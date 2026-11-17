@@ -1,22 +1,23 @@
 extends RefCounted
 ## The shared "pixel arcade" Theme, matching the PixelLab pixel art: hard
-## edges, thick dark outlines, hard drop shadows, saturated violet and gold.
+## edges, thick dark outlines, hard drop shadows; slate panels, rust
+## buttons, gold accent.
 ## Type variations: "Title" and "Header" (Label), "Slot" (Panel),
 ## "Plate" (PanelContainer, tight margins, for the HUD), "Card" (Button).
 
-const INK := Color("#1b1430")  # backgrounds
-const PANEL := Color("#2e2150")
-const PANEL_HI := Color("#47347a")
-const BUTTON := Color("#5b3fa0")
-const BUTTON_HI := Color("#7a58d0")
-const OUTLINE := Color("#0f0a1e")
-const GOLD := Color("#ffb62e")  # accent: titles, focus, gold
-const GOLD_DIM := Color("#a8701a")
-const TEXT := Color("#fff4dc")
-const TEXT_DIM := Color("#b9a8e0")
+const INK := Color("#16181d")  # backgrounds
+const PANEL := Color("#262a33")
+const PANEL_HI := Color("#3a404c")
+const BUTTON := Color("#8a3b2a")
+const BUTTON_HI := Color("#b4532f")
+const OUTLINE := Color("#0b0c10")
+const GOLD := Color("#ffc94a")  # accent: titles, focus, gold
+const GOLD_DIM := Color("#a07a1f")
+const TEXT := Color("#fff1e0")
+const TEXT_DIM := Color("#a7adb9")
 const HP := Color("#e0433a")
 const MANA := Color("#3f8cff")
-const XP := Color("#ffb62e")
+const XP := Color("#ffc94a")
 const SHADOW := Color(0, 0, 0, 0.55)
 
 ## Fonts (assets/fonts, SIL OFL): Pixelify Sans, a pixel font, for the whole
