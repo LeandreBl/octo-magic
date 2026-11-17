@@ -1,6 +1,8 @@
 """Spell forge: rewrites a spell with a word written on a scroll, using Claude.
 
-Run: ANTHROPIC_API_KEY=... python3 server/forge.py   (listens on :8765)
+Run: python3 server/forge.py   (listens on :8765)
+With ANTHROPIC_API_KEY set it calls the API; otherwise it goes through the
+logged-in `claude` CLI (Claude Code account), fine for development only.
 POST /forge {"spell": {...}, "word": "tempête"} -> {"spell": {...}}
 The game sanitizes and prices whatever comes back; this server only asks.
 """
@@ -8,6 +10,7 @@ The game sanitizes and prices whatever comes back; this server only asks.
 import json
 import os
 import re
+import subprocess
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -76,7 +79,38 @@ def call_claude(payload: dict) -> dict:
         return json.load(r)
 
 
-def forge(spell: dict, word: str, call=call_claude) -> dict:
+CLI_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "spell": {"type": "object", "description": "The full new spell."},
+        "reject_reason": {"type": "string", "description": "Only to refuse the word."},
+    },
+}
+
+
+def call_cli(payload: dict) -> dict:
+    """Same request through `claude -p`, answered in the API reply shape."""
+    out = subprocess.run(
+        ["claude", "-p", payload["messages"][0]["content"], "--model", payload["model"],
+         "--system-prompt", payload["system"] + "\nAnswer with `spell`, or only `reject_reason` to refuse.",
+         "--tools", "", "--no-session-persistence", "--setting-sources", "",
+         "--output-format", "json", "--json-schema", json.dumps(CLI_SCHEMA)],
+        capture_output=True, text=True, timeout=180, cwd="/tmp",
+    )
+    data = json.loads(out.stdout or "{}").get("structured_output") or {}
+    if "spell" in data:
+        return {"content": [{"type": "tool_use", "name": "forge_spell", "input": data}]}
+    if "reject_reason" in data:
+        return {"content": [{"type": "tool_use", "name": "reject_word", "input": {"reason": data["reject_reason"]}}]}
+    return {"content": []}
+
+
+def default_call(payload: dict) -> dict:
+    return (call_claude if os.environ.get("ANTHROPIC_API_KEY") else call_cli)(payload)
+
+
+def forge(spell: dict, word: str, call=None) -> dict:
+    call = call or default_call
     word = " ".join(str(word).split())
     if not (0 < len(word) <= 32 and WORD_RE.match(word)):
         raise ForgeError("un seul mot, sans chiffres ni symboles")
@@ -140,5 +174,5 @@ class Handler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     # ponytail: no accounts, rate limit or wait timer yet; add with the real
     # backend (Supabase) before exposing this publicly.
-    print(f"forge on :{PORT} with {MODEL}")
+    print(f"forge on :{PORT} with {MODEL} via", "API" if os.environ.get("ANTHROPIC_API_KEY") else "claude CLI")
     ThreadingHTTPServer(("", PORT), Handler).serve_forever()
