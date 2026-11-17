@@ -41,8 +41,21 @@ SPELLS = {
 }
 
 
+# Level-up upgrades (game/upgrades.gd LIST), as up_<id>.
+UPGRADES = {
+    "damage": "a glowing red fist-shaped rune of raw power with sparks",
+    "cooldown": "a small golden hourglass with glowing blue sand",
+    "count": "three small glowing magic orbs side by side",
+    "speed": "a winged golden arrow streaking forward with speed lines",
+    "mana": "a blue mana potion flask with a downward arrow rune",
+    "area": "an expanding magic circle with arrows pointing outward",
+    "pierce": "a silver spear tip piercing through a wooden shield",
+}
+
+
 def jobs() -> dict[str, str]:
     out = {k: f"{STYLE}: {v}" for k, v in SPELLS.items()}
+    out |= {f"up_{k}": f"{STYLE}: {v}" for k, v in UPGRADES.items()}
     profile = (ROOT / "game/profile.gd").read_text()
     for id_, kind, color in re.findall(r'"(\w+)": \{"kind": "(\w+)", "name": "[^"]+", "price": \d+, "color": "([^"]*)"', profile):
         if color:

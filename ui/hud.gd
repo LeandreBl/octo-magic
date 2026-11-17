@@ -26,41 +26,40 @@ func _ready() -> void:
 		margin.add_theme_constant_override("margin_" + side, 16)
 	add_child(margin)
 
+	var plate := _plate(margin, Control.SIZE_SHRINK_BEGIN)
 	var left := VBoxContainer.new()
-	left.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	left.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	margin.add_child(left)
+	left.add_theme_constant_override("separation", 6)
+	plate.add_child(left)
 	_hp = _bar(left, UITheme.HP)
 	_mana = _bar(left, UITheme.MANA)
 	_xp = _bar(left, UITheme.XP)
 	_spell = Label.new()
+	_spell.autowrap_mode = TextServer.AUTOWRAP_WORD
+	_spell.custom_minimum_size.x = 280
+	_spell.add_theme_font_size_override("font_size", 18)
 	left.add_child(_spell)
 	_scrolls = Label.new()
 	_scrolls.autowrap_mode = TextServer.AUTOWRAP_WORD
-	_scrolls.custom_minimum_size.x = 420
-	_scrolls.add_theme_font_size_override("font_size", 18)
+	_scrolls.custom_minimum_size.x = 280
+	_scrolls.add_theme_font_size_override("font_size", 16)
+	_scrolls.add_theme_color_override("font_color", UITheme.TEXT_DIM)
 	left.add_child(_scrolls)
 
 	_wave = Label.new()
 	_wave.theme_type_variation = "Header"
-	_wave.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_wave.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	margin.add_child(_wave)
+	_plate(margin, Control.SIZE_SHRINK_CENTER).add_child(_wave)
 
 	var right := HBoxContainer.new()
 	right.size_flags_horizontal = Control.SIZE_SHRINK_END
 	right.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	right.add_theme_constant_override("separation", 16)
 	margin.add_child(right)
-	var coin := TextureRect.new()
-	coin.texture = UITheme.icon("gold")
-	coin.custom_minimum_size = Vector2(40, 40)
-	coin.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	coin.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	right.add_child(coin)
+	var purse := HBoxContainer.new()
+	_plate(right, Control.SIZE_SHRINK_BEGIN).add_child(purse)
+	purse.add_child(UITheme.icon_rect(UITheme.icon("gold"), 40))
 	_gold = Label.new()
 	_gold.add_theme_color_override("font_color", UITheme.GOLD)
-	right.add_child(_gold)
+	purse.add_child(_gold)
 	var pause := Button.new()
 	pause.text = "II"
 	pause.focus_mode = Control.FOCUS_NONE
@@ -76,6 +75,17 @@ func _ready() -> void:
 	margin.add_child(bottom)
 	for slot in Upgrades.SLOTS:
 		bottom.add_child(_slot(slot))
+
+
+## A "Plate" panel in `parent`, at the top, aligned by `h_flags`.
+func _plate(parent: Control, h_flags: int) -> PanelContainer:
+	var p := PanelContainer.new()
+	p.theme_type_variation = "Plate"
+	p.size_flags_horizontal = h_flags
+	p.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(p)
+	return p
 
 
 func _bar(parent: Control, color: Color) -> ProgressBar:
@@ -117,6 +127,7 @@ func _slot(slot: String) -> Control:
 	icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 8)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	panel.add_child(icon)
 	var cd := ColorRect.new()
 	cd.color = Color(0, 0, 0, 0.6)

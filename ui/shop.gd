@@ -94,7 +94,7 @@ func _rebuild() -> void:
 	for c in Profile.COLORS:
 		var b := _button(row, "", func(): Profile.set_look("hat", c))
 		b.custom_minimum_size = Vector2(44, 44)
-		b.add_theme_stylebox_override("normal", _swatch(c, UITheme.GOLD_DIM))
+		b.add_theme_stylebox_override("normal", _swatch(c, UITheme.OUTLINE))
 		b.add_theme_stylebox_override("hover", _swatch(c, UITheme.GOLD))
 		b.add_theme_stylebox_override("disabled", _swatch(c, UITheme.TEXT))
 		b.disabled = Profile.look.hat == c
@@ -111,7 +111,8 @@ func _buttons() -> Array:
 func _section(title: String) -> HFlowContainer:
 	var l := Label.new()
 	l.text = title
-	l.add_theme_color_override("font_color", UITheme.GOLD)
+	l.theme_type_variation = "Header"
+	l.add_theme_font_size_override("font_size", 24)
 	_content.add_child(l)
 	var row := HFlowContainer.new()
 	row.add_theme_constant_override("h_separation", 8)
@@ -123,6 +124,7 @@ func _section(title: String) -> HFlowContainer:
 func _button(parent: Control, text: String, fn: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
+	b.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	b.pressed.connect(fn)
 	parent.add_child(b)
 	return b
@@ -142,6 +144,8 @@ static func _swatch(color: String, border: Color) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = Color(color)
 	s.border_color = border
-	s.set_border_width_all(3)
-	s.set_corner_radius_all(8)
+	s.set_border_width_all(4)
+	s.shadow_color = UITheme.SHADOW
+	s.shadow_size = 1
+	s.shadow_offset = Vector2(4, 4)
 	return s

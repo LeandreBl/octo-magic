@@ -69,8 +69,8 @@ func _ready() -> void:
 	screens.shop = add_screen(shop)
 	screens.achievements = add_screen(_list_screen("Succès", _achievements_text))
 	screens.leaderboard = add_screen(_list_screen("Classement", _scores_text))
-	_level_box = VBoxContainer.new()
-	_level_box.add_theme_constant_override("separation", 10)
+	_level_box = HBoxContainer.new()
+	_level_box.add_theme_constant_override("separation", 18)
 	screens.levelup = add_screen(_menu("Niveau supérieur !", [], _level_box))
 
 	main.run_ended.connect(_on_run_ended)
@@ -101,10 +101,25 @@ func show_screen(name: String) -> void:
 	sticks.visible = name == ""
 	_dim.visible = name not in ["", "title"]
 	get_tree().paused = not Run.active or (name != "" and main.solo())
+	_appear(screens[name])
 	if screens[name].has_meta("focus"):
 		screens[name].get_meta("focus").grab_focus()
 	elif get_viewport().gui_get_focus_owner():
 		get_viewport().gui_get_focus_owner().release_focus()
+
+
+## Screen transition: a fade, and the panel pops in (a slight overshoot).
+func _appear(screen: Control) -> void:
+	if screen == hud:
+		return
+	var tw := screen.create_tween().set_parallel()
+	screen.modulate.a = 0.0
+	tw.tween_property(screen, "modulate:a", 1.0, 0.12)
+	var panel: Control = screen.get_child(0) if screen is CenterContainer and screen.get_child_count() else null
+	if panel:
+		panel.pivot_offset = panel.size / 2
+		panel.scale = Vector2(0.9, 0.9)
+		tw.tween_property(panel, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 ## Options and placeholders return to the screen that opened them.
@@ -180,6 +195,11 @@ func _title() -> Control:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
 	center.add_child(box)
+	var frame := PanelContainer.new()  # the icon has an opaque background: frame it
+	frame.theme_type_variation = "Plate"
+	frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	frame.add_child(UITheme.icon_rect(preload("res://assets/icon.png"), 104))
+	box.add_child(frame)
 	var title := Label.new()
 	title.theme_type_variation = "Title"
 	title.text = "Octo Magic"
@@ -196,13 +216,24 @@ func _title() -> Control:
 		["Classement", open.bind("leaderboard")], ["Options", open.bind("options")]]
 	if not OS.has_feature("web"):
 		items.append(["Quitter", get_tree().quit])
-	for it in items:
+	# "Jouer" stands out; the rest in two columns, to fit a landscape phone.
+	var play := _button(items[0][0], items[0][1])
+	play.custom_minimum_size = Vector2(416, 64)
+	play.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	play.add_theme_font_size_override("font_size", 30)
+	play.add_theme_font_override("font", UITheme.PIXEL_BOLD)
+	box.add_child(play)
+	bg.set_meta("focus", play)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	grid.add_theme_constant_override("h_separation", 16)
+	grid.add_theme_constant_override("v_separation", 12)
+	box.add_child(grid)
+	for it in items.slice(1):
 		var b := _button(it[0], it[1])
-		b.custom_minimum_size = Vector2(320, 0)
-		b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		box.add_child(b)
-		if not bg.has_meta("focus"):
-			bg.set_meta("focus", b)
+		b.custom_minimum_size = Vector2(200, 0)
+		grid.add_child(b)
 	return bg
 
 
@@ -234,7 +265,7 @@ func _scores_text() -> String:
 	return "\n".join(lines) if lines else "Aucun score : lance une run !"
 
 
-var _level_box: VBoxContainer
+var _level_box: HBoxContainer
 
 
 func _show_level_up(offers: Array) -> void:
@@ -244,13 +275,32 @@ func _show_level_up(offers: Array) -> void:
 	for i in offers.size():
 		var o: Dictionary = offers[i]
 		var u: Dictionary = Upgrades.LIST[o.id]
-		var b := _button("%s · %s\n%s : %s" % [u.name, u.desc, Upgrades.SLOT_NAMES[o.slot], Run.spells[o.slot].name],
-			func():
-				var more := Run.choose(i)
-				main.send_loadout(false)
-				if not more:
-					show_screen(""))
-		b.custom_minimum_size.x = 460
+		var b := _button("", func():
+			var more := Run.choose(i)
+			main.send_loadout(false)
+			if not more:
+				show_screen(""))
+		b.theme_type_variation = "Card"
+		b.custom_minimum_size = Vector2(220, 250)
+		var card := VBoxContainer.new()
+		card.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 14)
+		card.add_theme_constant_override("separation", 8)
+		card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(card)
+		var pic := UITheme.icon_rect(UITheme.icon("up_" + o.id), 96)
+		pic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		card.add_child(pic)
+		for line in [[u.name, 26, UITheme.GOLD], [u.desc, 18, UITheme.TEXT],
+				["%s : %s" % [Upgrades.SLOT_NAMES[o.slot], Run.spells[o.slot].name], 14, UITheme.TEXT_DIM]]:
+			var l := Label.new()
+			l.text = line[0]
+			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			l.autowrap_mode = TextServer.AUTOWRAP_WORD
+			l.add_theme_font_size_override("font_size", line[1])
+			l.add_theme_color_override("font_color", line[2])
+			if line[1] == 26:
+				l.add_theme_font_override("font", UITheme.PIXEL_BOLD)
+			card.add_child(l)
 		_level_box.add_child(b)
 	screens.levelup.set_meta("focus", _level_box.get_child(0))
 	show_screen("levelup")
@@ -265,7 +315,11 @@ func _end_screen() -> Control:
 	_stats = Label.new()
 	_stats.custom_minimum_size.x = 300
 	_stats.autowrap_mode = TextServer.AUTOWRAP_WORD
-	row.add_child(_stats)
+	var plate := PanelContainer.new()
+	plate.theme_type_variation = "Plate"
+	plate.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	plate.add_child(_stats)
+	row.add_child(plate)
 	var scroll := preload("res://ui/scroll_panel.gd").new()
 	scroll.main = main
 	row.add_child(scroll)

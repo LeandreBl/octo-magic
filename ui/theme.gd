@@ -1,77 +1,118 @@
 extends RefCounted
-## The shared heroic-fantasy Theme: dark violet panels, gold trims, parchment text.
-## Type variations: "Title" and "Header" (Label), "Slot" (Panel).
+## The shared "pixel arcade" Theme, matching the PixelLab pixel art: hard
+## edges, thick dark outlines, hard drop shadows, saturated violet and gold.
+## Type variations: "Title" and "Header" (Label), "Slot" (Panel),
+## "Plate" (PanelContainer, tight margins, for the HUD), "Card" (Button).
 
-const INK := Color("#14101f")
-const PANEL := Color("#231a38")
-const PANEL_HI := Color("#3a2c5c")
-const GOLD := Color("#d4a83a")
-const GOLD_DIM := Color("#7d6224")
-const TEXT := Color("#f2e6c8")
-const TEXT_DIM := Color("#a89c80")
-const HP := Color("#c0392b")
-const MANA := Color("#3d6fd8")
-const XP := Color("#d4a83a")
+const INK := Color("#1b1430")  # backgrounds
+const PANEL := Color("#2e2150")
+const PANEL_HI := Color("#47347a")
+const BUTTON := Color("#5b3fa0")
+const BUTTON_HI := Color("#7a58d0")
+const OUTLINE := Color("#0f0a1e")
+const GOLD := Color("#ffb62e")  # accent: titles, focus, gold
+const GOLD_DIM := Color("#a8701a")
+const TEXT := Color("#fff4dc")
+const TEXT_DIM := Color("#b9a8e0")
+const HP := Color("#e0433a")
+const MANA := Color("#3f8cff")
+const XP := Color("#ffb62e")
+const SHADOW := Color(0, 0, 0, 0.55)
 
-## Fonts (assets/fonts, SIL OFL): Almendra, calligraphic, for the whole game;
-## Uncial Antiqua, an old manuscript hand, for what is written on scrolls.
-## Neither has Greek: EB Garamond fills in (πῦρ, ...).
+## Fonts (assets/fonts, SIL OFL): Pixelify Sans, a pixel font, for the whole
+## game; Uncial Antiqua, an old manuscript hand, for what is written on
+## scrolls. Neither has Greek: EB Garamond fills in (πῦρ, ...).
+## (Almendra stays for the website, web/style.css.)
 const GREEK: FontFile = preload("res://assets/fonts/EBGaramond.ttf")
-const MAGIC: FontFile = preload("res://assets/fonts/Almendra-Regular.ttf")
-const MAGIC_BOLD: FontFile = preload("res://assets/fonts/Almendra-Bold.ttf")
+const PIXEL_FILE: FontFile = preload("res://assets/fonts/PixelifySans.ttf")
 const PARCHMENT: FontFile = preload("res://assets/fonts/UncialAntiqua-Regular.ttf")
+static var PIXEL := _weight(500)
+static var PIXEL_BOLD := _weight(700)
 
 
 static func make() -> Theme:
-	var t := Theme.new()
-	for f in [MAGIC, MAGIC_BOLD, PARCHMENT]:
+	for f in [PIXEL_FILE, PARCHMENT]:
 		f.fallbacks = [GREEK]
-	t.default_font = MAGIC
-	t.default_font_size = 22
+	var t := Theme.new()
+	t.default_font = PIXEL
+	t.default_font_size = 20
 
 	t.set_color("font_color", "Label", TEXT)
-	t.set_color("font_shadow_color", "Label", Color(0, 0, 0, 0.6))
-	t.set_constant("shadow_offset_x", "Label", 1)
+	t.set_color("font_shadow_color", "Label", SHADOW)
+	t.set_constant("shadow_offset_x", "Label", 2)
 	t.set_constant("shadow_offset_y", "Label", 2)
 	t.set_type_variation("Title", "Label")
-	t.set_font_size("font_size", "Title", 64)
-	t.set_font("font", "Title", MAGIC_BOLD)
+	t.set_font_size("font_size", "Title", 80)
+	t.set_font("font", "Title", PIXEL_BOLD)
 	t.set_color("font_color", "Title", GOLD)
+	t.set_color("font_shadow_color", "Title", OUTLINE)
+	t.set_constant("shadow_offset_x", "Title", 5)
+	t.set_constant("shadow_offset_y", "Title", 5)
 	t.set_type_variation("Header", "Label")
 	t.set_font_size("font_size", "Header", 34)
-	t.set_font("font", "Header", MAGIC_BOLD)
+	t.set_font("font", "Header", PIXEL_BOLD)
 	t.set_color("font_color", "Header", GOLD)
+	t.set_color("font_shadow_color", "Header", OUTLINE)
+	t.set_constant("shadow_offset_x", "Header", 3)
+	t.set_constant("shadow_offset_y", "Header", 3)
 
-	t.set_stylebox("panel", "PanelContainer", _box(Color(PANEL, 0.94), GOLD_DIM, 2, 12, 20))
-	t.set_stylebox("panel", "Panel", _box(Color(PANEL, 0.94), GOLD_DIM, 2, 12, 0))
+	t.set_stylebox("panel", "PanelContainer", _box(PANEL, OUTLINE, 4, 22, 6))
+	t.set_stylebox("panel", "Panel", _box(PANEL, OUTLINE, 4, 0, 6))
+	t.set_type_variation("Plate", "PanelContainer")
+	t.set_stylebox("panel", "Plate", _box(Color(PANEL, 0.92), OUTLINE, 4, 10, 4))
 	t.set_type_variation("Slot", "Panel")
-	t.set_stylebox("panel", "Slot", _box(Color(INK, 0.85), GOLD_DIM, 2, 6, 0))
+	t.set_stylebox("panel", "Slot", _box(PANEL, OUTLINE, 4, 0, 4))
 
-	for type in ["Button", "OptionButton", "CheckButton"]:
-		t.set_stylebox("normal", type, _box(PANEL, GOLD_DIM, 2, 8, 10))
-		t.set_stylebox("hover", type, _box(PANEL_HI, GOLD, 2, 8, 10))
-		t.set_stylebox("pressed", type, _box(INK, GOLD, 2, 8, 10))
-		t.set_stylebox("focus", type, _box(Color.TRANSPARENT, TEXT, 3, 8, 10))
-		t.set_stylebox("disabled", type, _box(Color(PANEL, 0.5), Color(GOLD_DIM, 0.4), 2, 8, 10))
+	for type in ["Button", "OptionButton", "CheckButton", "Card"]:
+		t.set_stylebox("normal", type, _box(BUTTON, OUTLINE, 4, 10, 5))
+		t.set_stylebox("hover", type, _box(BUTTON_HI, OUTLINE, 4, 10, 5))
+		t.set_stylebox("pressed", type, _box(BUTTON.darkened(0.2), OUTLINE, 4, 10, 0, 5))
+		t.set_stylebox("disabled", type, _box(Color(PANEL_HI, 0.7), OUTLINE, 4, 10, 0))
+		var focus := _box(Color.TRANSPARENT, GOLD, 4, 10, 0)
+		focus.set_expand_margin_all(4)
+		t.set_stylebox("focus", type, focus)
 		t.set_color("font_color", type, TEXT)
 		t.set_color("font_hover_color", type, GOLD)
 		t.set_color("font_focus_color", type, GOLD)
 		t.set_color("font_pressed_color", type, GOLD)
+		t.set_color("font_hover_pressed_color", type, GOLD)
 		t.set_color("font_disabled_color", type, TEXT_DIM)
+		t.set_color("icon_disabled_color", type, Color(1, 1, 1, 0.5))
+		t.set_constant("h_separation", type, 8)
+	t.set_type_variation("Card", "Button")
+	t.set_stylebox("hover", "Card", _box(BUTTON_HI, GOLD, 4, 10, 5))
+	t.set_stylebox("focus", "Card", _box(Color.TRANSPARENT, GOLD, 4, 10, 0))
 
-	t.set_stylebox("normal", "LineEdit", _box(INK, GOLD_DIM, 2, 6, 10))
-	t.set_stylebox("focus", "LineEdit", _box(Color.TRANSPARENT, GOLD, 2, 6, 10))
-	t.set_stylebox("read_only", "LineEdit", _box(Color(INK, 0.5), Color(GOLD_DIM, 0.4), 2, 6, 10))
+	t.set_stylebox("normal", "LineEdit", _box(Color(OUTLINE, 0.6), OUTLINE, 4, 10, 0))
+	t.set_stylebox("focus", "LineEdit", _box(Color.TRANSPARENT, GOLD, 4, 10, 0))
+	t.set_stylebox("read_only", "LineEdit", _box(Color(OUTLINE, 0.3), Color(OUTLINE, 0.6), 4, 10, 0))
 	t.set_color("font_color", "LineEdit", TEXT)
 	t.set_color("font_placeholder_color", "LineEdit", TEXT_DIM)
+	t.set_color("caret_color", "LineEdit", GOLD)
 
-	t.set_stylebox("background", "ProgressBar", _box(Color(INK, 0.85), GOLD_DIM, 2, 4, 0))
-	t.set_stylebox("fill", "ProgressBar", _box(HP, Color.TRANSPARENT, 0, 4, 0))
+	t.set_stylebox("background", "ProgressBar", _box(Color(OUTLINE, 0.85), OUTLINE, 3, 0, 0))
+	t.set_stylebox("fill", "ProgressBar", fill(HP))
 	t.set_color("font_color", "ProgressBar", TEXT)
 
-	t.set_stylebox("slider", "HSlider", _box(INK, GOLD_DIM, 1, 4, 3))
-	t.set_stylebox("grabber_area", "HSlider", _box(GOLD_DIM, Color.TRANSPARENT, 0, 4, 3))
-	t.set_stylebox("grabber_area_highlight", "HSlider", _box(GOLD, Color.TRANSPARENT, 0, 4, 3))
+	t.set_stylebox("slider", "HSlider", _box(OUTLINE, OUTLINE, 0, 4, 0))
+	t.set_stylebox("grabber_area", "HSlider", _box(GOLD_DIM, Color.TRANSPARENT, 0, 4, 0))
+	t.set_stylebox("grabber_area_highlight", "HSlider", _box(GOLD, Color.TRANSPARENT, 0, 4, 0))
+	t.set_icon("grabber", "HSlider", _square(18, TEXT, OUTLINE))
+	t.set_icon("grabber_highlight", "HSlider", _square(18, GOLD, OUTLINE))
+
+	for bar in ["VScrollBar", "HScrollBar"]:
+		t.set_stylebox("scroll", bar, _box(Color(OUTLINE, 0.6), Color.TRANSPARENT, 0, 4, 0))
+		t.set_stylebox("grabber", bar, _box(BUTTON, OUTLINE, 2, 4, 0))
+		t.set_stylebox("grabber_highlight", bar, _box(BUTTON_HI, OUTLINE, 2, 4, 0))
+		t.set_stylebox("grabber_pressed", bar, _box(GOLD, OUTLINE, 2, 4, 0))
+
+	t.set_stylebox("panel", "TooltipPanel", _box(INK, GOLD, 3, 8, 0))
+	t.set_color("font_color", "TooltipLabel", TEXT)
+	t.set_font_size("font_size", "TooltipLabel", 16)
+	t.set_stylebox("panel", "PopupMenu", _box(PANEL, OUTLINE, 4, 6, 0))
+	t.set_stylebox("hover", "PopupMenu", _box(BUTTON_HI, Color.TRANSPARENT, 0, 4, 0))
+	t.set_color("font_color", "PopupMenu", TEXT)
+	t.set_color("font_hover_color", "PopupMenu", GOLD)
 	return t
 
 
@@ -89,17 +130,50 @@ static func spell_icon(s: Dictionary) -> Texture2D:
 	return null
 
 
-## A fill colored like `color`, for ProgressBar "fill" overrides.
+## A TextureRect showing `tex` at `px`, pixel-sharp.
+static func icon_rect(tex: Texture2D, px: int) -> TextureRect:
+	var r := TextureRect.new()
+	r.texture = tex
+	r.custom_minimum_size = Vector2(px, px)
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	r.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return r
+
+
+## A bar fill colored like `color`, a lighter band on top, for ProgressBar "fill".
 static func fill(color: Color) -> StyleBoxFlat:
-	return _box(color, Color.TRANSPARENT, 0, 4, 0)
+	var b := _box(color, color.lightened(0.35), 0, 0, 0)
+	b.border_width_top = 4
+	return b
 
 
-static func _box(bg: Color, border: Color, width: int, radius: int, margin: int) -> StyleBoxFlat:
+## A flat box: `width` outline, a hard drop shadow `drop` px below-right.
+static func _box(bg: Color, border: Color, width: int, margin: int, drop: int, nudge := 0) -> StyleBoxFlat:
 	var b := StyleBoxFlat.new()
 	b.bg_color = bg
 	b.border_color = border
 	b.set_border_width_all(width)
-	b.set_corner_radius_all(radius)
 	b.set_content_margin_all(margin)
-	b.anti_aliasing = true
+	b.content_margin_top += nudge  # pressed: the label sinks with the button
+	b.content_margin_bottom -= nudge
+	if drop:
+		b.shadow_color = SHADOW
+		b.shadow_size = 1
+		b.shadow_offset = Vector2(drop, drop)
 	return b
+
+
+static func _weight(w: int) -> FontVariation:
+	var v := FontVariation.new()
+	v.base_font = PIXEL_FILE
+	v.variation_opentype = {TextServerManager.get_primary_interface().name_to_tag("wght"): w}
+	return v
+
+
+static func _square(px: int, color: Color, border: Color) -> ImageTexture:
+	var img := Image.create_empty(px, px, false, Image.FORMAT_RGBA8)
+	img.fill(border)
+	img.fill_rect(Rect2i(3, 3, px - 6, px - 6), color)
+	return ImageTexture.create_from_image(img)
