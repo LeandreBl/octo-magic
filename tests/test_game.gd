@@ -41,10 +41,11 @@ func _test_french() -> void:
 				for m in literal.search_all(FileAccess.get_file_as_string(dir + f)):
 					texts.append(m.get_string(1).c_unescape())
 	texts += Upgrades.SLOT_NAMES.values()
+	texts += Upgrades.RARITIES.values().map(func(r): return r.name)
 	for d in [Upgrades.LIST, RunState.SHOP, ProfileState.ITEMS, ProfileState.BONUSES, ProfileState.ACHIEVEMENTS]:
 		for v in d.values():
 			texts.append(v.name)
-			if v.has("desc") and not v.desc.begins_with("+1 projectile") and not v.desc.begins_with("+3 mana/s"):
+			if v.has("desc") and not v.desc.begins_with("+%d projectile") and not v.desc.begins_with("+3 mana/s"):
 				texts.append(v.desc)
 	var p := ProfileState.new()
 	for e in p.base_spells:
@@ -53,7 +54,7 @@ func _test_french() -> void:
 	for m in RegEx.create_from_string("\"[A-Z_]+\": \"([^\"]+)\"").search_all(FileAccess.get_file_as_string("res://game/online.gd")):
 		texts.append(m.get_string(1))  # Online.ERRORS (the autoload needs Profile)
 	texts += Settings.REBINDABLE.values().filter(func(t): return t != "Pause")
-	var same := ["Multiplication", "Scribe"]
+	var same := ["Multiplication", "Scribe", "Rare", "Fortune"]
 	for t in texts:
 		check(t in same or TranslationServer.translate(t) != t, "French for: " + t)
 	check(Spell.describe({"description": "x", "description_fr": "y"}) == "y", "forged spell described in French")
@@ -68,8 +69,10 @@ func _damage(s: Dictionary) -> float:
 func _test_upgrades() -> void:
 	var s := Spell.base()
 	var up := Upgrades.apply(s, "damage")
-	check(is_equal_approx(_damage(up), _damage(s) * 1.25), "damage upgrade")
+	check(is_equal_approx(_damage(up), _damage(s) * 1.2), "damage upgrade")
+	check(is_equal_approx(_damage(Upgrades.apply(s, "damage", 3)), _damage(s) * 1.6), "an epic is three commons")
 	check(Upgrades.apply(s, "count").emit.count == s.emit.count + 1, "count upgrade")
+	check(Upgrades.apply(s, "count", 2).emit.count == s.emit.count + 2, "rare count upgrade")
 	check(Upgrades.apply(s, "cooldown").cooldown < s.cooldown, "cooldown upgrade")
 	check(Upgrades.apply(s, "pierce").emit.body.pierce == s.emit.body.pierce + 1, "pierce upgrade")
 	check(Upgrades.apply(up, "damage") == Spell.sanitize(Upgrades.apply(up, "damage")), "upgraded spell is sanitized")
@@ -83,8 +86,18 @@ func _test_upgrades() -> void:
 		"on_hit": [{"type": "damage", "amount": 10}]}}}]}}})
 	check(Upgrades.scale_damage(boom, 2.0).emit.body.on_expire[0].emit.body.on_hit[0].amount == 20.0, "nested damage scaled")
 	var rng := RandomNumberGenerator.new()
-	var offers := Upgrades.offers({"primary": s}, {}, rng)
-	check(offers.size() == 3 and offers[0] != offers[1] and offers[1] != offers[2], "3 distinct offers")
+	var offers := Upgrades.offers(s, 1.0, {}, rng)
+	check(offers.size() == 3 and offers[0].id != offers[1].id and offers[1].id != offers[2].id, "3 distinct offers")
+	check(offers.all(func(o): return Upgrades.RARITIES.has(o.rarity)), "offers have a rarity")
+	var seen := {}
+	for i in 200:
+		for o in Upgrades.offers(s, 1.0, {}, rng):
+			seen[o.rarity] = true
+			seen[o.id] = true
+	check(seen.has("epic") and seen.has("common") and seen.has("toughness"), "rarities and hero augments rolled")
+	check(not Upgrades.applies(s, "fleetness", 1.0, {"speed": 2.0}), "maxed stat not offered")
+	TranslationServer.set_locale("en")
+	check(Upgrades.describe("damage", "rare") == "+40% damage", "rare described with its value")
 
 
 func _test_run() -> void:
@@ -100,12 +113,18 @@ func _test_run() -> void:
 	run.add_xp(1 + RunState.xp_to_next(2))  # two level-ups at once
 	check(run.level == 3 and run.pending == 2 and got.size() == 1 and run.offers.size() == 3, "level-ups queue")
 	var o: Dictionary = run.offers[0]
-	var before: Dictionary = run.spells[o.slot]
-	var cost := run.mana_cost(o.slot)
+	var before: Dictionary = run.spells.primary
+	var cost := run.mana_cost("primary")
+	var stats: Dictionary = run.stats.duplicate()
 	check(run.choose(0), "a second choice waits")
-	check(run.spells[o.slot] != before or run.mana_cost(o.slot) <= cost, "choice applied")
+	check(run.spells.primary != before or run.mana_cost("primary") < cost or run.stats != stats or o.id == "mana", "choice applied")
 	check(not run.choose(0) and run.pending == 0 and run.offers.is_empty(), "all choices made")
 	check(run.picked.size() == 2, "picks recorded")
+	run.offers = [{"id": "toughness", "rarity": "epic"}]
+	run.pending = 1
+	var hp: float = run.stats.get("hp", 0.0)
+	run.choose(0)
+	check(run.stats.hp == hp + 60.0, "hero augment raises the run stat")
 	run.start(p.equipped_spells(), {"gold": 0.5})
 	run.collect("gold", 10)
 	check(run.gold == 15, "gold bonus")
@@ -127,8 +146,6 @@ func _test_run_shop(run: Object) -> void:
 	check(run.buy("ring_of_fire") and run.gold == 60 and run.spells.secondary.emit.pattern == "radial", "ring bought")
 	check(not run.buy("ring_of_fire") and run.gold == 60, "one active per run")
 	check(run.buy("shield") and run.passive == "shield" and not run.buy("shield"), "one passive per run")
-	check(Upgrades.offers(run.spells, run.mana_mult, run.rng, 99).any(func(o): return o.slot == "secondary"),
-		"level-ups improve the ring too")
 	var l := Player.clean_loadout(JSON.parse_string(JSON.stringify({"spells": run.spells, "passive": "shield"})))
 	check(l.spells.has("secondary") and l.passive == "shield", "loadout keeps the bought slots")
 	check(Player.clean_loadout({"passive": "god_mode"}).passive == "", "unknown passive dropped")

@@ -670,20 +670,16 @@ func _show_level_up(offers: Array) -> void:
 		num.add_child(n)
 		card.add_child(num)
 		card.add_child(UITheme.icon_box(UITheme.icon("up_" + o.id), 112))
-		for line in [[u.name, 28, UITheme.GOLD, true], [u.desc, 19, UITheme.TEXT, false]]:
+		var rarity: Dictionary = Upgrades.RARITIES[o.rarity]
+		b.self_modulate = Color(rarity.color).lerp(Color.WHITE, 0.4)  # the card's frame takes the rarity's hue
+		for line in [[tr(rarity.name), 14, Color(rarity.color), false], [tr(u.name), 28, Color(rarity.color), true],
+				[Upgrades.describe(o.id, o.rarity), 19, UITheme.TEXT, false]]:
 			var l := UITheme.label(line[0], "", line[1], line[2])
 			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			l.autowrap_mode = TextServer.AUTOWRAP_WORD
 			if line[3]:
 				l.add_theme_font_override("font", UITheme.PIXEL_BOLD)
 			card.add_child(l)
-		card.add_child(_spacer())
-		var target := PanelContainer.new()
-		target.add_theme_stylebox_override("panel", UITheme.flat(UITheme.INK, UITheme.RIM, 2, 6, 0))
-		target.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		target.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		target.add_child(UITheme.label("%s · %s" % [tr(Upgrades.SLOT_NAMES[o.slot]), Spell.label(Run.spells[o.slot])], "", 14, UITheme.TEXT_DIM))
-		card.add_child(target)
 		_level_box.add_child(b)
 	screens.levelup.set_meta("focus", _level_box.get_child(0))
 	show_screen("levelup")

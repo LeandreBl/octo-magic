@@ -1,25 +1,51 @@
 class_name Upgrades
-## Level-up upgrades. An upgrade edits a spell's JSON, then Spell.sanitize
-## clamps it again; "mana" is the only one kept outside the spell (the cost is
-## derived from the spell's power, see Run.mana_cost).
+## Level-up augments, each rolled with a rarity that multiplies its strength.
+## Spell augments edit the equipped spell's JSON (Spell.sanitize clamps it
+## again; "mana" is kept outside the spell, see Run.mana_mult); hero augments
+## ("stat") add to the mage's run stats (Run.stats, clamped in
+## Player.clean_loadout). "desc" formats the value: "step" times the tier.
 
 const SLOTS := ["primary"]  # the spell equipped from the profile
 const RUN_SLOTS := ["primary", "secondary"]  # + the active bought in a run (Run.SHOP)
 const SLOT_NAMES := {"primary": "Spell", "secondary": "Secondary spell"}  # English, translated where shown
-const LIST := {
-	"damage": {"name": "Power", "desc": "+25% damage"},
-	"cooldown": {"name": "Haste", "desc": "-15% cooldown"},
-	"count": {"name": "Multiplication", "desc": "+1 projectile"},
-	"speed": {"name": "Velocity", "desc": "+20% projectile speed"},
-	"mana": {"name": "Thrift", "desc": "-15% mana cost"},
-	"area": {"name": "Amplitude", "desc": "+20% size and area"},
-	"pierce": {"name": "Piercing", "desc": "Passes through one more enemy"},
+const RARITIES := {
+	"common": {"name": "Common", "tier": 1, "weight": 60.0, "color": "#d8d2c4"},
+	"rare": {"name": "Rare", "tier": 2, "weight": 30.0, "color": "#4fa3ff"},
+	"epic": {"name": "Epic", "tier": 3, "weight": 10.0, "color": "#c06bff"},
 }
-const MANA_FLOOR := 0.4  # "mana" upgrades stop at 40 % of the cost
+const LIST := {
+	"damage": {"name": "Power", "desc": "+%d%% damage", "step": 20},
+	"cooldown": {"name": "Haste", "desc": "-%d%% cooldown", "step": 10},
+	"count": {"name": "Multiplication", "desc": "+%d projectile(s)", "step": 1},
+	"speed": {"name": "Velocity", "desc": "+%d%% projectile speed", "step": 15},
+	"mana": {"name": "Thrift", "desc": "-%d%% mana cost", "step": 10},
+	"area": {"name": "Amplitude", "desc": "+%d%% size and area", "step": 15},
+	"pierce": {"name": "Piercing", "desc": "+%d enemies pierced", "step": 1},
+	"toughness": {"name": "Toughness", "desc": "+%d max health", "step": 20, "stat": "hp", "max": 1000.0},
+	"reservoir": {"name": "Reservoir", "desc": "+%d max mana", "step": 20, "stat": "mana", "max": 1000.0},
+	"flow": {"name": "Flow", "desc": "+%d mana per second", "step": 5, "stat": "regen", "max": 200.0},
+	"fleetness": {"name": "Fleetness", "desc": "+%d%% move speed", "step": 8, "stat": "speed", "max": 2.0, "pct": true},
+	"fortune": {"name": "Fortune", "desc": "+%d%% gold", "step": 15, "stat": "gold", "max": 5.0, "pct": true},
+	"insight": {"name": "Insight", "desc": "+%d%% experience", "step": 15, "stat": "xp", "max": 5.0, "pct": true},
+}
+const MANA_FLOOR := 0.4  # "mana" augments stop at 40 % of the cost
 
 
-## Can `id` still improve this spell? (mana_mult: the slot's cost multiplier)
-static func applies(spell: Dictionary, id: String, mana_mult := 1.0) -> bool:
+## The augment's text at `rarity`, translated.
+static func describe(id: String, rarity: String) -> String:
+	return TranslationServer.translate(LIST[id].desc) % (LIST[id].step * RARITIES[rarity].tier)
+
+
+## The augment's raw amount at `tier`: a fraction for "%" ones.
+static func amount(id: String, tier: int) -> float:
+	var u: Dictionary = LIST[id]
+	return u.step * tier * (0.01 if u.get("pct") or not u.has("stat") else 1.0)
+
+
+## Can `id` still improve the spell or the stats? (mana_mult: the cost multiplier)
+static func applies(spell: Dictionary, id: String, mana_mult := 1.0, stats := {}) -> bool:
+	if LIST[id].has("stat"):
+		return stats.get(LIST[id].stat, 0.0) < LIST[id].max
 	var e: Dictionary = spell.emit
 	var b: Dictionary = e.body
 	match id:
@@ -32,22 +58,23 @@ static func applies(spell: Dictionary, id: String, mana_mult := 1.0) -> bool:
 	return id == "damage"
 
 
-## The spell with upgrade `id` applied ("mana" leaves it unchanged).
-static func apply(spell: Dictionary, id: String) -> Dictionary:
+## The spell with spell augment `id` applied at `tier` ("mana" leaves it unchanged).
+static func apply(spell: Dictionary, id: String, tier := 1) -> Dictionary:
 	var s := spell.duplicate(true)
 	var e: Dictionary = s.emit
+	var a := amount(id, tier)
 	match id:
-		"damage": return scale_damage(s, 1.25)
-		"cooldown": s.cooldown *= 0.85
+		"damage": return scale_damage(s, 1.0 + a)
+		"cooldown": s.cooldown *= 1.0 - a
 		"count":
-			e.count += 1
+			e.count += tier
 			if e.pattern != "radial":
 				e.spread = maxf(e.spread, 12.0 * (e.count - 1))
-		"speed": e.body.speed *= 1.2
+		"speed": e.body.speed *= 1.0 + a
 		"area":
-			e.body.size *= 1.2
-			_each_effect(e, func(f): if f.get("radius", 0.0) > 0.0: f.radius *= 1.2)
-		"pierce": e.body.pierce += 1
+			e.body.size *= 1.0 + a
+			_each_effect(e, func(f): if f.get("radius", 0.0) > 0.0: f.radius *= 1.0 + a)
+		"pierce": e.body.pierce += tier
 	return Spell.sanitize(s)
 
 
@@ -68,16 +95,14 @@ static func _each_effect(emit: Dictionary, fn: Callable) -> void:
 				_each_effect(f.emit, fn)
 
 
-## Up to `n` distinct {slot, id} offers among the upgrades that still apply.
-static func offers(spells: Dictionary, mana_mult: Dictionary, rng: RandomNumberGenerator, n := 3) -> Array:
-	var pool := []
-	for slot in spells:
-		for id in LIST:
-			if applies(spells[slot], id, mana_mult.get(slot, 1.0)):
-				pool.append({"slot": slot, "id": id})
+## Up to `n` distinct {id, rarity} offers among the augments that still apply
+## to the equipped spell or the stats, each with its own rarity roll.
+static func offers(spell: Dictionary, mana_mult: float, stats: Dictionary, rng: RandomNumberGenerator, n := 3) -> Array:
+	var pool := LIST.keys().filter(func(id): return applies(spell, id, mana_mult, stats))
 	for i in range(pool.size() - 1, 0, -1):  # Fisher-Yates with the run's rng
 		var j := rng.randi_range(0, i)
 		var t = pool[i]
 		pool[i] = pool[j]
 		pool[j] = t
-	return pool.slice(0, n)
+	var weights := PackedFloat32Array(RARITIES.values().map(func(r): return r.weight))
+	return pool.slice(0, n).map(func(id): return {"id": id, "rarity": RARITIES.keys()[rng.rand_weighted(weights)]})
