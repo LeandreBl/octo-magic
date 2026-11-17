@@ -1,0 +1,33 @@
+# Production behind the VPS's Traefik: nothing is published on the host,
+# Traefik reaches the server through its own Docker network and handles TLS.
+# The game (GAME_HOST) and the API with the coop lobby (API_HOST) are the
+# same container. Postgres and the forge stay on the internal network; the
+# TURN server is reached directly (host network, TURN_URL).
+#
+# Select it from .env with:
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.traefik.yml
+#
+# Each host also gets a router on the plain HTTP entrypoint that only
+# redirects to HTTPS. Traefik's own ACME challenge router outranks it, so
+# certificates still renew.
+
+services:
+  server:
+    networks: [default, traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:-traefik}
+      - traefik.http.services.octo-magic.loadbalancer.server.port=8080
+      - traefik.http.routers.octo-magic.rule=Host(`${GAME_HOST:?GAME_HOST is required, see example.env}`) || Host(`${API_HOST:?API_HOST is required, see example.env}`)
+      - traefik.http.routers.octo-magic.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.octo-magic.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      - traefik.http.routers.octo-magic-http.rule=Host(`${GAME_HOST}`) || Host(`${API_HOST}`)
+      - traefik.http.routers.octo-magic-http.entrypoints=${TRAEFIK_HTTP_ENTRYPOINT:-web}
+      - traefik.http.routers.octo-magic-http.middlewares=octo-magic-https
+      - traefik.http.middlewares.octo-magic-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.octo-magic-https.redirectscheme.permanent=true
+
+networks:
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:-traefik}

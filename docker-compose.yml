@@ -1,7 +1,13 @@
 name: octo-magic
 
 # Everything online: `cp example.env .env`, fill it, `docker compose up -d --build`.
-# The game (web) and the API on http://localhost:${PORT:-8080}.
+#
+# Base shared by every environment. No port is published here:
+# - locally, docker-compose.override.yml (loaded automatically) publishes the
+#   game and the API on http://localhost:${PORT:-8080};
+# - on the VPS, docker-compose.traefik.yml routes them through Traefik
+#   instead, selected with COMPOSE_FILE in .env (see example.env).
+# The TURN server uses the host's network in both.
 
 services:
   postgres:
@@ -65,8 +71,6 @@ services:
       PGUSER: octo
       PGPASSWORD: ${POSTGRES_PASSWORD}
       PGDATABASE: octo
-    ports:
-      - "${PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy

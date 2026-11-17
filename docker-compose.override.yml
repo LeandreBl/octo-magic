@@ -1,0 +1,7 @@
+# Local development: loaded automatically by `docker compose` next to
+# docker-compose.yml. On the VPS, COMPOSE_FILE skips it (see example.env).
+
+services:
+  server:
+    ports:
+      - "${PORT:-8080}:8080"

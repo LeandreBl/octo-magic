@@ -7,7 +7,10 @@ Create, combine and cast spells to conquer a dungeon.
 - Spell forge (needed only to write on scrolls):
   `ANTHROPIC_API_KEY=... python3 server/forge.py`
 - Online (web game, accounts, forge, coop lobby, TURN): `cp example.env .env`,
-  fill it, `docker compose up -d --build`, then http://localhost:8080.
+  fill it, `docker compose up -d --build`, then http://localhost:8080. On the
+  VPS, behind Traefik: https://octo-magic.notdotio.com (game),
+  https://octo-magic.api.notdotio.com (API), TURN on
+  octo-magic.turn.notdotio.com (see the end of `example.env`).
   Server: `backend/server.js` (Firebase login, profiles and spells in
   Postgres, coop lobby on `/play`).
 - Coop (menu → Multijoueur, logged in): WebRTC peer to peer, the server only
@@ -15,8 +18,9 @@ Create, combine and cast spells to conquer a dungeon.
   extension: `./webrtc.sh` (downloads `addons/webrtc_native`, not in git).
 - Account in the game: menu → Compte (email/password, Firebase). Logged in,
   the profile and forged spells follow the account and the forge works. The
-  native game talks to `http://localhost:8080` (`OCTO_SERVER` or
-  `octo/server_url` in `project.godot` to change it); see `game/online.gd`.
+  native game talks to https://octo-magic.api.notdotio.com
+  (`OCTO_SERVER=http://localhost:8080` for a local server); see
+  `game/online.gd`.
 - Tests: `GODOT=/path/to/godot tests/run.sh`
 
 Controls: move WASD / arrows / left stick / left half of the screen; aim

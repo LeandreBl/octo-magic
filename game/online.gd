@@ -7,7 +7,7 @@ extends Node
 ## The forge (/api/forge) and the coop lobby (game/net.gd) use its token.
 ##
 ## Server URL: OCTO_SERVER, else the page's origin on web, else
-## octo/server_url in project.godot. OCTO_AUTH_EMULATOR (host:port) logs in
+## octo/server_url in project.godot, else the production API. OCTO_AUTH_EMULATOR (host:port) logs in
 ## on the Firebase Auth emulator instead.
 
 signal changed
@@ -39,7 +39,7 @@ func _ready() -> void:
 	if server.is_empty() and OS.has_feature("web"):
 		server = str(JavaScriptBridge.eval("location.origin"))
 	if server.is_empty():
-		server = ProjectSettings.get_setting("octo/server_url", "http://localhost:8080")
+		server = ProjectSettings.get_setting("octo/server_url", "https://octo-magic.api.notdotio.com")
 	server = server.trim_suffix("/")
 	var emulator := OS.get_environment("OCTO_AUTH_EMULATOR")
 	if emulator:
