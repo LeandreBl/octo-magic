@@ -14,6 +14,9 @@ const BASE_SPEED := 220.0
 const STICK_RANGE := 80.0
 const SHIELD_HP := 40.0
 const SHIELD_WAIT := 8.0
+## The octopus sprites (PixelLab, tools/make_octopus.py): animation_direction -> strip.
+const DIRECTIONS := ["east", "south-east", "south", "south-west", "west", "north-west", "north", "north-east"]
+static var SPRITES := _sprites()
 
 var run: Object  # spells and mana costs: a Loadout in game, a Run in tests
 var peer_id := 1  # the owner's peer; 1 = host (or solo)
@@ -39,8 +42,11 @@ var cooldowns := {}  # slot -> seconds left
 var held := {}  # slot -> bool, from a touch UI
 var aim := Vector2.RIGHT
 var radius := 12.0
-var look := {"hat": "#3a2a99", "skin": "#c77dff", "robe": "#6a4cff", "staff": "#8d6e63", "ring": ""}
+var look := {"hat": "#3a2a99", "robe": "#6a4cff", "staff": "#8d6e63", "ring": ""}
 
+var _facing := Vector2.DOWN  # where the sprite looks: its move, else its aim
+var _moving := false
+var _last_pos := Vector2.ZERO
 var _heard_hp := max_hp  # hosts and peers hear hurts on the synced hp
 var _touch_move := {}  # finger index -> [start, current]
 var _touch_aim := {}
@@ -81,7 +87,7 @@ static func clean_loadout(raw: Variant) -> Dictionary:
 	var st: Dictionary = l.get("stats") if l.get("stats") is Dictionary else {}
 	var look_in: Dictionary = l.get("look") if l.get("look") is Dictionary else {}
 	var out_look := {}
-	for k in ["hat", "skin", "robe", "staff", "ring"]:
+	for k in ["hat", "robe", "staff", "ring"]:
 		out_look[k] = Spell._color(look_in.get(k)) if look_in.get(k) else ""
 	return {"spells": spells, "costs": costs, "look": out_look, "fresh": l.get("fresh") == true,
 		"passive": l.get("passive") if l.get("passive") in ["shield"] else "",
@@ -111,6 +117,14 @@ func _apply(l: Dictionary) -> void:
 	if l.passive != passive:  # bought, or a new run
 		passive = l.passive
 		shield = SHIELD_HP if passive == "shield" else 0.0
+
+
+static func _sprites() -> Dictionary:
+	var out := {}
+	for anim in ["walk", "idle"]:
+		for d in DIRECTIONS:
+			out[anim + "_" + d] = load("res://assets/octo/%s_%s.png" % [anim, d])
+	return out
 
 
 class Loadout:
@@ -162,6 +176,10 @@ func _stick(slot: Dictionary) -> Vector2:
 
 func _physics_process(delta: float) -> void:
 	queue_redraw()
+	var step := position - _last_pos  # from the synced position: the same on every peer
+	_last_pos = position
+	_moving = step.length() > 0.5
+	_facing = step if _moving else aim
 	if hp < _heard_hp - 0.5:
 		if hp <= 0.0:
 			Sfx.play("death")
@@ -228,26 +246,17 @@ func _cast_fx(slot: String, pos: Vector2, dir: Vector2) -> void:
 
 
 func _draw() -> void:
-	## The mage is an octopus: tentacles waving under a robe, round head, hat.
 	modulate.a = 1.0 if hp > 0.0 else 0.3  # down until the next run
-	var body := Color(look.skin)
-	var t := Time.get_ticks_msec() / 1000.0
-	for i in 6:  # tentacles fanned below
-		var a := PI * (0.12 + 0.76 * i / 5.0)
-		var pts := PackedVector2Array()
-		for j in 5:
-			var r := radius * (0.3 + 0.28 * j)
-			pts.append(Vector2.from_angle(a + 0.25 * sin(t * 6.0 + i + j * 0.8) * j / 4.0) * r)
-		draw_polyline(pts, body, 3.0)
-	draw_circle(Vector2(0, radius * 0.15), radius * 0.75, Color(look.robe))  # robe
-	draw_circle(Vector2(0, -radius * 0.35), radius * 0.7, body)  # head
-	for x in [-0.28, 0.28]:  # eyes, looking where it aims
-		var e := Vector2(radius * x, -radius * 0.35)
-		draw_circle(e, radius * 0.2, Color.WHITE)
-		draw_circle(e + aim * radius * 0.08, radius * 0.1, Color.BLACK)
-	draw_colored_polygon(PackedVector2Array([Vector2(-radius * 0.8, -radius * 0.75),
-		Vector2(radius * 0.8, -radius * 0.75), Vector2(radius * 0.2, -radius * 2.0)]), Color(look.hat))
-	draw_line(Vector2.ZERO, aim * (radius + 12), Color(look.staff), 3.0)  # staff
-	draw_circle(aim * (radius + 12), 3.0, Color(look.ring) if look.ring else Color.WHITE)
+	draw_set_transform(Vector2(0, radius * 1.3), 0.0, Vector2(1.0, 0.35))  # robe colour at its feet: who is who in coop
+	draw_circle(Vector2.ZERO, radius * 2.2, Color(look.robe, 0.5))
+	draw_set_transform(Vector2.ZERO)
+	var anim := "walk" if _moving else "idle"
+	var dir: String = DIRECTIONS[wrapi(roundi(_facing.angle() / (PI / 4.0)), 0, 8)]
+	var tex: Texture2D = SPRITES[anim + "_" + dir]
+	var frames := tex.get_width() / tex.get_height()  # strips of square frames
+	var f := int(Time.get_ticks_msec() / 1000.0 * (14.0 if _moving else 8.0)) % frames
+	var size := float(tex.get_height())
+	draw_texture_rect_region(tex, Rect2(Vector2(-size / 2.0, -size / 2.0 - radius * 0.4), Vector2(size, size)),
+		Rect2(f * size, 0, size, size))
 	if shield > 0.0:
 		draw_arc(Vector2.ZERO, radius + 6, 0.0, TAU, 32, Color(0.5, 0.85, 1.0, 0.3 + 0.5 * shield / SHIELD_HP), 3.0)

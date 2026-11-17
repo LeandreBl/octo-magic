@@ -21,7 +21,8 @@
 - Vagues : mélange pondéré des types débloqués, tiré avec la vague pour graine (même plan chez tous les pairs). Trois boss en alternance toutes les 5 vagues : liche (`boss`), seigneur de guerre, mère des couvées.
 
 ## Personnage
-- Le joueur est un **mage-poulpe** (la mascotte de l'icône), plus le boss (tâche #137). Pas de classes : chaque joueur personnalise son mage (apparence + équipement).
+- Le joueur est un **mage-poulpe** (la mascotte de l'icône), plus le boss (tâche #137) : sprite PixelLab 8 directions, animations marche (tentacules) et idle (`tools/make_octopus.py`, `assets/octo/`).
+- **Tous les sprites sont faits avec PixelLab** (personnages, ennemis, animations, icônes), pas dessinés en code. Pas de classes : chaque joueur personnalise son mage (apparence + équipement).
 - Sorts de base élémentaires (feu, glace, foudre, poison, arcane…), assets faits maison.
 
 ## Sorts
