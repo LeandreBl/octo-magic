@@ -14,4 +14,6 @@ for t in tests/test_*.gd; do
 done
 python3 -m unittest discover -s server -p "test_*.py" -q
 GODOT="$GODOT" python3 -m unittest discover -s relay -p "test_*.py" -q  # + coop end to end
+[ -d backend/node_modules ] || npm ci --prefix backend --no-audit --no-fund --silent
+(cd backend && node --test) || code=1
 exit $code

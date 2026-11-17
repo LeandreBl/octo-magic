@@ -1,0 +1,69 @@
+name: octo-magic
+
+# Everything online: `cp example.env .env`, fill it, `docker compose up -d --build`.
+# The game (web) and the API on http://localhost:${PORT:-8080}.
+
+services:
+  postgres:
+    restart: unless-stopped
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: octo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required, see example.env}
+      POSTGRES_DB: octo
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U octo -d octo"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Reached only by the server, which checks the login first.
+  forge:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY is required, see example.env}
+      PIXELLAB_TOKEN: ${PIXELLAB_TOKEN:-}
+      FORGE_MODEL: ${FORGE_MODEL:-claude-haiku-5-5}
+
+  # Coop multiplayer (relay/relay.py): the game connects to ws://<host>:8770.
+  relay:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: relay/Dockerfile
+    ports:
+      - "${RELAY_PORT:-8770}:8770"
+
+  server:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      PORT: 8080
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:?FIREBASE_PROJECT_ID is required, see example.env}
+      FORGE_URL: http://forge:8765
+      PGHOST: postgres
+      PGUSER: octo
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: octo
+    ports:
+      - "${PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      forge:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  postgres_data:

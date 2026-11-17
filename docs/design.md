@@ -4,7 +4,7 @@
 - PC, téléphone (Android/iOS) et navigateur, depuis un seul projet **Godot 4 / GDScript**.
 - Jeu **hors ligne**. Connexion requise seulement pour : créer un parchemin, envoyer un score au classement, synchroniser le compte.
 - Contrôles twin-stick : clavier/souris, manette, double joystick tactile.
-- Backend minimal : Supabase (comptes, Postgres) + fonction serverless qui appelle l'IA (Claude, sortie JSON contrainte).
+- Backend minimal (tâche #86) : serveur Node (`backend/`), login **Firebase**, profils et sorts en **Postgres**, forge (IA) derrière le login, export web du jeu, relais coop dans son conteneur ; le tout lancé par `docker compose`.
 
 ## Boucle de jeu
 - Vue de dessus, vagues d'ennemis croissantes, boss toutes les N vagues.
@@ -51,6 +51,7 @@
 - Chaque joueur garde sa propre run (niveau, améliorations, sorts) ; les ennemis tués et les drops ramassés comptent pour tout le monde. Pas de pause au level-up en coop.
 - Les sorts sont des données : un joueur envoie ses sorts en JSON à l'hôte, qui les nettoie (`Spell.sanitize`), calcule leur coût et les synchronise à tous. Les planches PNG d'un bundle restent chez son propriétaire : les autres voient les grilles de pixels du sort.
 - La run se termine quand tous les mages sont à terre. Un joueur peut rejoindre en cours de run. Départ de l'hôte : chacun repasse en solo.
+- En ligne (`docker compose`, tâche #86) : le relais tourne dans son propre conteneur, à côté du serveur ; d'autres workers pourront héberger des parties plus tard.
 
 ## Décor des cartes
 - Une carte par run (`crypt`, `cave`, `ruins`), tirée au début de la run ; le décor est placé une fois (graine), il ne change pas pendant la run.

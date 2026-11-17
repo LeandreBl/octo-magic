@@ -8,6 +8,10 @@ Create, combine and cast spells to conquer a dungeon.
   `ANTHROPIC_API_KEY=... python3 server/forge.py`
 - Coop relay (needed only for multiplayer): `python3 relay/relay.py`, then
   hub → Multijoueur. See `relay/README.md` to host it on a VPS.
+- Online (web game, accounts, forge, coop relay): `cp example.env .env`, fill
+  it, `docker compose up -d --build`, then http://localhost:8080 (relay on
+  `ws://localhost:8770`). Server: `backend/server.js` (Firebase login,
+  profiles and spells in Postgres).
 - Tests: `GODOT=/path/to/godot tests/run.sh`
 
 Controls: move WASD / arrows / left stick / left half of the screen; aim
