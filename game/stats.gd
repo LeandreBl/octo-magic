@@ -1,0 +1,44 @@
+class_name Stats
+## The mage's stats, as data. Every source (shop items, permanent bonuses,
+## level-up picks) is a bonus dict: "stat": n adds n, "stat%": p multiplies by
+## (1 + p). Total = (BASE + every add) * every (1 + p), clamped to BOUNDS.
+## Unknown stats are ignored.
+
+const BASE := {
+	"hp": 100.0,  # max HP
+	"hp_regen": 0.0,  # HP per second
+	"mana": 100.0,  # max mana
+	"mana_regen": 25.0,  # mana per second
+	"mana_cost": 1.0,  # multiplier on Spell.mana_cost
+	"cooldown": 1.0,  # multiplier on spell cooldowns
+	"speed": 220.0,  # move speed, px/s
+	"pickup": 90.0,  # drops closer than this fly to the mage, px
+	"armor": 0.0,  # fraction of the damage taken that is removed
+	"crit": 0.05,  # chance a cast deals CRIT_MULT times its damage
+	"damage": 1.0,  # multiplier on spell damage
+	"gold": 1.0,  # multiplier on gold picked up
+	"xp": 1.0,  # multiplier on XP picked up
+}
+const BOUNDS := {
+	"hp": [1.0, 2000.0], "hp_regen": [0.0, 50.0], "mana": [10.0, 2000.0],
+	"mana_regen": [0.0, 500.0], "mana_cost": [0.3, 3.0], "cooldown": [0.4, 3.0],
+	"speed": [80.0, 600.0], "pickup": [30.0, 600.0], "armor": [0.0, 0.75],
+	"crit": [0.0, 1.0], "damage": [0.1, 20.0], "gold": [0.0, 20.0], "xp": [0.0, 20.0],
+}
+const CRIT_MULT := 2.0
+
+
+static func total(bonuses: Array) -> Dictionary:
+	var add := {}
+	var mult := {}
+	for b in bonuses:
+		for k: String in b:
+			var stat := k.trim_suffix("%")
+			if k.ends_with("%"):
+				mult[stat] = mult.get(stat, 1.0) * (1.0 + b[k])
+			else:
+				add[stat] = add.get(stat, 0.0) + b[k]
+	var s := {}
+	for k in BASE:
+		s[k] = clampf((BASE[k] + add.get(k, 0.0)) * mult.get(k, 1.0), BOUNDS[k][0], BOUNDS[k][1])
+	return s

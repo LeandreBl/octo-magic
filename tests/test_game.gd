@@ -1,6 +1,6 @@
 extends SceneTree
 ## Run: godot --headless --script tests/test_game.gd  (see tests/run.sh)
-## Game logic: level-ups, upgrades, waves, shop prices, save/load.
+## Game logic: level-ups, upgrades, mage stats, waves, shop prices, save/load.
 
 const RunState := preload("res://game/run.gd")
 const ProfileState := preload("res://game/profile.gd")
@@ -17,6 +17,7 @@ func check(cond: bool, what: String) -> void:
 
 
 func _initialize() -> void:
+	_test_stats()
 	_test_upgrades()
 	_test_run()
 	_test_waves()
@@ -28,6 +29,35 @@ func _initialize() -> void:
 
 func _damage(s: Dictionary) -> float:
 	return s.emit.body.on_hit.filter(func(f): return f.type == "damage")[0].amount
+
+
+func _test_stats() -> void:
+	var base := Stats.total([])
+	check(base == Stats.BASE, "no bonus: base stats")
+	var s := Stats.total([{"hp": 20.0}, {"hp%": 0.5}, {"hp": 30.0}])
+	check(is_equal_approx(s.hp, (100.0 + 50.0) * 1.5), "adds first, then multipliers")
+	s = Stats.total([{"mana_cost%": -0.1}, {"mana_cost%": -0.1}])
+	check(is_equal_approx(s.mana_cost, 0.81), "multipliers compound")
+	var many := []
+	for i in 40:
+		many.append({"mana_cost%": -0.5, "armor": 0.1, "crit": 0.1, "speed%": 1.0, "cooldown%": -0.5})
+	s = Stats.total(many)
+	check(s.mana_cost == Stats.BOUNDS.mana_cost[0] and s.armor == 0.75 and s.crit == 1.0, "lower and upper bounds")
+	check(s.speed == Stats.BOUNDS.speed[1] and s.cooldown == Stats.BOUNDS.cooldown[0], "bounds on multiplied stats")
+	check(Stats.total([{"hp": -1000.0}]).hp == Stats.BOUNDS.hp[0], "hp never below its floor")
+	check(Stats.total([{"nope": 5.0, "nope%": 1.0}]) == base, "unknown stats ignored")
+	check(Stats.BASE.keys() == Stats.BOUNDS.keys(), "every stat bounded")
+	# Every bonus of the game names a real stat.
+	var all := []
+	for id in ProfileState.ITEMS:
+		all.append(ProfileState.ITEMS[id].bonus)
+	for id in ProfileState.BONUSES:
+		all.append(ProfileState.BONUSES[id].bonus)
+	for id in Upgrades.MAGE:
+		all.append(Upgrades.MAGE[id].bonus)
+	for b in all:
+		for k: String in b:
+			check(Stats.BASE.has(k.trim_suffix("%")), "known stat: " + k)
 
 
 func _test_upgrades() -> void:
@@ -55,7 +85,7 @@ func _test_upgrades() -> void:
 func _test_run() -> void:
 	var run := RunState.new()
 	var p := ProfileState.new()
-	run.start(p.equipped_spells(), {"damage": 0.5, "xp": 0.0})
+	run.start(p.equipped_spells(), [{"damage%": 0.5}])
 	check(run.spells.size() == 3, "three spell slots")
 	check(is_equal_approx(_damage(run.spells.primary), _damage(p.equipped_spells().primary) * 1.5), "damage bonus applied")
 	var got := []
@@ -71,7 +101,22 @@ func _test_run() -> void:
 	check(run.spells[o.slot] != before or run.mana_cost(o.slot) <= cost, "choice applied")
 	check(not run.choose(0) and run.pending == 0 and run.offers.is_empty(), "all choices made")
 	check(run.picked.size() == 2, "picks recorded")
-	run.start(p.equipped_spells(), {"gold": 0.5})
+	# Mage upgrades: offered beside spell upgrades, stack on the run's bonuses.
+	run.start(p.equipped_spells(), [{"crit": 1.0}])
+	var seen := {}
+	for i in 40:
+		for of in Upgrades.offers(run.spells, run.mana_mult, run.rng, 3, ["vigor"]):
+			seen[of.slot] = true
+	check(seen.has("mage") and seen.has("primary"), "mage and spell offers mixed")
+	run.add_xp(RunState.xp_to_next(1))
+	for of in run.offers:
+		check(of.id != "precision", "maxed mage stat not offered")
+	run.offers = [{"slot": "mage", "id": "thrift"}]
+	cost = run.mana_cost("primary")
+	run.choose(0)
+	check(run.stats.mana_cost < 1.0 and run.mana_cost("primary") <= cost and run.stats.crit == 1.0, "mage upgrade applied")
+	run.start(p.equipped_spells(), [{"gold%": 0.5}])
+	check(run.stats.mana_cost == 1.0, "a new run drops the level-up picks")
 	run.collect("gold", 10)
 	check(run.gold == 15, "gold bonus")
 	run.wave = 6
@@ -109,7 +154,8 @@ func _test_profile() -> void:
 	check(p.equip_item("robe_novice") and p.equip_item("robe_warden"), "re-equip owned")
 	check(not p.equip_item("staff_crystal"), "cannot equip unowned")
 	var st := p.total_stats()
-	check(st.hp == 100.0 + 30.0 + 10.0 and st.regen == 25.0 + 3.0 * Profile_max("focus"), "stats sum items and bonuses")
+	check(st.hp == 100.0 + 30.0 + 10.0 and st.mana_regen == 25.0 + 3.0 * Profile_max("focus"), "stats sum items and bonuses")
+	check(st.armor == 0.05, "item stat bonus")
 	# End of run: gold kept, scores sorted, achievements unlock spells.
 	var reached := p.record_run({"score": 300, "wave": 10, "level": 4, "kills": 120, "bosses": 1, "gold": 70, "scrolls": 1})
 	p.record_run({"score": 900, "wave": 3, "level": 2, "kills": 5, "bosses": 0, "gold": 5, "scrolls": 0})
@@ -182,7 +228,21 @@ func _test_play() -> void:
 	for e in get_nodes_in_group("enemies"):
 		hp_after += e.hp
 	check(hp_after < hp_before, "base spells damage enemies")
-	check(player.hp < player.max_hp, "enemies hurt the player")
+	check(player.hp < player.stats.hp, "enemies hurt the player")
+	# The player reads its numbers from the stats.
+	player.setup(Stats.total([{"armor": 0.5, "hp": 100.0}]))
+	player.hurt(40.0)
+	check(player.hp == 180.0, "armor reduces damage")
+	player.setup(Stats.total([]))
+	player.hp = 50.0
+	player.set_stats(Stats.total([{"hp": 20.0}]))
+	check(player.hp == 70.0 and player.stats.hp == 120.0, "a higher max fills the gain")
+	player.setup(Stats.total([{"cooldown%": -0.5}]))
+	player.mana = 1000.0
+	player.cooldowns = {}
+	var id0: String = spells.keys()[0]
+	player.cast(id0)
+	check(is_equal_approx(player.cooldowns[id0], spells[id0].cooldown * 0.5), "cooldown stat")
 	world.free()
 	run.free()
 	p.free()

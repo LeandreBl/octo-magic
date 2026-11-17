@@ -9,33 +9,36 @@ signal changed
 const PATH := "user://profile.json"
 const MAX_SCORES := 10
 
-## Base stats of the mage; items and bonuses add to them. damage/speed/gold/xp
-## are fractions (+0.1 = +10 %).
-const BASE_STATS := {"hp": 100.0, "mana": 100.0, "regen": 25.0, "speed": 0.0,
-	"damage": 0.0, "gold": 0.0, "xp": 0.0}
-
+## Items and permanent bonuses carry Stats bonuses (see game/stats.gd).
 const ITEMS := {
 	"staff_oak": {"kind": "staff", "name": "Bâton de chêne", "price": 0, "color": "#8d6e63", "bonus": {}},
-	"staff_ember": {"kind": "staff", "name": "Bâton de braise", "price": 150, "color": "#ff7043", "bonus": {"damage": 0.15}},
-	"staff_crystal": {"kind": "staff", "name": "Bâton de cristal", "price": 450, "color": "#80deea", "bonus": {"damage": 0.3, "regen": 5.0}},
+	"staff_ember": {"kind": "staff", "name": "Bâton de braise", "price": 150, "color": "#ff7043", "bonus": {"damage%": 0.15}},
+	"staff_crystal": {"kind": "staff", "name": "Bâton de cristal", "price": 450, "color": "#80deea", "bonus": {"damage%": 0.3, "cooldown%": -0.1}},
+	"staff_willow": {"kind": "staff", "name": "Bâton de saule", "price": 200, "color": "#a5d6a7", "bonus": {"mana_cost%": -0.15, "mana_regen": 5.0}},
 	"robe_novice": {"kind": "robe", "name": "Robe de novice", "price": 0, "color": "#6a4cff", "bonus": {}},
-	"robe_warden": {"kind": "robe", "name": "Robe du gardien", "price": 120, "color": "#2e7d32", "bonus": {"hp": 30.0}},
-	"robe_archmage": {"kind": "robe", "name": "Robe d'archimage", "price": 500, "color": "#b71c1c", "bonus": {"hp": 60.0, "mana": 20.0}},
+	"robe_warden": {"kind": "robe", "name": "Robe du gardien", "price": 120, "color": "#2e7d32", "bonus": {"hp": 30.0, "armor": 0.05}},
+	"robe_wind": {"kind": "robe", "name": "Robe des vents", "price": 200, "color": "#b0bec5", "bonus": {"speed%": 0.12, "pickup%": 0.3}},
+	"robe_archmage": {"kind": "robe", "name": "Robe d'archimage", "price": 500, "color": "#b71c1c", "bonus": {"hp": 60.0, "mana": 20.0, "hp_regen": 1.0}},
 	"ring_none": {"kind": "ring", "name": "Sans anneau", "price": 0, "color": "", "bonus": {}},
-	"ring_copper": {"kind": "ring", "name": "Anneau de cuivre", "price": 100, "color": "#d08b4b", "bonus": {"regen": 5.0}},
-	"ring_gold": {"kind": "ring", "name": "Anneau de fortune", "price": 250, "color": "#ffd54f", "bonus": {"gold": 0.25}},
-	"ring_sapphire": {"kind": "ring", "name": "Anneau de saphir", "price": 350, "color": "#448aff", "bonus": {"mana": 30.0, "regen": 5.0}},
+	"ring_copper": {"kind": "ring", "name": "Anneau de cuivre", "price": 100, "color": "#d08b4b", "bonus": {"mana_regen": 5.0}},
+	"ring_gold": {"kind": "ring", "name": "Anneau de fortune", "price": 250, "color": "#ffd54f", "bonus": {"gold%": 0.25}},
+	"ring_ruby": {"kind": "ring", "name": "Anneau de rubis", "price": 300, "color": "#e53935", "bonus": {"crit": 0.1}},
+	"ring_sapphire": {"kind": "ring", "name": "Anneau de saphir", "price": 350, "color": "#448aff", "bonus": {"mana": 30.0, "mana_regen": 5.0}},
 }
 
 ## Permanent bonuses: level n costs price * GROWTH^n.
 const GROWTH := 1.5
 const BONUSES := {
 	"vitality": {"name": "Vitalité", "desc": "+10 PV", "price": 50, "max": 10, "bonus": {"hp": 10.0}},
-	"power": {"name": "Puissance", "desc": "+5 % de dégâts", "price": 80, "max": 10, "bonus": {"damage": 0.05}},
-	"focus": {"name": "Concentration", "desc": "+3 mana/s", "price": 60, "max": 5, "bonus": {"regen": 3.0}},
-	"swiftness": {"name": "Célérité", "desc": "+5 % de vitesse", "price": 70, "max": 5, "bonus": {"speed": 0.05}},
-	"greed": {"name": "Avarice", "desc": "+10 % d'or", "price": 60, "max": 5, "bonus": {"gold": 0.1}},
-	"wisdom": {"name": "Sagesse", "desc": "+10 % d'XP", "price": 60, "max": 5, "bonus": {"xp": 0.1}},
+	"power": {"name": "Puissance", "desc": "+5 % de dégâts", "price": 80, "max": 10, "bonus": {"damage%": 0.05}},
+	"focus": {"name": "Concentration", "desc": "+3 mana/s", "price": 60, "max": 5, "bonus": {"mana_regen": 3.0}},
+	"swiftness": {"name": "Célérité", "desc": "+5 % de vitesse", "price": 70, "max": 5, "bonus": {"speed%": 0.05}},
+	"thrift": {"name": "Économie", "desc": "-4 % de consommation de mana", "price": 90, "max": 5, "bonus": {"mana_cost%": -0.04}},
+	"toughness": {"name": "Endurance", "desc": "-3 % de dégâts subis", "price": 90, "max": 5, "bonus": {"armor": 0.03}},
+	"precision": {"name": "Œil vif", "desc": "+2 % de chance de critique", "price": 80, "max": 5, "bonus": {"crit": 0.02}},
+	"reach": {"name": "Attraction", "desc": "+15 % de rayon de ramassage", "price": 40, "max": 5, "bonus": {"pickup%": 0.15}},
+	"greed": {"name": "Avarice", "desc": "+10 % d'or", "price": 60, "max": 5, "bonus": {"gold%": 0.1}},
+	"wisdom": {"name": "Sagesse", "desc": "+10 % d'XP", "price": 60, "max": 5, "bonus": {"xp%": 0.1}},
 }
 
 ## Achievements: reached when stats[stat] >= goal. Some unlock spells
@@ -146,19 +149,20 @@ static func _arr(v: Variant) -> Array:
 
 # --- stats -------------------------------------------------------------------
 
+## Stats bonuses of the equipped items and permanent bonuses (one entry per level).
+func bonus_list() -> Array:
+	var out := []
+	for kind in equipped:
+		out.append(ITEMS[equipped[kind]].bonus)
+	for id in bonuses:
+		for i in bonuses[id]:
+			out.append(BONUSES[id].bonus)
+	return out
+
+
 ## The mage's stats with equipment and permanent bonuses.
 func total_stats() -> Dictionary:
-	var s := BASE_STATS.duplicate()
-	for kind in equipped:
-		_add(s, ITEMS[equipped[kind]].bonus, 1)
-	for id in bonuses:
-		_add(s, BONUSES[id].bonus, bonuses[id])
-	return s
-
-
-static func _add(s: Dictionary, bonus: Dictionary, times: int) -> void:
-	for k in bonus:
-		s[k] += bonus[k] * times
+	return Stats.total(bonus_list())
 
 
 # --- shop --------------------------------------------------------------------

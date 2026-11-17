@@ -2,6 +2,7 @@ class_name Upgrades
 ## Level-up upgrades. An upgrade edits a spell's JSON, then Spell.sanitize
 ## clamps it again; "mana" is the only one kept outside the spell (the cost is
 ## derived from the spell's power, see Run.mana_cost).
+## MAGE upgrades are Stats bonuses on the mage, offered in slot "mage".
 
 const SLOTS := ["primary", "secondary", "ultimate"]
 const SLOT_NAMES := {"primary": "Sort principal", "secondary": "Sort secondaire", "ultimate": "Ultime"}
@@ -13,6 +14,18 @@ const LIST := {
 	"mana": {"name": "Économie", "desc": "-15 % de coût en mana"},
 	"area": {"name": "Ampleur", "desc": "+20 % de taille et de zone"},
 	"pierce": {"name": "Perforation", "desc": "Traverse un ennemi de plus"},
+}
+const MAGE := {
+	"vigor": {"name": "Vigueur", "desc": "+20 PV max", "bonus": {"hp": 20.0}},
+	"mending": {"name": "Guérison", "desc": "+1 PV/s", "bonus": {"hp_regen": 1.0}},
+	"reserve": {"name": "Réserve", "desc": "+20 mana max", "bonus": {"mana": 20.0}},
+	"flow": {"name": "Afflux", "desc": "+5 mana/s", "bonus": {"mana_regen": 5.0}},
+	"thrift": {"name": "Sobriété", "desc": "-8 % de consommation de mana", "bonus": {"mana_cost%": -0.08}},
+	"haste": {"name": "Hâte", "desc": "+8 % de vitesse de déplacement", "bonus": {"speed%": 0.08}},
+	"tempo": {"name": "Tempo", "desc": "-6 % de recharge des sorts", "bonus": {"cooldown%": -0.06}},
+	"magnet": {"name": "Aimant", "desc": "+30 % de rayon de ramassage", "bonus": {"pickup%": 0.3}},
+	"ward": {"name": "Égide", "desc": "-5 % de dégâts subis", "bonus": {"armor": 0.05}},
+	"precision": {"name": "Précision", "desc": "+5 % de chance de critique", "bonus": {"crit": 0.05}},
 }
 const MANA_FLOOR := 0.4  # "mana" upgrades stop at 40 % of the cost
 
@@ -67,9 +80,10 @@ static func _each_effect(emit: Dictionary, fn: Callable) -> void:
 				_each_effect(f.emit, fn)
 
 
-## Up to `n` distinct {slot, id} offers among the upgrades that still apply.
-static func offers(spells: Dictionary, mana_mult: Dictionary, rng: RandomNumberGenerator, n := 3) -> Array:
-	var pool := []
+## Up to `n` distinct {slot, id} offers among the upgrades that still apply,
+## and the `mage` upgrade ids (those still below their stat's bound).
+static func offers(spells: Dictionary, mana_mult: Dictionary, rng: RandomNumberGenerator, n := 3, mage := []) -> Array:
+	var pool := mage.map(func(id): return {"slot": "mage", "id": id})
 	for slot in SLOTS:
 		if spells.has(slot):
 			for id in LIST:

@@ -47,7 +47,7 @@ func _process(_delta: float) -> void:
 	for slot in Upgrades.SLOTS:
 		slots.append("%s (%d)" % [Run.spells[slot].name, Run.mana_cost(slot)])
 	hud.text = "Vague %d   Niveau %d (%d/%d XP)   PV %d/%d   Mana %d   Or %d   Parchemins %d   Score %d\n%s\n%s" % [
-		Run.wave, Run.level, Run.xp, Run.xp_to_next(Run.level), player.hp, player.max_hp, player.mana,
+		Run.wave, Run.level, Run.xp, Run.xp_to_next(Run.level), player.hp, player.stats.hp, player.mana,
 		Run.gold, Run.scrolls, Run.score(), "   |   ".join(slots), forge_note]
 	if get_tree().get_nodes_in_group("enemies").is_empty():
 		for p in get_tree().get_nodes_in_group("pickups"):
@@ -61,9 +61,8 @@ func _start_run() -> void:
 	for n in get_children():
 		if n != player and n is Node2D:
 			n.free()
-	var stats := Profile.total_stats()
-	Run.start(Profile.equipped_spells(), stats)
-	player.setup(stats)
+	Run.start(Profile.equipped_spells(), Profile.bonus_list())
+	player.setup(Run.stats)
 	player.look = Profile.look.merged({"robe": Profile.ITEMS[Profile.equipped.robe].color,
 		"staff": Profile.ITEMS[Profile.equipped.staff].color,
 		"ring": Profile.ITEMS[Profile.equipped.ring].color}, true)
@@ -124,9 +123,13 @@ func _show_level_up(offers: Array) -> void:
 	level_box.add_child(title)
 	for i in offers.size():
 		var o: Dictionary = offers[i]
-		var u: Dictionary = Upgrades.LIST[o.id]
 		var b := Button.new()
-		b.text = "%d. %s — %s (%s : %s)" % [i + 1, u.name, u.desc, Upgrades.SLOT_NAMES[o.slot], Run.spells[o.slot].name]
+		if o.slot == "mage":
+			var m: Dictionary = Upgrades.MAGE[o.id]
+			b.text = "%d. %s — %s (Mage)" % [i + 1, m.name, m.desc]
+		else:
+			var u: Dictionary = Upgrades.LIST[o.id]
+			b.text = "%d. %s — %s (%s : %s)" % [i + 1, u.name, u.desc, Upgrades.SLOT_NAMES[o.slot], Run.spells[o.slot].name]
 		b.pressed.connect(func():
 			level_panel.hide()
 			if not Run.choose(i):

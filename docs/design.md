@@ -15,6 +15,7 @@
 
 ## Personnage
 - Pas de classes : chaque joueur personnalise son mage (apparence + équipement).
+- Statistiques du mage en données (`game/stats.gd`) : PV, régénération, mana, consommation de mana, vitesse, recharge, ramassage, armure, critique, dégâts, or, XP. Équipement, bonus permanents et améliorations de level up (« Mage », proposées à côté de celles des sorts) sont tous des bonus : base + bonus additifs, puis multiplicatifs (`"stat%"`, cumulés), puis bornes. Critique : par lancer, ×2 dégâts.
 - Sorts de base élémentaires (feu, glace, foudre, poison, arcane…), assets faits maison.
 
 ## Sorts

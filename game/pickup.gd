@@ -1,6 +1,6 @@
 extends Node2D
-## A drop: XP orb, gold coin or blank scroll. Flies to the player once close
-## (or when `magnet` is raised at the end of a wave), then reports itself.
+## A drop: XP orb, gold coin or blank scroll. Flies to the player once within
+## its pickup stat (or `magnet`, raised at the end of a wave), then reports itself.
 
 signal collected(kind: String, value: int)
 
@@ -9,7 +9,7 @@ const COLORS := {"xp": "#4fc3f7", "gold": "#ffd54f", "scroll": "#fff3e0"}
 var kind := "xp"
 var value := 1
 var target: Node2D
-var magnet := 90.0
+var magnet := 0.0
 var speed := 0.0
 
 
@@ -20,7 +20,7 @@ func _physics_process(delta: float) -> void:
 	if to.length() < target.radius + 6.0:
 		collected.emit(kind, value)
 		queue_free()
-	elif to.length() < magnet:
+	elif to.length() < maxf(magnet, target.stats.pickup):
 		speed = minf(speed + 1200.0 * delta, 700.0)
 		position += to.normalized() * minf(speed * delta, to.length())
 
