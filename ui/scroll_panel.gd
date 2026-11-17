@@ -3,6 +3,8 @@ extends VBoxContainer
 ## words on, one per scroll (sent to the forge by game/main.gd). Used by the end-of-run
 ## and shop screens.
 
+const UITheme := preload("res://ui/theme.gd")
+
 var main: Node
 var _spell: Label
 var _edit: LineEdit
@@ -16,18 +18,21 @@ func _ready() -> void:
 	var row := HBoxContainer.new()
 	add_child(row)
 	var icon := TextureRect.new()
-	icon.texture = preload("res://ui/theme.gd").icon("scroll")
+	icon.texture = UITheme.icon("scroll")
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	row.add_child(icon)
 	var head := Label.new()
 	head.theme_type_variation = "Header"
 	head.text = "Parchemin"
+	head.add_theme_font_override("font", UITheme.PARCHMENT)
 	row.add_child(head)
 	_spell = Label.new()
 	_spell.autowrap_mode = TextServer.AUTOWRAP_WORD
+	_spell.add_theme_font_override("font", UITheme.PARCHMENT)
 	add_child(_spell)
 	_edit = LineEdit.new()
 	_edit.max_length = 200
+	_edit.add_theme_font_override("font", UITheme.PARCHMENT)
 	_edit.placeholder_text = "un mot par parchemin, en langue morte, ex : ignis, πῦρ, umbra"
 	_edit.text_submitted.connect(func(_t): _on_write())
 	add_child(_edit)

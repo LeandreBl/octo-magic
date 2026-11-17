@@ -13,13 +13,20 @@ const HP := Color("#c0392b")
 const MANA := Color("#3d6fd8")
 const XP := Color("#d4a83a")
 
+## Fonts (assets/fonts, SIL OFL): Almendra, calligraphic, for the whole game;
+## Uncial Antiqua, an old manuscript hand, for what is written on scrolls.
+## Neither has Greek: EB Garamond fills in (πῦρ, ...).
+const GREEK: FontFile = preload("res://assets/fonts/EBGaramond.ttf")
+const MAGIC: FontFile = preload("res://assets/fonts/Almendra-Regular.ttf")
+const MAGIC_BOLD: FontFile = preload("res://assets/fonts/Almendra-Bold.ttf")
+const PARCHMENT: FontFile = preload("res://assets/fonts/UncialAntiqua-Regular.ttf")
+
 
 static func make() -> Theme:
 	var t := Theme.new()
-	var font := SystemFont.new()
-	font.font_names = ["Cinzel", "Cormorant Garamond", "Georgia", "Palatino Linotype",
-		"Book Antiqua", "DejaVu Serif", "serif"]
-	t.default_font = font
+	for f in [MAGIC, MAGIC_BOLD, PARCHMENT]:
+		f.fallbacks = [GREEK]
+	t.default_font = MAGIC
 	t.default_font_size = 22
 
 	t.set_color("font_color", "Label", TEXT)
@@ -28,9 +35,11 @@ static func make() -> Theme:
 	t.set_constant("shadow_offset_y", "Label", 2)
 	t.set_type_variation("Title", "Label")
 	t.set_font_size("font_size", "Title", 64)
+	t.set_font("font", "Title", MAGIC_BOLD)
 	t.set_color("font_color", "Title", GOLD)
 	t.set_type_variation("Header", "Label")
 	t.set_font_size("font_size", "Header", 34)
+	t.set_font("font", "Header", MAGIC_BOLD)
 	t.set_color("font_color", "Header", GOLD)
 
 	t.set_stylebox("panel", "PanelContainer", _box(Color(PANEL, 0.94), GOLD_DIM, 2, 12, 20))
