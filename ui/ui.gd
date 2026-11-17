@@ -41,10 +41,20 @@ func _ready() -> void:
 	_dim.color = Color(UITheme.INK, 0.75)
 	add_screen(_dim)
 	screens.title = add_screen(_title())
+	_run_shop = VBoxContainer.new()
+	var shop_head := Label.new()
+	shop_head.text = "Run shop"  # Labels translate their text
+	shop_head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_run_shop.add_child(shop_head)
 	screens.pause = add_screen(_menu("Pause", [
 		["Resume", resume],
 		["Options", open.bind("options")],
-		["Abandon run", main.abandon_run]]))
+		["Abandon run", main.abandon_run]], _run_shop))
+	for id in Run.SHOP:
+		_run_shop.add_child(_button("", func():
+			if Run.buy(id):
+				main.send_loadout(false)))
+	Run.changed.connect(_refresh_run_shop)
 	var options := preload("res://ui/options.gd").new()
 	options.closed.connect(back)
 	options.scale_changed.connect(_layout)
@@ -276,6 +286,18 @@ func _scores_text() -> String:
 
 
 var _level_box: HBoxContainer
+var _run_shop: VBoxContainer
+
+
+## Pause menu: the run's gold buys one active and one passive (Run.SHOP).
+func _refresh_run_shop() -> void:
+	var ids := Run.SHOP.keys()
+	for i in ids.size():
+		var it: Dictionary = Run.SHOP[ids[i]]
+		var b: Button = _run_shop.get_child(i + 1)
+		var owned: bool = Run.passive == ids[i] or (it.slot != "passive" and Run.spells.has(it.slot))
+		b.text = tr("%s: owned") % tr(it.name) if owned else tr("%s: %s (%d gold)") % [tr(it.name), tr(it.desc), it.price]
+		b.disabled = not Run.can_buy(ids[i])
 
 
 func _show_level_up(offers: Array) -> void:

@@ -73,7 +73,7 @@ func _ready() -> void:
 	bottom.add_theme_constant_override("separation", 12)
 	bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margin.add_child(bottom)
-	for slot in Upgrades.SLOTS:
+	for slot in Upgrades.RUN_SLOTS:
 		bottom.add_child(_slot(slot))
 
 
@@ -150,7 +150,8 @@ func _process(_delta: float) -> void:
 	var p: Node2D = main.local_player()
 	if not visible or not Run.active or not p:
 		return
-	_set_bar(_hp, p.hp, p.max_hp, tr("HP %d / %d") % [maxf(p.hp, 0.0), p.max_hp])
+	_set_bar(_hp, p.hp, p.max_hp, tr("HP %d / %d  ·  shield %d") % [maxf(p.hp, 0.0), p.max_hp, p.shield]
+		if p.passive else tr("HP %d / %d") % [maxf(p.hp, 0.0), p.max_hp])
 	_set_bar(_mana, p.mana, p.max_mana, "Mana %d / %d" % [p.mana, p.max_mana])
 	var need := Run.xp_to_next(Run.level)
 	_set_bar(_xp, Run.xp, need, tr("Level %d  ·  XP %d / %d") % [Run.level, Run.xp, need])
@@ -159,15 +160,18 @@ func _process(_delta: float) -> void:
 	var s: Dictionary = Run.spells.primary
 	_spell.text = Spell.label(s) + ("  [" + " + ".join(s.words) + "]" if not s.words.is_empty() else "")
 	_scrolls.text = tr("Scrolls found: %d%s") % [Run.scrolls, "\n" + main.forge_note if main.forge_note else ""]
-	for slot in _slots:  # Run.spells has every slot (Profile.equipped_spells)
+	for slot in _slots:
 		var ui: Array = _slots[slot]
+		ui[0].get_parent().get_parent().visible = Run.spells.has(slot)  # secondary: once bought
+		if not Run.spells.has(slot):
+			continue
 		var sp: Dictionary = Run.spells[slot]
 		var cost := Run.mana_cost(slot)
 		if not is_same(sp, ui[2]):
 			ui[2] = sp
 			ui[0].texture = _icon(sp)
 		ui[3].text = str(cost)
-		ui[4].text = "%s\n%s" % [Spell.label(sp), tr("Left click")]  # follows a language change
+		ui[4].text = "%s\n%s" % [Spell.label(sp), tr("Left click" if slot == "primary" else "Right click")]  # follows a language change
 		ui[1].offset_top = -ui[1].get_parent().size.y * clampf(p.cooldowns.get(slot, 0.0) / sp.cooldown, 0.0, 1.0)
 		ui[0].modulate = Color.WHITE if p.mana >= cost else Color(0.45, 0.45, 0.6)
 

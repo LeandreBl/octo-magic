@@ -118,7 +118,7 @@ func _run_started(map: String, map_seed: int) -> void:
 func send_loadout(fresh: bool) -> void:
 	if multiplayer.multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
 		return
-	_offer_loadout.rpc_id(1, JSON.stringify({"fresh": fresh, "spells": Run.spells, "mult": Run.mana_mult,
+	_offer_loadout.rpc_id(1, JSON.stringify({"fresh": fresh, "spells": Run.spells, "mult": Run.mana_mult, "passive": Run.passive,
 		"stats": Profile.total_stats(), "look": Profile.look.merged({
 			"robe": Profile.ITEMS[Profile.equipped.robe].color,
 			"staff": Profile.ITEMS[Profile.equipped.staff].color,
@@ -228,7 +228,7 @@ func _spawn(d: Dictionary) -> Node:
 		n = Player.new()
 		n.peer_id = d.id
 		n.died.connect(_on_player_died)
-		sync.replication_config = _config({"hp": ON_CHANGE, "mana": ALWAYS, "loadout_json": ON_CHANGE}, true)
+		sync.replication_config = _config({"hp": ON_CHANGE, "mana": ALWAYS, "shield": ON_CHANGE, "loadout_json": ON_CHANGE}, true)
 		var own := MultiplayerSynchronizer.new()  # what the owner steers
 		own.replication_config = _config({"position": ALWAYS, "aim": ALWAYS, "firing": ALWAYS}, false)
 		own.set_multiplayer_authority(d.id)

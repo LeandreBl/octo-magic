@@ -7,6 +7,17 @@ signal changed
 signal leveled_up(offers: Array)  # pause and let the player pick one
 
 const BOSS_EVERY := 5
+const RING_OF_FIRE := {"name": "Ring of fire", "element": "fire", "color": "#ff7a1f", "cooldown": 3.0,
+	"emit": {"pattern": "radial", "count": 12, "body": {"shape": "bolt", "speed": 320, "size": 8, "lifetime": 0.9,
+		"on_hit": [{"type": "damage", "amount": 14}, {"type": "status", "status": "burn", "power": 3, "duration": 2}]}}}
+## Bought with the run's gold, one active (slot "secondary") and one passive
+## per run, empty at the start. A passive is applied by game/player.gd.
+const SHOP := {
+	"ring_of_fire": {"name": "Ring of fire", "desc": "Fireballs burst out all around you (right click)",
+		"price": 40, "slot": "secondary", "spell": RING_OF_FIRE},
+	"shield": {"name": "Shield", "desc": "Absorbs 40 damage, back 8 s after it breaks",
+		"price": 30, "slot": "passive"},
+}
 
 var active := false
 var wave := 0
@@ -23,6 +34,7 @@ var offers := []  # current level-up choice, [] when none
 var pending := 0  # level-ups not chosen yet
 var rng := RandomNumberGenerator.new()
 var stats := {}  # the mage's permanent bonuses for this run
+var passive := ""  # a Run.SHOP id, "" until one is bought
 
 
 ## `equipped`: slot -> spell; `bonus`: Profile.total_stats() (damage, gold, xp).
@@ -41,6 +53,7 @@ func start(equipped: Dictionary, bonus := {}) -> void:
 	pending = 0
 	spells = {}
 	mana_mult = {}
+	passive = ""
 	for slot in equipped:
 		spells[slot] = Upgrades.scale_damage(equipped[slot], 1.0 + stats.get("damage", 0.0))
 		mana_mult[slot] = 1.0
@@ -87,6 +100,26 @@ func choose(i: int) -> bool:
 		_offer()
 	changed.emit()
 	return not offers.is_empty()
+
+
+## Is SHOP item `id` for sale: its slot empty and enough gold?
+func can_buy(id: String) -> bool:
+	var it: Dictionary = SHOP[id]
+	return active and gold >= it.price and (passive == "" if it.slot == "passive" else not spells.has(it.slot))
+
+
+func buy(id: String) -> bool:
+	if not can_buy(id):
+		return false
+	gold -= SHOP[id].price
+	var it: Dictionary = SHOP[id]
+	if it.slot == "passive":
+		passive = id
+	else:
+		spells[it.slot] = Upgrades.scale_damage(Spell.sanitize(it.spell), 1.0 + stats.get("damage", 0.0))
+		mana_mult[it.slot] = 1.0
+	changed.emit()
+	return true
 
 
 func mana_cost(slot: String) -> int:

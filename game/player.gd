@@ -1,8 +1,10 @@
 extends Node2D
 ## The mage. Twin-stick: keyboard/mouse, gamepad, or touch (left half of the
 ## screen moves, right half aims and fires the main spell).
-## One spell: left click / right stick / touch aim. `held` lets a touch UI
-## fire it.
+## Main spell: left click / right stick / touch aim; secondary (bought in the
+## run): right click / Space / RB. `held` lets a touch UI fire them.
+## Passive "shield" (bought in the run): absorbs SHIELD_HP damage, comes back
+## SHIELD_WAIT seconds after it breaks.
 ## Coop (see main.gd): the owner peer steers its mage (position, aim, firing
 ## are synced from it); the host owns the rest (hp, mana, loadout) and casts.
 
@@ -10,6 +12,8 @@ signal died
 
 const BASE_SPEED := 220.0
 const STICK_RANGE := 80.0
+const SHIELD_HP := 40.0
+const SHIELD_WAIT := 8.0
 
 var run: Object  # spells and mana costs: a Loadout in game, a Run in tests
 var peer_id := 1  # the owner's peer; 1 = host (or solo)
@@ -28,6 +32,9 @@ var mana_regen := 25.0
 var speed := BASE_SPEED
 var hp := max_hp
 var mana := max_mana
+var passive := ""  # a Run.SHOP id
+var shield := 0.0  # hp left on the shield, synced for drawing
+var shield_wait := 0.0  # seconds until a broken shield is back
 var cooldowns := {}  # slot -> seconds left
 var held := {}  # slot -> bool, from a touch UI
 var aim := Vector2.RIGHT
@@ -48,6 +55,7 @@ func setup(stats: Dictionary) -> void:
 	hp = max_hp
 	mana = max_mana
 	cooldowns = {}
+	shield_wait = 0.0
 
 
 func _ready() -> void:
@@ -64,7 +72,7 @@ static func clean_loadout(raw: Variant) -> Dictionary:
 	var l: Dictionary = raw if raw is Dictionary else {}
 	var spells := {}
 	var costs := {}
-	for slot in Upgrades.SLOTS:
+	for slot in Upgrades.RUN_SLOTS:
 		var s: Variant = l.get("spells", {}).get(slot) if l.get("spells") is Dictionary else null
 		if s is Dictionary:
 			spells[slot] = Spell.sanitize(s)
@@ -76,6 +84,7 @@ static func clean_loadout(raw: Variant) -> Dictionary:
 	for k in ["hat", "skin", "robe", "staff", "ring"]:
 		out_look[k] = Spell._color(look_in.get(k)) if look_in.get(k) else ""
 	return {"spells": spells, "costs": costs, "look": out_look, "fresh": l.get("fresh") == true,
+		"passive": l.get("passive") if l.get("passive") in ["shield"] else "",
 		"stats": {"hp": _clamp(st.get("hp"), 100.0, 1.0, 1000.0), "mana": _clamp(st.get("mana"), 100.0, 1.0, 1000.0),
 			"regen": _clamp(st.get("regen"), 25.0, 0.0, 200.0), "speed": _clamp(st.get("speed"), 0.0, 0.0, 2.0)}}
 
@@ -99,6 +108,9 @@ func _apply(l: Dictionary) -> void:
 		max_mana = l.stats.mana
 		mana_regen = l.stats.regen
 		speed = BASE_SPEED * (1.0 + l.stats.speed)
+	if l.passive != passive:  # bought, or a new run
+		passive = l.passive
+		shield = SHIELD_HP if passive == "shield" else 0.0
 
 
 class Loadout:
@@ -116,6 +128,12 @@ func heal(amount: float) -> void:
 func hurt(amount: float) -> void:
 	if hp <= 0.0:
 		return
+	var absorbed := minf(shield, amount)
+	if absorbed > 0.0:
+		shield -= absorbed
+		amount -= absorbed
+		if shield <= 0.0:
+			shield_wait = SHIELD_WAIT
 	hp -= amount
 	if hp <= 0.0:
 		died.emit()
@@ -155,7 +173,11 @@ func _physics_process(delta: float) -> void:
 	if not multiplayer.is_server() or hp <= 0.0:
 		return
 	mana = minf(max_mana, mana + mana_regen * delta)
-	for slot in Upgrades.SLOTS:
+	if shield_wait > 0.0:
+		shield_wait -= delta
+		if shield_wait <= 0.0 and passive == "shield":
+			shield = SHIELD_HP
+	for slot in Upgrades.RUN_SLOTS:
 		cooldowns[slot] = cooldowns.get(slot, 0.0) - delta
 		if firing.get(slot, false) and run and run.spells.has(slot):
 			cast(slot)
@@ -182,6 +204,7 @@ func _steer(delta: float) -> void:
 
 	firing = {
 		"primary": fire or held.get("primary", false),
+		"secondary": Input.is_action_pressed("cast_secondary") or held.get("secondary", false),
 	}
 
 
@@ -212,3 +235,5 @@ func _draw() -> void:
 		Vector2(radius * 0.8, -radius * 0.5), Vector2(0, -radius * 1.8)]), Color(look.hat))
 	draw_line(Vector2.ZERO, aim * (radius + 12), Color(look.staff), 3.0)  # staff
 	draw_circle(aim * (radius + 12), 3.0, Color(look.ring) if look.ring else Color.WHITE)
+	if shield > 0.0:
+		draw_arc(Vector2.ZERO, radius + 6, 0.0, TAU, 32, Color(0.5, 0.85, 1.0, 0.3 + 0.5 * shield / SHIELD_HP), 3.0)

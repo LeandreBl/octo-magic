@@ -5,9 +5,9 @@ extends CenterContainer
 signal closed
 signal scale_changed
 
-const SCHEME := "Mouse: aim · left click: cast the spell\n" \
-	+ "Gamepad: left stick move, right stick aim and cast, Start pause\n" \
-	+ "Touch: left half move, right half aim and cast"
+const SCHEME := "Mouse: aim · left click: cast the spell · right click or Space: secondary spell\n" \
+	+ "Gamepad: left stick move, right stick aim and cast, RB secondary spell, Start pause\n" \
+	+ "Touch: left half move, right half aim and cast, touch a slot to cast it"
 
 var _waiting := ""  # action waiting for its new key
 var _keys := {}  # action -> Button

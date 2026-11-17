@@ -70,8 +70,8 @@ msgstr "Succès : %s !"
 msgid "Spell unlocked: %s."
 msgstr "Sort débloqué : %s."
 
-msgid "Mouse: aim · left click: cast the spell\nGamepad: left stick move, right stick aim and cast, Start pause\nTouch: left half move, right half aim and cast"
-msgstr "Souris : viser · clic gauche : lancer le sort\nManette : stick gauche bouger, stick droit viser et lancer, Start pause\nTactile : moitié gauche bouger, moitié droite viser et lancer"
+msgid "Mouse: aim · left click: cast the spell · right click or Space: secondary spell\nGamepad: left stick move, right stick aim and cast, RB secondary spell, Start pause\nTouch: left half move, right half aim and cast, touch a slot to cast it"
+msgstr "Souris : viser · clic gauche : lancer le sort · clic droit ou Espace : sort secondaire\nManette : stick gauche bouger, stick droit viser et lancer, RB sort secondaire, Start pause\nTactile : moitié gauche bouger, moitié droite viser et lancer, toucher un emplacement pour le lancer"
 
 msgid "Language"
 msgstr "Langue"
@@ -576,3 +576,33 @@ msgstr "Missiles arcaniques"
 
 msgid "Three missiles that hunt down enemies."
 msgstr "Trois missiles qui traquent les ennemis."
+
+msgid "Secondary spell"
+msgstr "Sort secondaire"
+
+msgid "Right click"
+msgstr "Clic D"
+
+msgid "Ring of fire"
+msgstr "Anneau de feu"
+
+msgid "Fireballs burst out all around you (right click)"
+msgstr "Des boules de feu jaillissent tout autour de vous (clic droit)"
+
+msgid "Shield"
+msgstr "Bouclier"
+
+msgid "Absorbs 40 damage, back 8 s after it breaks"
+msgstr "Absorbe 40 dégâts, revient 8 s après s'être brisé"
+
+msgid "Run shop"
+msgstr "Boutique de la run"
+
+msgid "%s: %s (%d gold)"
+msgstr "%s : %s (%d or)"
+
+msgid "%s: owned"
+msgstr "%s : acquis"
+
+msgid "HP %d / %d  ·  shield %d"
+msgstr "PV %d / %d  ·  bouclier %d"

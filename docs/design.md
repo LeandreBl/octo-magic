@@ -18,7 +18,8 @@
 - Sorts de base élémentaires (feu, glace, foudre, poison, arcane…), assets faits maison.
 
 ## Sorts
-- Un seul sort équipé, au clic gauche : pas de secondaire ni d'ultime (tâche #94).
+- Un seul sort équipé, au clic gauche (tâche #94).
+- En run, l'or de la run achète (menu pause) **un sort secondaire** (clic droit / Espace / RB) et **un passif**, vides au départ et remis à zéro à chaque run (tâche #123, `Run.SHOP`) : anneau de feu (boules de feu à 360°) et bouclier (absorbe 40 dégâts, revient 8 s après s'être brisé).
 - Améliorations par sort : vitesse du projectile (si pertinent), nombre de projectiles, coût en mana, dégâts, cadence, zone…
 - Inspiration : sorts de base et augments de Solomon's Boneyard, **avec nos noms, nos valeurs et nos visuels** (on reprend la mécanique, pas le contenu).
 

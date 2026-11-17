@@ -3,8 +3,9 @@ class_name Upgrades
 ## clamps it again; "mana" is the only one kept outside the spell (the cost is
 ## derived from the spell's power, see Run.mana_cost).
 
-const SLOTS := ["primary"]  # one spell: no secondary or ultimate (task #94)
-const SLOT_NAMES := {"primary": "Spell"}  # names: English, translated where shown
+const SLOTS := ["primary"]  # the spell equipped from the profile
+const RUN_SLOTS := ["primary", "secondary"]  # + the active bought in a run (Run.SHOP)
+const SLOT_NAMES := {"primary": "Spell", "secondary": "Secondary spell"}  # English, translated where shown
 const LIST := {
 	"damage": {"name": "Power", "desc": "+25% damage"},
 	"cooldown": {"name": "Haste", "desc": "-15% cooldown"},
@@ -70,11 +71,10 @@ static func _each_effect(emit: Dictionary, fn: Callable) -> void:
 ## Up to `n` distinct {slot, id} offers among the upgrades that still apply.
 static func offers(spells: Dictionary, mana_mult: Dictionary, rng: RandomNumberGenerator, n := 3) -> Array:
 	var pool := []
-	for slot in SLOTS:
-		if spells.has(slot):
-			for id in LIST:
-				if applies(spells[slot], id, mana_mult.get(slot, 1.0)):
-					pool.append({"slot": slot, "id": id})
+	for slot in spells:
+		for id in LIST:
+			if applies(spells[slot], id, mana_mult.get(slot, 1.0)):
+				pool.append({"slot": slot, "id": id})
 	for i in range(pool.size() - 1, 0, -1):  # Fisher-Yates with the run's rng
 		var j := rng.randi_range(0, i)
 		var t = pool[i]

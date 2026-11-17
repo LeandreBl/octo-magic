@@ -39,7 +39,8 @@ func _test_french() -> void:
 			if f.ends_with(".gd"):
 				for m in literal.search_all(FileAccess.get_file_as_string(dir + f)):
 					texts.append(m.get_string(1).c_unescape())
-	for d in [Upgrades.LIST, ProfileState.ITEMS, ProfileState.BONUSES, ProfileState.ACHIEVEMENTS]:
+	texts += Upgrades.SLOT_NAMES.values()
+	for d in [Upgrades.LIST, RunState.SHOP, ProfileState.ITEMS, ProfileState.BONUSES, ProfileState.ACHIEVEMENTS]:
 		for v in d.values():
 			texts.append(v.name)
 			if v.has("desc") and not v.desc.begins_with("+1 projectile") and not v.desc.begins_with("+3 mana/s"):
@@ -107,12 +108,41 @@ func _test_run() -> void:
 	run.start(p.equipped_spells(), {"gold": 0.5})
 	run.collect("gold", 10)
 	check(run.gold == 15, "gold bonus")
+	_test_run_shop(run)
 	run.wave = 6
 	run.killed("boss")
 	var r := run.finish()
 	check(not run.active and r.bosses == 1 and r.score == run.score(), "run result")
 	run.free()
 	p.free()
+
+
+## One active and one passive per run, bought with the run's gold.
+func _test_run_shop(run: Object) -> void:
+	var gold: int = run.gold
+	check(not run.spells.has("secondary") and run.passive == "", "run slots empty at the start")
+	check(not run.buy("ring_of_fire") and run.gold == gold, "too poor for the ring")
+	run.gold = 100
+	check(run.buy("ring_of_fire") and run.gold == 60 and run.spells.secondary.emit.pattern == "radial", "ring bought")
+	check(not run.buy("ring_of_fire") and run.gold == 60, "one active per run")
+	check(run.buy("shield") and run.passive == "shield" and not run.buy("shield"), "one passive per run")
+	check(Upgrades.offers(run.spells, run.mana_mult, run.rng, 99).any(func(o): return o.slot == "secondary"),
+		"level-ups improve the ring too")
+	var l := Player.clean_loadout(JSON.parse_string(JSON.stringify({"spells": run.spells, "passive": "shield"})))
+	check(l.spells.has("secondary") and l.passive == "shield", "loadout keeps the bought slots")
+	check(Player.clean_loadout({"passive": "god_mode"}).passive == "", "unknown passive dropped")
+	var me := Player.new()
+	me.loadout_json = JSON.stringify(l)
+	me.hurt(30.0)
+	check(me.hp == me.max_hp and me.shield == Player.SHIELD_HP - 30.0, "shield absorbs")
+	me.hurt(30.0)
+	check(me.hp == me.max_hp - 20.0 and me.shield == 0.0 and me.shield_wait == Player.SHIELD_WAIT, "shield breaks")
+	l.passive = ""
+	me.loadout_json = JSON.stringify(l)
+	check(me.shield == 0.0, "no shield without the passive")
+	me.free()
+	run.start({}, {})
+	check(run.passive == "" and run.spells.is_empty(), "run slots reset")
 
 
 func _test_waves() -> void:
