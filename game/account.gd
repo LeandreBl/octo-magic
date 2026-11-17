@@ -4,6 +4,8 @@ extends PanelContainer
 
 signal closed
 
+const UITheme := preload("res://ui/theme.gd")
+
 var info: Label
 var mail: LineEdit
 var password: LineEdit
