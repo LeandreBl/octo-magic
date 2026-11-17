@@ -73,8 +73,13 @@ static func bodies(emit: Dictionary, out: Array) -> Array:
 	return out
 
 
+## A PNG of the spell's bundle; base spells (game/spells.json) point their
+## bundle at a res:// folder (tools/make_spells.py), loaded on first use.
 static func sheet(spell: Dictionary, file: String) -> Texture2D:
-	return _sheets.get(spell.get("bundle", "") + "/" + file)
+	var key: String = spell.get("bundle", "") + "/" + file
+	if file and key.begins_with("res://") and not _sheets.has(key):
+		_sheets[key] = load(key) if ResourceLoader.exists(key) else null
+	return _sheets.get(key)
 
 
 ## A body's animation, whatever its source: the bundle sheet, else its pixel

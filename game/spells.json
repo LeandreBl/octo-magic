@@ -43,9 +43,24 @@
      }
     ],
     "tick_interval": 0.5,
-    "on_tick": []
+    "on_tick": [],
+    "sheet": {
+     "file": "fireball.png",
+     "size": 32,
+     "frames": 12,
+     "fps": 12,
+     "loop": true
+    },
+    "burst_sheet": {
+     "file": "fireball_burst.png",
+     "size": 56,
+     "frames": 10,
+     "fps": 12,
+     "loop": false
+    }
    }
-  }
+  },
+  "bundle": "res://assets/spells"
  },
  {
   "id": "lightning",
@@ -119,9 +134,24 @@
     ],
     "on_expire": [],
     "tick_interval": 0.5,
-    "on_tick": []
+    "on_tick": [],
+    "sheet": {
+     "file": "magic_missile.png",
+     "size": 24,
+     "frames": 8,
+     "fps": 12,
+     "loop": true
+    },
+    "burst_sheet": {
+     "file": "magic_missile_burst.png",
+     "size": 24,
+     "frames": 7,
+     "fps": 12,
+     "loop": false
+    }
    }
-  }
+  },
+  "bundle": "res://assets/spells"
  },
  {
   "id": "frost_jet",
@@ -204,9 +234,24 @@
     ],
     "on_expire": [],
     "tick_interval": 0.5,
-    "on_tick": []
+    "on_tick": [],
+    "sheet": {
+     "file": "frost_shard.png",
+     "size": 24,
+     "frames": 12,
+     "fps": 12,
+     "loop": true
+    },
+    "burst_sheet": {
+     "file": "frost_shard_burst.png",
+     "size": 32,
+     "frames": 10,
+     "fps": 12,
+     "loop": false
+    }
    }
-  }
+  },
+  "bundle": "res://assets/spells"
  },
  {
   "id": "spark",
@@ -239,9 +284,24 @@
     ],
     "on_expire": [],
     "tick_interval": 0.5,
-    "on_tick": []
+    "on_tick": [],
+    "sheet": {
+     "file": "spark.png",
+     "size": 24,
+     "frames": 8,
+     "fps": 12,
+     "loop": true
+    },
+    "burst_sheet": {
+     "file": "spark_burst.png",
+     "size": 32,
+     "frames": 7,
+     "fps": 12,
+     "loop": false
+    }
    }
-  }
+  },
+  "bundle": "res://assets/spells"
  },
  {
   "id": "venom_dart",
@@ -286,9 +346,24 @@
     ],
     "on_expire": [],
     "tick_interval": 0.5,
-    "on_tick": []
+    "on_tick": [],
+    "sheet": {
+     "file": "venom_dart.png",
+     "size": 24,
+     "frames": 8,
+     "fps": 12,
+     "loop": true
+    },
+    "burst_sheet": {
+     "file": "venom_dart_burst.png",
+     "size": 32,
+     "frames": 8,
+     "fps": 12,
+     "loop": false
+    }
    }
-  }
+  },
+  "bundle": "res://assets/spells"
  },
  {
   "id": "arcane_missiles",
@@ -326,8 +401,23 @@
     ],
     "on_expire": [],
     "tick_interval": 0.5,
-    "on_tick": []
+    "on_tick": [],
+    "sheet": {
+     "file": "arcane_missiles.png",
+     "size": 16,
+     "frames": 8,
+     "fps": 12,
+     "loop": true
+    },
+    "burst_sheet": {
+     "file": "arcane_missiles_burst.png",
+     "size": 24,
+     "frames": 6,
+     "fps": 12,
+     "loop": false
+    }
    }
-  }
+  },
+  "bundle": "res://assets/spells"
  }
 ]
