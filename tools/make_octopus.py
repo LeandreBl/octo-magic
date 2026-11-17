@@ -1,9 +1,16 @@
-"""The octopus mage's sprites, made with PixelLab (server/art.py).
+"""The octopus mage's animations, made with PixelLab (server/art.py).
 
 Seen from straight above, head to the top: the game turns it toward where it
-goes. One still (pixen, high top-down), then each animation from it
-(PixMiniMax), written to assets/octo/<anim>.png: a strip of FRAMES square
-frames of SIZE pixels, read by game/player.gd. Each run draws new ones.
+goes. Every animation starts from STILL (tools/octo_still.png): a PixelLab
+pixen still (high top-down, seed 3, LOOK), edited by PixelLab so one tentacle
+grips the staff, then the ground tentacle that grips it erased by hand.
+Each animation is a PixMiniMax one, written to assets/octo/<anim>.png: a strip
+of FRAMES square frames of SIZE pixels, read by game/player.gd. Each run draws
+new ones.
+
+PixMiniMax strikes toward the bottom of the image whatever the prompt: the
+strike and the channel are drawn on the still turned 180 degrees, then turned
+back so they strike forward (up).
 
 Run: python3 tools/make_octopus.py
 """
@@ -19,69 +26,62 @@ import art  # noqa: E402
 import sheet  # noqa: E402
 
 OUT = ROOT / "assets/octo"
-SIZE = 96  # the still (64) centered on a larger canvas: room for the tentacles to spread
+STILL = ROOT / "tools/octo_still.png"
+SIZE = 96
 FRAMES = 8
 LOOK = ("purple octopus wizard seen from directly above, bird's-eye view at 90 degrees, top-down game sprite:"
         " we see the top of its round pointed indigo wizard hat with a gold band in the center, eight curly purple"
         " tentacles spread out radially around it like a star, a wooden staff with a glowing blue crystal tip held"
         " by one tentacle pointing up, symmetric overhead view, no face visible")
-ANIMATIONS = {
+ANIMATIONS = {  # drawn on the still as it is
     "walk": "octopus swimming forward toward the top of the image, seen from directly above: all eight tentacles"
             " pulse together, sweeping back and contracting then spreading out wide again, a strong rhythmic"
             " jet-propulsion stroke, seamless loop",
     "idle": "octopus resting in place seen from directly above: the eight tentacles slowly undulate and curl at"
             " their tips like seaweed, the body breathes gently, seamless loop",
-    "cast": "the tentacle holding the staff quickly thrusts the staff straight forward toward the top of the image"
-            " at full reach, the crystal flashes with a bright blue burst of magic, then the staff is pulled back to"
-            " rest; the body stays in place",
 }
-# Channeling starts from the cast's frame CHANNEL_FROM: the staff held out.
-CHANNEL = ("the tentacle keeps the staff stretched straight forward at full reach without moving it, the crystal at"
-           " its tip pulses and crackles with a continuous stream of blue magic sparks, the other tentacles sway"
-           " gently, seamless loop")
-CHANNEL_FROM = 5
+CAST = ("the tentacle coiled around the staff keeps gripping it and strikes with it: it swings the staff forward so"
+        " it tilts and leans out ahead toward the bottom of the image, like a club blow at an enemy in front, a small"
+        " blue spark at the crystal on impact, then it brings the staff back to its starting position. The staff"
+        " never leaves the tentacle")
+# Channeling starts from the cast's frame CHANNEL_FROM: the staff leaning forward.
+CHANNEL = ("the tentacle keeps gripping the staff and holds it leaning forward toward the bottom of the image without"
+           " moving it, the crystal at its tip pulses and crackles with a continuous stream of blue magic sparks, the"
+           " other tentacles sway gently, seamless loop")
+CHANNEL_FROM = 4
 
 
-def _b64(png: bytes) -> dict:
-    return {"type": "base64", "base64": base64.b64encode(png).decode()}
+def _turn(px: bytes) -> bytes:
+    """A SIZE x SIZE RGBA frame turned 180 degrees."""
+    pixels = [px[i:i + 4] for i in range(0, len(px), 4)]
+    return b"".join(reversed(pixels))
 
 
-def still() -> bytes:
-    r = art._request("POST", "/create-image-pixen", {
-        "description": LOOK, "image_size": {"width": 64, "height": 64}, "view": "high top-down",
-        "direction": "north", "no_background": True, "outline": "single color black outline",
-        "detail": "medium detail", "seed": 3})
-    w, h, px = sheet.read_png(base64.b64decode(r["image"]["base64"]))
-    out = bytearray(SIZE * SIZE * 4)  # centered on the SIZE canvas
-    ox, oy = (SIZE - w) // 2, (SIZE - h) // 2
-    for y in range(h):
-        out[((oy + y) * SIZE + ox) * 4:((oy + y) * SIZE + ox + w) * 4] = px[y * w * 4:(y + 1) * w * 4]
-    return sheet.write_png(SIZE, SIZE, bytes(out))
-
-
-def animate(first: bytes, motion: str) -> list[bytearray]:
+def animate(first: bytes, motion: str) -> list[bytes]:
     job = art._request("POST", "/animate-pixminimax", {
-        "first_frame": _b64(first), "description": motion, "frame_count": FRAMES, "no_background": True,
-        "view": "high top-down", "direction": "north"})["background_job_id"]
+        "first_frame": {"type": "base64", "base64": base64.b64encode(sheet.write_png(SIZE, SIZE, first)).decode()},
+        "description": motion, "frame_count": FRAMES, "no_background": True,
+        "view": "high top-down"})["background_job_id"]
     while (r := art._request("GET", f"/background-jobs/{job}"))["status"] in ("pending", "processing"):
         time.sleep(10)
-    images = r["last_response"]["images"][1:]  # the first one is the still itself
-    return [sheet.read_png(base64.b64decode(i["base64"]))[2] for i in images]
+    images = r["last_response"]["images"][1:]  # the first one is the input itself
+    return [bytes(sheet.read_png(base64.b64decode(i["base64"]))[2]) for i in images]
 
 
-def _write(name: str, frames: list[bytearray]) -> None:
-    rows = b"".join(b"".join(bytes(f[y * SIZE * 4:(y + 1) * SIZE * 4]) for f in frames) for y in range(SIZE))
+def _write(name: str, frames: list[bytes]) -> None:
+    rows = b"".join(b"".join(f[y * SIZE * 4:(y + 1) * SIZE * 4] for f in frames) for y in range(SIZE))
     (OUT / f"{name}.png").write_bytes(sheet.write_png(SIZE * len(frames), SIZE, rows))
     print(name, len(frames))
 
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    first = still()
+    still = bytes(sheet.read_png(STILL.read_bytes())[2])
     for name, motion in ANIMATIONS.items():
-        frames = animate(first, motion)
-        _write(name, frames)
-    _write("channel", animate(sheet.write_png(SIZE, SIZE, bytes(frames[CHANNEL_FROM])), CHANNEL))
+        _write(name, animate(still, motion))
+    cast = animate(_turn(still), CAST)  # turned: see the docstring
+    _write("cast", [_turn(f) for f in cast])
+    _write("channel", [_turn(f) for f in animate(cast[CHANNEL_FROM], CHANNEL)])
 
 
 if __name__ == "__main__":
