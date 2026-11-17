@@ -262,8 +262,8 @@ func _process(_delta: float) -> void:
 	var p: Node2D = main.local_player()
 	if not visible or not Run.active or not p:
 		return
-	_set_bar(_hp, p.hp, p.max_hp, tr("HP %d / %d") % [maxf(p.hp, 0.0), p.max_hp])
-	_set_bar(_mana, p.mana, p.max_mana, "Mana %d / %d" % [p.mana, p.max_mana])
+	_set_bar(_hp, p.hp, p.stats.hp, tr("HP %d / %d") % [maxf(p.hp, 0.0), p.stats.hp])
+	_set_bar(_mana, p.mana, p.stats.mana, "Mana %d / %d" % [p.mana, p.stats.mana])
 	_set_bar(_xp, Run.xp, Run.xp_to_next(Run.level), "")
 	_level.text = str(Run.level)
 	_wave.text = tr("Wave %d") % Run.wave

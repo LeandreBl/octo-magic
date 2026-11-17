@@ -2,8 +2,7 @@ class_name Upgrades
 ## Level-up augments, each rolled with a rarity that multiplies its strength.
 ## Spell augments edit the equipped spell's JSON (Spell.sanitize clamps it
 ## again; "mana" is kept outside the spell, see Run.mana_mult); hero augments
-## ("stat") add to the mage's run stats (Run.stats, clamped in
-## Player.clean_loadout). "desc" formats the value: "step" times the tier.
+## ("stat") are Stats bonuses on the mage (Run.bonuses, see game/stats.gd). "desc" formats the value: "step" times the tier.
 
 const SLOTS := ["primary"]  # the spell equipped from the profile
 const RUN_SLOTS := ["primary", "secondary"]  # + the active bought in a run (Run.SHOP)
@@ -21,12 +20,16 @@ const LIST := {
 	"mana": {"name": "Thrift", "desc": "-%d%% mana cost", "step": 10},
 	"area": {"name": "Amplitude", "desc": "+%d%% size and area", "step": 15},
 	"pierce": {"name": "Piercing", "desc": "+%d enemies pierced", "step": 1},
-	"toughness": {"name": "Toughness", "desc": "+%d max health", "step": 20, "stat": "hp", "max": 1000.0},
-	"reservoir": {"name": "Reservoir", "desc": "+%d max mana", "step": 20, "stat": "mana", "max": 1000.0},
-	"flow": {"name": "Flow", "desc": "+%d mana per second", "step": 5, "stat": "regen", "max": 200.0},
-	"fleetness": {"name": "Fleetness", "desc": "+%d%% move speed", "step": 8, "stat": "speed", "max": 2.0, "pct": true},
-	"fortune": {"name": "Fortune", "desc": "+%d%% gold", "step": 15, "stat": "gold", "max": 5.0, "pct": true},
-	"insight": {"name": "Insight", "desc": "+%d%% experience", "step": 15, "stat": "xp", "max": 5.0, "pct": true},
+	"toughness": {"name": "Toughness", "desc": "+%d max health", "step": 20, "stat": "hp"},
+	"mending": {"name": "Mending", "desc": "+%d health per second", "step": 1, "stat": "hp_regen"},
+	"reservoir": {"name": "Reservoir", "desc": "+%d max mana", "step": 20, "stat": "mana"},
+	"flow": {"name": "Flow", "desc": "+%d mana per second", "step": 5, "stat": "mana_regen"},
+	"fleetness": {"name": "Fleetness", "desc": "+%d%% move speed", "step": 8, "stat": "speed%", "pct": true},
+	"magnetism": {"name": "Magnetism", "desc": "+%d%% pickup radius", "step": 25, "stat": "pickup%", "pct": true},
+	"ward": {"name": "Ward", "desc": "-%d%% damage taken", "step": 4, "stat": "armor", "pct": true},
+	"precision": {"name": "Precision", "desc": "+%d%% critical chance", "step": 4, "stat": "crit", "pct": true},
+	"fortune": {"name": "Fortune", "desc": "+%d%% gold", "step": 15, "stat": "gold%", "pct": true},
+	"insight": {"name": "Insight", "desc": "+%d%% experience", "step": 15, "stat": "xp%", "pct": true},
 }
 const MANA_FLOOR := 0.4  # "mana" augments stop at 40 % of the cost
 
@@ -42,10 +45,17 @@ static func amount(id: String, tier: int) -> float:
 	return u.step * tier * (0.01 if u.get("pct") or not u.has("stat") else 1.0)
 
 
-## Can `id` still improve the spell or the stats? (mana_mult: the cost multiplier)
+## Hero augment `id` at `tier` as a Stats bonus.
+static func bonus(id: String, tier: int) -> Dictionary:
+	return {LIST[id].stat: amount(id, tier)}
+
+
+## Can `id` still improve the spell or the stats (Run.stats: below its bound)?
+## (mana_mult: the cost multiplier)
 static func applies(spell: Dictionary, id: String, mana_mult := 1.0, stats := {}) -> bool:
 	if LIST[id].has("stat"):
-		return stats.get(LIST[id].stat, 0.0) < LIST[id].max
+		var k: String = LIST[id].stat.trim_suffix("%")
+		return stats.get(k, Stats.BASE[k]) < Stats.BOUNDS[k][1]
 	var e: Dictionary = spell.emit
 	var b: Dictionary = e.body
 	match id:

@@ -287,11 +287,18 @@ func _refresh_mage() -> void:
 		var id: String = Profile.equipped[kind]
 		var tex := UITheme.icon(id)
 		_worn.add_child(UITheme.icon_box(tex, 56, UITheme.GOLD if tex else UITheme.RIM))
-	var s := Profile.total_stats()
-	var rows := [["HP", "%d" % s.get("hp", 0)], ["Mana", "%d" % s.get("mana", 0)], ["Mana/s", "%d" % s.get("regen", 0)]]
-	for k in [["damage", "Damage"], ["speed", "Speed"], ["gold", "Gold"], ["xp", "XP"]]:
-		if s.get(k[0], 0.0) > 0.0:
-			rows.append([k[1], "+%d %%" % roundi(s[k[0]] * 100)])
+	var s := Stats.total(Profile.bonus_list())
+	var rows := [["HP", "%d" % s.hp], ["Mana", "%d" % s.mana], ["Mana/s", "%d" % s.mana_regen],
+		["Critical chance", "%d %%" % roundi(s.crit * 100)]]
+	if s.hp_regen > 0.0:
+		rows.append(["HP/s", "%.1f" % s.hp_regen])
+	if s.armor > 0.0:
+		rows.append(["Damage taken", "-%d %%" % roundi(s.armor * 100)])
+	for k in [["damage", "Damage"], ["speed", "Speed"], ["cooldown", "Cooldown"], ["mana_cost", "Mana cost"],
+			["pickup", "Pickup radius"], ["gold", "Gold"], ["xp", "XP"]]:
+		var d: float = s[k[0]] / Stats.BASE[k[0]] - 1.0  # vs the bare mage
+		if absf(d) > 0.004:
+			rows.append([k[1], "%+d %%" % roundi(d * 100)])
 	for r in rows:
 		var row := _hbox(8)
 		var n := UITheme.label(r[0], "", 16, UITheme.TEXT_DIM)
@@ -302,10 +309,13 @@ func _refresh_mage() -> void:
 
 
 static func _bonus_text(bonus: Dictionary) -> String:
-	var names := {"hp": "HP", "mana": "mana", "regen": "mana/s", "speed": "speed",
-		"damage": "damage", "gold": "gold", "xp": "XP"}
+	var names := {"hp": "HP", "hp_regen": "HP/s", "mana": "mana", "mana_regen": "mana/s", "mana_cost": "mana cost",
+		"cooldown": "cooldown", "speed": "speed", "pickup": "pickup radius", "armor": "damage taken",
+		"crit": "critical chance", "damage": "damage", "gold": "gold", "xp": "XP"}
 	var parts := []
-	for k in bonus:
-		var v: float = bonus[k]
-		parts.append(("+%d %%" % roundi(v * 100) if k in ["speed", "damage", "gold", "xp"] else "+%d" % v) + " " + TranslationServer.translate(names.get(k, k)))
+	for k: String in bonus:
+		var v: float = -bonus[k] if k == "armor" else bonus[k]  # armor: less damage taken
+		var pct := k.ends_with("%") or k in ["armor", "crit"]
+		parts.append("%+d%s %s" % [roundi(v * 100) if pct else roundi(v), " %" if pct else "",
+			TranslationServer.translate(names[k.trim_suffix("%")])])
 	return ", ".join(parts)

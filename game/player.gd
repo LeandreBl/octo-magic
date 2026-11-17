@@ -5,12 +5,12 @@ extends Node2D
 ## run): right click / Space / RB. `held` lets a touch UI fire them.
 ## Passive "shield" (bought in the run): absorbs SHIELD_HP damage, comes back
 ## SHIELD_WAIT seconds after it breaks.
+## Every number of the mage comes from `stats` (game/stats.gd, from the loadout).
 ## Coop (see main.gd): the owner peer steers its mage (position, aim, firing
 ## are synced from it); the host owns the rest (hp, mana, loadout) and casts.
 
 signal died
 
-const BASE_SPEED := 220.0
 const STICK_RANGE := 80.0
 const SHIELD_HP := 40.0
 const SHIELD_WAIT := 8.0
@@ -31,12 +31,9 @@ var loadout_json := "":
 		var l: Variant = JSON.parse_string(v) if v else null
 		if l is Dictionary:
 			_apply(l)
-var max_hp := 100.0
-var max_mana := 100.0
-var mana_regen := 25.0
-var speed := BASE_SPEED
-var hp := max_hp
-var mana := max_mana
+var stats := Stats.total([])
+var hp: float = stats.hp
+var mana: float = stats.mana
 var passive := ""  # a Run.SHOP id
 var shield := 0.0  # hp left on the shield, synced for drawing
 var shield_wait := 0.0  # seconds until a broken shield is back
@@ -51,19 +48,16 @@ var _moving := false
 var _cast_t := 0.0  # s left of the cast animation
 var _channel_t := 0.0  # s left of the channel animation: renewed by each tick of a beam or cone
 var _last_pos := Vector2.ZERO
-var _heard_hp := max_hp  # hosts and peers hear hurts on the synced hp
+var _heard_hp: float = stats.hp  # hosts and peers hear hurts on the synced hp
 var _touch_move := {}  # finger index -> [start, current]
 var _touch_aim := {}
 
 
-## Stats from Profile.total_stats(), at the start of a run.
-func setup(stats: Dictionary) -> void:
-	max_hp = stats.hp
-	max_mana = stats.mana
-	mana_regen = stats.regen
-	speed = BASE_SPEED * (1.0 + stats.speed)
-	hp = max_hp
-	mana = max_mana
+## Full HP and mana with these stats, at the start of a run.
+func setup(s: Dictionary) -> void:
+	stats = s
+	hp = s.hp
+	mana = s.mana
 	cooldowns = {}
 	shield_wait = 0.0
 
@@ -82,21 +76,23 @@ static func clean_loadout(raw: Variant) -> Dictionary:
 	var l: Dictionary = raw if raw is Dictionary else {}
 	var spells := {}
 	var costs := {}
+	var st: Dictionary = l.get("stats") if l.get("stats") is Dictionary else {}
+	var stats := {}
+	for k in Stats.BASE:
+		stats[k] = _clamp(st.get(k), Stats.BASE[k], Stats.BOUNDS[k][0], Stats.BOUNDS[k][1])
 	for slot in Upgrades.RUN_SLOTS:
 		var s: Variant = l.get("spells", {}).get(slot) if l.get("spells") is Dictionary else null
 		if s is Dictionary:
 			spells[slot] = Spell.sanitize(s)
 			var mult: Variant = l.get("mult", {}).get(slot, 1.0) if l.get("mult") is Dictionary else 1.0
-			costs[slot] = maxi(1, roundi(Spell.mana_cost(spells[slot]) * clampf(float(mult) if mult is float else 1.0, 0.2, 1.0)))
-	var st: Dictionary = l.get("stats") if l.get("stats") is Dictionary else {}
+			costs[slot] = maxi(1, roundi(Spell.mana_cost(spells[slot]) * clampf(float(mult) if mult is float else 1.0, 0.2, 1.0) * stats.mana_cost))
 	var look_in: Dictionary = l.get("look") if l.get("look") is Dictionary else {}
 	var out_look := {}
 	for k in ["hat", "robe", "staff", "ring"]:
 		out_look[k] = Spell._color(look_in.get(k)) if look_in.get(k) else ""
 	return {"spells": spells, "costs": costs, "look": out_look, "fresh": l.get("fresh") == true,
 		"passive": l.get("passive") if l.get("passive") in ["shield"] else "",
-		"stats": {"hp": _clamp(st.get("hp"), 100.0, 1.0, 1000.0), "mana": _clamp(st.get("mana"), 100.0, 1.0, 1000.0),
-			"regen": _clamp(st.get("regen"), 25.0, 0.0, 200.0), "speed": _clamp(st.get("speed"), 0.0, 0.0, 2.0)}}
+		"stats": stats}
 
 
 static func _clamp(v: Variant, default: float, lo: float, hi: float) -> float:
@@ -114,12 +110,9 @@ func _apply(l: Dictionary) -> void:
 	if l.fresh:
 		setup(l.stats)
 	else:  # a hero augment: the extra health and mana come filled
-		hp += maxf(0.0, l.stats.hp - max_hp)
-		mana += maxf(0.0, l.stats.mana - max_mana)
-		max_hp = l.stats.hp
-		max_mana = l.stats.mana
-		mana_regen = l.stats.regen
-		speed = BASE_SPEED * (1.0 + l.stats.speed)
+		hp += maxf(0.0, l.stats.hp - stats.hp)
+		mana += maxf(0.0, l.stats.mana - stats.mana)
+		stats = l.stats
 	if l.passive != passive:  # bought, or a new run
 		passive = l.passive
 		shield = SHIELD_HP if passive == "shield" else 0.0
@@ -134,12 +127,13 @@ class Loadout:
 
 
 func heal(amount: float) -> void:
-	hp = minf(max_hp, hp + amount)
+	hp = minf(stats.hp, hp + amount)
 
 
 func hurt(amount: float) -> void:
 	if hp <= 0.0:
 		return
+	amount *= 1.0 - stats.armor
 	var absorbed := minf(shield, amount)
 	if absorbed > 0.0:
 		shield -= absorbed
@@ -191,7 +185,8 @@ func _physics_process(delta: float) -> void:
 		_steer(delta)
 	if not multiplayer.is_server() or hp <= 0.0:
 		return
-	mana = minf(max_mana, mana + mana_regen * delta)
+	mana = minf(stats.mana, mana + stats.mana_regen * delta)
+	hp = minf(stats.hp, hp + stats.hp_regen * delta)
 	if shield_wait > 0.0:
 		shield_wait -= delta
 		if shield_wait <= 0.0 and passive == "shield":
@@ -206,7 +201,7 @@ func _steer(delta: float) -> void:
 	# Input actions (project.godot): rebindable keys, arrows, left stick (ui/settings.gd).
 	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	move = (move + _stick(_touch_move)).limit_length(1.0)
-	position = (position + move * speed * delta).clamp(Arena.RECT.position, Arena.RECT.end)
+	position = (position + move * stats.speed * delta).clamp(Arena.RECT.position, Arena.RECT.end)
 
 	# Gamepad (any connected one): right stick aims and fires, RT fires
 	# where the mage aims; with the right stick idle it aims where it walks.
@@ -237,8 +232,10 @@ func cast(slot: String) -> bool:
 	if cooldowns.get(slot, 0.0) > 0.0 or mana < cost:
 		return false
 	var s: Dictionary = run.spells[slot]
+	if randf() < stats.crit:
+		s = Upgrades.scale_damage(s, Stats.CRIT_MULT)
 	mana -= cost
-	cooldowns[slot] = s.cooldown
+	cooldowns[slot] = s.cooldown * stats.cooldown
 	SpellBody.cast(s.emit, global_position + aim * radius, aim, self, s, get_parent())
 	_animate_cast(s)
 	_cast_fx.rpc(slot, global_position + aim * radius, aim)

@@ -97,7 +97,7 @@ func _run_started(map: String) -> void:
 	for n in get_children():
 		if n is Node2D and not n.is_in_group("players"):
 			n.free()
-	Run.start(Profile.equipped_spells(), Profile.total_stats())
+	Run.start(Profile.equipped_spells(), Profile.bonus_list())
 	var p := local_player()
 	if p:
 		p.position = Arena.RECT.get_center()

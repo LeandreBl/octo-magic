@@ -13,34 +13,37 @@ const MAX_SCORES := 10
 const FIELDS := ["gold", "blank_scrolls", "owned", "equipped", "bonuses", "look", "stats",
 	"achievements", "scores", "spells", "forged"]
 
-## Base stats of the mage; items and bonuses add to them. damage/speed/gold/xp
-## are fractions (+0.1 = +10 %).
-const BASE_STATS := {"hp": 100.0, "mana": 100.0, "regen": 25.0, "speed": 0.0,
-	"damage": 0.0, "gold": 0.0, "xp": 0.0}
-
+## Items and permanent bonuses carry Stats bonuses (see game/stats.gd).
 ## Names and descriptions are English, translated where shown (locale/fr.po).
 const ITEMS := {
 	"staff_oak": {"kind": "staff", "name": "Oak staff", "price": 0, "color": "#8d6e63", "bonus": {}},
-	"staff_ember": {"kind": "staff", "name": "Ember staff", "price": 150, "color": "#ff7043", "bonus": {"damage": 0.15}},
-	"staff_crystal": {"kind": "staff", "name": "Crystal staff", "price": 450, "color": "#80deea", "bonus": {"damage": 0.3, "regen": 5.0}},
+	"staff_ember": {"kind": "staff", "name": "Ember staff", "price": 150, "color": "#ff7043", "bonus": {"damage%": 0.15}},
+	"staff_willow": {"kind": "staff", "name": "Willow staff", "price": 200, "color": "#a5d6a7", "bonus": {"mana_cost%": -0.15, "mana_regen": 5.0}},
+	"staff_crystal": {"kind": "staff", "name": "Crystal staff", "price": 450, "color": "#80deea", "bonus": {"damage%": 0.3, "cooldown%": -0.1}},
 	"robe_novice": {"kind": "robe", "name": "Novice robe", "price": 0, "color": "#6a4cff", "bonus": {}},
-	"robe_warden": {"kind": "robe", "name": "Warden robe", "price": 120, "color": "#2e7d32", "bonus": {"hp": 30.0}},
-	"robe_archmage": {"kind": "robe", "name": "Archmage robe", "price": 500, "color": "#b71c1c", "bonus": {"hp": 60.0, "mana": 20.0}},
+	"robe_warden": {"kind": "robe", "name": "Warden robe", "price": 120, "color": "#2e7d32", "bonus": {"hp": 30.0, "armor": 0.05}},
+	"robe_wind": {"kind": "robe", "name": "Wind robe", "price": 200, "color": "#b0bec5", "bonus": {"speed%": 0.12, "pickup%": 0.3}},
+	"robe_archmage": {"kind": "robe", "name": "Archmage robe", "price": 500, "color": "#b71c1c", "bonus": {"hp": 60.0, "mana": 20.0, "hp_regen": 1.0}},
 	"ring_none": {"kind": "ring", "name": "No ring", "price": 0, "color": "", "bonus": {}},
-	"ring_copper": {"kind": "ring", "name": "Copper ring", "price": 100, "color": "#d08b4b", "bonus": {"regen": 5.0}},
-	"ring_gold": {"kind": "ring", "name": "Ring of fortune", "price": 250, "color": "#ffd54f", "bonus": {"gold": 0.25}},
-	"ring_sapphire": {"kind": "ring", "name": "Sapphire ring", "price": 350, "color": "#448aff", "bonus": {"mana": 30.0, "regen": 5.0}},
+	"ring_copper": {"kind": "ring", "name": "Copper ring", "price": 100, "color": "#d08b4b", "bonus": {"mana_regen": 5.0}},
+	"ring_gold": {"kind": "ring", "name": "Ring of fortune", "price": 250, "color": "#ffd54f", "bonus": {"gold%": 0.25}},
+	"ring_ruby": {"kind": "ring", "name": "Ruby ring", "price": 300, "color": "#e53935", "bonus": {"crit": 0.1}},
+	"ring_sapphire": {"kind": "ring", "name": "Sapphire ring", "price": 350, "color": "#448aff", "bonus": {"mana": 30.0, "mana_regen": 5.0}},
 }
 
 ## Permanent bonuses: level n costs price * GROWTH^n.
 const GROWTH := 1.5
 const BONUSES := {
 	"vitality": {"name": "Vitality", "desc": "+10 HP", "price": 50, "max": 10, "bonus": {"hp": 10.0}},
-	"power": {"name": "Power", "desc": "+5% damage", "price": 80, "max": 10, "bonus": {"damage": 0.05}},
-	"focus": {"name": "Focus", "desc": "+3 mana/s", "price": 60, "max": 5, "bonus": {"regen": 3.0}},
-	"swiftness": {"name": "Swiftness", "desc": "+5% speed", "price": 70, "max": 5, "bonus": {"speed": 0.05}},
-	"greed": {"name": "Greed", "desc": "+10% gold", "price": 60, "max": 5, "bonus": {"gold": 0.1}},
-	"wisdom": {"name": "Wisdom", "desc": "+10% XP", "price": 60, "max": 5, "bonus": {"xp": 0.1}},
+	"power": {"name": "Power", "desc": "+5% damage", "price": 80, "max": 10, "bonus": {"damage%": 0.05}},
+	"focus": {"name": "Focus", "desc": "+3 mana/s", "price": 60, "max": 5, "bonus": {"mana_regen": 3.0}},
+	"swiftness": {"name": "Swiftness", "desc": "+5% speed", "price": 70, "max": 5, "bonus": {"speed%": 0.05}},
+	"frugality": {"name": "Frugality", "desc": "-4% mana cost", "price": 90, "max": 5, "bonus": {"mana_cost%": -0.04}},
+	"endurance": {"name": "Endurance", "desc": "-3% damage taken", "price": 90, "max": 5, "bonus": {"armor": 0.03}},
+	"keen_eye": {"name": "Keen eye", "desc": "+2% critical chance", "price": 80, "max": 5, "bonus": {"crit": 0.02}},
+	"attraction": {"name": "Attraction", "desc": "+15% pickup radius", "price": 40, "max": 5, "bonus": {"pickup%": 0.15}},
+	"greed": {"name": "Greed", "desc": "+10% gold", "price": 60, "max": 5, "bonus": {"gold%": 0.1}},
+	"wisdom": {"name": "Wisdom", "desc": "+10% XP", "price": 60, "max": 5, "bonus": {"xp%": 0.1}},
 }
 
 ## Achievements: reached when stats[stat] >= goal. Some unlock spells
@@ -165,19 +168,15 @@ static func _arr(v: Variant) -> Array:
 
 # --- stats -------------------------------------------------------------------
 
-## The mage's stats with equipment and permanent bonuses.
-func total_stats() -> Dictionary:
-	var s := BASE_STATS.duplicate()
+## Stats bonuses of the equipped items and permanent bonuses (one per level).
+func bonus_list() -> Array:
+	var out := []
 	for kind in equipped:
-		_add(s, ITEMS[equipped[kind]].bonus, 1)
+		out.append(ITEMS[equipped[kind]].bonus)
 	for id in bonuses:
-		_add(s, BONUSES[id].bonus, bonuses[id])
-	return s
-
-
-static func _add(s: Dictionary, bonus: Dictionary, times: int) -> void:
-	for k in bonus:
-		s[k] += bonus[k] * times
+		for i in bonuses[id]:
+			out.append(BONUSES[id].bonus)
+	return out
 
 
 # --- shop --------------------------------------------------------------------

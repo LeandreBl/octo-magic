@@ -56,6 +56,10 @@ UPGRADES = {
     "fleetness": "a winged boot with a speed trail",
     "fortune": "a four-leaf clover over a shiny gold coin",
     "insight": "a glowing open eye inside a golden star",
+    "mending": "a green healing leaf over a small glowing red heart",
+    "magnetism": "a red and silver horseshoe magnet pulling small gold sparks",
+    "ward": "a round silver shield with a glowing blue protective rune",
+    "precision": "a red bullseye target pierced dead center by a glowing arrow",
 }
 
 

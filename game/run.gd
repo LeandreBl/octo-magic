@@ -33,13 +33,16 @@ var picked := []  # augment ids taken, in order
 var offers := []  # current level-up choice, [] when none
 var pending := 0  # level-ups not chosen yet
 var rng := RandomNumberGenerator.new()
-var stats := {}  # the mage's bonuses: the profile's, + hero augments
+var bonuses := []  # Stats bonuses: the profile's, then the hero augments
+var stats := Stats.total([])  # Stats.total(bonuses)
 var passive := ""  # a Run.SHOP id, "" until one is bought
 
 
-## `equipped`: slot -> spell; `bonus`: Profile.total_stats() (damage, gold, xp).
-func start(equipped: Dictionary, bonus := {}) -> void:
-	stats = bonus.duplicate()
+## `equipped`: slot -> spell; `bonus_list`: Profile.bonus_list(). The damage
+## stat is applied to the spells, once, here and at buy().
+func start(equipped: Dictionary, bonus_list := []) -> void:
+	bonuses = bonus_list.duplicate()
+	stats = Stats.total(bonuses)
 	active = true
 	wave = 0
 	level = 1
@@ -55,7 +58,7 @@ func start(equipped: Dictionary, bonus := {}) -> void:
 	mana_mult = {}
 	passive = ""
 	for slot in equipped:
-		spells[slot] = Upgrades.scale_damage(equipped[slot], 1.0 + stats.get("damage", 0.0))
+		spells[slot] = Upgrades.scale_damage(equipped[slot], stats.damage)
 		mana_mult[slot] = 1.0
 	rng.randomize()
 	changed.emit()
@@ -92,7 +95,8 @@ func choose(i: int) -> bool:
 	var tier: int = Upgrades.RARITIES[o.rarity].tier
 	var u: Dictionary = Upgrades.LIST[o.id]
 	if u.has("stat"):
-		stats[u.stat] = minf(u.max, stats.get(u.stat, 0.0) + Upgrades.amount(o.id, tier))
+		bonuses.append(Upgrades.bonus(o.id, tier))
+		stats = Stats.total(bonuses)
 	elif o.id == "mana":
 		mana_mult.primary = maxf(Upgrades.MANA_FLOOR, mana_mult.primary * (1.0 - Upgrades.amount(o.id, tier)))
 	else:
@@ -120,20 +124,20 @@ func buy(id: String) -> bool:
 	if it.slot == "passive":
 		passive = id
 	else:
-		spells[it.slot] = Upgrades.scale_damage(Spell.sanitize(it.spell), 1.0 + stats.get("damage", 0.0))
+		spells[it.slot] = Upgrades.scale_damage(Spell.sanitize(it.spell), stats.damage)
 		mana_mult[it.slot] = 1.0
 	changed.emit()
 	return true
 
 
 func mana_cost(slot: String) -> int:
-	return maxi(1, roundi(Spell.mana_cost(spells[slot]) * mana_mult[slot]))
+	return maxi(1, roundi(Spell.mana_cost(spells[slot]) * mana_mult[slot] * stats.mana_cost))
 
 
 func collect(kind: String, value: int) -> void:
 	match kind:
-		"xp": add_xp(roundi(value * (1.0 + stats.get("xp", 0.0))))
-		"gold": gold += roundi(value * (1.0 + stats.get("gold", 0.0)))
+		"xp": add_xp(roundi(value * stats.xp))
+		"gold": gold += roundi(value * stats.gold)
 		"scroll": scrolls += value
 	changed.emit()
 

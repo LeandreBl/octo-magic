@@ -23,6 +23,7 @@
 ## Personnage
 - Le joueur est un **mage-poulpe** (la mascotte de l'icône), plus le boss (tâche #137) : vu de dessus (~90°), sprite PixelLab qui tourne vers sa direction, marche (les 3 tentacules avant puis arrière s'étirent l'un après l'autre, décalés, les latéraux bougent à peine), idle, cast (un tentacule tient le bâton et l'abat vers la visée) et channeling (bâton tendu tant qu'un rayon ou un cône tourne) (`tools/make_octopus.py`, `assets/octo/`).
 - **Tous les sprites sont faits avec PixelLab** (personnages, ennemis, animations, icônes), pas dessinés en code. Pas de classes : chaque joueur personnalise son mage (apparence + équipement).
+- Statistiques du mage en données (`game/stats.gd`, tâche #79) : PV, régénération de PV et de mana, mana, consommation de mana, vitesse, recharge, rayon de ramassage, armure, critique, dégâts, or, XP. Équipement, bonus permanents et augments « héros » des level-ups sont tous des bonus : base + bonus additifs, puis multiplicatifs (`"stat%"`, cumulés), puis bornes ; l'hôte les borne encore en coop. Critique : par lancer, ×2 dégâts.
 - Sorts de base élémentaires (feu, glace, foudre, poison, arcane…), assets faits maison.
 
 ## Sorts

@@ -54,7 +54,7 @@ func _test_french() -> void:
 	for m in RegEx.create_from_string("\"[A-Z_]+\": \"([^\"]+)\"").search_all(FileAccess.get_file_as_string("res://game/online.gd")):
 		texts.append(m.get_string(1))  # Online.ERRORS (the autoload needs Profile)
 	texts += Settings.REBINDABLE.values().filter(func(t): return t != "Pause")
-	var same := ["Multiplication", "Scribe", "Rare", "Fortune"]
+	var same := ["Multiplication", "Scribe", "Rare", "Fortune", "Endurance", "Attraction"]
 	for t in texts:
 		check(t in same or TranslationServer.translate(t) != t, "French for: " + t)
 	check(Spell.describe({"description": "x", "description_fr": "y"}) == "y", "forged spell described in French")
@@ -95,7 +95,9 @@ func _test_upgrades() -> void:
 			seen[o.rarity] = true
 			seen[o.id] = true
 	check(seen.has("epic") and seen.has("common") and seen.has("toughness"), "rarities and hero augments rolled")
-	check(not Upgrades.applies(s, "fleetness", 1.0, {"speed": 2.0}), "maxed stat not offered")
+	check(not Upgrades.applies(s, "fleetness", 1.0, Stats.total([{"speed": 1e4}])), "maxed stat not offered")
+	check(Upgrades.applies(s, "ward", 1.0, Stats.total([])), "stat below its bound offered")
+	check(Upgrades.bonus("ward", 3) == {"armor": 0.12} and Upgrades.bonus("fleetness", 1) == {"speed%": 0.08}, "hero augments are Stats bonuses")
 	TranslationServer.set_locale("en")
 	check(Upgrades.describe("damage", "rare") == "+40% damage", "rare described with its value")
 
@@ -103,7 +105,7 @@ func _test_upgrades() -> void:
 func _test_run() -> void:
 	var run := RunState.new()
 	var p := ProfileState.new()
-	run.start(p.equipped_spells(), {"damage": 0.5, "xp": 0.0})
+	run.start(p.equipped_spells(), [{"damage%": 0.5}])
 	check(run.spells.keys() == ["primary"], "one spell, no secondary or ultimate")
 	check(is_equal_approx(_damage(run.spells.primary), _damage(p.equipped_spells().primary) * 1.5), "damage bonus applied")
 	var got := []
@@ -122,10 +124,11 @@ func _test_run() -> void:
 	check(run.picked.size() == 2, "picks recorded")
 	run.offers = [{"id": "toughness", "rarity": "epic"}]
 	run.pending = 1
-	var hp: float = run.stats.get("hp", 0.0)
+	var hp: float = run.stats.hp
 	run.choose(0)
 	check(run.stats.hp == hp + 60.0, "hero augment raises the run stat")
-	run.start(p.equipped_spells(), {"gold": 0.5})
+	run.start(p.equipped_spells(), [{"gold%": 0.5}, {"mana_cost%": -0.5}])
+	check(run.mana_cost("primary") == maxi(1, roundi(Spell.mana_cost(run.spells.primary) * 0.5)), "mana cost stat")
 	run.collect("gold", 10)
 	check(run.gold == 15, "gold bonus")
 	_test_run_shop(run)
@@ -149,17 +152,19 @@ func _test_run_shop(run: Object) -> void:
 	var l := Player.clean_loadout(JSON.parse_string(JSON.stringify({"spells": run.spells, "passive": "shield"})))
 	check(l.spells.has("secondary") and l.passive == "shield", "loadout keeps the bought slots")
 	check(Player.clean_loadout({"passive": "god_mode"}).passive == "", "unknown passive dropped")
+	var st: Dictionary = Player.clean_loadout({"stats": {"armor": 5, "hp": "x", "god": 1}}).stats
+	check(st.armor == Stats.BOUNDS.armor[1] and st.hp == Stats.BASE.hp and st.keys() == Stats.BASE.keys(), "loadout stats clamped")
 	var me := Player.new()
 	me.loadout_json = JSON.stringify(l)
 	me.hurt(30.0)
-	check(me.hp == me.max_hp and me.shield == Player.SHIELD_HP - 30.0, "shield absorbs")
+	check(me.hp == me.stats.hp and me.shield == Player.SHIELD_HP - 30.0, "shield absorbs")
 	me.hurt(30.0)
-	check(me.hp == me.max_hp - 20.0 and me.shield == 0.0 and me.shield_wait == Player.SHIELD_WAIT, "shield breaks")
+	check(me.hp == me.stats.hp - 20.0 and me.shield == 0.0 and me.shield_wait == Player.SHIELD_WAIT, "shield breaks")
 	l.passive = ""
 	me.loadout_json = JSON.stringify(l)
 	check(me.shield == 0.0, "no shield without the passive")
 	me.free()
-	run.start({}, {})
+	run.start({}, [])
 	check(run.passive == "" and run.spells.is_empty(), "run slots reset")
 
 
@@ -206,8 +211,9 @@ func _test_profile() -> void:
 	check(not p.buy_item("robe_warden"), "item bought once")
 	check(p.equip_item("robe_novice") and p.equip_item("robe_warden"), "re-equip owned")
 	check(not p.equip_item("staff_crystal"), "cannot equip unowned")
-	var st := p.total_stats()
-	check(st.hp == 100.0 + 30.0 + 10.0 and st.regen == 25.0 + 3.0 * Profile_max("focus"), "stats sum items and bonuses")
+	var st := Stats.total(p.bonus_list())
+	check(st.hp == 100.0 + 30.0 + 10.0 and st.mana_regen == 25.0 + 3.0 * Profile_max("focus"), "stats sum items and bonuses")
+	check(is_equal_approx(st.armor, 0.05), "robe armor")
 	# End of run: gold kept, scores sorted, achievements unlock spells.
 	var reached := p.record_run({"score": 300, "wave": 10, "level": 4, "kills": 120, "bosses": 1, "gold": 70, "scrolls": 1})
 	p.record_run({"score": 900, "wave": 3, "level": 2, "kills": 5, "bosses": 0, "gold": 5, "scrolls": 0})
@@ -323,12 +329,12 @@ func _test_play() -> void:
 	bomber.setup("bomber", RunState.enemy_stats("bomber", 1))
 	bomber.position = player.position + Vector2(80, 0)
 	world.add_child(bomber)
-	player.hp = player.max_hp
+	player.hp = player.stats.hp
 	player.shield = 0.0
 	for i in 90:
 		await physics_frame
-	check(not is_instance_valid(bomber) and player.hp <= player.max_hp - bomber_blast(), "bomber blows up")
-	check(player.hp < player.max_hp, "enemies hurt the player")
+	check(not is_instance_valid(bomber) and player.hp <= player.stats.hp - bomber_blast(), "bomber blows up")
+	check(player.hp < player.stats.hp, "enemies hurt the player")
 	_test_gamepad(player)
 	world.free()
 	run.free()

@@ -901,3 +901,93 @@ msgstr "+%d %% d'expérience"
 
 msgid "+%d projectile(s)"
 msgstr "+%d projectile(s)"
+
+msgid "HP/s"
+msgstr "PV/s"
+
+msgid "mana cost"
+msgstr "consommation de mana"
+
+msgid "cooldown"
+msgstr "recharge"
+
+msgid "pickup radius"
+msgstr "rayon de ramassage"
+
+msgid "damage taken"
+msgstr "dégâts subis"
+
+msgid "critical chance"
+msgstr "chance de critique"
+
+msgid "Willow staff"
+msgstr "Bâton de saule"
+
+msgid "Wind robe"
+msgstr "Robe des vents"
+
+msgid "Ruby ring"
+msgstr "Anneau de rubis"
+
+msgid "Frugality"
+msgstr "Économie"
+
+msgid "-4% mana cost"
+msgstr "-4 % de consommation de mana"
+
+msgid "Endurance"
+msgstr "Endurance"
+
+msgid "-3% damage taken"
+msgstr "-3 % de dégâts subis"
+
+msgid "Keen eye"
+msgstr "Œil vif"
+
+msgid "+2% critical chance"
+msgstr "+2 % de chance de critique"
+
+msgid "Attraction"
+msgstr "Attraction"
+
+msgid "+15% pickup radius"
+msgstr "+15 % de rayon de ramassage"
+
+msgid "Mending"
+msgstr "Guérison"
+
+msgid "+%d health per second"
+msgstr "+%d PV par seconde"
+
+msgid "Magnetism"
+msgstr "Magnétisme"
+
+msgid "+%d%% pickup radius"
+msgstr "+%d %% de rayon de ramassage"
+
+msgid "Ward"
+msgstr "Égide"
+
+msgid "-%d%% damage taken"
+msgstr "-%d %% de dégâts subis"
+
+msgid "Precision"
+msgstr "Précision"
+
+msgid "+%d%% critical chance"
+msgstr "+%d %% de chance de critique"
+
+msgid "Cooldown"
+msgstr "Recharge"
+
+msgid "Mana cost"
+msgstr "Consommation de mana"
+
+msgid "Pickup radius"
+msgstr "Rayon de ramassage"
+
+msgid "Damage taken"
+msgstr "Dégâts subis"
+
+msgid "Critical chance"
+msgstr "Chance de critique"
