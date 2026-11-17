@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Octo Magic — My account</title>
+<link rel="alternate" hreflang="fr" href="https://octo-magic.notdotio.com/account">
+<link rel="alternate" hreflang="en" href="https://octo-magic.notdotio.com/en/account">
+<link rel="alternate" hreflang="x-default" href="https://octo-magic.notdotio.com/en/account">
+<link rel="icon" href="/assets/icon.png">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <a class="brand" href="/en/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
+  <nav><a href="/en/game">Play</a><a href="/en/account" data-who>Log in</a><a class="lang" href="/account" hreflang="fr" lang="fr" title="Français" data-lang="fr">FR</a></nav>
+</header>
+<main>
+  <section id="out" class="auth" hidden>
+    <div class="sky"></div>
+    <div class="auth-card">
+      <img class="pixel auth-octo" src="/assets/icon.png" alt="">
+      <h1>Enter the dungeon</h1>
+      <p class="muted">Your progress and spells follow you, on the site as in the game.</p>
+      <button id="google" class="google" type="button"><img class="pixel" src="/img/google.png" alt="">Continue with Google</button>
+      <p class="or"><span>or with your email</span></p>
+      <form id="login">
+        <label>Email<input name="email" type="email" autocomplete="email" required></label>
+        <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+        <button name="signin">Log in</button>
+        <div class="links">
+          <button name="signup" class="link">Create an account</button>
+          <button name="reset" class="link" formnovalidate>Forgot password?</button>
+        </div>
+        <p class="msg" aria-live="polite"></p>
+      </form>
+      <p class="legal">By creating an account, you accept the <a href="/en/terms">terms of use</a> and the <a href="/en/privacy">privacy policy</a>.</p>
+    </div>
+  </section>
+
+  <section id="in" hidden>
+    <h1>My account</h1>
+    <p class="who"><img class="pixel" src="/assets/icon.png" alt=""><span>Logged in as <b id="email"></b></span><a class="button" href="/en/game">Launch the game</a></p>
+
+    <h2>Stats</h2>
+    <p id="empty" hidden>No online progress yet: play a game while logged in and it will show up here.</p>
+    <div class="stats" id="stats"></div>
+
+    <h2>Best scores</h2>
+    <table>
+      <thead><tr><th>Score</th><th>Wave</th><th>Level</th><th>Enemies</th><th>Date</th></tr></thead>
+      <tbody id="scores"></tbody>
+    </table>
+
+    <h2>Achievements</h2>
+    <ul class="achievements" id="achievements"></ul>
+
+    <h2>My spells</h2>
+    <ul id="forged"></ul>
+
+    <h2>Manage the account</h2>
+    <div class="cards">
+      <form id="password" class="card">
+        <h3>Change password</h3>
+        <input name="current" type="password" placeholder="Current password" autocomplete="current-password" required>
+        <input name="password" type="password" placeholder="New password" autocomplete="new-password" minlength="6" required>
+        <button>Change</button>
+        <p class="msg" aria-live="polite"></p>
+      </form>
+      <form id="delete" class="card">
+        <h3>Delete the account</h3>
+        <p>Permanently erases your account, your online progress and your spells.</p>
+        <input name="password" type="password" placeholder="Password" autocomplete="current-password" required>
+        <button class="danger">Delete</button>
+        <small data-google hidden>Google will ask you to log in again before the deletion.</small>
+        <p class="msg" aria-live="polite"></p>
+      </form>
+    </div>
+    <p><button id="logout" class="ghost">Log out</button></p>
+  </section>
+</main>
+<footer>
+  <a href="/en/privacy">Privacy</a><a href="/en/terms">Terms of use</a>
+</footer>
+<script type="module" src="/account.js"></script>
+</body>
+</html>

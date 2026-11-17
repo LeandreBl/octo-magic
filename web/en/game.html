@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Octo Magic — Play</title>
+<script>
+  // No playing logged out: to the site's login, back here after (same check as site.session()).
+  try {
+    if (!JSON.parse(localStorage.getItem("octo.session") || "null")?.refresh) throw 0;
+  } catch {
+    location.replace("/en/account?then=/en/game");
+  }
+</script>
+<link rel="alternate" hreflang="fr" href="https://octo-magic.notdotio.com/game">
+<link rel="alternate" hreflang="en" href="https://octo-magic.notdotio.com/en/game">
+<link rel="alternate" hreflang="x-default" href="https://octo-magic.notdotio.com/en/game">
+<link rel="icon" href="/assets/icon.png">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="game">
+<header>
+  <a class="brand" href="/en/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
+  <h1>Play</h1>
+  <nav><a href="#" id="fullscreen">Fullscreen</a><a href="/en/account" data-who>Log in</a><a class="lang" href="/game" hreflang="fr" lang="fr" title="Français" data-lang="fr">FR</a></nav>
+</header>
+<!-- The game's web export (Godot), same origin: it shares the site's login (site.js). -->
+<iframe id="game" src="/godot/index.html" title="Octo Magic" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
+<script type="module">
+  import "/site.js";
+  const game = document.getElementById("game");
+  game.addEventListener("load", () => game.focus());
+  document.getElementById("fullscreen").onclick = (e) => {
+    e.preventDefault();
+    game.requestFullscreen();
+  };
+</script>
+</body>
+</html>

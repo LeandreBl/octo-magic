@@ -30,6 +30,7 @@ header .brand { display: flex; align-items: center; gap: .5rem; font: 1.4rem Unc
 header .brand img { width: 36px; height: 36px; }
 header nav a { color: var(--muted); text-decoration: none; margin-left: 1.2rem; }
 header nav a:hover { color: var(--text); }
+header nav a.lang { font-weight: bold; letter-spacing: .05em; }
 
 main { max-width: 60rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
 h1, h2 { font-family: Uncial, serif; font-weight: normal; color: var(--gold); }
@@ -237,7 +238,7 @@ main.legal .note { margin-top: 1rem; font-size: .95rem; }
   body.landing .hero, .forge { grid-template-columns: 1fr; text-align: center; }
   body.landing .hero { padding-top: 3rem; }
   body.landing .hero .actions, .stores { justify-content: center; }
-  header nav a:not(.button) { display: none; }
+  header nav a:not(.button):not(.lang) { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before { animation: none !important; transition: none !important; }
