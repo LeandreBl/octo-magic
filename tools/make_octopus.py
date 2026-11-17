@@ -34,9 +34,9 @@ LOOK = ("purple octopus wizard seen from directly above, bird's-eye view at 90 d
         " tentacles spread out radially around it like a star, a wooden staff with a glowing blue crystal tip held"
         " by one tentacle pointing up, symmetric overhead view, no face visible")
 ANIMATIONS = {  # drawn on the still as it is
-    "walk": "octopus swimming forward toward the top of the image, seen from directly above: all eight tentacles"
-            " pulse together, sweeping back and contracting then spreading out wide again, a strong rhythmic"
-            " jet-propulsion stroke, seamless loop",
+    "walk": "walking cycle seen from directly above: the octopus moves forward (up), the tentacles push off and glide"
+            " backward under its body toward the bottom of the image, stretching out behind it, then curl forward"
+            " again; alternate tentacles, smooth continuous propulsion; the staff stays held, seamless loop",
     "idle": "octopus resting in place seen from directly above: the eight tentacles slowly undulate and curl at"
             " their tips like seaweed, the body breathes gently, seamless loop",
 }
