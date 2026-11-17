@@ -31,7 +31,15 @@ ANIMATIONS = {
             " jet-propulsion stroke, seamless loop",
     "idle": "octopus resting in place seen from directly above: the eight tentacles slowly undulate and curl at"
             " their tips like seaweed, the body breathes gently, seamless loop",
+    "cast": "the tentacle holding the staff quickly thrusts the staff straight forward toward the top of the image"
+            " at full reach, the crystal flashes with a bright blue burst of magic, then the staff is pulled back to"
+            " rest; the body stays in place",
 }
+# Channeling starts from the cast's frame CHANNEL_FROM: the staff held out.
+CHANNEL = ("the tentacle keeps the staff stretched straight forward at full reach without moving it, the crystal at"
+           " its tip pulses and crackles with a continuous stream of blue magic sparks, the other tentacles sway"
+           " gently, seamless loop")
+CHANNEL_FROM = 5
 
 
 def _b64(png: bytes) -> dict:
@@ -61,14 +69,19 @@ def animate(first: bytes, motion: str) -> list[bytearray]:
     return [sheet.read_png(base64.b64decode(i["base64"]))[2] for i in images]
 
 
+def _write(name: str, frames: list[bytearray]) -> None:
+    rows = b"".join(b"".join(bytes(f[y * SIZE * 4:(y + 1) * SIZE * 4]) for f in frames) for y in range(SIZE))
+    (OUT / f"{name}.png").write_bytes(sheet.write_png(SIZE * len(frames), SIZE, rows))
+    print(name, len(frames))
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     first = still()
     for name, motion in ANIMATIONS.items():
         frames = animate(first, motion)
-        rows = b"".join(b"".join(bytes(f[y * SIZE * 4:(y + 1) * SIZE * 4]) for f in frames) for y in range(SIZE))
-        (OUT / f"{name}.png").write_bytes(sheet.write_png(SIZE * len(frames), SIZE, rows))
-        print(name, len(frames))
+        _write(name, frames)
+    _write("channel", animate(sheet.write_png(SIZE, SIZE, bytes(frames[CHANNEL_FROM])), CHANNEL))
 
 
 if __name__ == "__main__":

@@ -16,7 +16,9 @@ const SHIELD_HP := 40.0
 const SHIELD_WAIT := 8.0
 ## The octopus seen from above (PixelLab, tools/make_octopus.py): strips of
 ## square frames, head to the top, turned toward where it goes.
-const SPRITES := {"walk": preload("res://assets/octo/walk.png"), "idle": preload("res://assets/octo/idle.png")}
+const SPRITES := {"walk": preload("res://assets/octo/walk.png"), "idle": preload("res://assets/octo/idle.png"),
+	"cast": preload("res://assets/octo/cast.png"), "channel": preload("res://assets/octo/channel.png")}
+const CAST_TIME := 0.4  # s: the cast animation, played once per cast
 
 var run: Object  # spells and mana costs: a Loadout in game, a Run in tests
 var peer_id := 1  # the owner's peer; 1 = host (or solo)
@@ -46,6 +48,8 @@ var look := {"hat": "#3a2a99", "robe": "#6a4cff", "staff": "#8d6e63", "ring": ""
 
 var _angle := 0.0  # where the sprite heads: its move, else its aim (turned smoothly)
 var _moving := false
+var _cast_t := 0.0  # s left of the cast animation
+var _channel_t := 0.0  # s left of the channel animation: renewed by each tick of a beam or cone
 var _last_pos := Vector2.ZERO
 var _heard_hp := max_hp  # hosts and peers hear hurts on the synced hp
 var _touch_move := {}  # finger index -> [start, current]
@@ -171,7 +175,10 @@ func _physics_process(delta: float) -> void:
 	var step := position - _last_pos  # from the synced position: the same on every peer
 	_last_pos = position
 	_moving = step.length() > 0.5
-	_angle = lerp_angle(_angle, (step if _moving else aim).angle(), minf(1.0, 12.0 * delta))
+	_cast_t -= delta
+	_channel_t -= delta
+	var heading := aim if _cast_t > 0.0 or _channel_t > 0.0 or not _moving else step  # casting: faces its aim
+	_angle = lerp_angle(_angle, heading.angle(), minf(1.0, 12.0 * delta))
 	if hp < _heard_hp - 0.5:
 		if hp <= 0.0:
 			Sfx.play("death")
@@ -226,6 +233,7 @@ func cast(slot: String) -> bool:
 	mana -= cost
 	cooldowns[slot] = s.cooldown
 	SpellBody.cast(s.emit, global_position + aim * radius, aim, self, s, get_parent())
+	_animate_cast(s)
 	_cast_fx.rpc(slot, global_position + aim * radius, aim)
 	return true
 
@@ -235,14 +243,28 @@ func cast(slot: String) -> bool:
 func _cast_fx(slot: String, pos: Vector2, dir: Vector2) -> void:
 	if run and run.spells.has(slot):
 		SpellBody.cast(run.spells[slot].emit, pos, dir, self, run.spells[slot], get_parent())
+		_animate_cast(run.spells[slot])
+
+
+## A channeled spell (beam, cone) holds the staff out while it ticks; any other
+## thrusts it once (not restarted before the flash, for fast spells).
+func _animate_cast(s: Dictionary) -> void:
+	if s.emit.body.shape in ["beam", "cone"]:
+		_channel_t = s.cooldown + 0.15
+	elif _cast_t < CAST_TIME / 2.0:
+		_cast_t = CAST_TIME
 
 
 func _draw() -> void:
 	modulate.a = 1.0 if hp > 0.0 else 0.3  # down until the next run
 	draw_circle(Vector2.ZERO, radius * 1.6, Color(look.robe, 0.45))  # robe colour under it: who is who in coop
-	var tex: Texture2D = SPRITES["walk" if _moving else "idle"]
+	var anim := "channel" if _channel_t > 0.0 else "cast" if _cast_t > 0.0 else "walk" if _moving else "idle"
+	var tex: Texture2D = SPRITES[anim]
 	var size := float(tex.get_height())
-	var f := int(Time.get_ticks_msec() / 1000.0 * (12.0 if _moving else 8.0)) % (tex.get_width() / tex.get_height())
+	var frames := tex.get_width() / tex.get_height()
+	var f := int(Time.get_ticks_msec() / 1000.0 * (12.0 if anim in ["walk", "channel"] else 8.0)) % frames
+	if anim == "cast":
+		f = mini(int((1.0 - _cast_t / CAST_TIME) * frames), frames - 1)
 	draw_set_transform(Vector2.ZERO, _angle + PI / 2.0)  # the sprite's head is up
 	draw_texture_rect_region(tex, Rect2(Vector2(-size, -size) / 2.0, Vector2(size, size)), Rect2(f * size, 0, size, size))
 	draw_set_transform(Vector2.ZERO)
