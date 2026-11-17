@@ -5,9 +5,13 @@ extends Node
 ## The UI reads these fields and calls the methods; logic stays here.
 
 signal changed
+signal saved  # written to disk (game/online.gd pushes it to the server)
 
 const PATH := "user://profile.json"
 const MAX_SCORES := 10
+## What is saved, locally and on the server.
+const FIELDS := ["gold", "blank_scrolls", "owned", "equipped", "bonuses", "look", "stats",
+	"achievements", "scores", "spells", "forged"]
 
 ## Base stats of the mage; items and bonuses add to them. damage/speed/gold/xp
 ## are fractions (+0.1 = +10 %).
@@ -89,8 +93,16 @@ func _ready() -> void:
 func load_profile(p := PATH) -> void:
 	path = p
 	var d: Variant = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else null
-	if not d is Dictionary:
-		return
+	if d is Dictionary:
+		apply(d)
+
+
+## Replaces the whole profile with `d` (a save, or the server's copy), sanitized.
+func apply(d: Dictionary) -> void:
+	var fresh: Node = get_script().new()
+	for k in FIELDS:
+		set(k, fresh.get(k))
+	fresh.free()
 	gold = maxi(0, int(d.get("gold", 0)))
 	blank_scrolls = maxi(0, int(d.get("blank_scrolls", 0)))
 	for id in _dict(d.get("owned")):
@@ -128,12 +140,18 @@ func load_profile(p := PATH) -> void:
 	changed.emit()
 
 
+func to_dict() -> Dictionary:
+	var d := {"version": 1}
+	for k in FIELDS:
+		d[k] = get(k)
+	return d
+
+
 func save() -> void:
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	if f:
-		f.store_string(JSON.stringify({"version": 1, "gold": gold, "blank_scrolls": blank_scrolls,
-			"owned": owned, "equipped": equipped, "bonuses": bonuses, "look": look, "stats": stats,
-			"achievements": achievements, "scores": scores, "spells": spells, "forged": forged}, " "))
+		f.store_string(JSON.stringify(to_dict(), " "))
+	saved.emit()
 
 
 static func _dict(v: Variant) -> Dictionary:

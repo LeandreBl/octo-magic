@@ -12,6 +12,10 @@ Create, combine and cast spells to conquer a dungeon.
   it, `docker compose up -d --build`, then http://localhost:8080 (relay on
   `ws://localhost:8770`). Server: `backend/server.js` (Firebase login,
   profiles and spells in Postgres).
+- Account in the game: hub → Compte (email/password, Firebase). Logged in,
+  the profile and forged spells follow the account and the forge works. The
+  native game talks to `http://localhost:8080` (`OCTO_SERVER` or
+  `octo/server_url` in `project.godot` to change it); see `game/online.gd`.
 - Tests: `GODOT=/path/to/godot tests/run.sh`
 
 Controls: move WASD / arrows / left stick / left half of the screen; aim

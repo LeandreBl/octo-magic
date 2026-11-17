@@ -4,6 +4,7 @@
 //
 // HTTP (Authorization: Bearer <Firebase ID token> on /api):
 //   GET  /health
+//   GET  /api/config             -> {firebaseApiKey, relayUrl} for the game (no login)
 //   GET  /api/profile            -> the saved profile ({} for a new player)
 //   PUT  /api/profile            <- the profile (JSON object, Profile.save())
 //   GET  /api/spells/<id>        -> a .spell bundle (zip) of the player
@@ -51,8 +52,9 @@ function send(res, code, body, type = "application/json") {
 /**
  * verify(token) -> {uid} or throws; store: getProfile/putProfile/getSpell/putSpell.
  * forgeUrl: base URL of the forge (null: no forge); webDir: the game's web export.
+ * config: public settings the game reads before logging in.
  */
-export function createServer({ verify, store, forgeUrl = null, webDir = null }) {
+export function createServer({ verify, store, forgeUrl = null, webDir = null, config = {} }) {
   async function user(req) {
     const m = /^Bearer (.+)$/.exec(req.headers.authorization ?? "");
     if (!m) throw new HttpError(401, "missing token");
@@ -114,6 +116,7 @@ export function createServer({ verify, store, forgeUrl = null, webDir = null }) 
         return res.end();
       }
       if (url.pathname === "/health") return send(res, 200, { ok: true });
+      if (url.pathname === "/api/config") return send(res, 200, config);
       if (url.pathname.startsWith("/api/")) return await api(req, res, url);
       if (req.method === "GET") return await staticFile(res, url);
       throw new HttpError(404, "not found");
@@ -178,5 +181,7 @@ if (import.meta.main) {
     store: await postgresStore(),
     forgeUrl: process.env.FORGE_URL || null,
     webDir: process.env.WEB_DIR || null,
+    // The Firebase web API key is public (it ships in every client).
+    config: { firebaseApiKey: process.env.FIREBASE_API_KEY ?? "", relayUrl: process.env.RELAY_URL || null },
   }).listen(port, () => console.log(`octo-magic server on :${port}`));
 }

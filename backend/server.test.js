@@ -12,7 +12,7 @@ const store = {
   putSpell: async (uid, id, b) => { spells.set(uid + "/" + id, b); },
 };
 
-const server = createServer({ verify, store });
+const server = createServer({ verify, store, config: { firebaseApiKey: "k" } });
 await new Promise((r) => server.listen(0, r));
 const base = `http://127.0.0.1:${server.address().port}`;
 test.after(() => server.close());
@@ -34,4 +34,8 @@ test("profile and spells are kept per player", async () => {
   assert.equal(await (await api("/api/spells/s1", "ann")).text(), "PK\x03\x04zip");
   assert.equal((await api("/api/spells/s1", "bob")).status, 404);
   assert.equal((await api("/api/spells/..%2Fx", "ann")).status, 400);
+});
+
+test("config is public", async () => {
+  assert.deepEqual(await (await api("/api/config")).json(), { firebaseApiKey: "k" });
 });

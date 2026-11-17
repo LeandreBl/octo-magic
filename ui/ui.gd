@@ -5,7 +5,8 @@ extends CanvasLayer
 ## in coop it only stops between runs.
 ## UI is drawn at screen resolution (not pixel-art scaled), scaled by the
 ## "UI size" option. Data comes from the Run and Profile autoloads.
-## The multiplayer screen is the coop lobby (game/lobby.gd).
+## The multiplayer screen is the coop lobby (game/lobby.gd), the account
+## screen game/account.gd.
 
 const UITheme := preload("res://ui/theme.gd")
 
@@ -56,6 +57,12 @@ func _ready() -> void:
 	lobby_screen.add_child(lobby)
 	screens.multiplayer = add_screen(lobby_screen)
 	lobby_screen.set_meta("focus", lobby.get_meta("focus"))  # set in its _ready
+	var account := preload("res://game/account.gd").new()
+	account.closed.connect(back)
+	var account_screen := CenterContainer.new()
+	account_screen.add_child(account)
+	screens.account = add_screen(account_screen)
+	account_screen.set_meta("focus", account.get_meta("focus"))
 	var shop := preload("res://ui/shop.gd").new()
 	shop.main = main
 	shop.closed.connect(back)
@@ -184,7 +191,7 @@ func _title() -> Control:
 	sub.add_theme_color_override("font_color", UITheme.TEXT_DIM)
 	box.add_child(sub)
 	box.add_child(Control.new())  # spacer
-	var items := [["Jouer", _play], ["Multijoueur", open.bind("multiplayer")],
+	var items := [["Jouer", _play], ["Multijoueur", open.bind("multiplayer")], ["Compte", open.bind("account")],
 		["Boutique", open.bind("shop")], ["Succès", open.bind("achievements")],
 		["Classement", open.bind("leaderboard")], ["Options", open.bind("options")]]
 	if not OS.has_feature("web"):

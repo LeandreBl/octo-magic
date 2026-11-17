@@ -2,11 +2,11 @@ extends Node2D
 ## The game scene. Game state lives in the autoloads: `Run` (the current run)
 ## and `Profile` (kept between runs, saved). This scene spawns waves and drops;
 ## every screen is in ui/ (ui/ui.gd), which follows the signals below. Runs
-## are fully offline. Blank scrolls found in a run are kept; between runs the
-## player writes words on them (one word per scroll, several at once)
-## and the forge server rewrites the main spell with them, cancelling
-## meaningless words (their scrolls come back). If the forge does not answer,
-## the scrolls stay for later.
+## play offline. Blank scrolls found in a run are kept; between runs the
+## player, logged in (game/online.gd), writes words on them (one word per
+## scroll, several at once) and the server's forge rewrites the main spell
+## with them, cancelling meaningless words (their scrolls come back). If the
+## forge does not answer, the scrolls stay for later.
 ##
 ## Coop (relay/relay.py, game/lobby.gd): the host runs the waves, enemies,
 ## drops and damage, spawned through a MultiplayerSpawner; each peer steers
@@ -14,12 +14,10 @@ extends Node2D
 ## loadout. Kills and drops are shared. Solo is a host alone
 ## (OfflineMultiplayerPeer): one code path.
 
-const FORGE_URL := "http://localhost:8765/forge"
 const POLL_SECONDS := 3.0
 const Enemy := preload("res://game/enemy.gd")
 const Pickup := preload("res://game/pickup.gd")
 const Player := preload("res://game/player.gd")
-const RELAY_URL := "ws://localhost:8770"
 const ALWAYS := SceneReplicationConfig.REPLICATION_MODE_ALWAYS
 const ON_CHANGE := SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE
 
@@ -326,16 +324,22 @@ func write_scroll(words: String) -> void:
 	if word.is_empty() or not can_write() \
 			or forge_http.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
 		return
+	var auth := await Online.auth_headers()
+	if auth.is_empty():
+		forge_status = "Connecte-toi (menu principal → Compte) pour écrire les parchemins."
+		return
 	forge_status = "Envoi à la forge…"
 	var body := JSON.stringify({"spell": Profile.equipped_spells().primary, "words": word,
 		"scrolls": Profile.blank_scrolls})
-	if forge_http.request(FORGE_URL, ["Content-Type: application/json"], HTTPClient.METHOD_POST, body) != OK:
-		forge_status = "Impossible de joindre la forge (connexion requise). Tes parchemins sont gardés."
+	if forge_http.request(Online.server + "/api/forge", auth + PackedStringArray(["Content-Type: application/json"]),
+			HTTPClient.METHOD_POST, body) != OK:
+		forge_status = "Impossible de joindre la forge. Tes parchemins sont gardés."
 
 
 func _poll() -> void:
+	var auth := await Online.auth_headers()  # a forge job can outlive the ID token
 	if not forge_job.is_empty() and forge_http.get_http_client_status() == HTTPClient.STATUS_DISCONNECTED:
-		forge_http.request(FORGE_URL + "/" + forge_job)
+		forge_http.request(Online.server + "/api/forge/" + forge_job, auth)
 
 
 func _on_forge_reply(result: int, code: int, headers: PackedStringArray, data: PackedByteArray) -> void:
@@ -386,7 +390,7 @@ func _on_bundle(data: PackedByteArray, cancelled: int) -> void:
 		forge_status = forge_note
 		return
 	Profile.blank_scrolls += cancelled
-	Profile.add_forged(s, path)
+	Online.push_spell(Profile.add_forged(s, path), path)
 	forge_note = "Parchemin écrit : %s sera ton sort principal à la prochaine run." % s.name
 	if cancelled > 0:
 		forge_note += " %d mot(s) annulé(s) (sans sens ou pas en langue morte), parchemin(s) rendu(s)." % cancelled

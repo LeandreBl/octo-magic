@@ -22,7 +22,8 @@ func _ready() -> void:
 	title.text = "Multijoueur (coop)"
 	box.add_child(title)
 	url_edit = LineEdit.new()
-	url_edit.text = OS.get_environment("OCTO_RELAY") if OS.get_environment("OCTO_RELAY") else main.RELAY_URL
+	url_edit.text = Online.relay_url
+	Online.changed.connect(func(): url_edit.text = Online.relay_url)  # from the server's config
 	url_edit.tooltip_text = "Adresse du relais"
 	box.add_child(url_edit)
 	var row := HBoxContainer.new()

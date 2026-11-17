@@ -1,0 +1,219 @@
+extends Node
+## Autoload `Online`: the player's account on the online server
+## (backend/server.js). Firebase email/password login through the Identity
+## Toolkit REST API, the same code on web and native. Once logged in, the
+## profile follows the account: pulled at login (the server's copy wins
+## unless it is empty), pushed on every save, forged .spell bundles with it.
+## The forge (/api/forge) and the coop relay are reached from here.
+##
+## Server URL: OCTO_SERVER, else the page's origin on web, else
+## octo/server_url in project.godot. Relay URL: OCTO_RELAY, else the
+## server's /api/config, else ws://<server host>:8770. OCTO_AUTH_EMULATOR
+## (host:port) logs in on the Firebase Auth emulator instead.
+
+signal changed
+
+const SESSION := "user://session.json"
+const SPELL_ID := "^[\\w-]{1,64}$"
+const ERRORS := {"EMAIL_EXISTS": "adresse déjà utilisée", "EMAIL_NOT_FOUND": "identifiants invalides",
+	"INVALID_PASSWORD": "identifiants invalides", "INVALID_LOGIN_CREDENTIALS": "identifiants invalides",
+	"INVALID_EMAIL": "adresse invalide", "MISSING_PASSWORD": "mot de passe manquant",
+	"WEAK_PASSWORD": "mot de passe trop court (6 caractères min.)",
+	"TOO_MANY_ATTEMPTS_TRY_LATER": "trop d'essais, réessaie plus tard", "USER_DISABLED": "compte désactivé"}
+
+var server := ""
+var identity := "https://identitytoolkit.googleapis.com/v1/accounts:"
+var secure_token := "https://securetoken.googleapis.com/v1/token?key="
+var relay_url := ""
+var api_key := ""  # Firebase web API key, from /api/config
+var email := ""
+var status := ""  # last news, for the account panel
+var _token := ""
+var _refresh := ""
+var _expires := 0.0  # unix time of _token's end
+var _pulling := false
+var _pushing := false
+var _dirty := false
+
+
+func _ready() -> void:
+	server = OS.get_environment("OCTO_SERVER")
+	if server.is_empty() and OS.has_feature("web"):
+		server = str(JavaScriptBridge.eval("location.origin"))
+	if server.is_empty():
+		server = ProjectSettings.get_setting("octo/server_url", "http://localhost:8080")
+	server = server.trim_suffix("/")
+	relay_url = OS.get_environment("OCTO_RELAY")
+	if relay_url.is_empty():
+		var host := server.get_slice("://", 1).get_slice("/", 0).get_slice(":", 0)
+		relay_url = "%s://%s:8770" % ["wss" if server.begins_with("https") else "ws", host]
+	var emulator := OS.get_environment("OCTO_AUTH_EMULATOR")
+	if emulator:
+		identity = "http://%s/identitytoolkit.googleapis.com/v1/accounts:" % emulator
+		secure_token = "http://%s/securetoken.googleapis.com/v1/token?key=" % emulator
+	Profile.saved.connect(_on_saved)
+	var s: Variant = JSON.parse_string(FileAccess.get_file_as_string(SESSION)) if FileAccess.file_exists(SESSION) else null
+	if s is Dictionary and s.get("refresh", "") != "":
+		email = str(s.get("email", ""))
+		_refresh = str(s.refresh)
+		if await _config() and not (await auth_headers()).is_empty():
+			await pull()
+		changed.emit()
+
+
+func logged_in() -> bool:
+	return not _refresh.is_empty()
+
+
+## Logs in (or creates the account), then syncs the profile. Returns an error
+## message, or "".
+func login(mail: String, password: String, create := false) -> String:
+	if api_key.is_empty() and not await _config():
+		return "serveur injoignable"
+	var r := await _http(identity + ("signUp" if create else "signInWithPassword") + "?key=" + api_key,
+		HTTPClient.METHOD_POST, {"email": mail.strip_edges(), "password": password, "returnSecureToken": true})
+	if not r.ok:
+		var e: Variant = r.json.get("error") if r.json is Dictionary else null
+		var code := str(e.get("message", "")) if e is Dictionary else ""
+		return ERRORS.get(code.get_slice(" ", 0), code if code else "serveur d'identité injoignable")
+	email = str(r.json.get("email", mail))
+	_set_session(r.json.idToken, r.json.refreshToken, r.json.expiresIn)
+	await pull()
+	changed.emit()
+	return ""
+
+
+func logout() -> void:
+	email = ""
+	_token = ""
+	_refresh = ""
+	status = ""
+	DirAccess.remove_absolute(SESSION)
+	changed.emit()
+
+
+## ["Authorization: Bearer <ID token>"], refreshed when needed; [] when logged
+## out or the session is gone.
+func auth_headers() -> PackedStringArray:
+	if not logged_in():
+		return PackedStringArray()
+	if _token.is_empty() or Time.get_unix_time_from_system() > _expires - 60.0:
+		var r := await _http(secure_token + api_key, HTTPClient.METHOD_POST,
+			"grant_type=refresh_token&refresh_token=" + _refresh.uri_encode(),
+			["Content-Type: application/x-www-form-urlencoded"])
+		if r.code == 400:  # revoked or expired: log in again
+			logout()
+			status = "Session expirée, reconnecte-toi."
+		if not r.ok:
+			return PackedStringArray()
+		_set_session(r.json.id_token, r.json.refresh_token, r.json.expires_in)
+	return PackedStringArray(["Authorization: Bearer " + _token])
+
+
+## GET/PUT on the server's /api, logged in. Body: a Dictionary (JSON) or bytes.
+func api(path: String, method := HTTPClient.METHOD_GET, body: Variant = null) -> Dictionary:
+	var headers := await auth_headers()
+	if headers.is_empty():
+		return {"ok": false, "code": 401, "body": PackedByteArray(), "json": null}
+	return await _http(server + path, method, body, headers)
+
+
+## The server's profile replaces the local one, with its spell bundles; a new
+## account gets the local profile instead.
+func pull() -> void:
+	var r := await api("/api/profile")
+	if not r.ok or not r.json is Dictionary:
+		status = "Profil non synchronisé (serveur injoignable)."
+		return
+	var d: Dictionary = r.json
+	if d.is_empty():
+		_push()
+		for f in Profile.forged:
+			if FileAccess.file_exists(f.file):
+				api("/api/spells/" + f.id, HTTPClient.METHOD_PUT, FileAccess.get_file_as_bytes(f.file))
+		status = "Profil envoyé sur le serveur."
+		return
+	var forged: Array = d.get("forged") if d.get("forged") is Array else []
+	DirAccess.make_dir_recursive_absolute("user://spells")
+	for f in forged:
+		if not f is Dictionary or not RegEx.create_from_string(SPELL_ID).search(str(f.get("id"))):
+			continue
+		f.file = "user://spells/%s.spell" % f.id  # never a path from the server
+		# Always fetched: a local file of that name may be another account's.
+		var b := await api("/api/spells/" + f.id)
+		if b.ok and b.body.slice(0, 2).get_string_from_ascii() == "PK":
+			var file := FileAccess.open(f.file, FileAccess.WRITE)
+			file.store_buffer(b.body)
+			file.close()
+		else:
+			DirAccess.remove_absolute(f.file)  # the spell falls back to its JSON, without art
+	_pulling = true
+	Profile.apply(d)
+	Profile.save()
+	_pulling = false
+	status = "Profil synchronisé."
+
+
+## A forged spell's bundle, to the server (the profile follows on its save).
+func push_spell(id: String, path: String) -> void:
+	if logged_in():
+		api("/api/spells/" + id, HTTPClient.METHOD_PUT, FileAccess.get_file_as_bytes(path))
+
+
+func _on_saved() -> void:
+	if logged_in() and not _pulling:
+		_push()
+
+
+## One PUT at a time, the last save wins.
+func _push() -> void:
+	if _pushing:
+		_dirty = true
+		return
+	_pushing = true
+	_dirty = true
+	while _dirty:
+		_dirty = false
+		var r := await api("/api/profile", HTTPClient.METHOD_PUT, Profile.to_dict())
+		status = "Profil synchronisé." if r.ok else "Profil non synchronisé (serveur injoignable)."
+	_pushing = false
+
+
+func _config() -> bool:
+	var r := await _http(server + "/api/config")
+	if not r.ok or not r.json is Dictionary:
+		return false
+	api_key = str(r.json.get("firebaseApiKey", ""))
+	if r.json.get("relayUrl") and OS.get_environment("OCTO_RELAY").is_empty():
+		relay_url = str(r.json.relayUrl)
+	changed.emit()
+	return not api_key.is_empty()
+
+
+func _set_session(token: String, refresh: String, expires_in: Variant) -> void:
+	_token = token
+	_refresh = refresh
+	_expires = Time.get_unix_time_from_system() + float(expires_in)
+	var f := FileAccess.open(SESSION, FileAccess.WRITE)
+	f.store_string(JSON.stringify({"email": email, "refresh": _refresh}))
+
+
+## One request: {ok (200), code, body, json (or null)}.
+func _http(url: String, method := HTTPClient.METHOD_GET, body: Variant = null, headers := PackedStringArray()) -> Dictionary:
+	var req := HTTPRequest.new()
+	req.timeout = 20.0
+	add_child(req)
+	var err: int
+	if body is PackedByteArray:
+		err = req.request_raw(url, headers + PackedStringArray(["Content-Type: application/octet-stream"]), method, body)
+	elif body is Dictionary:
+		err = req.request(url, headers + PackedStringArray(["Content-Type: application/json"]), method, JSON.stringify(body))
+	else:
+		err = req.request(url, headers, method, str(body) if body != null else "")
+	var r: Array = [HTTPRequest.RESULT_CANT_CONNECT, 0, [], PackedByteArray()]
+	if err == OK:
+		r = await req.request_completed
+	req.queue_free()
+	var json := JSON.new()
+	var parsed: Variant = json.data if json.parse(r[3].get_string_from_utf8()) == OK else null
+	return {"ok": r[0] == HTTPRequest.RESULT_SUCCESS and r[1] == 200, "code": r[1], "body": r[3], "json": parsed}

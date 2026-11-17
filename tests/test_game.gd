@@ -128,6 +128,11 @@ func _test_profile() -> void:
 		check(q.get(k) == p.get(k), "%s saved" % k)
 	check(q.achievements == p.achievements, "achievements saved")
 	check(q.equipped_spells().primary.name == Spell.base().name, "forged spell restored from its JSON")
+	# The server's copy replaces the profile, nothing doubled.
+	q.apply(p.to_dict())
+	check(q.scores.size() == 2 and q.forged.size() == 1 and q.gold == p.gold, "profile replaced by a copy")
+	q.apply({})
+	check(q.gold == 0 and q.scores.is_empty() and q.spells.primary == "fireball", "empty copy resets")
 	# A corrupt save is ignored, not fatal.
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	f.store_string('{"gold": "lots", "equipped": {"robe": "robe_archmage"}, "bonuses": {"power": 99}, "spells": {"primary": "nope"}}')

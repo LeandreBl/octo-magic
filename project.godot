@@ -10,6 +10,7 @@ config/features=PackedStringArray("4.7")
 
 Profile="*res://game/profile.gd"
 Run="*res://game/run.gd"
+Online="*res://game/online.gd"
 
 [display]
 window/size/viewport_width=1280
