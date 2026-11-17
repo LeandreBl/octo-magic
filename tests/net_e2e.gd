@@ -1,5 +1,5 @@
 extends SceneTree
-## Coop end to end over WebRTC, the lobby of a running backend/server.js
+## Coop end to end over WebRTC, the lobby of a running backend/src/lobby/lobby.service.ts
 ## (OCTO_SERVER, tokens "token-<role>"), driven by backend/server.test.js:
 ##   godot --headless --script tests/net_e2e.gd -- host
 ##   godot --headless --script tests/net_e2e.gd -- join CODE

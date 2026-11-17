@@ -13,8 +13,13 @@ Create, combine and cast spells to conquer a dungeon.
   VPS, behind Traefik: https://octo-magic.notdotio.com (game),
   https://octo-magic.api.notdotio.com (API), TURN on
   octo-magic.turn.notdotio.com (see the end of `example.env`).
-  Server: `backend/server.js` (Firebase login, profiles and spells in
-  Postgres, coop lobby on `/play`).
+  Server: `backend/`, NestJS in TypeScript (Firebase login guard,
+  profiles and spells in Postgres through Prisma, forge proxy, coop lobby
+  on `/play`, `/terms` and `/privacy` from `backend/legal/`); API docs
+  on `/api/docs`. Local dev: `cd backend && npm i &&
+  npm run start:dev` (with the variables of `example.env` and a
+  `DATABASE_URL`); migrations in `backend/prisma/migrations`, applied at
+  container start-up.
 - Coop (menu → Multijoueur, logged in): WebRTC peer to peer, the server only
   introduces the players (`game/net.gd`). The native game needs the WebRTC
   extension: `./webrtc.sh` (downloads `addons/webrtc_native`, not in git).

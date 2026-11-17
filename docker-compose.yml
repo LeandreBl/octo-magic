@@ -71,10 +71,11 @@ services:
       FORGE_URL: http://forge:8765
       # Who may forge (see example.env); empty: every logged-in player.
       FORGE_EMAILS: ${FORGE_EMAILS:-}
-      PGHOST: postgres
-      PGUSER: octo
-      PGPASSWORD: ${POSTGRES_PASSWORD}
-      PGDATABASE: octo
+      # docker/start.sh assembles DATABASE_URL, percent-encoding the password.
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: octo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: octo
     depends_on:
       postgres:
         condition: service_healthy

@@ -1,6 +1,6 @@
 extends Node
 ## Autoload `Online`: the player's account on the online server
-## (backend/server.js). Firebase email/password login through the Identity
+## (backend/, NestJS). Firebase email/password login through the Identity
 ## Toolkit REST API, the same code on web and native. Once logged in, the
 ## profile follows the account: pulled at login (the server's copy wins
 ## unless it is empty), pushed on every save, forged .spell bundles with it.

@@ -2,7 +2,7 @@ extends Node
 ## Coop over WebRTC (WebRTCMultiplayerPeer, built in on web, addons/webrtc_native
 ## on native). Game packets go peer to peer over UDP; the server's /play
 ## WebSocket only introduces the players (signaling, protocol in
-## backend/server.js). STUN finds a way through NATs; when there is none the
+## backend/src/lobby/lobby.service.ts). STUN finds a way through NATs; when there is none the
 ## TURN server relays. The host is peer 1, players connect to the host only
 ## and SceneMultiplayer relays between them (server relay).
 

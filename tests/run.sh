@@ -16,5 +16,5 @@ done
 python3 -m unittest discover -s server -p "test_*.py" -q
 # Reinstall when package-lock.json changed since the last install.
 [ backend/node_modules/.package-lock.json -nt backend/package-lock.json ] || npm ci --prefix backend --no-audit --no-fund --silent
-(cd backend && GODOT="$GODOT" node --test) || code=1  # + coop end to end
+(cd backend && GODOT="$GODOT" npm test --silent) || code=1  # + coop end to end
 exit $code

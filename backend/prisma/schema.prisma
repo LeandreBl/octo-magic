@@ -1,0 +1,31 @@
+// The online data of octo-magic. Tables and columns keep the names of the
+// first server (backend/server.js), so its databases carry over as is.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A player's saved profile (game/profile.gd, Profile.to_dict()).
+model Player {
+  uid       String   @id
+  profile   Json
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("players")
+}
+
+/// A .spell bundle (zip) forged by a player.
+model Spell {
+  uid       String
+  id        String
+  bundle    Bytes
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@id([uid, id])
+  @@map("spells")
+}
