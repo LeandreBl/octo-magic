@@ -24,7 +24,10 @@
 
 ## Parchemins (cœur du jeu)
 - La boucle de jeu est **toujours hors ligne** (sauf la coop P2P). La forge a lieu **entre deux runs**, jamais pendant (décision tâche #75).
-- En run, on trouve des parchemins vierges : ils sont gardés. À la fin de la run (dans le hub), le joueur en écrit un avec un mot libre.
+- En run, on trouve des parchemins vierges : ils sont gardés. À la fin de la run (dans le hub), le joueur en écrit un ou plusieurs d'un coup : un mot libre par parchemin, séparés par des espaces ou des virgules (tâche #85).
+- Parser strict côté forge : lettres, `'` et `-` seulement, autant de mots que de parchemins (8 max) ; sinon refusé avant l'IA, parchemins intacts.
+- Un mot qui ne veut rien dire est **annulé** par l'IA : il ne change pas le sort et son parchemin est rendu.
+- Anti-injection : les mots et le sort envoyés par le joueur sont passés à l'IA comme données balisées (`<` et `>` échappés), jamais comme instructions ; la sortie reste nettoyée et équilibrée par le moteur.
 - Le mot part à la forge (modération, puis IA) qui renvoie un **bundle `.spell`** : un zip avec `manifest.json` (le sort : briques connues du moteur, forme, trajectoire, élément, effets) et les planches PNG de ses sprites.
 - Le moteur calcule un **budget de puissance** : l'IA décrit, le moteur équilibre.
 - Temps d'attente façon Clash of Clans pendant l'écriture : le joueur peut relancer une run en attendant ; le nouveau sort est équipé au début de la run suivante, jamais en cours de run.

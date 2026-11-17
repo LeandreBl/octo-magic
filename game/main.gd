@@ -3,8 +3,10 @@ extends Node2D
 ## and `Profile` (kept between runs, saved). This scene spawns waves and drops,
 ## and shows a minimal HUD, level-up choice and hub (the menus task replaces
 ## them). Runs are fully offline. Blank scrolls found in a run are kept; in the
-## hub the player writes a word on one and the forge server rewrites the main
-## spell with it. If the forge does not answer, the scroll stays for later.
+## hub the player writes words on them (one word per scroll, several at once)
+## and the forge server rewrites the main spell with them, cancelling
+## meaningless words (their scrolls come back). If the forge does not answer,
+## the scrolls stay for later.
 ##
 ## Coop (relay/relay.py, game/lobby.gd): the host runs the waves, enemies,
 ## drops and damage, spawned through a MultiplayerSpawner; each peer steers
@@ -36,7 +38,8 @@ var run_summary := "Bienvenue, mage."
 var word_edit: LineEdit
 var hub_status: Label
 var forge_http: HTTPRequest
-var forge_job := ""  # scroll being written on the forge
+var forge_job := ""  # scrolls being written on the forge
+var forge_words := 0  # scrolls used by that job
 var forge_note := ""  # forge news, shown in the HUD and the hub
 
 
@@ -257,8 +260,8 @@ func _build_ui() -> void:
 	hub_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(hub_box)
 	word_edit = LineEdit.new()
-	word_edit.max_length = 32
-	word_edit.placeholder_text = "ex : tempête, vampire, miroir…"
+	word_edit.max_length = 200
+	word_edit.placeholder_text = "ex : tempête, vampire, miroir"
 	word_edit.text_submitted.connect(func(_t): _forge())
 	hub_status = Label.new()
 	hub_status.autowrap_mode = TextServer.AUTOWRAP_WORD
@@ -446,7 +449,7 @@ func _refresh_hub() -> void:
 	_label("\nParchemin (forge, connexion requise) :")
 	hub_box.add_child(word_edit)
 	row = _row()
-	var write := _button(row, "Écrire le parchemin", _forge)
+	var write := _button(row, "Écrire les parchemins", _forge)
 	var can_write := Profile.blank_scrolls > 0 and forge_job.is_empty()
 	word_edit.editable = can_write
 	write.disabled = not can_write
@@ -456,7 +459,7 @@ func _refresh_hub() -> void:
 	elif Profile.blank_scrolls == 0:
 		hub_status.text = "Aucun parchemin vierge : les boss en laissent tomber. %s" % forge_note
 	elif hub_status.text.is_empty():
-		hub_status.text = "Écris un mot pour transformer ton sort principal."
+		hub_status.text = "Écris un mot par parchemin (séparés par des espaces ou des virgules) pour transformer ton sort principal."
 
 	var done := Profile.ACHIEVEMENTS.keys().filter(func(id): return Profile.achievements.has(id))
 	_label("\nSuccès %d/%d : %s" % [done.size(), Profile.ACHIEVEMENTS.size(),
@@ -489,7 +492,7 @@ func _button(parent: Control, text: String, fn: Callable) -> Button:
 	return b
 
 
-# --- forge: POST the word, then poll the job until the bundle is ready -------
+# --- forge: POST the words, then poll the job until the bundle is ready -------
 
 func _forge() -> void:
 	var word := word_edit.text.strip_edges()
@@ -497,9 +500,10 @@ func _forge() -> void:
 			or forge_http.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
 		return
 	hub_status.text = "Envoi à la forge…"
-	var body := JSON.stringify({"spell": Profile.equipped_spells().primary, "word": word})
+	var body := JSON.stringify({"spell": Profile.equipped_spells().primary, "words": word,
+		"scrolls": Profile.blank_scrolls})
 	if forge_http.request(FORGE_URL, ["Content-Type: application/json"], HTTPClient.METHOD_POST, body) != OK:
-		hub_status.text = "Impossible de joindre la forge (connexion requise). Ton parchemin est gardé."
+		hub_status.text = "Impossible de joindre la forge (connexion requise). Tes parchemins sont gardés."
 
 
 func _poll() -> void:
@@ -507,35 +511,41 @@ func _poll() -> void:
 		forge_http.request(FORGE_URL + "/" + forge_job)
 
 
-func _on_forge_reply(result: int, code: int, _headers: PackedStringArray, data: PackedByteArray) -> void:
+func _on_forge_reply(result: int, code: int, headers: PackedStringArray, data: PackedByteArray) -> void:
 	if result == HTTPRequest.RESULT_SUCCESS and code == 200 and data.slice(0, 2).get_string_from_ascii() == "PK":
-		_on_bundle(data)
+		var applied := forge_words
+		for h in headers:
+			if h.to_lower().begins_with("x-forge-applied:"):
+				applied = h.get_slice(":", 1).strip_edges().to_int()
+		_on_bundle(data, clampi(forge_words - applied, 0, forge_words))
 		return
 	var reply: Variant = JSON.parse_string(data.get_string_from_utf8())
 	reply = reply if reply is Dictionary else {}
 	if result != HTTPRequest.RESULT_SUCCESS or code != 200 or reply.has("error"):
 		var msg: String = reply.get("error", "erreur %d" % code if result == HTTPRequest.RESULT_SUCCESS else "hors ligne")
-		if forge_job.is_empty():  # word refused or forge unreachable: scroll kept
-			hub_status.text = "La forge n'a pas répondu (%s). Ton parchemin est gardé pour plus tard." % msg
+		if forge_job.is_empty():  # words refused or forge unreachable: scrolls kept
+			hub_status.text = "La forge a refusé ou n'a pas répondu (%s). Tes parchemins sont gardés." % msg
 		else:
 			forge_job = ""
-			Profile.blank_scrolls += 1  # the scroll was not used up
-			forge_note = "La forge a échoué (%s). Ton parchemin t'est rendu." % msg
+			Profile.blank_scrolls += forge_words  # the scrolls were not used up
+			forge_note = "La forge a échoué (%s). Tes parchemins te sont rendus." % msg
 			Profile.save()
 			_refresh_hub()
 		return
 	if reply.has("job"):
 		forge_job = reply.job
-		Profile.blank_scrolls -= 1
+		forge_words = maxi(1, reply.get("words", [1]).size())
+		Profile.blank_scrolls -= forge_words
 		Profile.save()
-		forge_note = "Parchemin en cours d'écriture…"
+		forge_note = "%d parchemin(s) en cours d'écriture…" % forge_words
 		_refresh_hub()
 	get_tree().create_timer(POLL_SECONDS, true).timeout.connect(_poll)
 
 
 ## The forged spell is kept and equipped as the main spell: the run in
 ## progress keeps its spells, the next one starts with it.
-func _on_bundle(data: PackedByteArray) -> void:
+## cancelled: words the forge found meaningless; their scrolls come back.
+func _on_bundle(data: PackedByteArray, cancelled: int) -> void:
 	forge_job = ""
 	var path := Profile.next_bundle_path()
 	var f := FileAccess.open(path, FileAccess.WRITE)
@@ -543,9 +553,14 @@ func _on_bundle(data: PackedByteArray) -> void:
 	f.close()
 	var s := SpellArt.load_bundle(path)
 	if s.is_empty():
-		forge_note = "Le parchemin est illisible."
+		Profile.blank_scrolls += forge_words
+		Profile.save()
+		forge_note = "Le parchemin est illisible. Tes parchemins te sont rendus."
 		_refresh_hub()
 		return
+	Profile.blank_scrolls += cancelled
 	Profile.add_forged(s, path)
 	forge_note = "Parchemin écrit : %s sera ton sort principal à la prochaine run." % s.name
+	if cancelled > 0:
+		forge_note += " %d mot(s) sans sens annulé(s), parchemin(s) rendu(s)." % cancelled
 	_refresh_hub()
