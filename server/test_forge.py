@@ -39,7 +39,7 @@ class ForgeTest(unittest.TestCase):
     def test_parse_words(self):
         self.assertEqual(forge.parse_words(" tempête,vampire ;  l'éclair\n+ boule-de-feu "),
                          ["tempête", "vampire", "l'éclair", "boule-de-feu"])
-        with self.assertRaisesRegex(forge.ForgeError, "2 mots pour 1"):
+        with self.assertRaisesRegex(forge.ForgeError, "2 words for 1"):
             forge.parse_words("feu glace", 1)
         with self.assertRaises(forge.ForgeError):
             forge.parse_words(" ".join(["feu"] * (forge.MAX_WORDS + 1)), 99)
@@ -52,6 +52,8 @@ class ForgeTest(unittest.TestCase):
             "spell": {}, "rejected": [{"word": "BLORG", "reason": "x" * 500}, {"word": "absent", "reason": "?"}, "junk"]}))
         self.assertEqual(out["words"], ["feu", "tempête", "miroir"])
         with self.assertRaisesRegex(forge.ForgeError, "^blorg : ne veut rien dire$"):
+            forge.forge({}, "blorg", reply("forge_spell", {"spell": {}, "rejected": [{"word": "blorg", "reason": ""}]}), "fr")
+        with self.assertRaisesRegex(forge.ForgeError, "^blorg: meaningless$"):
             forge.forge({}, "blorg", reply("forge_spell", {"spell": {}, "rejected": [{"word": "blorg", "reason": ""}]}))
         with self.assertRaises(forge.ForgeError) as e:
             forge.forge({}, "mot", reply("reject_word", {"reason": "y" * 500}))
@@ -93,6 +95,16 @@ class ForgeTest(unittest.TestCase):
         self.assertIn("on_expire", forge.SYSTEM)
         self.assertIn("Étincelle", forge.SYSTEM)
         self.assertIn("dead language", forge.SYSTEM)
+
+    def test_errors_in_the_players_language(self):
+        with self.assertRaises(forge.ForgeError) as e:
+            forge.parse_words("feu glace", 1)
+        self.assertEqual(e.exception.say("fr"), "2 mots pour 1 parchemin(s)")
+        self.assertEqual(e.exception.say("en"), "2 words for 1 scroll(s)")
+        sent = {}
+        forge.forge({}, "ignis", lambda p: sent.update(p) or reply("forge_spell", {"spell": {}})(p), "fr")
+        self.assertIn("<player_language>French</player_language>", sent["messages"][0]["content"])
+        self.assertIn("description_fr", forge.SYSTEM)
 
     def test_greek_letters_are_words(self):
         self.assertEqual(forge.parse_words("πῦρ, ignis"), ["πῦρ", "ignis"])

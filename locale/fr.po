@@ -1,0 +1,563 @@
+# French translation of Octo Magic. Source strings (msgid) are the English
+# texts of the code; ui/settings.gd picks the language.
+msgid ""
+msgstr ""
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Resume"
+msgstr "Reprendre"
+
+msgid "Abandon run"
+msgstr "Abandonner la run"
+
+msgid "Achievements"
+msgstr "Succès"
+
+msgid "Leaderboard"
+msgstr "Classement"
+
+msgid "Level up!"
+msgstr "Niveau supérieur !"
+
+msgid "Write your spells, survive the waves."
+msgstr "Écris tes sorts, survis aux vagues."
+
+msgid "Play"
+msgstr "Jouer"
+
+msgid "Multiplayer"
+msgstr "Multijoueur"
+
+msgid "Account"
+msgstr "Compte"
+
+msgid "Shop"
+msgstr "Boutique"
+
+msgid "Quit"
+msgstr "Quitter"
+
+msgid "Back"
+msgstr "Retour"
+
+msgid "%2d.  %6d pts   wave %d, level %d, %d enemies   %s"
+msgstr "%2d.  %6d pts   vague %d, niveau %d, %d ennemis   %s"
+
+msgid "No score yet: start a run!"
+msgstr "Aucun score : lance une run !"
+
+msgid "%s: %s"
+msgstr "%s : %s"
+
+msgid "End of run"
+msgstr "Fin de la run"
+
+msgid "Play again"
+msgstr "Rejouer"
+
+msgid "Main menu"
+msgstr "Menu principal"
+
+msgid "Wave reached: %d\nLevel: %d\nEnemies defeated: %d\nScore: %d\n\nGold earned: %d\nScrolls: %d"
+msgstr "Vague atteinte : %d\nNiveau : %d\nEnnemis vaincus : %d\nScore : %d\n\nOr gagné : %d\nParchemins : %d"
+
+msgid "Achievement: %s!"
+msgstr "Succès : %s !"
+
+msgid "Spell unlocked: %s."
+msgstr "Sort débloqué : %s."
+
+msgid "Mouse: aim · left click: cast the spell\nGamepad: left stick move, right stick aim and cast, Start pause\nTouch: left half move, right half aim and cast"
+msgstr "Souris : viser · clic gauche : lancer le sort\nManette : stick gauche bouger, stick droit viser et lancer, Start pause\nTactile : moitié gauche bouger, moitié droite viser et lancer"
+
+msgid "Language"
+msgstr "Langue"
+
+msgid "Master volume"
+msgstr "Volume général"
+
+msgid "Music"
+msgstr "Musique"
+
+msgid "Effects"
+msgstr "Effets"
+
+msgid "Fullscreen"
+msgstr "Plein écran"
+
+msgid "Interface size"
+msgstr "Taille de l'interface"
+
+msgid "Press a key…"
+msgstr "Appuie…"
+
+msgid "Up"
+msgstr "Haut"
+
+msgid "Down"
+msgstr "Bas"
+
+msgid "Left"
+msgstr "Gauche"
+
+msgid "Right"
+msgstr "Droite"
+
+msgid "HP %d / %d"
+msgstr "PV %d / %d"
+
+msgid "Level %d  ·  XP %d / %d"
+msgstr "Niveau %d  ·  XP %d / %d"
+
+msgid "Wave %d"
+msgstr "Vague %d"
+
+msgid "%d gold  ·  score %d"
+msgstr "%d or  ·  score %d"
+
+msgid "Scrolls found: %d%s"
+msgstr "Parchemins trouvés : %d%s"
+
+msgid "Left click"
+msgstr "Clic G"
+
+msgid "%d gold  ·  %d blank scroll(s)"
+msgstr "%d or  ·  %d parchemin(s) vierge(s)"
+
+msgid "Equipment"
+msgstr "Équipement"
+
+msgid "%d gold"
+msgstr "%d or"
+
+msgid "Permanent bonuses"
+msgstr "Bonus permanents"
+
+msgid "Hat"
+msgstr "Chapeau"
+
+msgid "HP"
+msgstr "PV"
+
+msgid "speed"
+msgstr "vitesse"
+
+msgid "damage"
+msgstr "dégâts"
+
+msgid "gold"
+msgstr "or"
+
+msgid "Scroll"
+msgstr "Parchemin"
+
+msgid "one word per scroll, in a dead language, e.g. ignis, πῦρ, umbra"
+msgstr "un mot par parchemin, en langue morte, ex : ignis, πῦρ, umbra"
+
+msgid "Write the scrolls"
+msgstr "Écrire les parchemins"
+
+msgid "Main spell: %s\n%s"
+msgstr "Sort principal : %s\n%s"
+
+msgid "A scroll is being written."
+msgstr "Un parchemin est en cours d'écriture."
+
+msgid "No blank scroll: bosses drop them."
+msgstr "Aucun parchemin vierge : les boss en laissent tomber."
+
+msgid "You have %d blank scroll(s). Write one word in a dead language (Latin, Ancient Greek…) per scroll (separated by spaces or commas) to transform your main spell."
+msgstr "Tu as %d parchemin(s) vierge(s). Écris un mot en langue morte (latin, grec ancien…) par parchemin (séparés par des espaces ou des virgules) pour transformer ton sort principal."
+
+msgid "email"
+msgstr "e-mail"
+
+msgid "password"
+msgstr "mot de passe"
+
+msgid "Log in"
+msgstr "Connexion"
+
+msgid "Create an account"
+msgstr "Créer un compte"
+
+msgid "Log out"
+msgstr "Déconnexion"
+
+msgid "Logged in: %s"
+msgstr "Connecté : %s"
+
+msgid "Offline: local profile only."
+msgstr "Hors ligne : profil local seulement."
+
+msgid "Logging in…"
+msgstr "Connexion…"
+
+msgid "Failed: %s"
+msgstr "Échec : %s"
+
+msgid "email already in use"
+msgstr "adresse déjà utilisée"
+
+msgid "invalid credentials"
+msgstr "identifiants invalides"
+
+msgid "invalid email"
+msgstr "adresse invalide"
+
+msgid "missing password"
+msgstr "mot de passe manquant"
+
+msgid "password too short (6 characters min.)"
+msgstr "mot de passe trop court (6 caractères min.)"
+
+msgid "too many attempts, try again later"
+msgstr "trop d'essais, réessaie plus tard"
+
+msgid "account disabled"
+msgstr "compte désactivé"
+
+msgid "server unreachable"
+msgstr "serveur injoignable"
+
+msgid "identity server unreachable"
+msgstr "serveur d'identité injoignable"
+
+msgid "Session expired, log in again."
+msgstr "Session expirée, reconnecte-toi."
+
+msgid "Profile not synced (server unreachable)."
+msgstr "Profil non synchronisé (serveur injoignable)."
+
+msgid "Profile sent to the server."
+msgstr "Profil envoyé sur le serveur."
+
+msgid "Profile synced."
+msgstr "Profil synchronisé."
+
+msgid "Multiplayer (coop)"
+msgstr "Multijoueur (coop)"
+
+msgid "Create a room"
+msgstr "Créer un salon"
+
+msgid "Join"
+msgstr "Rejoindre"
+
+msgid "Start the game"
+msgstr "Lancer la partie"
+
+msgid "Leave the room"
+msgstr "Quitter le salon"
+
+msgid "Offline: solo game."
+msgstr "Hors ligne : partie solo."
+
+msgid "Connecting to the room…"
+msgstr "Connexion au salon…"
+
+msgid "Connecting to the host…"
+msgstr "Connexion à l'hôte…"
+
+msgid "Room code: %s  (give it to the other players)"
+msgstr "Code du salon : %s  (à donner aux autres joueurs)"
+
+msgid "Connected. The host starts the game."
+msgstr "Connecté. L'hôte lance la partie."
+
+msgid "Players:"
+msgstr "Joueurs :"
+
+msgid "Player %d"
+msgstr "Joueur %d"
+
+msgid "host"
+msgstr "hôte"
+
+msgid "you"
+msgstr "toi"
+
+msgid "log in first (Account button)"
+msgstr "connecte-toi d'abord (bouton Compte)"
+
+msgid "invalid server address"
+msgstr "adresse du serveur invalide"
+
+msgid "unknown code"
+msgstr "code inconnu"
+
+msgid "room full"
+msgstr "salon plein"
+
+msgid "host left"
+msgstr "l'hôte est parti"
+
+msgid "session expired, log in again"
+msgstr "session expirée, reconnecte-toi"
+
+msgid "Blank scroll found! You can write on it at the end of the run."
+msgstr "Parchemin vierge trouvé ! Tu pourras l'écrire à la fin de la run."
+
+msgid "Log in (main menu → Account) to write the scrolls."
+msgstr "Connecte-toi (menu principal → Compte) pour écrire les parchemins."
+
+msgid "Sending to the forge…"
+msgstr "Envoi à la forge…"
+
+msgid "Cannot reach the forge. Your scrolls are kept."
+msgstr "Impossible de joindre la forge. Tes parchemins sont gardés."
+
+msgid "error %d"
+msgstr "erreur %d"
+
+msgid "offline"
+msgstr "hors ligne"
+
+msgid "The forge refused or did not answer (%s). Your scrolls are kept."
+msgstr "La forge a refusé ou n'a pas répondu (%s). Tes parchemins sont gardés."
+
+msgid "The forge failed (%s). Your scrolls are given back."
+msgstr "La forge a échoué (%s). Tes parchemins te sont rendus."
+
+msgid "%d scroll(s) being written…"
+msgstr "%d parchemin(s) en cours d'écriture…"
+
+msgid "The scroll is unreadable. Your scrolls are given back."
+msgstr "Le parchemin est illisible. Tes parchemins te sont rendus."
+
+msgid "Scroll written: %s will be your main spell in the next run."
+msgstr "Parchemin écrit : %s sera ton sort principal à la prochaine run."
+
+msgid "%d word(s) cancelled (meaningless, not in a dead language or cheating), scroll(s) given back."
+msgstr "%d mot(s) annulé(s) (sans sens, pas en langue morte ou triche), parchemin(s) rendu(s)."
+
+msgid "unknown scroll"
+msgstr "parchemin inconnu"
+
+msgid "request too large"
+msgstr "requête trop grosse"
+
+msgid "Spell"
+msgstr "Sort"
+
+msgid "Power"
+msgstr "Puissance"
+
+msgid "+25% damage"
+msgstr "+25 % de dégâts"
+
+msgid "Haste"
+msgstr "Cadence"
+
+msgid "-15% cooldown"
+msgstr "-15 % de temps de recharge"
+
+msgid "Velocity"
+msgstr "Vélocité"
+
+msgid "+20% projectile speed"
+msgstr "+20 % de vitesse des projectiles"
+
+msgid "Thrift"
+msgstr "Économie"
+
+msgid "-15% mana cost"
+msgstr "-15 % de coût en mana"
+
+msgid "Amplitude"
+msgstr "Ampleur"
+
+msgid "+20% size and area"
+msgstr "+20 % de taille et de zone"
+
+msgid "Piercing"
+msgstr "Perforation"
+
+msgid "Passes through one more enemy"
+msgstr "Traverse un ennemi de plus"
+
+msgid "Oak staff"
+msgstr "Bâton de chêne"
+
+msgid "Ember staff"
+msgstr "Bâton de braise"
+
+msgid "Crystal staff"
+msgstr "Bâton de cristal"
+
+msgid "Novice robe"
+msgstr "Robe de novice"
+
+msgid "Warden robe"
+msgstr "Robe du gardien"
+
+msgid "Archmage robe"
+msgstr "Robe d'archimage"
+
+msgid "No ring"
+msgstr "Sans anneau"
+
+msgid "Copper ring"
+msgstr "Anneau de cuivre"
+
+msgid "Ring of fortune"
+msgstr "Anneau de fortune"
+
+msgid "Sapphire ring"
+msgstr "Anneau de saphir"
+
+msgid "Vitality"
+msgstr "Vitalité"
+
+msgid "+10 HP"
+msgstr "+10 PV"
+
+msgid "+5% damage"
+msgstr "+5 % de dégâts"
+
+msgid "Focus"
+msgstr "Concentration"
+
+msgid "Swiftness"
+msgstr "Célérité"
+
+msgid "+5% speed"
+msgstr "+5 % de vitesse"
+
+msgid "Greed"
+msgstr "Avarice"
+
+msgid "+10% gold"
+msgstr "+10 % d'or"
+
+msgid "Wisdom"
+msgstr "Sagesse"
+
+msgid "+10% XP"
+msgstr "+10 % d'XP"
+
+msgid "First blood"
+msgstr "Premier sang"
+
+msgid "Defeat an enemy"
+msgstr "Vaincre un ennemi"
+
+msgid "Hunter"
+msgstr "Chasseur"
+
+msgid "Defeat 100 enemies"
+msgstr "Vaincre 100 ennemis"
+
+msgid "Scourge"
+msgstr "Fléau"
+
+msgid "Defeat 1000 enemies"
+msgstr "Vaincre 1000 ennemis"
+
+msgid "Giant slayer"
+msgstr "Tueur de géants"
+
+msgid "Defeat a boss"
+msgstr "Vaincre un boss"
+
+msgid "Giant hunter"
+msgstr "Chasseur de géants"
+
+msgid "Defeat 3 bosses"
+msgstr "Vaincre 3 boss"
+
+msgid "Bane of giants"
+msgstr "Fléau des géants"
+
+msgid "Defeat 10 bosses"
+msgstr "Vaincre 10 boss"
+
+msgid "Enduring"
+msgstr "Endurant"
+
+msgid "Reach wave 10"
+msgstr "Atteindre la vague 10"
+
+msgid "Unstoppable"
+msgstr "Inarrêtable"
+
+msgid "Reach wave 20"
+msgstr "Atteindre la vague 20"
+
+msgid "Scholar"
+msgstr "Érudit"
+
+msgid "Reach level 10 in one run"
+msgstr "Atteindre le niveau 10 en une run"
+
+msgid "Archmage"
+msgstr "Archimage"
+
+msgid "Reach level 20 in one run"
+msgstr "Atteindre le niveau 20 en une run"
+
+msgid "Wealthy"
+msgstr "Fortuné"
+
+msgid "Earn 1000 gold in total"
+msgstr "Gagner 1000 pièces d'or au total"
+
+msgid "Find 5 blank scrolls"
+msgstr "Trouver 5 parchemins vierges"
+
+msgid "Veteran"
+msgstr "Vétéran"
+
+msgid "Play 10 runs"
+msgstr "Jouer 10 runs"
+
+msgid "Fireball"
+msgstr "Boule de feu"
+
+msgid "A heavy fireball that explodes on impact. High damage, high mana cost."
+msgstr "Une lourde boule de feu qui explose à l'impact. Gros dégâts, gros coût en mana."
+
+msgid "Lightning"
+msgstr "Foudre"
+
+msgid "Held, an electric arc latches onto the nearest aimed enemy and strikes it constantly, for mana."
+msgstr "Maintenu, un arc électrique s'agrippe à l'ennemi visé le plus proche et le frappe à chaque instant, contre du mana."
+
+msgid "Magic missile"
+msgstr "Missile magique"
+
+msgid "A projectile that aims by itself. Low damage, low mana."
+msgstr "Un projectile qui vise tout seul. Peu de dégâts, peu de mana."
+
+msgid "Frost jet"
+msgstr "Jet de givre"
+
+msgid "Held, a very short-range cone of frost hurts and slows every enemy it touches."
+msgstr "Maintenu, un cône de givre à très courte portée blesse et ralentit tous les ennemis qu'il touche."
+
+msgid "Frost shard"
+msgstr "Éclat de givre"
+
+msgid "An icy shard that pierces and slows."
+msgstr "Un éclat glacé qui transperce et ralentit."
+
+msgid "Electric arc"
+msgstr "Arc électrique"
+
+msgid "A spark that jumps from enemy to enemy."
+msgstr "Une étincelle qui saute d'ennemi en ennemi."
+
+msgid "Venom dart"
+msgstr "Dard venimeux"
+
+msgid "A homing dart that poisons."
+msgstr "Un dard à tête chercheuse qui empoisonne."
+
+msgid "Arcane missiles"
+msgstr "Missiles arcaniques"
+
+msgid "Three missiles that hunt down enemies."
+msgstr "Trois missiles qui traquent les ennemis."

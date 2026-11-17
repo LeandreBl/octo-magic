@@ -15,18 +15,19 @@ signal changed
 const SESSION := "user://session.json"
 const WEB_SESSION := "octo.session"  # localStorage key, shared with the website (web/site.js)
 const SPELL_ID := "^[\\w-]{1,64}$"
-const ERRORS := {"EMAIL_EXISTS": "adresse déjà utilisée", "EMAIL_NOT_FOUND": "identifiants invalides",
-	"INVALID_PASSWORD": "identifiants invalides", "INVALID_LOGIN_CREDENTIALS": "identifiants invalides",
-	"INVALID_EMAIL": "adresse invalide", "MISSING_PASSWORD": "mot de passe manquant",
-	"WEAK_PASSWORD": "mot de passe trop court (6 caractères min.)",
-	"TOO_MANY_ATTEMPTS_TRY_LATER": "trop d'essais, réessaie plus tard", "USER_DISABLED": "compte désactivé"}
+## Login errors, in English (translated where shown, locale/fr.po).
+const ERRORS := {"EMAIL_EXISTS": "email already in use", "EMAIL_NOT_FOUND": "invalid credentials",
+	"INVALID_PASSWORD": "invalid credentials", "INVALID_LOGIN_CREDENTIALS": "invalid credentials",
+	"INVALID_EMAIL": "invalid email", "MISSING_PASSWORD": "missing password",
+	"WEAK_PASSWORD": "password too short (6 characters min.)",
+	"TOO_MANY_ATTEMPTS_TRY_LATER": "too many attempts, try again later", "USER_DISABLED": "account disabled"}
 
 var server := ""
 var identity := "https://identitytoolkit.googleapis.com/v1/accounts:"
 var secure_token := "https://securetoken.googleapis.com/v1/token?key="
 var api_key := ""  # Firebase web API key, from /api/config
 var email := ""
-var status := ""  # last news, for the account panel
+var status := ""  # last news, for the account panel (English, translated there)
 var _token := ""
 var _refresh := ""
 var _expires := 0.0  # unix time of _token's end
@@ -64,13 +65,13 @@ func logged_in() -> bool:
 ## message, or "".
 func login(mail: String, password: String, create := false) -> String:
 	if api_key.is_empty() and not await _config():
-		return "serveur injoignable"
+		return "server unreachable"
 	var r := await _http(identity + ("signUp" if create else "signInWithPassword") + "?key=" + api_key,
 		HTTPClient.METHOD_POST, {"email": mail.strip_edges(), "password": password, "returnSecureToken": true})
 	if not r.ok:
 		var e: Variant = r.json.get("error") if r.json is Dictionary else null
 		var code := str(e.get("message", "")) if e is Dictionary else ""
-		return ERRORS.get(code.get_slice(" ", 0), code if code else "serveur d'identité injoignable")
+		return ERRORS.get(code.get_slice(" ", 0), code if code else "identity server unreachable")
 	email = str(r.json.get("email", mail))
 	_set_session(r.json.idToken, r.json.refreshToken, r.json.expiresIn)
 	await pull()
@@ -107,7 +108,7 @@ func id_token() -> String:
 			["Content-Type: application/x-www-form-urlencoded"])
 		if r.code == 400:  # revoked or expired: log in again
 			logout()
-			status = "Session expirée, reconnecte-toi."
+			status = "Session expired, log in again."
 		if not r.ok:
 			return ""
 		_set_session(r.json.id_token, r.json.refresh_token, r.json.expires_in)
@@ -127,7 +128,7 @@ func api(path: String, method := HTTPClient.METHOD_GET, body: Variant = null) ->
 func pull() -> void:
 	var r := await api("/api/profile")
 	if not r.ok or not r.json is Dictionary:
-		status = "Profil non synchronisé (serveur injoignable)."
+		status = "Profile not synced (server unreachable)."
 		return
 	var d: Dictionary = r.json
 	if d.is_empty():
@@ -135,7 +136,7 @@ func pull() -> void:
 		for f in Profile.forged:
 			if FileAccess.file_exists(f.file):
 				api("/api/spells/" + f.id, HTTPClient.METHOD_PUT, FileAccess.get_file_as_bytes(f.file))
-		status = "Profil envoyé sur le serveur."
+		status = "Profile sent to the server."
 		return
 	var forged: Array = d.get("forged") if d.get("forged") is Array else []
 	DirAccess.make_dir_recursive_absolute("user://spells")
@@ -155,7 +156,7 @@ func pull() -> void:
 	Profile.apply(d)
 	Profile.save()
 	_pulling = false
-	status = "Profil synchronisé."
+	status = "Profile synced."
 
 
 ## A forged spell's bundle, to the server (the profile follows on its save).
@@ -179,7 +180,7 @@ func _push() -> void:
 	while _dirty:
 		_dirty = false
 		var r := await api("/api/profile", HTTPClient.METHOD_PUT, Profile.to_dict())
-		status = "Profil synchronisé." if r.ok else "Profil non synchronisé (serveur injoignable)."
+		status = "Profile synced." if r.ok else "Profile not synced (server unreachable)."
 	_pushing = false
 
 

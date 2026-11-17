@@ -19,6 +19,18 @@ static func base() -> Dictionary:
 	return sanitize(JSON.parse_string(FileAccess.get_file_as_string("res://spell/examples.json"))[0])
 
 
+## The spell's name and description in the game's language: base spells are
+## translated (locale/fr.po), forged ones carry a French description.
+static func label(s: Dictionary) -> String:
+	return TranslationServer.translate(s.name)
+
+
+static func describe(s: Dictionary) -> String:
+	if TranslationServer.get_locale().begins_with("fr") and s.get("description_fr", ""):
+		return s.description_fr
+	return TranslationServer.translate(s.description)
+
+
 # --- sanitize: never trust spell data (AI output, save files) ---------------
 
 static func sanitize(d: Variant) -> Dictionary:
@@ -27,8 +39,9 @@ static func sanitize(d: Variant) -> Dictionary:
 	for w in _arr(s.get("words")):
 		words.append(str(w).substr(0, 32))
 	return {
-		"name": str(s.get("name", "Sort")).substr(0, 40),
+		"name": str(s.get("name", "Spell")).substr(0, 40),
 		"description": str(s.get("description", "")).substr(0, 200),
+		"description_fr": str(s.get("description_fr", "")).substr(0, 200),
 		"element": _enum(s.get("element"), ELEMENTS),
 		"color": _color(s.get("color")),
 		"cooldown": _num(s.get("cooldown"), 0.5, 0.08, 5.0),

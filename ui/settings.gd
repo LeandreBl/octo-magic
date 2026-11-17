@@ -1,11 +1,15 @@
 class_name Settings
-## Player options, saved in user://settings.cfg: volumes, fullscreen, UI scale
-## and the rebindable keys (first key of each action in REBINDABLE).
+## Player options, saved in user://settings.cfg: language, volumes, fullscreen,
+## UI scale and the rebindable keys (first key of each action in REBINDABLE).
+## Language: the saved choice, else (web) the website's, else the system's;
+## on web it is shared with the website through localStorage (WEB_LANG).
 
 const PATH := "user://settings.cfg"
 const BUSES := ["Master", "Music", "SFX"]
-const REBINDABLE := {"move_up": "Haut", "move_down": "Bas", "move_left": "Gauche",
-	"move_right": "Droite", "pause": "Pause"}
+const REBINDABLE := {"move_up": "Up", "move_down": "Down", "move_left": "Left",
+	"move_right": "Right", "pause": "Pause"}
+const LANGUAGES := {"en": "English", "fr": "Français"}
+const WEB_LANG := "octo.lang"  # localStorage key, shared with the website
 const UI_SCALES := [0.75, 1.0, 1.25, 1.5]
 
 static var cfg := ConfigFile.new()
@@ -29,7 +33,25 @@ static func load_and_apply() -> void:
 	apply()
 
 
+## The game's language: "en" or "fr".
+static func language() -> String:
+	var lang: String = get_value("general", "language", "")
+	if OS.has_feature("web"):
+		var site := str(JavaScriptBridge.eval("localStorage.getItem('%s') || ''" % WEB_LANG))
+		lang = site if site else lang
+	if not LANGUAGES.has(lang):
+		lang = OS.get_locale_language()
+	return lang if LANGUAGES.has(lang) else "en"
+
+
+static func set_language(lang: String) -> void:
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("localStorage.setItem('%s', '%s')" % [WEB_LANG, lang])
+	set_value("general", "language", lang)
+
+
 static func apply() -> void:
+	TranslationServer.set_locale(language())
 	for bus in BUSES:
 		if AudioServer.get_bus_index(bus) < 0:
 			AudioServer.add_bus()

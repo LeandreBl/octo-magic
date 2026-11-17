@@ -23,7 +23,7 @@ func _ready() -> void:
 	row.add_child(icon)
 	var head := Label.new()
 	head.theme_type_variation = "Header"
-	head.text = "Parchemin"
+	head.text = "Scroll"
 	head.add_theme_font_override("font", UITheme.PARCHMENT)
 	row.add_child(head)
 	_spell = Label.new()
@@ -33,11 +33,11 @@ func _ready() -> void:
 	_edit = LineEdit.new()
 	_edit.max_length = 200
 	_edit.add_theme_font_override("font", UITheme.PARCHMENT)
-	_edit.placeholder_text = "un mot par parchemin, en langue morte, ex : ignis, πῦρ, umbra"
+	_edit.placeholder_text = "one word per scroll, in a dead language, e.g. ignis, πῦρ, umbra"
 	_edit.text_submitted.connect(func(_t): _on_write())
 	add_child(_edit)
 	_write = Button.new()
-	_write.text = "Écrire les parchemins"
+	_write.text = "Write the scrolls"
 	_write.pressed.connect(_on_write)
 	add_child(_write)
 	_status = Label.new()
@@ -54,15 +54,15 @@ func _process(_delta: float) -> void:
 	if not is_visible_in_tree():
 		return
 	var s: Dictionary = Profile.equipped_spells().primary
-	_spell.text = "Sort principal : %s\n%s" % [s.name, s.description]
+	_spell.text = tr("Main spell: %s\n%s") % [Spell.label(s), Spell.describe(s)]
 	var can: bool = main.can_write()
 	_edit.editable = can
 	_write.disabled = not can
 	var state := ""
 	if not main.forge_job.is_empty():
-		state = "Un parchemin est en cours d'écriture."
+		state = tr("A scroll is being written.")
 	elif Profile.blank_scrolls == 0:
-		state = "Aucun parchemin vierge : les boss en laissent tomber."
+		state = tr("No blank scroll: bosses drop them.")
 	else:
-		state = "Tu as %d parchemin(s) vierge(s). Écris un mot en langue morte (latin, grec ancien…) par parchemin (séparés par des espaces ou des virgules) pour transformer ton sort principal." % Profile.blank_scrolls
+		state = tr("You have %d blank scroll(s). Write one word in a dead language (Latin, Ancient Greek…) per scroll (separated by spaces or commas) to transform your main spell.") % Profile.blank_scrolls
 	_status.text = main.forge_status + "\n" + state if main.forge_status else state

@@ -42,9 +42,9 @@ func _ready() -> void:
 	add_screen(_dim)
 	screens.title = add_screen(_title())
 	screens.pause = add_screen(_menu("Pause", [
-		["Reprendre", resume],
+		["Resume", resume],
 		["Options", open.bind("options")],
-		["Abandonner la run", main.abandon_run]]))
+		["Abandon run", main.abandon_run]]))
 	var options := preload("res://ui/options.gd").new()
 	options.closed.connect(back)
 	options.scale_changed.connect(_layout)
@@ -67,11 +67,11 @@ func _ready() -> void:
 	shop.main = main
 	shop.closed.connect(back)
 	screens.shop = add_screen(shop)
-	screens.achievements = add_screen(_list_screen("Succès", _achievements_text))
-	screens.leaderboard = add_screen(_list_screen("Classement", _scores_text))
+	screens.achievements = add_screen(_list_screen("Achievements", _achievements_text))
+	screens.leaderboard = add_screen(_list_screen("Leaderboard", _scores_text))
 	_level_box = HBoxContainer.new()
 	_level_box.add_theme_constant_override("separation", 18)
-	screens.levelup = add_screen(_menu("Niveau supérieur !", [], _level_box))
+	screens.levelup = add_screen(_menu("Level up!", [], _level_box))
 
 	main.run_ended.connect(_on_run_ended)
 	main.run_started.connect(show_screen.bind(""))  # also on peers when the host starts
@@ -206,17 +206,17 @@ func _title() -> Control:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
 	var sub := Label.new()
-	sub.text = "Écris tes sorts, survis aux vagues."
+	sub.text = "Write your spells, survive the waves."
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.add_theme_color_override("font_color", UITheme.TEXT_DIM)
 	box.add_child(sub)
 	box.add_child(Control.new())  # spacer
-	var items := [["Jouer", _play], ["Multijoueur", open.bind("multiplayer")], ["Compte", open.bind("account")],
-		["Boutique", open.bind("shop")], ["Succès", open.bind("achievements")],
-		["Classement", open.bind("leaderboard")], ["Options", open.bind("options")]]
+	var items := [["Play", _play], ["Multiplayer", open.bind("multiplayer")], ["Account", open.bind("account")],
+		["Shop", open.bind("shop")], ["Achievements", open.bind("achievements")],
+		["Leaderboard", open.bind("leaderboard")], ["Options", open.bind("options")]]
 	if not OS.has_feature("web"):
-		items.append(["Quitter", get_tree().quit])
-	# "Jouer" stands out; the rest in two columns, to fit a landscape phone.
+		items.append(["Quit", get_tree().quit])
+	# "Play" stands out; the rest in two columns, to fit a landscape phone.
 	var play := _button(items[0][0], items[0][1])
 	play.custom_minimum_size = Vector2(416, 64)
 	play.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -241,7 +241,7 @@ func _title() -> Control:
 func _list_screen(title: String, text_fn: Callable) -> Control:
 	var l := Label.new()
 	l.add_theme_font_size_override("font_size", 18)
-	var c := _menu(title, [["Retour", back]], l)
+	var c := _menu(title, [["Back", back]], l)
 	c.visibility_changed.connect(func(): l.text = text_fn.call())
 	return c
 
@@ -251,7 +251,7 @@ func _achievements_text() -> String:
 	for id in Profile.ACHIEVEMENTS:
 		var a: Dictionary = Profile.ACHIEVEMENTS[id]
 		var have: int = mini(Profile.stats.get(a.stat, 0), a.goal)
-		lines.append("%s  %s · %s%s" % ["✔" if Profile.achievements.has(id) else "·", a.name, a.desc,
+		lines.append("%s  %s · %s%s" % ["✔" if Profile.achievements.has(id) else "·", tr(a.name), tr(a.desc),
 			"" if Profile.achievements.has(id) else "  (%d/%d)" % [have, a.goal]])
 	return "\n".join(lines)
 
@@ -260,9 +260,9 @@ func _scores_text() -> String:
 	var lines := []
 	for i in Profile.scores.size():
 		var r: Dictionary = Profile.scores[i]
-		lines.append("%2d.  %6d pts   vague %d, niveau %d, %d ennemis   %s" % [i + 1, r.score, r.wave,
+		lines.append(tr("%2d.  %6d pts   wave %d, level %d, %d enemies   %s") % [i + 1, r.score, r.wave,
 			r.level, r.kills, Time.get_date_string_from_unix_time(r.time)])
-	return "\n".join(lines) if lines else "Aucun score : lance une run !"
+	return "\n".join(lines) if lines else tr("No score yet: start a run!")
 
 
 var _level_box: HBoxContainer
@@ -291,7 +291,7 @@ func _show_level_up(offers: Array) -> void:
 		pic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		card.add_child(pic)
 		for line in [[u.name, 26, UITheme.GOLD], [u.desc, 18, UITheme.TEXT],
-				["%s : %s" % [Upgrades.SLOT_NAMES[o.slot], Run.spells[o.slot].name], 14, UITheme.TEXT_DIM]]:
+				[tr("%s: %s") % [tr(Upgrades.SLOT_NAMES[o.slot]), Spell.label(Run.spells[o.slot])], 14, UITheme.TEXT_DIM]]:
 			var l := Label.new()
 			l.text = line[0]
 			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -323,19 +323,19 @@ func _end_screen() -> Control:
 	var scroll := preload("res://ui/scroll_panel.gd").new()
 	scroll.main = main
 	row.add_child(scroll)
-	return _menu("Fin de la run", [["Rejouer", _play], ["Menu principal", _to_title]], row)
+	return _menu("End of run", [["Play again", _play], ["Main menu", _to_title]], row)
 
 
 func _on_run_ended() -> void:
 	var r: Dictionary = main.last_run
-	var text := "Vague atteinte : %d\nNiveau : %d\nEnnemis vaincus : %d\nScore : %d\n\nOr gagné : %d\nParchemins : %d" % [
+	var text := tr("Wave reached: %d\nLevel: %d\nEnemies defeated: %d\nScore: %d\n\nGold earned: %d\nScrolls: %d") % [
 		r.wave, r.level, r.kills, r.score, r.gold, r.scrolls]
 	for id in r.reached:
-		text += "\nSuccès : %s !" % Profile.ACHIEVEMENTS[id].name
+		text += "\n" + tr("Achievement: %s!") % tr(Profile.ACHIEVEMENTS[id].name)
 	for e in r.unlocked:
-		text += "\nSort débloqué : %s." % e.spell.name
+		text += "\n" + tr("Spell unlocked: %s.") % Spell.label(e.spell)
 	_stats.text = text
-	screens.end.get_meta("focus").disabled = not multiplayer.is_server()  # "Rejouer": the host restarts
+	screens.end.get_meta("focus").disabled = not multiplayer.is_server()  # "Play again": the host restarts
 	show_screen("end")
 
 

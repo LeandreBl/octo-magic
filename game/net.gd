@@ -23,13 +23,13 @@ func start(room := "") -> String:
 	close()
 	var token := await Online.id_token()
 	if token.is_empty():
-		error = "connecte-toi d'abord (bouton Compte)"
+		error = "log in first (Account button)"
 		return error
 	var hello := {"op": "join", "code": room.strip_edges().to_upper(), "token": token} if room else {"op": "host", "token": token}
 	_hello = JSON.stringify(hello)
 	error = ""
 	if ws.connect_to_url(Online.server.replace("http", "ws") + "/play") != OK:
-		error = "adresse du serveur invalide"
+		error = "invalid server address"
 	waiting = error.is_empty()
 	return error
 
@@ -56,7 +56,7 @@ func _process(_delta: float) -> void:
 	if state == WebSocketPeer.STATE_CLOSED and waiting:
 		waiting = false
 		if error.is_empty():
-			error = "serveur injoignable"
+			error = "server unreachable"
 
 
 func _on_message(msg: Dictionary) -> void:
@@ -89,8 +89,7 @@ func _on_message(msg: Dictionary) -> void:
 				pc.add_ice_candidate(str(data.ice[0]), int(data.ice[1]), str(data.ice[2]))
 		"error":
 			lost.emit.call_deferred()
-			error = {"no such room": "code inconnu", "room full": "salon plein",
-				"host left": "l'hôte est parti", "invalid token": "session expirée, reconnecte-toi"
+			error = {"no such room": "unknown code", "invalid token": "session expired, log in again"
 				}.get(msg.get("msg"), str(msg.get("msg")))
 
 

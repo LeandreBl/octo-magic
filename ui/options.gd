@@ -1,13 +1,13 @@
 extends CenterContainer
-## Options: volumes, fullscreen, UI size, key rebinding and the controls
-## scheme. Every change applies at once; "Retour" saves (ui/settings.gd).
+## Options: language, volumes, fullscreen, UI size, key rebinding and the
+## controls scheme. Every change applies at once; "Back" saves (ui/settings.gd).
 
 signal closed
 signal scale_changed
 
-const SCHEME := "Souris : viser · clic gauche : lancer le sort\n" \
-	+ "Manette : stick gauche bouger, stick droit viser et lancer, Start pause\n" \
-	+ "Tactile : moitié gauche bouger, moitié droite viser et lancer"
+const SCHEME := "Mouse: aim · left click: cast the spell\n" \
+	+ "Gamepad: left stick move, right stick aim and cast, Start pause\n" \
+	+ "Touch: left half move, right half aim and cast"
 
 var _waiting := ""  # action waiting for its new key
 var _keys := {}  # action -> Button
@@ -29,7 +29,13 @@ func _ready() -> void:
 	box.add_child(cols)
 
 	var general := _grid(cols)
-	for bus in [["Master", "Volume général"], ["Music", "Musique"], ["SFX", "Effets"]]:
+	var lang := OptionButton.new()
+	for code in Settings.LANGUAGES:
+		lang.add_item(Settings.LANGUAGES[code])
+	lang.select(Settings.LANGUAGES.keys().find(Settings.language()))
+	lang.item_selected.connect(func(i): Settings.set_language(Settings.LANGUAGES.keys()[i]))
+	_row(general, "Language", lang)
+	for bus in [["Master", "Master volume"], ["Music", "Music"], ["SFX", "Effects"]]:
 		var s := HSlider.new()
 		s.max_value = 1.0
 		s.step = 0.05
@@ -41,7 +47,7 @@ func _ready() -> void:
 		var full := CheckButton.new()
 		full.button_pressed = Settings.get_value("display", "fullscreen", false)
 		full.toggled.connect(func(on): Settings.set_value("display", "fullscreen", on))
-		_row(general, "Plein écran", full)
+		_row(general, "Fullscreen", full)
 	var ui_size := OptionButton.new()
 	for f in Settings.UI_SCALES:
 		ui_size.add_item("%d %%" % (f * 100))
@@ -49,7 +55,7 @@ func _ready() -> void:
 	ui_size.item_selected.connect(func(i):
 		Settings.set_value("display", "ui_scale", Settings.UI_SCALES[i])
 		scale_changed.emit())
-	_row(general, "Taille de l'interface", ui_size)
+	_row(general, "Interface size", ui_size)
 
 	var controls := _grid(cols)
 	for action in Settings.REBINDABLE:
@@ -57,7 +63,7 @@ func _ready() -> void:
 		b.custom_minimum_size.x = 160
 		b.pressed.connect(func():
 			_waiting = action
-			b.text = "Appuie…")
+			b.text = "Press a key…")
 		_keys[action] = b
 		_row(controls, Settings.REBINDABLE[action], b)
 	_refresh_keys()
@@ -67,7 +73,7 @@ func _ready() -> void:
 	scheme.add_theme_font_size_override("font_size", 16)
 	box.add_child(scheme)
 	var back := Button.new()
-	back.text = "Retour"
+	back.text = "Back"
 	back.pressed.connect(_close)
 	box.add_child(back)
 	set_meta("focus", general.get_child(1))
@@ -94,7 +100,7 @@ func _refresh_keys() -> void:
 		_keys[action].text = Settings.key_name(action)
 
 
-## While waiting for a key, the next key press is the new binding (Échap cancels).
+## While waiting for a key, the next key press is the new binding (Escape cancels).
 func _input(e: InputEvent) -> void:
 	if _waiting.is_empty() or not (e is InputEventKey and e.pressed and not e.echo):
 		return

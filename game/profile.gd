@@ -18,46 +18,47 @@ const FIELDS := ["gold", "blank_scrolls", "owned", "equipped", "bonuses", "look"
 const BASE_STATS := {"hp": 100.0, "mana": 100.0, "regen": 25.0, "speed": 0.0,
 	"damage": 0.0, "gold": 0.0, "xp": 0.0}
 
+## Names and descriptions are English, translated where shown (locale/fr.po).
 const ITEMS := {
-	"staff_oak": {"kind": "staff", "name": "Bâton de chêne", "price": 0, "color": "#8d6e63", "bonus": {}},
-	"staff_ember": {"kind": "staff", "name": "Bâton de braise", "price": 150, "color": "#ff7043", "bonus": {"damage": 0.15}},
-	"staff_crystal": {"kind": "staff", "name": "Bâton de cristal", "price": 450, "color": "#80deea", "bonus": {"damage": 0.3, "regen": 5.0}},
-	"robe_novice": {"kind": "robe", "name": "Robe de novice", "price": 0, "color": "#6a4cff", "bonus": {}},
-	"robe_warden": {"kind": "robe", "name": "Robe du gardien", "price": 120, "color": "#2e7d32", "bonus": {"hp": 30.0}},
-	"robe_archmage": {"kind": "robe", "name": "Robe d'archimage", "price": 500, "color": "#b71c1c", "bonus": {"hp": 60.0, "mana": 20.0}},
-	"ring_none": {"kind": "ring", "name": "Sans anneau", "price": 0, "color": "", "bonus": {}},
-	"ring_copper": {"kind": "ring", "name": "Anneau de cuivre", "price": 100, "color": "#d08b4b", "bonus": {"regen": 5.0}},
-	"ring_gold": {"kind": "ring", "name": "Anneau de fortune", "price": 250, "color": "#ffd54f", "bonus": {"gold": 0.25}},
-	"ring_sapphire": {"kind": "ring", "name": "Anneau de saphir", "price": 350, "color": "#448aff", "bonus": {"mana": 30.0, "regen": 5.0}},
+	"staff_oak": {"kind": "staff", "name": "Oak staff", "price": 0, "color": "#8d6e63", "bonus": {}},
+	"staff_ember": {"kind": "staff", "name": "Ember staff", "price": 150, "color": "#ff7043", "bonus": {"damage": 0.15}},
+	"staff_crystal": {"kind": "staff", "name": "Crystal staff", "price": 450, "color": "#80deea", "bonus": {"damage": 0.3, "regen": 5.0}},
+	"robe_novice": {"kind": "robe", "name": "Novice robe", "price": 0, "color": "#6a4cff", "bonus": {}},
+	"robe_warden": {"kind": "robe", "name": "Warden robe", "price": 120, "color": "#2e7d32", "bonus": {"hp": 30.0}},
+	"robe_archmage": {"kind": "robe", "name": "Archmage robe", "price": 500, "color": "#b71c1c", "bonus": {"hp": 60.0, "mana": 20.0}},
+	"ring_none": {"kind": "ring", "name": "No ring", "price": 0, "color": "", "bonus": {}},
+	"ring_copper": {"kind": "ring", "name": "Copper ring", "price": 100, "color": "#d08b4b", "bonus": {"regen": 5.0}},
+	"ring_gold": {"kind": "ring", "name": "Ring of fortune", "price": 250, "color": "#ffd54f", "bonus": {"gold": 0.25}},
+	"ring_sapphire": {"kind": "ring", "name": "Sapphire ring", "price": 350, "color": "#448aff", "bonus": {"mana": 30.0, "regen": 5.0}},
 }
 
 ## Permanent bonuses: level n costs price * GROWTH^n.
 const GROWTH := 1.5
 const BONUSES := {
-	"vitality": {"name": "Vitalité", "desc": "+10 PV", "price": 50, "max": 10, "bonus": {"hp": 10.0}},
-	"power": {"name": "Puissance", "desc": "+5 % de dégâts", "price": 80, "max": 10, "bonus": {"damage": 0.05}},
-	"focus": {"name": "Concentration", "desc": "+3 mana/s", "price": 60, "max": 5, "bonus": {"regen": 3.0}},
-	"swiftness": {"name": "Célérité", "desc": "+5 % de vitesse", "price": 70, "max": 5, "bonus": {"speed": 0.05}},
-	"greed": {"name": "Avarice", "desc": "+10 % d'or", "price": 60, "max": 5, "bonus": {"gold": 0.1}},
-	"wisdom": {"name": "Sagesse", "desc": "+10 % d'XP", "price": 60, "max": 5, "bonus": {"xp": 0.1}},
+	"vitality": {"name": "Vitality", "desc": "+10 HP", "price": 50, "max": 10, "bonus": {"hp": 10.0}},
+	"power": {"name": "Power", "desc": "+5% damage", "price": 80, "max": 10, "bonus": {"damage": 0.05}},
+	"focus": {"name": "Focus", "desc": "+3 mana/s", "price": 60, "max": 5, "bonus": {"regen": 3.0}},
+	"swiftness": {"name": "Swiftness", "desc": "+5% speed", "price": 70, "max": 5, "bonus": {"speed": 0.05}},
+	"greed": {"name": "Greed", "desc": "+10% gold", "price": 60, "max": 5, "bonus": {"gold": 0.1}},
+	"wisdom": {"name": "Wisdom", "desc": "+10% XP", "price": 60, "max": 5, "bonus": {"xp": 0.1}},
 }
 
 ## Achievements: reached when stats[stat] >= goal. Some unlock spells
 ## (the "unlock" field of game/spells.json).
 const ACHIEVEMENTS := {
-	"first_blood": {"name": "Premier sang", "desc": "Vaincre un ennemi", "stat": "kills", "goal": 1},
-	"hunter": {"name": "Chasseur", "desc": "Vaincre 100 ennemis", "stat": "kills", "goal": 100},
-	"slayer": {"name": "Fléau", "desc": "Vaincre 1000 ennemis", "stat": "kills", "goal": 1000},
-	"boss": {"name": "Tueur de géants", "desc": "Vaincre un boss", "stat": "bosses", "goal": 1},
-	"boss3": {"name": "Chasseur de géants", "desc": "Vaincre 3 boss", "stat": "bosses", "goal": 3},
-	"boss10": {"name": "Fléau des géants", "desc": "Vaincre 10 boss", "stat": "bosses", "goal": 10},
-	"wave10": {"name": "Endurant", "desc": "Atteindre la vague 10", "stat": "best_wave", "goal": 10},
-	"wave20": {"name": "Inarrêtable", "desc": "Atteindre la vague 20", "stat": "best_wave", "goal": 20},
-	"level10": {"name": "Érudit", "desc": "Atteindre le niveau 10 en une run", "stat": "best_level", "goal": 10},
-	"level20": {"name": "Archimage", "desc": "Atteindre le niveau 20 en une run", "stat": "best_level", "goal": 20},
-	"rich": {"name": "Fortuné", "desc": "Gagner 1000 pièces d'or au total", "stat": "gold_total", "goal": 1000},
-	"scribe": {"name": "Scribe", "desc": "Trouver 5 parchemins vierges", "stat": "scrolls", "goal": 5},
-	"veteran": {"name": "Vétéran", "desc": "Jouer 10 runs", "stat": "runs", "goal": 10},
+	"first_blood": {"name": "First blood", "desc": "Defeat an enemy", "stat": "kills", "goal": 1},
+	"hunter": {"name": "Hunter", "desc": "Defeat 100 enemies", "stat": "kills", "goal": 100},
+	"slayer": {"name": "Scourge", "desc": "Defeat 1000 enemies", "stat": "kills", "goal": 1000},
+	"boss": {"name": "Giant slayer", "desc": "Defeat a boss", "stat": "bosses", "goal": 1},
+	"boss3": {"name": "Giant hunter", "desc": "Defeat 3 bosses", "stat": "bosses", "goal": 3},
+	"boss10": {"name": "Bane of giants", "desc": "Defeat 10 bosses", "stat": "bosses", "goal": 10},
+	"wave10": {"name": "Enduring", "desc": "Reach wave 10", "stat": "best_wave", "goal": 10},
+	"wave20": {"name": "Unstoppable", "desc": "Reach wave 20", "stat": "best_wave", "goal": 20},
+	"level10": {"name": "Scholar", "desc": "Reach level 10 in one run", "stat": "best_level", "goal": 10},
+	"level20": {"name": "Archmage", "desc": "Reach level 20 in one run", "stat": "best_level", "goal": 20},
+	"rich": {"name": "Wealthy", "desc": "Earn 1000 gold in total", "stat": "gold_total", "goal": 1000},
+	"scribe": {"name": "Scribe", "desc": "Find 5 blank scrolls", "stat": "scrolls", "goal": 5},
+	"veteran": {"name": "Veteran", "desc": "Play 10 runs", "stat": "runs", "goal": 10},
 }
 
 const COLORS := ["#3a2a99", "#6a1b9a", "#1565c0", "#00838f", "#2e7d32", "#f9a825", "#c62828", "#37474f", "#eceff1"]

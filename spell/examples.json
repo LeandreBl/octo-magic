@@ -1,7 +1,8 @@
 [
  {
   "name": "Étincelle",
-  "description": "Une petite boule de feu.",
+  "description": "A small fireball.",
+  "description_fr": "Une petite boule de feu.",
   "element": "fire",
   "color": "#ff7a1a",
   "cooldown": 0.35,
@@ -81,7 +82,8 @@
  },
  {
   "name": "Étincelle orageuse",
-  "description": "L'étincelle saute d'ennemi en ennemi et les paralyse.",
+  "description": "The spark jumps from enemy to enemy and paralyzes them.",
+  "description_fr": "L'étincelle saute d'ennemi en ennemi et les paralyse.",
   "element": "lightning",
   "color": "#ffe14d",
   "cooldown": 0.45,
@@ -160,7 +162,8 @@
  },
  {
   "name": "Étincelle vampire",
-  "description": "Une boule rouge qui traque sa proie et rend la vie volée.",
+  "description": "A red ball that hunts its prey and gives back the stolen life.",
+  "description_fr": "Une boule rouge qui traque sa proie et rend la vie volée.",
   "element": "arcane",
   "color": "#c2185b",
   "cooldown": 0.4,
@@ -204,7 +207,8 @@
  },
  {
   "name": "Feu d'artifice",
-  "description": "La boule explose en une gerbe d'étincelles.",
+  "description": "The ball explodes in a shower of sparks.",
+  "description_fr": "La boule explose en une gerbe d'étincelles.",
   "element": "fire",
   "color": "#ff4081",
   "cooldown": 0.8,
@@ -268,7 +272,8 @@
  },
  {
   "name": "Blizzard",
-  "description": "Un éclat de glace qui laisse une tempête de neige gelante.",
+  "description": "An ice shard that leaves a freezing snowstorm behind.",
+  "description_fr": "Un éclat de glace qui laisse une tempête de neige gelante.",
   "element": "ice",
   "color": "#80d8ff",
   "cooldown": 1.5,
@@ -333,7 +338,8 @@
  },
  {
   "name": "Couronne de flammes",
-  "description": "Trois flammes tournent autour du mage.",
+  "description": "Three flames circle around the mage.",
+  "description_fr": "Trois flammes tournent autour du mage.",
   "element": "fire",
   "color": "#ff9100",
   "cooldown": 3,
@@ -380,7 +386,8 @@
  },
  {
   "name": "Trou noir",
-  "description": "Une sphère lente qui aspire les ennemis puis implose.",
+  "description": "A slow sphere that pulls enemies in, then implodes.",
+  "description_fr": "Une sphère lente qui aspire les ennemis puis implose.",
   "element": "arcane",
   "color": "#7c4dff",
   "cooldown": 4,
@@ -427,7 +434,8 @@
  },
  {
   "name": "Rafale serpentine",
-  "description": "Une salve de traits qui ondulent et reviennent comme des boomerangs.",
+  "description": "A volley of bolts that weave and come back like boomerangs.",
+  "description_fr": "Une salve de traits qui ondulent et reviennent comme des boomerangs.",
   "element": "poison",
   "color": "#76ff03",
   "cooldown": 0.9,
@@ -479,7 +487,8 @@
  },
  {
   "name": "Comète",
-  "description": "Un projectile qui accélère et repousse tout sur son passage.",
+  "description": "A projectile that speeds up and pushes back everything in its path.",
+  "description_fr": "Un projectile qui accélère et repousse tout sur son passage.",
   "element": "physical",
   "color": "#bdbdbd",
   "cooldown": 0.7,

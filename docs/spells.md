@@ -9,7 +9,7 @@ This file is also sent to the AI as the format reference: keep it accurate.
 
 ## Spell
 
-- `name` (string), `description` (string, one sentence, player-facing)
+- `name` (string), `description` (string, one sentence, player-facing, in English), `description_fr` (the same sentence in French; base spells leave it out and are translated by `locale/fr.po`)
 - `element`: `fire` | `ice` | `lightning` | `poison` | `arcane` | `physical` (flavour,
   and the texture of the spell's sounds, synthesized by the engine from the
   element and each body's shape, size and speed: `spell/spell_sound.gd`)

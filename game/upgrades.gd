@@ -4,15 +4,15 @@ class_name Upgrades
 ## derived from the spell's power, see Run.mana_cost).
 
 const SLOTS := ["primary"]  # one spell: no secondary or ultimate (task #94)
-const SLOT_NAMES := {"primary": "Sort"}
+const SLOT_NAMES := {"primary": "Spell"}  # names: English, translated where shown
 const LIST := {
-	"damage": {"name": "Puissance", "desc": "+25 % de dégâts"},
-	"cooldown": {"name": "Cadence", "desc": "-15 % de temps de recharge"},
+	"damage": {"name": "Power", "desc": "+25% damage"},
+	"cooldown": {"name": "Haste", "desc": "-15% cooldown"},
 	"count": {"name": "Multiplication", "desc": "+1 projectile"},
-	"speed": {"name": "Vélocité", "desc": "+20 % de vitesse des projectiles"},
-	"mana": {"name": "Économie", "desc": "-15 % de coût en mana"},
-	"area": {"name": "Ampleur", "desc": "+20 % de taille et de zone"},
-	"pierce": {"name": "Perforation", "desc": "Traverse un ennemi de plus"},
+	"speed": {"name": "Velocity", "desc": "+20% projectile speed"},
+	"mana": {"name": "Thrift", "desc": "-15% mana cost"},
+	"area": {"name": "Amplitude", "desc": "+20% size and area"},
+	"pierce": {"name": "Piercing", "desc": "Passes through one more enemy"},
 }
 const MANA_FLOOR := 0.4  # "mana" upgrades stop at 40 % of the cost
 

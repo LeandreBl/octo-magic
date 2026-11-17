@@ -169,7 +169,7 @@ func _killed(kind: String) -> void:
 func _collected(kind: String, value: int) -> void:
 	Run.collect(kind, value)
 	if kind == "scroll":
-		forge_note = "Parchemin vierge trouvé ! Tu pourras l'écrire à la fin de la run."
+		forge_note = tr("Blank scroll found! You can write on it at the end of the run.")
 
 
 func _drop(kind: String, value: int, pos: Vector2) -> void:
@@ -335,14 +335,14 @@ func write_scroll(words: String) -> void:
 		return
 	var auth := await Online.auth_headers()
 	if auth.is_empty():
-		forge_status = "Connecte-toi (menu principal → Compte) pour écrire les parchemins."
+		forge_status = tr("Log in (main menu → Account) to write the scrolls.")
 		return
-	forge_status = "Envoi à la forge…"
+	forge_status = tr("Sending to the forge…")
 	var body := JSON.stringify({"spell": Profile.equipped_spells().primary, "words": word,
-		"scrolls": Profile.blank_scrolls})
+		"scrolls": Profile.blank_scrolls, "lang": TranslationServer.get_locale()})
 	if forge_http.request(Online.server + "/api/forge", auth + PackedStringArray(["Content-Type: application/json"]),
 			HTTPClient.METHOD_POST, body) != OK:
-		forge_status = "Impossible de joindre la forge. Tes parchemins sont gardés."
+		forge_status = tr("Cannot reach the forge. Your scrolls are kept.")
 
 
 func _poll() -> void:
@@ -362,13 +362,13 @@ func _on_forge_reply(result: int, code: int, headers: PackedStringArray, data: P
 	var reply: Variant = JSON.parse_string(data.get_string_from_utf8())
 	reply = reply if reply is Dictionary else {}
 	if result != HTTPRequest.RESULT_SUCCESS or code != 200 or reply.has("error"):
-		var msg: String = reply.get("error", "erreur %d" % code if result == HTTPRequest.RESULT_SUCCESS else "hors ligne")
+		var msg: String = tr(str(reply.get("error", tr("error %d") % code if result == HTTPRequest.RESULT_SUCCESS else tr("offline"))))
 		if forge_job.is_empty():  # words refused or forge unreachable: scrolls kept
-			forge_status = "La forge a refusé ou n'a pas répondu (%s). Tes parchemins sont gardés." % msg
+			forge_status = tr("The forge refused or did not answer (%s). Your scrolls are kept.") % msg
 		else:
 			forge_job = ""
 			Profile.blank_scrolls += forge_words  # the scrolls were not used up
-			forge_note = "La forge a échoué (%s). Tes parchemins te sont rendus." % msg
+			forge_note = tr("The forge failed (%s). Your scrolls are given back.") % msg
 			forge_status = forge_note
 			Profile.save()
 		return
@@ -377,7 +377,7 @@ func _on_forge_reply(result: int, code: int, headers: PackedStringArray, data: P
 		forge_words = maxi(1, reply.get("words", [1]).size())
 		Profile.blank_scrolls -= forge_words
 		Profile.save()
-		forge_note = "%d parchemin(s) en cours d'écriture…" % forge_words
+		forge_note = tr("%d scroll(s) being written…") % forge_words
 		forge_status = ""
 	get_tree().create_timer(POLL_SECONDS, true).timeout.connect(_poll)
 
@@ -395,12 +395,12 @@ func _on_bundle(data: PackedByteArray, cancelled: int) -> void:
 	if s.is_empty():
 		Profile.blank_scrolls += forge_words
 		Profile.save()
-		forge_note = "Le parchemin est illisible. Tes parchemins te sont rendus."
+		forge_note = tr("The scroll is unreadable. Your scrolls are given back.")
 		forge_status = forge_note
 		return
 	Profile.blank_scrolls += cancelled
 	Online.push_spell(Profile.add_forged(s, path), path)
-	forge_note = "Parchemin écrit : %s sera ton sort principal à la prochaine run." % s.name
+	forge_note = tr("Scroll written: %s will be your main spell in the next run.") % s.name
 	if cancelled > 0:
-		forge_note += " %d mot(s) annulé(s) (sans sens ou pas en langue morte), parchemin(s) rendu(s)." % cancelled
+		forge_note += " " + tr("%d word(s) cancelled (meaningless, not in a dead language or cheating), scroll(s) given back.") % cancelled
 	forge_status = forge_note

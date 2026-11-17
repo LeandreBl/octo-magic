@@ -22,7 +22,7 @@ func _ready() -> void:
 	box.add_child(head)
 	var title := Label.new()
 	title.theme_type_variation = "Header"
-	title.text = "Boutique"
+	title.text = "Shop"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(title)
 	var coin := TextureRect.new()
@@ -45,7 +45,7 @@ func _ready() -> void:
 	scroll_panel.main = main
 	inner.add_child(scroll_panel)
 	var back := Button.new()
-	back.text = "Retour"
+	back.text = "Back"
 	back.pressed.connect(closed.emit)
 	box.add_child(back)
 	Profile.changed.connect(_rebuild)
@@ -62,35 +62,35 @@ func _rebuild() -> void:
 	for c in _content.get_children():  # not free(): a pressed button is mid-signal
 		_content.remove_child(c)
 		c.queue_free()
-	_gold.text = "%d or  ·  %d parchemin(s) vierge(s)" % [Profile.gold, Profile.blank_scrolls]
+	_gold.text = tr("%d gold  ·  %d blank scroll(s)") % [Profile.gold, Profile.blank_scrolls]
 
-	var row := _section("Équipement")
+	var row := _section("Equipment")
 	for id in Profile.ITEMS:
 		var it: Dictionary = Profile.ITEMS[id]
 		var on: bool = Profile.equipped[it.kind] == id
-		var b := _button(row, it.name + (" ✔" if on else "" if Profile.owned.has(id) else " (%d or)" % it.price),
+		var b := _button(row, tr(it.name) + (" ✔" if on else "" if Profile.owned.has(id) else " (%s)" % tr("%d gold") % it.price),
 			func(): if not Profile.equip_item(id): Profile.buy_item(id))
 		b.disabled = on or (not Profile.owned.has(id) and Profile.gold < it.price)
 		b.tooltip_text = _bonus_text(it.bonus)
 		b.icon = UITheme.icon(id)
 
-	row = _section("Bonus permanents")
+	row = _section("Permanent bonuses")
 	for id in Profile.BONUSES:
 		var bo: Dictionary = Profile.BONUSES[id]
 		var price := Profile.bonus_price(id)
-		var b := _button(row, "%s %d/%d · %s%s" % [bo.name, Profile.bonuses.get(id, 0), bo.max, bo.desc,
-			" (max)" if price < 0 else " (%d or)" % price], func(): Profile.buy_bonus(id))
+		var b := _button(row, "%s %d/%d · %s (%s)" % [tr(bo.name), Profile.bonuses.get(id, 0), bo.max, tr(bo.desc),
+			"max" if price < 0 else tr("%d gold") % price], func(): Profile.buy_bonus(id))
 		b.disabled = price < 0 or Profile.gold < price
 
 	for slot in Upgrades.SLOTS:
-		row = _section(Upgrades.SLOT_NAMES[slot])
+		row = _section(tr(Upgrades.SLOT_NAMES[slot]))
 		for e in Profile.available_spells(slot):
-			var b := _button(row, e.spell.name, func(): Profile.equip_spell(slot, e.id))
+			var b := _button(row, Spell.label(e.spell), func(): Profile.equip_spell(slot, e.id))
 			b.disabled = Profile.spells[slot] == e.id
-			b.tooltip_text = "%s (%d mana)" % [e.spell.description, Spell.mana_cost(e.spell)]
+			b.tooltip_text = "%s (%d mana)" % [Spell.describe(e.spell), Spell.mana_cost(e.spell)]
 			b.icon = UITheme.spell_icon(e.spell)
 
-	row = _section("Chapeau")
+	row = _section("Hat")
 	for c in Profile.COLORS:
 		var b := _button(row, "", func(): Profile.set_look("hat", c))
 		b.custom_minimum_size = Vector2(44, 44)
@@ -131,12 +131,12 @@ func _button(parent: Control, text: String, fn: Callable) -> Button:
 
 
 static func _bonus_text(bonus: Dictionary) -> String:
-	var names := {"hp": "PV", "mana": "mana", "regen": "mana/s", "speed": "vitesse",
-		"damage": "dégâts", "gold": "or", "xp": "XP"}
+	var names := {"hp": "HP", "mana": "mana", "regen": "mana/s", "speed": "speed",
+		"damage": "damage", "gold": "gold", "xp": "XP"}
 	var parts := []
 	for k in bonus:
 		var v: float = bonus[k]
-		parts.append(("+%d %%" % roundi(v * 100) if k in ["speed", "damage", "gold", "xp"] else "+%d" % v) + " " + names.get(k, k))
+		parts.append(("+%d %%" % roundi(v * 100) if k in ["speed", "damage", "gold", "xp"] else "+%d" % v) + " " + TranslationServer.translate(names.get(k, k)))
 	return ", ".join(parts)
 
 

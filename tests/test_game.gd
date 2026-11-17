@@ -21,9 +21,41 @@ func _initialize() -> void:
 	_test_run()
 	_test_waves()
 	_test_profile()
+	_test_french()
 	await _test_play()
 	print("game tests: %s" % ("OK" if failures == 0 else "%d failure(s)" % failures))
 	quit(1 if failures else 0)
+
+
+## Every text of the game has its French translation (locale/fr.po): tr()
+## literals in the code, and the names in the game's data.
+func _test_french() -> void:
+	TranslationServer.set_locale("fr")
+	var texts := ["Spell"]
+	var literal := RegEx.create_from_string("\\btr\\(\"((?:[^\"\\\\]|\\\\.)+)\"\\)")
+	for dir in ["res://game/", "res://ui/"]:
+		for f in DirAccess.get_files_at(dir):
+			if f.ends_with(".gd"):
+				for m in literal.search_all(FileAccess.get_file_as_string(dir + f)):
+					texts.append(m.get_string(1).c_unescape())
+	for d in [Upgrades.LIST, ProfileState.ITEMS, ProfileState.BONUSES, ProfileState.ACHIEVEMENTS]:
+		for v in d.values():
+			texts.append(v.name)
+			if v.has("desc") and not v.desc.begins_with("+1 projectile") and not v.desc.begins_with("+3 mana/s"):
+				texts.append(v.desc)
+	var p := ProfileState.new()
+	for e in p.base_spells:
+		texts += [e.spell.name, e.spell.description]
+	p.free()
+	for m in RegEx.create_from_string("\"[A-Z_]+\": \"([^\"]+)\"").search_all(FileAccess.get_file_as_string("res://game/online.gd")):
+		texts.append(m.get_string(1))  # Online.ERRORS (the autoload needs Profile)
+	texts += Settings.REBINDABLE.values().filter(func(t): return t != "Pause")
+	var same := ["Multiplication", "Scribe"]
+	for t in texts:
+		check(t in same or TranslationServer.translate(t) != t, "French for: " + t)
+	check(Spell.describe({"description": "x", "description_fr": "y"}) == "y", "forged spell described in French")
+	TranslationServer.set_locale("en")
+	check(Spell.describe({"description": "x", "description_fr": "y"}) == "x", "forged spell described in English")
 
 
 func _damage(s: Dictionary) -> float:
