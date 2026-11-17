@@ -3,52 +3,115 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Octo Magic — Crée tes sorts, conquiers le donjon</title>
-<meta name="description" content="Octo Magic : un jeu de survie twin-stick où tu écris tes propres sorts sur des parchemins, dans une langue morte. Gratuit, dans le navigateur, en solo ou en coop.">
+<title>Octo Magic — Écris tes sorts, conquiers le donjon</title>
+<meta name="description" content="Octo Magic : un jeu de survie où tu écris tes propres sorts sur des parchemins, dans une langue morte. Gratuit, dans le navigateur, en solo ou en coop à quatre.">
+<meta property="og:title" content="Octo Magic">
+<meta property="og:description" content="Écris tes sorts en latin, survis aux vagues, conquiers le donjon. Gratuit, dans le navigateur.">
+<meta property="og:image" content="/assets/icon.png">
+<meta name="theme-color" content="#120d24">
 <link rel="icon" href="/assets/icon.png">
 <link rel="stylesheet" href="/style.css">
 </head>
-<body>
+<body class="landing">
 <header>
   <a class="brand" href="/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
-  <nav><a href="/game">Jouer</a><a href="/account" data-who>Connexion</a></nav>
+  <nav><a href="#forge">La forge</a><a href="#features">Le jeu</a><a href="/account" data-who>Connexion</a><a class="button small" href="/game">Jouer</a></nav>
 </header>
-<main>
-  <section class="hero">
-    <img class="pixel" src="/assets/icon.png" alt="">
+
+<section class="hero">
+  <div class="sky" aria-hidden="true"></div>
+  <div class="hero-text">
+    <p class="eyebrow">Roguelite · Coop · Sorts forgés par IA</p>
     <h1>Octo Magic</h1>
-    <p>Crée, combine et lance des sorts pour conquérir un donjon.</p>
+    <p class="tagline">Écris tes sorts dans une langue oubliée.<br>Survis aux vagues. Conquiers le donjon.</p>
     <div class="actions">
-      <a class="button" href="/game">Jouer maintenant</a>
-      <a class="button ghost" href="/account">Mon compte</a>
+      <a class="button big" href="/game">▶ Jouer gratuitement</a>
+      <a class="button ghost big" href="/account">Créer un compte</a>
+    </div>
+    <p class="note">Dans le navigateur, sans installation. Bientôt sur mobile :</p>
+    <div class="stores">
+      <a class="store soon" aria-disabled="true" title="Bientôt"><img src="/img/app-store.svg" alt="Télécharger dans l'App Store"></a>
+      <a class="store soon play" aria-disabled="true" title="Bientôt"><img src="/img/google-play.png" alt="Disponible sur Google Play"></a>
+    </div>
+  </div>
+  <div class="orbit" aria-hidden="true">
+    <img class="pixel core" src="/assets/icon.png" alt="">
+    <img class="pixel o1" src="/assets/icons/fire_nova.png" alt="">
+    <img class="pixel o2" src="/assets/icons/thunder_chain.png" alt="">
+    <img class="pixel o3" src="/assets/icons/frost_shard.png" alt="">
+    <img class="pixel o4" src="/assets/icons/plague.png" alt="">
+    <img class="pixel o5" src="/assets/icons/black_hole.png" alt="">
+    <img class="pixel o6" src="/assets/icons/arcane_missiles.png" alt="">
+  </div>
+</section>
+
+<main>
+  <section id="forge" class="forge">
+    <div>
+      <p class="eyebrow">La forge</p>
+      <h2>Un mot. Un sort que personne d'autre n'a.</h2>
+      <p>En run, tu ramasses des parchemins vierges. Entre deux runs, tu y écris un mot — en <b>latin</b>, en <b>grec ancien</b>, en <b>vieux norrois</b>, en <b>sanskrit</b>… La forge en tire un sort unique : sa forme, sa trajectoire, son élément, ses effets et ses visuels en pixel art.</p>
+      <p class="muted">Un mot sans sens ou d'une langue vivante ? Le parchemin te revient, intact. Le moteur équilibre chaque sort : l'IA décrit, le jeu arbitre.</p>
+    </div>
+    <div class="scroll" aria-label="Exemple de parchemin">
+      <span class="word">fulgur</span>
+      <span class="arrow">↓</span>
+      <span class="spell"><img class="pixel" src="/assets/icons/storm.png" alt=""><span><b>Fulgur Caeli</b><small>Un éclair tombe du ciel et rebondit entre les ennemis proches.</small></span></span>
     </div>
   </section>
 
-  <section class="cards">
+  <section class="steps">
+    <div><span>1</span><h3>Survis</h3><p>Des vagues d'ennemis toujours plus fortes, et un boss qui guette.</p></div>
+    <div><span>2</span><h3>Évolue</h3><p>Chaque niveau t'offre une amélioration : plus de projectiles, plus de dégâts, plus de chaos.</p></div>
+    <div><span>3</span><h3>Forge</h3><p>Écris tes parchemins entre les runs et équipe tes nouveaux sorts.</p></div>
+    <div><span>4</span><h3>Recommence</h3><p>La mort est permanente, l'or reste : bâtons, robes, anneaux et bonus.</p></div>
+  </section>
+
+  <section id="features" class="cards">
     <div class="card">
-      <img class="pixel" src="/assets/icons/scroll.png" alt="">
-      <h3>Écris tes sorts</h3>
-      <p>Trouve des parchemins vierges pendant la run, puis écris-y un mot en latin, en grec ancien ou en vieux norrois : la forge en fait un sort unique, avec ses propres effets et visuels.</p>
+      <img class="pixel" src="/assets/icons/arcane_orbit.png" alt="">
+      <h3>Jusqu'à 4 mages</h3>
+      <p>Crée une partie, partage son code, et affrontez le donjon ensemble en pair à pair.</p>
     </div>
     <div class="card">
       <img class="pixel" src="/assets/icons/meteor_rain.png" alt="">
-      <h3>Survis aux vagues</h3>
-      <p>Des vagues d'ennemis toujours plus fortes et des boss. Gagne de l'expérience, choisis tes améliorations et pousse ton mage le plus loin possible.</p>
-    </div>
-    <div class="card">
-      <img class="pixel" src="/assets/icons/arcane_orbit.png" alt="">
-      <h3>Joue à plusieurs</h3>
-      <p>Jusqu'à quatre mages en coopération, en pair à pair : crée une partie et partage son code.</p>
+      <h3>Trois emplacements</h3>
+      <p>Sort principal, secondaire et ultime : combine-les pour un style qui n'appartient qu'à toi.</p>
     </div>
     <div class="card">
       <img class="pixel" src="/assets/icons/staff_crystal.png" alt="">
-      <h3>Progresse</h3>
-      <p>L'or reste après la mort : bâtons, robes, anneaux et bonus permanents. Ta progression et tes sorts suivent ton compte.</p>
+      <h3>Ton mage, ta progression</h3>
+      <p>Personnalise ton mage, débloque des succès et retrouve tes sorts sur tous tes appareils.</p>
     </div>
+    <div class="card">
+      <img class="pixel" src="/assets/icons/gold.png" alt="">
+      <h3>Gratuit</h3>
+      <p>Joue tout de suite dans ton navigateur, au clavier, à la souris ou à la manette.</p>
+    </div>
+  </section>
+
+  <section class="spellbook" aria-label="Quelques sorts">
+    <img class="pixel" src="/assets/icons/fire_nova.png" alt="Nova de feu">
+    <img class="pixel" src="/assets/icons/blizzard.png" alt="Blizzard">
+    <img class="pixel" src="/assets/icons/storm.png" alt="Tempête">
+    <img class="pixel" src="/assets/icons/toxic_cloud.png" alt="Nuage toxique">
+    <img class="pixel" src="/assets/icons/frost_ring.png" alt="Anneau de givre">
+    <img class="pixel" src="/assets/icons/venom_dart.png" alt="Dard venimeux">
+    <img class="pixel" src="/assets/icons/black_hole.png" alt="Trou noir">
+    <img class="pixel" src="/assets/icons/spark.png" alt="Étincelle">
+    <img class="pixel" src="/assets/icons/meteor_rain.png" alt="Pluie de météores">
+    <img class="pixel" src="/assets/icons/arcane_missiles.png" alt="Missiles arcaniques">
+  </section>
+
+  <section class="cta">
+    <h2>Le donjon t'attend.</h2>
+    <p>Ton premier sort n'attend qu'un mot.</p>
+    <a class="button big" href="/game">▶ Lancer le jeu</a>
   </section>
 </main>
 <footer>
-  <a href="/privacy">Confidentialité</a><a href="/terms">Conditions d'utilisation</a>
+  <a href="/account">Mon compte</a><a href="/privacy">Confidentialité</a><a href="/terms">Conditions d'utilisation</a>
+  <p><small>App Store est une marque d'Apple Inc. Google Play est une marque de Google LLC.</small></p>
 </footer>
 <script type="module" src="/site.js"></script>
 </body>
