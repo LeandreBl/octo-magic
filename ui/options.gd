@@ -8,7 +8,9 @@ signal scale_changed
 
 const UITheme := preload("res://ui/theme.gd")
 const SCHEME := "Mouse: aim · left click: cast the spell · right click or Space: secondary spell\n" \
-	+ "Gamepad: left stick move, right stick aim and cast, RB secondary spell, Start pause\n" \
+	+ "Gamepad: left stick move, right stick aim and cast, RT cast, RB secondary spell, Start pause\n" \
+	+ "Menus with a gamepad: d-pad or left stick, A confirm, B back\n" \
+	+ "Browser: press a gamepad button so it is detected\n" \
 	+ "Touch: left half move, right half aim and cast, touch a slot to cast it"
 
 var _waiting := ""  # action waiting for its new key
@@ -172,13 +174,22 @@ func _refresh_keys() -> void:
 		_keys[action].text = Settings.key_name(action)
 
 
-## While waiting for a key, the next key press is the new binding (Escape cancels).
+## While waiting for a key, the next key press is the new binding (Escape or a
+## gamepad button cancels). Otherwise Escape / B / Start close and save.
 func _input(e: InputEvent) -> void:
-	if _waiting.is_empty() or not (e is InputEventKey and e.pressed and not e.echo):
+	if not is_visible_in_tree():
+		return
+	if _waiting.is_empty():
+		if e.is_action_pressed("ui_cancel") or e.is_action_pressed("pause"):
+			get_viewport().set_input_as_handled()
+			_close()
+		return
+	if e is InputEventKey and e.pressed and not e.echo:
+		if e.physical_keycode != KEY_ESCAPE:
+			Settings.set_value("controls", _waiting, e.physical_keycode)
+	elif not (e is InputEventJoypadButton and e.pressed):
 		return
 	get_viewport().set_input_as_handled()
-	if e.physical_keycode != KEY_ESCAPE:
-		Settings.set_value("controls", _waiting, e.physical_keycode)
 	_waiting = ""
 	_refresh_keys()
 

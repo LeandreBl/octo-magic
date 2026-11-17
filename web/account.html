@@ -52,7 +52,7 @@
     <h2>Succès</h2>
     <ul class="achievements" id="achievements"></ul>
 
-    <h2>Sorts forgés</h2>
+    <h2>Mes sorts</h2>
     <ul id="forged"></ul>
 
     <h2>Gérer le compte</h2>
@@ -66,7 +66,7 @@
       </form>
       <form id="delete" class="card">
         <h3>Supprimer le compte</h3>
-        <p>Efface définitivement ton compte, ta progression en ligne et tes sorts forgés.</p>
+        <p>Efface définitivement ton compte, ta progression en ligne et tes sorts.</p>
         <input name="password" type="password" placeholder="Mot de passe" autocomplete="current-password" required>
         <button class="danger">Supprimer</button>
         <small data-google hidden>Google te redemandera de te connecter avant la suppression.</small>
@@ -104,6 +104,9 @@
     ["scrolls", "Parchemins trouvés"],
   ];
   const $ = (id) => document.getElementById(id);
+  // Where to go once logged in (?then=/game from the game's guard); same-site paths only.
+  const next = new URLSearchParams(location.search).get("then");
+  const then = /^\/[^/\\]/.test(next ?? "") ? next : "";
 
   // Runs an async form action: button disabled meanwhile, message after.
   function action(form, run, done) {
@@ -136,7 +139,7 @@
       return "E-mail de réinitialisation envoyé.";
     }
     await site.login(email.value, password.value, button === "signup");
-  }, () => site.session() && location.reload());
+  }, () => site.session() && (then ? location.replace(then) : location.reload()));
 
   const pw = $("password");
   pw.onsubmit = action(pw, async () => {
@@ -154,7 +157,7 @@
 
   $("google").onclick = async () => {
     try {
-      await site.google();
+      await site.google(then);
     } catch (err) {
       say(login, err);
     }
@@ -206,7 +209,7 @@
     const forged = Array.isArray(p.forged) ? p.forged : [];
     $("forged").replaceChildren(...(forged.length ? forged : [null]).map((f) =>
       Object.assign(document.createElement("li"), {
-        textContent: f ? `${f.spell?.name ?? f.id}${f.spell?.description ? ` — ${f.spell.description}` : ""}` : "Aucun sort forgé.",
+        textContent: f ? `${f.spell?.name ?? f.id}${f.spell?.description ? ` — ${f.spell.description}` : ""}` : "Aucun sort créé pour l'instant.",
       })));
   }
 

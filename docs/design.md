@@ -66,9 +66,5 @@
 - La run se termine quand tous les mages sont à terre. Un joueur peut rejoindre en cours de run. Départ de l'hôte : chacun repasse en solo.
 - En ligne (`docker compose`) : le salon est dans le serveur, coturn dans son propre conteneur (réseau de l'hôte, ports UDP).
 
-## Décor des cartes
-- Une carte par run (`crypt`, `cave`, `ruins`), tirée au début de la run ; le décor est placé une fois (graine), il ne change pas pendant la run.
-- Planches PixelLab 128x128 (4x4 cases de 32x32), versionnées dans `assets/decor/<carte>.png`, dessinées au même facteur que les sorts (`SpellArt.PIXEL`). Rôle de chaque case : `Decor.MAPS` (`game/decor.gd`).
-- Props non bloquants ; obstacles `wall` (les `bolt` s'y arrêtent) et `rock` (ils rebondissent) ; `crate` cassable par un `bolt`, lâche or et XP. Joueur et ennemis glissent autour des obstacles.
-- Centre et bords (entrées des ennemis) dégagés, passage d'au moins 80 px entre deux obstacles.
-- Lumières : halo pixel art en paliers, additif, qui vacille (pas de `PointLight2D`). Le décor est en `z_index = -1`, le sol doit être dessous.
+## Carte
+- La carte (`Arena.RECT`, `game/arena.gd`, environ 4x4 écrans ; une de `Arena.MAPS` par run, pour sa musique) est vide : seul son bord est dessiné. Les objets (décor, obstacles, caisses) viendront avec la tâche #92 ; les planches PixelLab de l'ancien décor restent dans `assets/decor/`.

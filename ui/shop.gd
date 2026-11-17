@@ -1,12 +1,13 @@
 extends Control
-## Shop, between runs, in tabs: equipment, permanent bonuses, equipped spells,
-## the mage's look and the scroll panel; the mage and its total stats on the
-## right. Reads and edits the Profile autoload.
+## Shop, between runs, in tabs: equipment, permanent bonuses, the mage's look
+## and the scroll panel (the spell is the character's, chosen at its
+## creation); the mage and its total stats on the right. Reads and edits the
+## Profile autoload.
 
 signal closed
 
 const UITheme := preload("res://ui/theme.gd")
-const TABS := ["Equipment", "Bonuses", "Spells", "Look", "Scrolls"]
+const TABS := ["Equipment", "Bonuses", "Look", "Scrolls"]
 
 var main: Node
 var _gold: Label
@@ -72,6 +73,7 @@ func _ready() -> void:
 	_scroll = ScrollContainer.new()
 	_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scroll.follow_focus = true  # keyboard/gamepad
 	body.add_child(_scroll)
 	var inner := _vbox(16)
 	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -157,12 +159,6 @@ func _rebuild() -> void:
 			var grid := _grid()
 			for id in Profile.BONUSES:
 				_bonus_card(grid, id)
-		"Spells":
-			for slot in Upgrades.SLOTS:
-				_content.add_child(UITheme.label(tr(Upgrades.SLOT_NAMES[slot]), "Subheader"))
-				var grid := _grid()
-				for e in Profile.available_spells(slot):
-					_spell_card(grid, slot, e)
 		"Look":
 			_content.add_child(UITheme.label("Hat", "Subheader"))
 			var row := HFlowContainer.new()
@@ -281,14 +277,6 @@ func _bonus_card(grid: Control, id: String) -> void:
 		c[1].add_child(UITheme.label("max", "", 16, UITheme.GOOD))
 	else:
 		_price(c[1], "", price)
-
-
-func _spell_card(grid: Control, slot: String, e: Dictionary) -> void:
-	var on: bool = Profile.spells[slot] == e.id
-	var c := _card(grid, UITheme.spell_icon(e.spell), Spell.label(e.spell),
-		"%d mana" % Spell.mana_cost(e.spell), on, func(): Profile.equip_spell(slot, e.id))
-	c[0].disabled = on
-	c[0].tooltip_text = Spell.describe(e.spell)
 
 
 ## The mage panel: worn items, and the total stats with every bonus.

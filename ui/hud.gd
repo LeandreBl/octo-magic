@@ -2,7 +2,8 @@ extends Control
 ## In-run HUD: level, HP, mana, XP (top left), wave and the boss countdown
 ## (top center), gold, score and a pause button for touch (top right), spell
 ## slots with key, mana cost and cooldown (bottom center: touch a slot to cast
-## it), the passive, and the scrolls found with the forge news (bottom left).
+## it; key or gamepad button below), the passive (shield left, time until
+## it is back), and the scrolls found with the forge news (bottom left).
 
 signal paused
 
@@ -22,6 +23,7 @@ var _scrolls: Label
 var _scroll_note: Label
 var _passive: Control
 var _shield: Label
+var _shield_wait: ColorRect  # covers the passive while a broken shield comes back
 var _slots := {}  # slot -> [icon, cooldown ColorRect, spell shown, cost Label, name Label, panel, seconds Label]
 var _ready_box: StyleBox
 var _busy_box: StyleBox
@@ -147,9 +149,15 @@ func _ready() -> void:
 	p_panel.custom_minimum_size = Vector2(60, 60)
 	p_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	p_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p_panel.clip_contents = true
 	var shield := UITheme.icon_rect(UITheme.glyph("shield", UITheme.MANA), 36)
 	shield.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	p_panel.add_child(shield)
+	_shield_wait = ColorRect.new()
+	_shield_wait.color = Color(UITheme.OUTLINE, 0.65)
+	_shield_wait.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	_shield_wait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p_panel.add_child(_shield_wait)
 	_passive.add_child(p_panel)
 	_shield = UITheme.label("", "", 14, UITheme.TEXT_DIM)
 	_shield.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -269,7 +277,9 @@ func _process(_delta: float) -> void:
 	_scrolls.text = tr("Scrolls found: %d") % Run.scrolls
 	_scroll_note.text = main.forge_note if main.forge_note else tr("To write at the end of the run")
 	_passive.visible = p.passive != ""
-	_shield.text = tr("Shield %d") % p.shield
+	if p.passive:  # no key: it applies itself
+		_shield.text = "%s %d" % [tr(Run.SHOP[p.passive].name), p.shield]
+		_shield_wait.offset_top = -_shield_wait.get_parent().size.y * clampf(p.shield_wait / p.SHIELD_WAIT, 0.0, 1.0)
 	for slot in _slots:
 		var ui: Array = _slots[slot]
 		ui[0].get_parent().get_parent().visible = Run.spells.has(slot)  # secondary: once bought
@@ -282,13 +292,20 @@ func _process(_delta: float) -> void:
 			ui[0].texture = _icon(sp)
 		ui[3].text = str(cost)
 		ui[4].text = Spell.label(sp)  # follows a language change
-		ui[7].text = tr("Left click" if slot == "primary" else "Right click")
+		ui[7].text = _binding(slot)
 		var left: float = p.cooldowns.get(slot, 0.0)
 		ui[1].offset_top = -ui[5].size.y * clampf(left / sp.cooldown, 0.0, 1.0)
 		ui[6].text = ("%.1f" % left) if left > 0.05 and sp.cooldown >= 1.0 else ""
 		var can: bool = p.mana >= cost
 		ui[0].modulate = Color.WHITE if can else Color(0.45, 0.45, 0.6)
 		ui[5].add_theme_stylebox_override("panel", _ready_box if can and left <= 0.05 else _busy_box)
+
+
+## The button of a spell slot, for the device in use.
+func _binding(slot: String) -> String:
+	if Settings.pad:
+		return Settings.pad_button("RT", "R2") if slot == "primary" else Settings.pad_button("RB", "R1")
+	return tr("Left click" if slot == "primary" else "Right click")
 
 
 ## The spell's icon, else the first frame of its projectile, else a disc of its color.

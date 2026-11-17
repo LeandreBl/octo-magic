@@ -22,8 +22,8 @@ msgstr "Classement"
 msgid "Level up!"
 msgstr "Niveau supérieur !"
 
-msgid "Write your spells, survive the waves."
-msgstr "Écris tes sorts, survis aux vagues."
+msgid "Create your spells, combine them, survive the waves."
+msgstr "Crée tes sorts, combine-les, survis aux vagues."
 
 msgid "Play"
 msgstr "Jouer"
@@ -70,8 +70,8 @@ msgstr "Succès : %s !"
 msgid "Spell unlocked: %s."
 msgstr "Sort débloqué : %s."
 
-msgid "Mouse: aim · left click: cast the spell · right click or Space: secondary spell\nGamepad: left stick move, right stick aim and cast, RB secondary spell, Start pause\nTouch: left half move, right half aim and cast, touch a slot to cast it"
-msgstr "Souris : viser · clic gauche : lancer le sort · clic droit ou Espace : sort secondaire\nManette : stick gauche bouger, stick droit viser et lancer, RB sort secondaire, Start pause\nTactile : moitié gauche bouger, moitié droite viser et lancer, toucher un emplacement pour le lancer"
+msgid "Mouse: aim · left click: cast the spell · right click or Space: secondary spell\nGamepad: left stick move, right stick aim and cast, RT cast, RB secondary spell, Start pause\nMenus with a gamepad: d-pad or left stick, A confirm, B back\nBrowser: press a gamepad button so it is detected\nTouch: left half move, right half aim and cast, touch a slot to cast it"
+msgstr "Souris : viser · clic gauche : lancer le sort · clic droit ou Espace : sort secondaire\nManette : stick gauche bouger, stick droit viser et lancer, RT lancer, RB sort secondaire, Start pause\nMenus à la manette : croix directionnelle ou stick gauche, A valider, B retour\nNavigateur : appuie sur un bouton de la manette pour qu'elle soit détectée\nTactile : moitié gauche bouger, moitié droite viser et lancer, toucher un emplacement pour le lancer"
 
 msgid "Language"
 msgstr "Langue"
@@ -247,9 +247,6 @@ msgstr "Session expirée, reconnecte-toi."
 msgid "Profile not synced (server unreachable)."
 msgstr "Profil non synchronisé (serveur injoignable)."
 
-msgid "Profile sent to the server."
-msgstr "Profil envoyé sur le serveur."
-
 msgid "Profile synced."
 msgstr "Profil synchronisé."
 
@@ -319,11 +316,11 @@ msgstr "Parchemin vierge trouvé ! Tu pourras l'écrire à la fin de la run."
 msgid "Log in (main menu → Account) to write the scrolls."
 msgstr "Connecte-toi (menu principal → Compte) pour écrire les parchemins."
 
-msgid "Sending to the forge…"
-msgstr "Envoi à la forge…"
+msgid "Writing the scrolls…"
+msgstr "Inscription des parchemins…"
 
-msgid "Cannot reach the forge. Your scrolls are kept."
-msgstr "Impossible de joindre la forge. Tes parchemins sont gardés."
+msgid "The scrolls cannot be written right now. Your scrolls are kept."
+msgstr "Impossible d'inscrire les parchemins pour l'instant. Tes parchemins sont gardés."
 
 msgid "error %d"
 msgstr "erreur %d"
@@ -331,11 +328,11 @@ msgstr "erreur %d"
 msgid "offline"
 msgstr "hors ligne"
 
-msgid "The forge refused or did not answer (%s). Your scrolls are kept."
-msgstr "La forge a refusé ou n'a pas répondu (%s). Tes parchemins sont gardés."
+msgid "The scrolls could not be written (%s). Your scrolls are kept."
+msgstr "Les parchemins n'ont pas pu être inscrits (%s). Tes parchemins sont gardés."
 
-msgid "The forge failed (%s). Your scrolls are given back."
-msgstr "La forge a échoué (%s). Tes parchemins te sont rendus."
+msgid "Writing the scrolls failed (%s). Your scrolls are given back."
+msgstr "L'inscription a échoué (%s). Tes parchemins te sont rendus."
 
 msgid "%d scroll(s) being written…"
 msgstr "%d parchemin(s) en cours d'écriture…"
@@ -586,8 +583,8 @@ msgstr "Clic D"
 msgid "Ring of fire"
 msgstr "Anneau de feu"
 
-msgid "Fireballs burst out all around you (right click)"
-msgstr "Des boules de feu jaillissent tout autour de vous (clic droit)"
+msgid "Fireballs burst out all around you"
+msgstr "Des boules de feu jaillissent tout autour de toi"
 
 msgid "Shield"
 msgstr "Bouclier"
@@ -705,9 +702,6 @@ msgstr "Parchemins trouvés : %d"
 msgid "To write at the end of the run"
 msgstr "À écrire en fin de run"
 
-msgid "Shield %d"
-msgstr "Bouclier %d"
-
 msgid "Scrolls"
 msgstr "Parchemins"
 
@@ -821,3 +815,41 @@ msgstr "mana"
 
 msgid "mana/s"
 msgstr "mana/s"
+msgid "Passive"
+msgstr "Passif"
+
+msgid "Characters"
+msgstr "Personnages"
+
+msgid "New character"
+msgstr "Nouveau personnage"
+
+msgid "Create"
+msgstr "Créer"
+
+msgid "name"
+msgstr "nom"
+
+msgid "Loading…"
+msgstr "Chargement…"
+
+msgid "Choose a name."
+msgstr "Choisis un nom."
+
+msgid "Creating…"
+msgstr "Création…"
+
+msgid "Cost: %d mana"
+msgstr "Coût : %d mana"
+
+msgid "%s: confirm"
+msgstr "%s : valider"
+
+msgid "%s: back"
+msgstr "%s : retour"
+
+msgid "Cross"
+msgstr "Croix"
+
+msgid "Circle"
+msgstr "Rond"

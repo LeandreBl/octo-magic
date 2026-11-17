@@ -32,7 +32,6 @@ header nav a { color: var(--muted); text-decoration: none; margin-left: 1.2rem; 
 header nav a:hover { color: var(--text); }
 
 main { max-width: 60rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
-main.text { max-width: 42rem; }
 h1, h2 { font-family: Uncial, serif; font-weight: normal; color: var(--gold); }
 footer { text-align: center; color: var(--muted); padding: 2rem; border-top: 1px solid var(--line); }
 footer a { color: var(--muted); margin: 0 .6rem; }
@@ -125,7 +124,7 @@ body.landing .hero h1 {
 /* The octopus with its spells orbiting around. */
 .orbit { position: relative; width: min(26rem, 80vw); aspect-ratio: 1; margin: 0 auto; }
 .orbit::before {
-  content: ""; position: absolute; inset: 12%; border-radius: 50%;
+  content: ""; position: absolute; inset: 8%; border-radius: 50%;
   border: 1px dashed #8b5cf666; box-shadow: 0 0 80px #8b5cf644 inset, 0 0 60px #8b5cf633;
 }
 .orbit .core {
@@ -185,7 +184,56 @@ body.landing h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: .3rem 0 1rem; }
 }
 .cta p { color: var(--muted); font-size: 1.2rem; margin-bottom: 2rem; }
 
+/* --- Legal pages (terms, privacy) ---------------------------------------- */
+main.legal { max-width: 46rem; counter-reset: part; }
+.legal-head { text-align: center; padding: 1.5rem 0 2rem; }
+.legal-head h1 { font-size: clamp(2rem, 6vw, 3rem); line-height: 1.1; margin: .4rem 0 .8rem; }
+.updated {
+  display: inline-block; margin: 0; padding: .15rem .8rem; font-size: .85rem;
+  color: var(--muted); border: 1px solid var(--line); border-radius: 999px;
+}
+.lead { font-size: 1.15rem; max-width: 34rem; margin: 1.2rem auto 0; }
+
+.toc {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem;
+  margin: 0 0 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--line);
+}
+.toc a {
+  padding: .25rem .8rem; border-radius: 6px; font-size: .95rem; text-decoration: none;
+  color: var(--muted); background: var(--panel); border: 1px solid var(--line);
+}
+.toc a:hover { color: var(--text); border-color: var(--accent); }
+
+main.legal section { margin: 0 0 2.5rem; scroll-margin-top: 1.5rem; }
+main.legal h2 {
+  counter-increment: part; display: flex; align-items: baseline; gap: .7rem;
+  font-size: 1.5rem; margin: 0 0 .6rem;
+}
+main.legal h2::before {
+  content: counter(part); font-size: 1rem; color: var(--accent); filter: brightness(1.4);
+  min-width: 1.8rem; height: 1.8rem; display: inline-grid; place-items: center;
+  border: 1px solid var(--line); border-radius: 50%; background: var(--panel);
+}
+main.legal section > :not(h2) { margin-left: 2.5rem; }
+main.legal p, main.legal li, main.legal dd { color: #d8d0f0; }
+main.legal ul { padding-left: 1.2rem; }
+main.legal li { margin: .3rem 0; }
+main.legal li::marker { color: var(--gold); content: "✦  "; }
+
+.facts { display: grid; gap: .7rem; margin-top: 0; margin-bottom: 0; }
+.facts div { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--gold); border-radius: 8px; padding: .8rem 1rem; }
+.facts dt { font-weight: bold; color: var(--gold); }
+.facts dd { margin: .2rem 0 0; }
+main.legal .note { margin-top: 1rem; font-size: .95rem; }
+
+.contact {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .5rem 1rem;
+  padding: 1.2rem 1.5rem; border-radius: 12px; border: 1px solid var(--line);
+  background: radial-gradient(ellipse at left, #3a2a99aa, transparent 70%), var(--panel);
+}
+
 @media (max-width: 800px) {
+  main.legal section > :not(h2) { margin-left: 0; }
   body.landing .hero, .forge { grid-template-columns: 1fr; text-align: center; }
   body.landing .hero { padding-top: 3rem; }
   body.landing .hero .actions, .stores { justify-content: center; }
