@@ -33,7 +33,8 @@
 ## Direction artistique
 - Pixel art, univers heroic fantasy, sprites petits et peu détaillés.
 - Jeu en **haute résolution** : seuls les sprites sont en pixel art, agrandis d'un facteur entier sans lissage (filtre « nearest », pas de flou).
-- Effets de sorts procéduraux (particules, lueurs) rendus en haute qualité par-dessus.
+- Sorts et effets aussi en pixel art, à la même taille de pixel que les sprites : effets procéduraux calés sur la grille de pixels (couche rendue en basse résolution puis agrandie sans lissage) ; l'interface et le texte restent en haute résolution.
+- Piste : la forge peut aussi générer un petit sprite pixel art par sort (projectile, icône).
 - Assets générés par IA (outils spécialisés pixel art) puis nettoyés à la main (grille, palette commune).
 
 ## Multijoueur (piste)
