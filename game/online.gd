@@ -50,6 +50,10 @@ var _google: TCPServer  # the native Google login waiting for the browser
 var _link := ""  # Google ID token to link to the account at the next password login
 
 
+func _init() -> void:
+	process_mode = PROCESS_MODE_ALWAYS  # menus pause the tree: its HTTPRequests must still poll
+
+
 func _ready() -> void:
 	server = OS.get_environment("OCTO_SERVER")
 	if server.is_empty() and OS.has_feature("web"):

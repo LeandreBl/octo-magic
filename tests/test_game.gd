@@ -201,6 +201,8 @@ func _test_waves() -> void:
 
 
 func _test_profile() -> void:
+	# Menus pause the tree: a paused Online never finishes creating a character.
+	check(root.get_node("Online").process_mode == Node.PROCESS_MODE_ALWAYS,"Online's requests run while menus pause the game")
 	var path := "user://test_profile.json"
 	DirAccess.remove_absolute(path)
 	var p := ProfileState.new()
