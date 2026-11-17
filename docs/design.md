@@ -21,7 +21,7 @@
 - Vagues : mélange pondéré des types débloqués, tiré avec la vague pour graine (même plan chez tous les pairs). Trois boss en alternance toutes les 5 vagues : liche (`boss`), seigneur de guerre, mère des couvées.
 
 ## Personnage
-- Pas de classes : chaque joueur personnalise son mage (apparence + équipement).
+- Le joueur est un **mage-poulpe** (la mascotte de l'icône), plus le boss (tâche #137). Pas de classes : chaque joueur personnalise son mage (apparence + équipement).
 - Sorts de base élémentaires (feu, glace, foudre, poison, arcane…), assets faits maison.
 
 ## Sorts

@@ -203,7 +203,7 @@ const ENEMIES := {
 		"spells": [{"type": "nova", "every": 3.0, "radius": 110.0, "dmg": 1.5}]},
 	# bosses, one every BOSS_EVERY waves in turn
 	"boss": {"hp": 400.0, "speed": 50.0, "radius": 36.0, "damage": 25.0, "xp": 20, "gold": 40,
-		"boss": true, "ai": "chase", "heavy": 0.3, "color": "#8e24aa",
+		"boss": true, "ai": "chase", "heavy": 0.3, "color": "#e65100",
 		"spells": [{"type": "ring", "every": 3.0, "count": 12}, {"type": "summon", "every": 8.0, "kind": "melee", "count": 3}]},
 	"warlord": {"hp": 500.0, "speed": 60.0, "radius": 34.0, "damage": 28.0, "xp": 20, "gold": 40,
 		"boss": true, "ai": "chase", "heavy": 0.3, "color": "#c62828", "sides": 4,

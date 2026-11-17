@@ -39,7 +39,7 @@ var cooldowns := {}  # slot -> seconds left
 var held := {}  # slot -> bool, from a touch UI
 var aim := Vector2.RIGHT
 var radius := 12.0
-var look := {"hat": "#3a2a99", "skin": "#f1c27d", "robe": "#6a4cff", "staff": "#8d6e63", "ring": ""}
+var look := {"hat": "#3a2a99", "skin": "#c77dff", "robe": "#6a4cff", "staff": "#8d6e63", "ring": ""}
 
 var _heard_hp := max_hp  # hosts and peers hear hurts on the synced hp
 var _touch_move := {}  # finger index -> [start, current]
@@ -228,11 +228,25 @@ func _cast_fx(slot: String, pos: Vector2, dir: Vector2) -> void:
 
 
 func _draw() -> void:
+	## The mage is an octopus: tentacles waving under a robe, round head, hat.
 	modulate.a = 1.0 if hp > 0.0 else 0.3  # down until the next run
-	draw_circle(Vector2.ZERO, radius, Color(look.robe))
-	draw_circle(Vector2(0, -radius * 0.2), radius * 0.45, Color(look.skin))  # face
-	draw_colored_polygon(PackedVector2Array([Vector2(-radius * 0.8, -radius * 0.5),
-		Vector2(radius * 0.8, -radius * 0.5), Vector2(0, -radius * 1.8)]), Color(look.hat))
+	var body := Color(look.skin)
+	var t := Time.get_ticks_msec() / 1000.0
+	for i in 6:  # tentacles fanned below
+		var a := PI * (0.12 + 0.76 * i / 5.0)
+		var pts := PackedVector2Array()
+		for j in 5:
+			var r := radius * (0.3 + 0.28 * j)
+			pts.append(Vector2.from_angle(a + 0.25 * sin(t * 6.0 + i + j * 0.8) * j / 4.0) * r)
+		draw_polyline(pts, body, 3.0)
+	draw_circle(Vector2(0, radius * 0.15), radius * 0.75, Color(look.robe))  # robe
+	draw_circle(Vector2(0, -radius * 0.35), radius * 0.7, body)  # head
+	for x in [-0.28, 0.28]:  # eyes, looking where it aims
+		var e := Vector2(radius * x, -radius * 0.35)
+		draw_circle(e, radius * 0.2, Color.WHITE)
+		draw_circle(e + aim * radius * 0.08, radius * 0.1, Color.BLACK)
+	draw_colored_polygon(PackedVector2Array([Vector2(-radius * 0.8, -radius * 0.75),
+		Vector2(radius * 0.8, -radius * 0.75), Vector2(radius * 0.2, -radius * 2.0)]), Color(look.hat))
 	draw_line(Vector2.ZERO, aim * (radius + 12), Color(look.staff), 3.0)  # staff
 	draw_circle(aim * (radius + 12), 3.0, Color(look.ring) if look.ring else Color.WHITE)
 	if shield > 0.0:
