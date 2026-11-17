@@ -153,10 +153,10 @@ func _move(delta: float) -> void:
 					return
 	position += dir * speed * delta + offset
 	if homing:
-		if not get_viewport_rect().has_point(global_position) \
+		if global_position.distance_to(origin) > 1500.0 \
 				and get_tree().get_nodes_in_group("enemies").is_empty():
 			queue_free()
-	elif not get_viewport_rect().grow(200).has_point(global_position):
+	elif global_position.distance_to(origin) > 1500.0:  # about off-screen
 		queue_free()
 
 

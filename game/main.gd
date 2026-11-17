@@ -99,13 +99,13 @@ func _run_started(map: String, map_seed: int) -> void:
 	Run.start(Profile.equipped_spells(), Profile.total_stats())
 	var p := local_player()
 	if p:
-		p.position = get_viewport_rect().size / 2.0
+		p.position = Decor.ARENA.get_center()
 	var decor := Decor.new()  # one map per run, placed once
 	decor.broken.connect(func(pos):
 		_drop("gold", 3, pos)
 		_drop("xp", 2, pos + Vector2(10, 0)))
 	add_child(decor)
-	decor.build(map, get_viewport_rect(), map_seed)
+	decor.build(map, Decor.ARENA, map_seed)
 	forge_status = ""
 	get_tree().paused = false
 	send_loadout(true)
@@ -134,12 +134,14 @@ func _offer_loadout(text: String) -> void:
 
 func _next_wave() -> void:
 	_wave_started.rpc(Run.wave + 1)
-	var size := get_viewport_rect().size
+	var off_screen := get_viewport_rect().size.length() * 0.55
+	var alive := get_tree().get_nodes_in_group("players").filter(func(p): return p.hp > 0.0)
 	for kind in Run.wave_plan(Run.wave):
 		spawned += 1
+		var near: Vector2 = alive.pick_random().position if alive else Decor.ARENA.get_center()
 		spawner.spawn({"kind": "enemy", "name": "E%d" % spawned, "type": kind,
-			"stats": Run.enemy_stats(kind, Run.wave),
-			"pos": size / 2.0 + Vector2.from_angle(randf() * TAU) * size.length() * 0.55})
+			"stats": Run.enemy_stats(kind, Run.wave),  # just off a mage's screen, inside the arena
+			"pos": (near + Vector2.from_angle(randf() * TAU) * off_screen).clamp(Decor.ARENA.position, Decor.ARENA.end)})
 
 
 @rpc("authority", "call_local", "reliable")
@@ -255,7 +257,7 @@ static func _config(props: Dictionary, spawn: bool) -> SceneReplicationConfig:
 
 
 func _spawn_player(id: int) -> void:
-	spawner.spawn({"kind": "player", "name": "P%d" % id, "id": id, "pos": get_viewport_rect().size / 2.0})
+	spawner.spawn({"kind": "player", "name": "P%d" % id, "id": id, "pos": Decor.ARENA.get_center()})
 
 
 ## Fresh world for a new session: the host (or solo) spawns its mage, a

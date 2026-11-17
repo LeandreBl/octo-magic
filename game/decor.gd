@@ -20,7 +20,8 @@ const MAPS := {
 	"ruins": [[0, "wall"], [1, "wall"], [3, "wall"], [14, "wall"], [8, "wall", "#ff9a3c"], [2, "rock"],
 		[4, "crate"], [5, "crate"], [6, "prop"], [7, "prop"], [9, "prop"], [12, "prop"], [13, "prop"], [15, "prop"]],
 }
-const COUNTS := {"wall": 5, "rock": 3, "crate": 4, "prop": 16}  # placement order
+const COUNTS := {"wall": 5, "rock": 3, "crate": 4, "prop": 16}  # per 1280x720 screen, placement order
+const ARENA := Rect2(0, 0, 4800, 3200)  # the run's map, about 4x4 screens: the camera shows a part of it
 const EDGE := 64.0  # enemies come in from every side
 const CENTER := 180.0  # the player starts in the middle
 const GAP := 80.0  # room between solid items: the boss (radius 36) gets through
@@ -56,7 +57,7 @@ func build(map: String, rect: Rect2, seed: int) -> void:
 	var inner := rect.grow(-EDGE)
 	for kind in COUNTS:
 		var cells: Array = MAPS[map].filter(func(c): return c[1] == kind)
-		for i in COUNTS[kind]:
+		for i in roundi(COUNTS[kind] * rect.get_area() / (1280.0 * 720.0)):
 			var c: Array = cells[rng.randi() % cells.size()]
 			var it := _shape(img, c[0])
 			it.kind = kind

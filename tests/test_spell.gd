@@ -124,14 +124,14 @@ func _check_homing_lifetime() -> void:
 	var e := Enemy.new()
 	e.position = Vector2(-500, -500)
 	world.add_child(e)
-	bolt.position = Vector2(-300, 100)  # off the map, an enemy still there
+	bolt.position = Vector2(-3000, 100)  # far off-screen, an enemy still there
 	await physics_frame
 	await physics_frame
-	check(is_instance_valid(bolt), "off-map homing bolt kept while enemies remain")
+	check(is_instance_valid(bolt), "far homing bolt kept while enemies remain")
 	e.free()
 	await physics_frame
 	await physics_frame
-	check(not is_instance_valid(bolt), "off-map homing bolt freed once no enemy is left")
+	check(not is_instance_valid(bolt), "far homing bolt freed once no enemy is left")
 	world.free()
 
 
