@@ -1,6 +1,8 @@
 extends Control
-## In-run HUD: HP, mana, XP/level, wave, gold, score, spell slots with
-## cooldown (touch a slot to cast it), scroll status, a pause button for touch.
+## In-run HUD: level, HP, mana, XP (top left), wave and the boss countdown
+## (top center), gold, score and a pause button for touch (top right), spell
+## slots with key, mana cost and cooldown (bottom center: touch a slot to cast
+## it), the passive, and the scrolls found with the forge news (bottom left).
 
 signal paused
 
@@ -10,15 +12,25 @@ var main: Node
 var _hp: ProgressBar
 var _mana: ProgressBar
 var _xp: ProgressBar
+var _level: Label
 var _wave: Label
+var _pips: Array[ColorRect] = []  # waves left before the boss
 var _gold: Label
-var _spell: Label
+var _score: Label
+var _scroll_plate: Control
 var _scrolls: Label
-var _slots := {}  # slot -> [icon TextureRect, cooldown ColorRect, spell shown, cost Label]
+var _scroll_note: Label
+var _passive: Control
+var _shield: Label
+var _slots := {}  # slot -> [icon, cooldown ColorRect, spell shown, cost Label, name Label, panel, seconds Label]
+var _ready_box: StyleBox
+var _busy_box: StyleBox
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ready_box = UITheme.frame({"rings": [[UITheme.GOLD, 4]], "bg": UITheme.PANEL, "drop": 4}, 0)
+	_busy_box = UITheme.frame({"rings": [[UITheme.OUTLINE, 4]], "bg": UITheme.PANEL, "drop": 4}, 0)
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -26,78 +38,154 @@ func _ready() -> void:
 		margin.add_theme_constant_override("margin_" + side, 16)
 	add_child(margin)
 
-	var plate := _plate(margin, Control.SIZE_SHRINK_BEGIN)
-	var left := VBoxContainer.new()
-	left.add_theme_constant_override("separation", 6)
-	plate.add_child(left)
-	_hp = _bar(left, UITheme.HP)
-	_mana = _bar(left, UITheme.MANA)
-	_xp = _bar(left, UITheme.XP)
-	_spell = Label.new()
-	_spell.autowrap_mode = TextServer.AUTOWRAP_WORD
-	_spell.custom_minimum_size.x = 280
-	_spell.add_theme_font_size_override("font_size", 18)
-	left.add_child(_spell)
-	_scrolls = Label.new()
-	_scrolls.autowrap_mode = TextServer.AUTOWRAP_WORD
-	_scrolls.custom_minimum_size.x = 280
-	_scrolls.add_theme_font_size_override("font_size", 16)
-	_scrolls.add_theme_color_override("font_color", UITheme.TEXT_DIM)
-	left.add_child(_scrolls)
+	# Top left: level badge and bars.
+	var vitals := _plate(margin, Control.SIZE_SHRINK_BEGIN, Control.SIZE_SHRINK_BEGIN)
+	var row := _box(HBoxContainer.new(), 10)
+	vitals.add_child(row)
+	var badge := PanelContainer.new()
+	badge.add_theme_stylebox_override("panel", UITheme.flat(UITheme.INK, UITheme.GOLD, 3, 0, 0))
+	badge.custom_minimum_size = Vector2(64, 64)
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var b_col := _box(VBoxContainer.new(), -4)
+	b_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	badge.add_child(b_col)
+	var lv := UITheme.label("LV.", "", 12, UITheme.TEXT_DIM)
+	lv.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	b_col.add_child(lv)
+	_level = UITheme.label("", "", 28, UITheme.GOLD)
+	_level.add_theme_font_override("font", UITheme.PIXEL_BOLD)
+	_level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	b_col.add_child(_level)
+	row.add_child(badge)
+	var bars := _box(VBoxContainer.new(), 6)
+	bars.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_child(bars)
+	_hp = _bar(bars, UITheme.HP, 24)
+	_mana = _bar(bars, UITheme.MANA, 24)
+	_xp = _bar(bars, UITheme.XP, 10)
 
-	_wave = Label.new()
-	_wave.theme_type_variation = "Header"
-	_plate(margin, Control.SIZE_SHRINK_CENTER).add_child(_wave)
+	# Top center: the wave, and pips counting down to the next boss.
+	var wave := _plate(margin, Control.SIZE_SHRINK_CENTER, Control.SIZE_SHRINK_BEGIN)
+	var w_col := _box(VBoxContainer.new(), 4)
+	wave.add_child(w_col)
+	_wave = UITheme.label("", "", 32, UITheme.GOLD)
+	_wave.add_theme_font_override("font", UITheme.PIXEL_BOLD)
+	_wave.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
+	_wave.add_theme_constant_override("shadow_offset_x", 3)
+	_wave.add_theme_constant_override("shadow_offset_y", 3)
+	_wave.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	w_col.add_child(_wave)
+	var pips := _box(HBoxContainer.new(), 6)
+	pips.alignment = BoxContainer.ALIGNMENT_CENTER
+	w_col.add_child(pips)
+	for i in Run.BOSS_EVERY:
+		var boss := i == Run.BOSS_EVERY - 1
+		var frame := PanelContainer.new()
+		frame.add_theme_stylebox_override("panel", UITheme.flat(UITheme.OUTLINE, UITheme.OUTLINE, 2, 2, 0))
+		frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var pip := ColorRect.new()
+		pip.custom_minimum_size = Vector2(14, 14) if boss else Vector2(10, 10)
+		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		frame.add_child(pip)
+		pips.add_child(frame)
+		_pips.append(pip)
+	pips.add_child(UITheme.label("boss", "", 13, UITheme.TEXT_DIM))
 
-	var right := HBoxContainer.new()
+	# Top right: purse, score, pause.
+	var right := _box(HBoxContainer.new(), 12)
 	right.size_flags_horizontal = Control.SIZE_SHRINK_END
 	right.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	right.add_theme_constant_override("separation", 16)
 	margin.add_child(right)
-	var purse := HBoxContainer.new()
-	_plate(right, Control.SIZE_SHRINK_BEGIN).add_child(purse)
-	purse.add_child(UITheme.icon_rect(UITheme.icon("gold"), 40))
-	_gold = Label.new()
-	_gold.add_theme_color_override("font_color", UITheme.GOLD)
-	purse.add_child(_gold)
+	var purse := _plate(right, Control.SIZE_SHRINK_BEGIN, Control.SIZE_SHRINK_BEGIN)
+	var p_col := _box(VBoxContainer.new(), 0)
+	purse.add_child(p_col)
+	var g_row := _box(HBoxContainer.new(), 6)
+	g_row.alignment = BoxContainer.ALIGNMENT_END
+	p_col.add_child(g_row)
+	g_row.add_child(UITheme.icon_rect(UITheme.icon("gold"), 28))
+	_gold = UITheme.label("", "", 24, UITheme.GOLD)
+	g_row.add_child(_gold)
+	_score = UITheme.label("", "", 15, UITheme.TEXT_DIM)
+	_score.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	p_col.add_child(_score)
 	var pause := Button.new()
-	pause.text = "II"
+	pause.icon = UITheme.glyph("pause", UITheme.TEXT)
+	pause.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	pause.tooltip_text = "Pause"
 	pause.focus_mode = Control.FOCUS_NONE
 	pause.custom_minimum_size = Vector2(56, 56)
+	pause.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	pause.pressed.connect(paused.emit)
 	right.add_child(pause)
 
-	var bottom := HBoxContainer.new()
+	# Bottom left: scrolls found, forge news.
+	_scroll_plate = _plate(margin, Control.SIZE_SHRINK_BEGIN, Control.SIZE_SHRINK_END)
+	var s_row := _box(HBoxContainer.new(), 10)
+	_scroll_plate.add_child(s_row)
+	s_row.add_child(UITheme.icon_rect(UITheme.icon("scroll"), 36))
+	var s_col := _box(VBoxContainer.new(), 0)
+	s_row.add_child(s_col)
+	_scrolls = UITheme.label("", "", 17, UITheme.GOLD)
+	s_col.add_child(_scrolls)
+	_scroll_note = UITheme.label("", "", 14, UITheme.TEXT_DIM)
+	_scroll_note.autowrap_mode = TextServer.AUTOWRAP_WORD
+	_scroll_note.custom_minimum_size.x = 260
+	s_col.add_child(_scroll_note)
+
+	# Bottom center: spell slots, then the passive.
+	var bottom := _box(HBoxContainer.new(), 14)
 	bottom.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	bottom.size_flags_vertical = Control.SIZE_SHRINK_END
-	bottom.add_theme_constant_override("separation", 12)
-	bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margin.add_child(bottom)
 	for slot in Upgrades.RUN_SLOTS:
 		bottom.add_child(_slot(slot))
+	_passive = _box(VBoxContainer.new(), 6)
+	_passive.size_flags_vertical = Control.SIZE_SHRINK_END
+	var p_panel := Panel.new()
+	p_panel.theme_type_variation = "Slot"
+	p_panel.custom_minimum_size = Vector2(60, 60)
+	p_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	p_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var shield := UITheme.icon_rect(UITheme.glyph("shield", UITheme.MANA), 36)
+	shield.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	p_panel.add_child(shield)
+	_passive.add_child(p_panel)
+	_shield = UITheme.label("", "", 14, UITheme.TEXT_DIM)
+	_shield.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_passive.add_child(_shield)
+	bottom.add_child(_passive)
 
 
-## A "Plate" panel in `parent`, at the top, aligned by `h_flags`.
-func _plate(parent: Control, h_flags: int) -> PanelContainer:
+func _box(c: BoxContainer, gap: int) -> BoxContainer:
+	c.add_theme_constant_override("separation", gap)
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return c
+
+
+## A "Plate" panel in `parent`, aligned by `h_flags` and `v_flags`.
+func _plate(parent: Control, h_flags: int, v_flags: int) -> PanelContainer:
 	var p := PanelContainer.new()
 	p.theme_type_variation = "Plate"
 	p.size_flags_horizontal = h_flags
-	p.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	p.size_flags_vertical = v_flags
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(p)
 	return p
 
 
-func _bar(parent: Control, color: Color) -> ProgressBar:
+func _bar(parent: Control, color: Color, height: int) -> ProgressBar:
 	var bar := ProgressBar.new()
-	bar.custom_minimum_size = Vector2(280, 26)
+	bar.custom_minimum_size = Vector2(250, height)
 	bar.show_percentage = false
-	bar.add_theme_stylebox_override("fill", UITheme.fill(color))
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.add_theme_stylebox_override("fill", UITheme.fill(color) if height > 12 else UITheme.flat(color, color, 0, 0, 0))
 	var text := Label.new()
 	text.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	text.add_theme_font_size_override("font_size", 16)
+	text.add_theme_font_size_override("font_size", 15)
+	text.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
 	bar.add_child(text)
 	parent.add_child(bar)
 	return bar
@@ -110,11 +198,13 @@ func _set_bar(bar: ProgressBar, value: float, max_value: float, text: String) ->
 
 
 func _slot(slot: String) -> Control:
-	var box := VBoxContainer.new()
+	var box := _box(VBoxContainer.new(), 6)
+	box.size_flags_vertical = Control.SIZE_SHRINK_END
 	var panel := Panel.new()
-	panel.theme_type_variation = "Slot"
-	panel.custom_minimum_size = Vector2(72, 72)
+	panel.add_theme_stylebox_override("panel", _busy_box)
+	panel.custom_minimum_size = Vector2(84, 84)
 	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	panel.clip_contents = true
 	# ponytail: the touch also reaches player.gd's aim stick (right half); fine
 	# while every slot sits at the bottom center.
 	panel.gui_input.connect(func(e):
@@ -124,25 +214,39 @@ func _slot(slot: String) -> Control:
 				me.held[slot] = e.pressed)
 	box.add_child(panel)
 	var icon := TextureRect.new()
-	icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 8)
+	icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 10)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(icon)
 	var cd := ColorRect.new()
-	cd.color = Color(0, 0, 0, 0.6)
+	cd.color = Color(UITheme.OUTLINE, 0.65)
 	cd.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	cd.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(cd)
-	var cost := Label.new()
-	cost.add_theme_font_size_override("font_size", 14)
-	cost.add_theme_color_override("font_color", UITheme.MANA.lightened(0.4))
-	cost.position = Vector2(4, 50)
+	var secs := UITheme.label("", "", 22)
+	secs.add_theme_font_override("font", UITheme.PIXEL_BOLD)
+	secs.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	secs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	secs.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	panel.add_child(secs)
+	var cost := UITheme.label("", "", 14, UITheme.MANA.lightened(0.5))
+	cost.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
+	cost.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	cost.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	cost.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	cost.offset_right = -6
+	cost.offset_bottom = -2
 	panel.add_child(cost)
-	var label := Label.new()
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 14)
-	box.add_child(label)
-	_slots[slot] = [icon, cd, null, cost, label]
+	var under := _box(HBoxContainer.new(), 6)
+	under.alignment = BoxContainer.ALIGNMENT_CENTER
+	var key := UITheme.tag("")
+	under.add_child(key)
+	var label := UITheme.label("", "", 14)
+	under.add_child(label)
+	box.add_child(under)
+	_slots[slot] = [icon, cd, null, cost, label, panel, secs, key.get_child(0)]
 	return box
 
 
@@ -150,16 +254,22 @@ func _process(_delta: float) -> void:
 	var p: Node2D = main.local_player()
 	if not visible or not Run.active or not p:
 		return
-	_set_bar(_hp, p.hp, p.max_hp, tr("HP %d / %d  ·  shield %d") % [maxf(p.hp, 0.0), p.max_hp, p.shield]
-		if p.passive else tr("HP %d / %d") % [maxf(p.hp, 0.0), p.max_hp])
+	_set_bar(_hp, p.hp, p.max_hp, tr("HP %d / %d") % [maxf(p.hp, 0.0), p.max_hp])
 	_set_bar(_mana, p.mana, p.max_mana, "Mana %d / %d" % [p.mana, p.max_mana])
-	var need := Run.xp_to_next(Run.level)
-	_set_bar(_xp, Run.xp, need, tr("Level %d  ·  XP %d / %d") % [Run.level, Run.xp, need])
+	_set_bar(_xp, Run.xp, Run.xp_to_next(Run.level), "")
+	_level.text = str(Run.level)
 	_wave.text = tr("Wave %d") % Run.wave
-	_gold.text = tr("%d gold  ·  score %d") % [Run.gold, Run.score()]
-	var s: Dictionary = Run.spells.primary
-	_spell.text = Spell.label(s) + ("  [" + " + ".join(s.words) + "]" if not s.words.is_empty() else "")
-	_scrolls.text = tr("Scrolls found: %d%s") % [Run.scrolls, "\n" + main.forge_note if main.forge_note else ""]
+	var done := Run.BOSS_EVERY if Run.wave > 0 and Run.wave % Run.BOSS_EVERY == 0 else Run.wave % Run.BOSS_EVERY
+	for i in _pips.size():
+		var boss := i == _pips.size() - 1
+		_pips[i].color = (UITheme.HP if boss else UITheme.GOLD) if i < done or boss else UITheme.RIM
+	_gold.text = str(Run.gold)
+	_score.text = "Score %d" % Run.score()
+	_scroll_plate.visible = Run.scrolls > 0 or main.forge_note != ""
+	_scrolls.text = tr("Scrolls found: %d") % Run.scrolls
+	_scroll_note.text = main.forge_note if main.forge_note else tr("To write at the end of the run")
+	_passive.visible = p.passive != ""
+	_shield.text = tr("Shield %d") % p.shield
 	for slot in _slots:
 		var ui: Array = _slots[slot]
 		ui[0].get_parent().get_parent().visible = Run.spells.has(slot)  # secondary: once bought
@@ -171,9 +281,14 @@ func _process(_delta: float) -> void:
 			ui[2] = sp
 			ui[0].texture = _icon(sp)
 		ui[3].text = str(cost)
-		ui[4].text = "%s\n%s" % [Spell.label(sp), tr("Left click" if slot == "primary" else "Right click")]  # follows a language change
-		ui[1].offset_top = -ui[1].get_parent().size.y * clampf(p.cooldowns.get(slot, 0.0) / sp.cooldown, 0.0, 1.0)
-		ui[0].modulate = Color.WHITE if p.mana >= cost else Color(0.45, 0.45, 0.6)
+		ui[4].text = Spell.label(sp)  # follows a language change
+		ui[7].text = tr("Left click" if slot == "primary" else "Right click")
+		var left: float = p.cooldowns.get(slot, 0.0)
+		ui[1].offset_top = -ui[5].size.y * clampf(left / sp.cooldown, 0.0, 1.0)
+		ui[6].text = ("%.1f" % left) if left > 0.05 and sp.cooldown >= 1.0 else ""
+		var can: bool = p.mana >= cost
+		ui[0].modulate = Color.WHITE if can else Color(0.45, 0.45, 0.6)
+		ui[5].add_theme_stylebox_override("panel", _ready_box if can and left <= 0.05 else _busy_box)
 
 
 ## The spell's icon, else the first frame of its projectile, else a disc of its color.

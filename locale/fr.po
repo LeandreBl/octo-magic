@@ -606,3 +606,218 @@ msgstr "%s : acquis"
 
 msgid "HP %d / %d  ·  shield %d"
 msgstr "PV %d / %d  ·  bouclier %d"
+
+# Redesigned screens (abyssal grimoire UI)
+
+msgid "Options"
+msgstr "Options"
+
+msgid "%d blank scroll(s)"
+msgstr "%d parchemin(s) vierge(s)"
+
+msgid "To write after your next run"
+msgstr "À écrire après ta prochaine run"
+
+msgid "No blank scroll"
+msgstr "Aucun parchemin vierge"
+
+msgid "Pause"
+msgstr "Pause"
+
+msgid "Wave"
+msgstr "Vague"
+
+msgid "Level"
+msgstr "Niveau"
+
+msgid "Enemies defeated"
+msgstr "Ennemis vaincus"
+
+msgid "Upgrades taken"
+msgstr "Améliorations prises"
+
+msgid "The run's gold buys a secondary spell and a passive. They are gone at the end of the run."
+msgstr "L'or de la run achète un sort secondaire et un passif. Ils disparaissent à la fin de la run."
+
+msgid "PASSIVE"
+msgstr "PASSIF"
+
+msgid "ACTIVE · RIGHT CLICK"
+msgstr "ACTIF · CLIC DROIT"
+
+msgid "Owned"
+msgstr "Possédé"
+
+msgid "Pick an upgrade for this run"
+msgstr "Choisis une amélioration pour cette run"
+
+msgid "1 · 2 · 3 or click to pick"
+msgstr "1 · 2 · 3 ou clic pour choisir"
+
+msgid "Level %d!"
+msgstr "Niveau %d !"
+
+msgid "+%d more level(s) waiting"
+msgstr "+%d autre(s) niveau(x) en attente"
+
+msgid "%s · %s"
+msgstr "%s · %s"
+
+msgid "Wave reached"
+msgstr "Vague atteinte"
+
+msgid "Score"
+msgstr "Score"
+
+msgid "The octo-mage fell at wave %d."
+msgstr "Le mage-poulpe est tombé à la vague %d."
+
+msgid "Score · record!"
+msgstr "Score · record !"
+
+msgid "+%d gold"
+msgstr "+%d or"
+
+msgid "+%d scroll(s)"
+msgstr "+%d parchemin(s)"
+
+msgid "Achievement:"
+msgstr "Succès :"
+
+msgid "Spell unlocked:"
+msgstr "Sort débloqué :"
+
+msgid "In coop, only the host starts a new run."
+msgstr "En coop, seul l'hôte relance une run."
+
+msgid "LV."
+msgstr "NIV."
+
+msgid "boss"
+msgstr "boss"
+
+msgid "Score %d"
+msgstr "Score %d"
+
+msgid "Scrolls found: %d"
+msgstr "Parchemins trouvés : %d"
+
+msgid "To write at the end of the run"
+msgstr "À écrire en fin de run"
+
+msgid "Shield %d"
+msgstr "Bouclier %d"
+
+msgid "Scrolls"
+msgstr "Parchemins"
+
+msgid "Letters, ' and - only. A meaningless word gives its scroll back."
+msgstr "Lettres, ' et - seulement. Un mot vide de sens rend son parchemin."
+
+msgid "%d blank · %d word(s)"
+msgstr "%d vierge(s) · %d mot(s)"
+
+msgid "The forge turns them into a new spell, equipped at your next run."
+msgstr "La forge en fait un nouveau sort, équipé à ta prochaine run."
+
+msgid "Bonuses"
+msgstr "Bonus"
+
+msgid "Spells"
+msgstr "Sorts"
+
+msgid "Look"
+msgstr "Apparence"
+
+msgid "Your mage"
+msgstr "Ton mage"
+
+msgid "EQUIPPED"
+msgstr "ÉQUIPÉ"
+
+msgid "%d · %d missing"
+msgstr "%d · il manque %d"
+
+msgid "No bonus"
+msgstr "Aucun bonus"
+
+msgid "Owned · equip"
+msgstr "Possédé · équiper"
+
+msgid "%d mana"
+msgstr "%d mana"
+
+msgid "Mana"
+msgstr "Mana"
+
+msgid "Mana/s"
+msgstr "Mana/s"
+
+msgid "Damage"
+msgstr "Dégâts"
+
+msgid "Speed"
+msgstr "Vitesse"
+
+msgid "Gold"
+msgstr "Or"
+
+msgid "XP"
+msgstr "XP"
+
+msgid "General"
+msgstr "Général"
+
+msgid "Controls"
+msgstr "Commandes"
+
+msgid "DISPLAY"
+msgstr "AFFICHAGE"
+
+msgid "SOUND"
+msgstr "SON"
+
+msgid "KEYS"
+msgstr "TOUCHES"
+
+msgid "DEVICES"
+msgstr "APPAREILS"
+
+msgid "Every setting applies at once · Esc to go back"
+msgstr "Chaque réglage s'applique tout de suite · Échap pour revenir"
+
+msgid "Coop"
+msgstr "Coop"
+
+msgid "Up to 8 mages against the waves"
+msgstr "Jusqu'à 8 mages contre les vagues"
+
+msgid "ROOM CODE"
+msgstr "CODE DU SALON"
+
+msgid "Copy the code"
+msgstr "Copier le code"
+
+msgid "JOIN A ROOM"
+msgstr "REJOINDRE UN SALON"
+
+msgid "Free seat"
+msgstr "Place libre"
+
+msgid "Give this code to the other players."
+msgstr "Donne ce code aux autres joueurs."
+
+msgid "Connected"
+msgstr "Connecté"
+
+msgid "Mages · %d / %d"
+msgstr "Mages · %d / %d"
+
+msgid "max"
+msgstr "max"
+
+msgid "mana"
+msgstr "mana"
+
+msgid "mana/s"
+msgstr "mana/s"

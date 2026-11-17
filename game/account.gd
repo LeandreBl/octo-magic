@@ -11,7 +11,7 @@ var buttons := {}
 
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(560, 0)
+	custom_minimum_size = Vector2(640, 0)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
 	add_child(box)
@@ -30,12 +30,16 @@ func _ready() -> void:
 	password.secret = true
 	password.text_submitted.connect(func(_t): _login(false))
 	box.add_child(password)
-	var row := HBoxContainer.new()
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 12)
+	row.add_theme_constant_override("v_separation", 12)
 	box.add_child(row)
 	for b in [["Log in", func(): _login(false)], ["Create an account", func(): _login(true)],
 			["Log in with Google", _google], ["Log out", Online.logout], ["Back", closed.emit]]:
 		var button := Button.new()
 		button.text = b[0]
+		if b[0] == "Log in":
+			button.theme_type_variation = "Primary"
 		button.pressed.connect(b[1])
 		row.add_child(button)
 		buttons[b[0]] = button

@@ -38,23 +38,11 @@ func _ready() -> void:
 	add_screen(hud)
 	screens[""] = hud
 	_dim = ColorRect.new()
-	_dim.color = Color(UITheme.INK, 0.75)
+	_dim.color = Color(UITheme.INK, 0.82)
 	add_screen(_dim)
 	screens.title = add_screen(_title())
-	_run_shop = VBoxContainer.new()
-	var shop_head := Label.new()
-	shop_head.text = "Run shop"  # Labels translate their text
-	shop_head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_run_shop.add_child(shop_head)
-	screens.pause = add_screen(_menu("Pause", [
-		["Resume", resume],
-		["Options", open.bind("options")],
-		["Abandon run", main.abandon_run]], _run_shop))
-	for id in Run.SHOP:
-		_run_shop.add_child(_button("", func():
-			if Run.buy(id):
-				main.send_loadout(false)))
-	Run.changed.connect(_refresh_run_shop)
+	screens.pause = add_screen(_pause_screen())
+	Run.changed.connect(_refresh_pause)
 	var options := preload("res://ui/options.gd").new()
 	options.closed.connect(back)
 	options.scale_changed.connect(_layout)
@@ -79,13 +67,12 @@ func _ready() -> void:
 	screens.shop = add_screen(shop)
 	screens.achievements = add_screen(_list_screen("Achievements", _achievements_text))
 	screens.leaderboard = add_screen(_list_screen("Leaderboard", _scores_text))
-	_level_box = HBoxContainer.new()
-	_level_box.add_theme_constant_override("separation", 18)
-	screens.levelup = add_screen(_menu("Level up!", [], _level_box))
+	screens.levelup = add_screen(_levelup_screen())
 
 	main.run_ended.connect(_on_run_ended)
 	main.run_started.connect(show_screen.bind(""))  # also on peers when the host starts
 	Run.leveled_up.connect(_show_level_up)
+	Profile.changed.connect(_refresh_title)
 	get_viewport().size_changed.connect(_layout)
 	_layout()
 	show_screen("title")
@@ -119,8 +106,12 @@ func show_screen(name: String) -> void:
 	for k in screens:
 		screens[k].visible = k == name
 	sticks.visible = name == ""
-	_dim.visible = name not in ["", "title"]
+	_dim.visible = name not in ["", "title", "shop", "end"]
 	get_tree().paused = not Run.active or (name != "" and main.solo())
+	if name == "title":
+		_refresh_title()
+	elif name == "pause":
+		_refresh_pause()
 	_appear(screens[name])
 	if screens[name].has_meta("focus"):
 		screens[name].get_meta("focus").grab_focus()
@@ -162,6 +153,12 @@ func resume() -> void:
 
 
 func _unhandled_input(e: InputEvent) -> void:
+	# Level up: 1, 2, 3 pick a card.
+	if current == "levelup" and e is InputEventKey and e.pressed and not e.echo \
+			and e.keycode >= KEY_1 and e.keycode < KEY_1 + _level_box.get_child_count():
+		get_viewport().set_input_as_handled()
+		_level_box.get_child(e.keycode - KEY_1).pressed.emit()
+		return
 	var pause := e.is_action_pressed("pause")
 	if not pause and not (e.is_action_pressed("ui_cancel") and current != ""):
 		return
@@ -173,95 +170,226 @@ func _unhandled_input(e: InputEvent) -> void:
 		_: back()
 
 
-# --- screens -----------------------------------------------------------------
+# --- building blocks ---------------------------------------------------------
 
-## A centered panel: header, then a column of [label, callable] buttons.
+func _button(text: String, action: Callable, variation := "") -> Button:
+	var b := Button.new()
+	b.text = text
+	b.theme_type_variation = variation
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.pressed.connect(action)
+	return b
+
+
+func _vbox(gap: int) -> VBoxContainer:
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", gap)
+	return v
+
+
+func _hbox(gap: int) -> HBoxContainer:
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", gap)
+	return h
+
+
+func _spacer() -> Control:
+	var c := Control.new()
+	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	c.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return c
+
+
+## A "Label ...... value" row.
+func _stat_row(name: String) -> Array:
+	var row := _hbox(12)
+	var l := UITheme.label(name, "", 18, UITheme.TEXT_DIM)
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(l)
+	var v := UITheme.label("", "", 18)
+	row.add_child(v)
+	return [row, v]
+
+
+## A full-rect margin container holding a screen's content.
+func _margin(left: int, top: int, right: int, bottom: int) -> MarginContainer:
+	var m := MarginContainer.new()
+	for side in [["left", left], ["top", top], ["right", right], ["bottom", bottom]]:
+		m.add_theme_constant_override("margin_" + side[0], side[1])
+	return m
+
+
+# --- title -------------------------------------------------------------------
+
+var _title_gold: Label
+var _title_scrolls: Label
+var _title_scrolls_hint: Label
+
+
+## Title menu: name and menu on the left, the mage on the right, the purse and
+## account top right, blank scrolls bottom left.
+func _title() -> Control:
+	var bg := ColorRect.new()
+	bg.color = UITheme.INK
+	# The deep: stepped bands, lighter toward the bottom.
+	var bands := _vbox(0)
+	bands.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	bands.offset_top = -360
+	bands.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg.add_child(bands)
+	for c in ["#0d1628", "#0f1a2f", "#112036", "#13253e", "#152a46"]:
+		var band := ColorRect.new()
+		band.color = Color(c)
+		band.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bands.add_child(band)
+
+	# The mage, right, in rings of light.
+	var stage := Control.new()
+	stage.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
+	stage.offset_left = -560
+	stage.offset_right = -80
+	stage.offset_top = -240
+	stage.offset_bottom = 300
+	stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg.add_child(stage)
+	for ring in [[0, 480, 0.10], [64, 352, 0.16]]:
+		var p := Panel.new()
+		p.add_theme_stylebox_override("panel", UITheme.flat(Color.TRANSPARENT, Color(UITheme.MANA, ring[2]), 8, 0, 0))
+		p.position = Vector2(ring[0], ring[0])
+		p.size = Vector2(ring[1], ring[1])
+		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		stage.add_child(p)
+	var pedestal := Panel.new()
+	pedestal.add_theme_stylebox_override("panel", UITheme.flat(Color("#0a1322"), UITheme.OUTLINE, 4, 0, 0))
+	pedestal.position = Vector2(48, 410)
+	pedestal.size = Vector2(384, 48)
+	pedestal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stage.add_child(pedestal)
+	var mage := UITheme.octo(288)
+	mage.position = Vector2(96, 130)
+	mage.size = Vector2(288, 288)
+	stage.add_child(mage)
+
+	var m := _margin(72, 56, 32, 28)
+	m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	m.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg.add_child(m)
+	var left := _vbox(12)
+	left.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	left.custom_minimum_size.x = 400
+	m.add_child(left)
+	left.add_child(UITheme.label("Octo Magic", "Title"))
+	left.add_child(UITheme.label("Write your spells, survive the waves.", "", 22, UITheme.TEXT_DIM))
+	var gap := Control.new()
+	gap.custom_minimum_size.y = 24
+	left.add_child(gap)
+
+	var play := _button("Play", _play, "Primary")
+	play.custom_minimum_size.y = 76
+	play.add_theme_font_size_override("font_size", 32)
+	play.icon = UITheme.glyph("play", UITheme.ON_GOLD)
+	play.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	play.add_theme_constant_override("h_separation", 0)
+	left.add_child(play)
+	bg.set_meta("focus", play)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 12)
+	left.add_child(grid)
+	var items := [["Multiplayer", open.bind("multiplayer")], ["Shop", open.bind("shop")],
+		["Achievements", open.bind("achievements")], ["Leaderboard", open.bind("leaderboard")],
+		["Options", open.bind("options")]]
+	if not OS.has_feature("web"):
+		items.append(["Quit", get_tree().quit])
+	for it in items:
+		var b := _button(it[0], it[1])
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		grid.add_child(b)
+	left.add_child(_spacer())
+
+	var scrolls := PanelContainer.new()
+	scrolls.custom_minimum_size.x = 400
+	scrolls.add_theme_stylebox_override("panel", UITheme.frame({"rings": [[UITheme.OUTLINE, 4], [UITheme.RIM, 2]],
+		"bg": UITheme.PANEL, "rivets": UITheme.GOLD, "drop": 6}, 14))
+	var row := _hbox(14)
+	scrolls.add_child(row)
+	row.add_child(UITheme.icon_rect(UITheme.icon("scroll"), 48))
+	var texts := _vbox(2)
+	_title_scrolls = UITheme.label("", "", 18, UITheme.GOLD)
+	_title_scrolls_hint = UITheme.label("", "Caption")
+	texts.add_child(_title_scrolls)
+	texts.add_child(_title_scrolls_hint)
+	row.add_child(texts)
+	left.add_child(scrolls)
+
+	# Top right: the purse and the account.
+	var corner := _hbox(12)
+	corner.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	corner.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	corner.offset_right = -32
+	corner.offset_top = 28
+	bg.add_child(corner)
+	var purse := PanelContainer.new()
+	purse.theme_type_variation = "Plate"
+	var p_row := _hbox(8)
+	purse.add_child(p_row)
+	p_row.add_child(UITheme.icon_rect(UITheme.icon("gold"), 32))
+	_title_gold = UITheme.label("", "", 22, UITheme.GOLD)
+	p_row.add_child(_title_gold)
+	corner.add_child(purse)
+	var account := _button("Account", open.bind("account"))
+	account.icon = UITheme.glyph("user", UITheme.TEXT_DIM)
+	corner.add_child(account)
+	return bg
+
+
+func _refresh_title() -> void:
+	if not _title_gold:
+		return
+	_title_gold.text = str(Profile.gold)
+	if Profile.blank_scrolls:
+		_title_scrolls.text = tr("%d blank scroll(s)") % Profile.blank_scrolls
+		_title_scrolls_hint.text = tr("To write after your next run")
+	else:
+		_title_scrolls.text = tr("No blank scroll")
+		_title_scrolls_hint.text = tr("No blank scroll: bosses drop them.")
+
+
+# --- lists (achievements, leaderboard) ---------------------------------------
+
+## A centered panel: header, then an extra control, then [label, callable] buttons.
 func _menu(title: String, buttons: Array, extra: Control = null) -> Control:
 	var center := CenterContainer.new()
 	var panel := PanelContainer.new()
 	center.add_child(panel)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 14)
+	var box := _vbox(16)
 	panel.add_child(box)
-	var head := Label.new()
-	head.theme_type_variation = "Header"
-	head.text = title
+	var head := UITheme.label(title, "Header")
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(head)
 	if extra:
 		box.add_child(extra)
 	for b in buttons:
 		var btn := _button(b[0], b[1])
+		btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		btn.custom_minimum_size.x = 320
+		btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		box.add_child(btn)
 		if not center.has_meta("focus"):
 			center.set_meta("focus", btn)
 	return center
 
 
-func _button(text: String, action: Callable) -> Button:
-	var b := Button.new()
-	b.text = text
-	b.pressed.connect(action)
-	return b
-
-
-func _title() -> Control:
-	var bg := ColorRect.new()
-	bg.color = UITheme.INK
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	bg.add_child(center)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 12)
-	center.add_child(box)
-	var frame := PanelContainer.new()  # the icon has an opaque background: frame it
-	frame.theme_type_variation = "Plate"
-	frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	frame.add_child(UITheme.icon_rect(preload("res://assets/icon.png"), 104))
-	box.add_child(frame)
-	var title := Label.new()
-	title.theme_type_variation = "Title"
-	title.text = "Octo Magic"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(title)
-	var sub := Label.new()
-	sub.text = "Write your spells, survive the waves."
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub.add_theme_color_override("font_color", UITheme.TEXT_DIM)
-	box.add_child(sub)
-	box.add_child(Control.new())  # spacer
-	var items := [["Play", _play], ["Multiplayer", open.bind("multiplayer")], ["Account", open.bind("account")],
-		["Shop", open.bind("shop")], ["Achievements", open.bind("achievements")],
-		["Leaderboard", open.bind("leaderboard")], ["Options", open.bind("options")]]
-	if not OS.has_feature("web"):
-		items.append(["Quit", get_tree().quit])
-	# "Play" stands out; the rest in two columns, to fit a landscape phone.
-	var play := _button(items[0][0], items[0][1])
-	play.custom_minimum_size = Vector2(416, 64)
-	play.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	play.add_theme_font_size_override("font_size", 30)
-	play.add_theme_font_override("font", UITheme.PIXEL_BOLD)
-	box.add_child(play)
-	bg.set_meta("focus", play)
-	var grid := GridContainer.new()
-	grid.columns = 2
-	grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	grid.add_theme_constant_override("h_separation", 16)
-	grid.add_theme_constant_override("v_separation", 12)
-	box.add_child(grid)
-	for it in items.slice(1):
-		var b := _button(it[0], it[1])
-		b.custom_minimum_size = Vector2(200, 0)
-		grid.add_child(b)
-	return bg
-
-
-## A screen showing `text_fn.call()`, refreshed each time it is shown.
+## A screen showing `text_fn.call()` in a sunken box, refreshed each time it is shown.
 func _list_screen(title: String, text_fn: Callable) -> Control:
-	var l := Label.new()
-	l.add_theme_font_size_override("font_size", 18)
-	var c := _menu(title, [["Back", back]], l)
+	var well := PanelContainer.new()
+	well.theme_type_variation = "Well"
+	var l := UITheme.label("", "", 18)
+	well.add_child(l)
+	var c := _menu(title, [["Back", back]], well)
 	c.visibility_changed.connect(func(): l.text = text_fn.call())
 	return c
 
@@ -285,25 +413,180 @@ func _scores_text() -> String:
 	return "\n".join(lines) if lines else tr("No score yet: start a run!")
 
 
+# --- pause -------------------------------------------------------------------
+
+var _pause_rows := {}  # "wave", "level", "kills" -> value Label
+var _pause_picks: HFlowContainer
+var _pause_gold: Label
+var _shop_ui := {}  # Run.SHOP id -> [buy Button, owned Control]
+
+
+## Pause: menu and run summary on the left, the run shop on the right (the
+## run's gold buys one active and one passive, Run.SHOP).
+func _pause_screen() -> Control:
+	var center := CenterContainer.new()
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size.x = 960
+	center.add_child(panel)
+	var cols := _hbox(36)
+	panel.add_child(cols)
+
+	var left := _vbox(14)
+	left.custom_minimum_size.x = 340
+	cols.add_child(left)
+	left.add_child(UITheme.label("Pause", "Header"))
+	var resume_b := _button("Resume", resume, "Primary")
+	left.add_child(resume_b)
+	center.set_meta("focus", resume_b)
+	left.add_child(_button("Options", open.bind("options")))
+	left.add_child(_button("Abandon run", main.abandon_run, "Danger"))
+	var well := PanelContainer.new()
+	well.theme_type_variation = "Well"
+	var sum := _vbox(10)
+	well.add_child(sum)
+	for k in [["wave", "Wave"], ["level", "Level"], ["kills", "Enemies defeated"]]:
+		var r := _stat_row(k[1])
+		sum.add_child(r[0])
+		_pause_rows[k[0]] = r[1]
+	sum.add_child(UITheme.label("Upgrades taken", "Caption"))
+	_pause_picks = HFlowContainer.new()
+	_pause_picks.add_theme_constant_override("h_separation", 6)
+	_pause_picks.add_theme_constant_override("v_separation", 6)
+	sum.add_child(_pause_picks)
+	left.add_child(well)
+
+	var line := ColorRect.new()
+	line.color = UITheme.INK
+	line.custom_minimum_size.x = 6
+	cols.add_child(line)
+
+	var right := _vbox(16)
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cols.add_child(right)
+	var head := _hbox(12)
+	right.add_child(head)
+	var title := UITheme.label("Run shop", "Subheader")
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(title)
+	var purse := PanelContainer.new()
+	purse.add_theme_stylebox_override("panel", UITheme.flat(UITheme.INK, UITheme.OUTLINE, 3, 6, 0))
+	var p_row := _hbox(6)
+	purse.add_child(p_row)
+	p_row.add_child(UITheme.icon_rect(UITheme.icon("gold"), 28))
+	_pause_gold = UITheme.label("", "", 22, UITheme.GOLD)
+	p_row.add_child(_pause_gold)
+	head.add_child(purse)
+	var hint := UITheme.label("The run's gold buys a secondary spell and a passive. They are gone at the end of the run.", "Caption")
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD
+	hint.custom_minimum_size.x = 480
+	right.add_child(hint)
+	for id in Run.SHOP:
+		right.add_child(_run_shop_item(id))
+	return center
+
+
+func _run_shop_item(id: String) -> Control:
+	var it: Dictionary = Run.SHOP[id]
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", UITheme.flat(UITheme.INK, UITheme.RIM, 3, 14, 0))
+	var row := _hbox(14)
+	card.add_child(row)
+	var tex: Texture2D = UITheme.glyph("shield", UITheme.MANA, 4) if it.slot == "passive" else UITheme.icon("fire_nova")
+	row.add_child(UITheme.icon_box(tex, 64))
+	var texts := _vbox(4)
+	texts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(texts)
+	var name_row := _hbox(8)
+	name_row.add_child(UITheme.label(it.name, "", 21, UITheme.GOLD))
+	name_row.add_child(UITheme.tag(tr("PASSIVE") if it.slot == "passive" else tr("ACTIVE · RIGHT CLICK")))
+	texts.add_child(name_row)
+	var desc := UITheme.label(it.desc, "", 16)
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD
+	texts.add_child(desc)
+	var buy := _button(str(it.price), func():
+		if Run.buy(id):
+			main.send_loadout(false))
+	buy.icon = UITheme.icon("gold")
+	buy.expand_icon = false
+	buy.custom_minimum_size = Vector2(104, 48)
+	buy.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	buy.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	row.add_child(buy)
+	var owned := PanelContainer.new()
+	owned.add_theme_stylebox_override("panel", UITheme.flat(Color("#10261a"), Color("#2f6b3a"), 3, 10, 0))
+	owned.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var o_row := _hbox(8)
+	owned.add_child(o_row)
+	o_row.add_child(UITheme.icon_rect(UITheme.glyph("check", UITheme.GOOD, 2), 16))
+	o_row.add_child(UITheme.label("Owned", "", 18, UITheme.GOOD))
+	row.add_child(owned)
+	_shop_ui[id] = [buy, owned]
+	return card
+
+
+func _refresh_pause() -> void:
+	_pause_rows.wave.text = str(Run.wave)
+	_pause_rows.level.text = str(Run.level)
+	_pause_rows.kills.text = str(Run.kills)
+	_pause_gold.text = str(Run.gold)
+	if _pause_picks.get_child_count() != Run.picked.size():
+		for c in _pause_picks.get_children():
+			c.queue_free()
+		for id in Run.picked:
+			var box := UITheme.icon_box(UITheme.icon("up_" + id), 40, UITheme.RIM)
+			box.tooltip_text = tr(Upgrades.LIST[id].name)
+			box.mouse_filter = Control.MOUSE_FILTER_PASS
+			_pause_picks.add_child(box)
+	for id in _shop_ui:
+		var it: Dictionary = Run.SHOP[id]
+		var owned: bool = Run.passive == id or (it.slot != "passive" and Run.spells.has(it.slot))
+		_shop_ui[id][0].visible = not owned
+		_shop_ui[id][0].disabled = not Run.can_buy(id)
+		_shop_ui[id][1].visible = owned
+
+
+# --- level up ----------------------------------------------------------------
+
 var _level_box: HBoxContainer
-var _run_shop: VBoxContainer
+var _level_title: Label
+var _level_more: Label
 
 
-## Pause menu: the run's gold buys one active and one passive (Run.SHOP).
-func _refresh_run_shop() -> void:
-	var ids := Run.SHOP.keys()
-	for i in ids.size():
-		var it: Dictionary = Run.SHOP[ids[i]]
-		var b: Button = _run_shop.get_child(i + 1)
-		var owned: bool = Run.passive == ids[i] or (it.slot != "passive" and Run.spells.has(it.slot))
-		b.text = tr("%s: owned") % tr(it.name) if owned else tr("%s: %s (%d gold)") % [tr(it.name), tr(it.desc), it.price]
-		b.disabled = not Run.can_buy(ids[i])
+func _levelup_screen() -> Control:
+	var c := CenterContainer.new()
+	var box := _vbox(10)
+	c.add_child(box)
+	_level_title = UITheme.label("", "Header")
+	_level_title.add_theme_font_size_override("font_size", 56)
+	_level_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(_level_title)
+	var sub := UITheme.label("Pick an upgrade for this run", "", 20, UITheme.TEXT_DIM)
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(sub)
+	var gap := Control.new()
+	gap.custom_minimum_size.y = 18
+	box.add_child(gap)
+	_level_box = _hbox(28)
+	_level_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	box.add_child(_level_box)
+	gap = Control.new()
+	gap.custom_minimum_size.y = 22
+	box.add_child(gap)
+	var hints := _hbox(22)
+	hints.alignment = BoxContainer.ALIGNMENT_CENTER
+	hints.add_child(UITheme.label("1 · 2 · 3 or click to pick", "Caption"))
+	_level_more = UITheme.label("", "", 16, UITheme.GOLD)
+	hints.add_child(_level_more)
+	box.add_child(hints)
+	return c
 
 
 func _show_level_up(offers: Array) -> void:
 	for c in _level_box.get_children():  # not free(): a pressed button is mid-signal
 		_level_box.remove_child(c)
 		c.queue_free()
+	_level_title.text = tr("Level %d!") % Run.level
+	_level_more.text = tr("+%d more level(s) waiting") % (Run.pending - 1) if Run.pending > 1 else ""
 	for i in offers.size():
 		var o: Dictionary = offers[i]
 		var u: Dictionary = Upgrades.LIST[o.id]
@@ -313,62 +596,158 @@ func _show_level_up(offers: Array) -> void:
 			if not more:
 				show_screen(""))
 		b.theme_type_variation = "Card"
-		b.custom_minimum_size = Vector2(220, 250)
-		var card := VBoxContainer.new()
-		card.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 14)
-		card.add_theme_constant_override("separation", 8)
+		b.custom_minimum_size = Vector2(264, 372)
+		var m := _margin(20, 16, 20, 22)
+		m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		m.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(m)
+		var card := _vbox(12)
 		card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		b.add_child(card)
-		var pic := UITheme.icon_rect(UITheme.icon("up_" + o.id), 96)
-		pic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		card.add_child(pic)
-		for line in [[u.name, 26, UITheme.GOLD], [u.desc, 18, UITheme.TEXT],
-				[tr("%s: %s") % [tr(Upgrades.SLOT_NAMES[o.slot]), Spell.label(Run.spells[o.slot])], 14, UITheme.TEXT_DIM]]:
-			var l := Label.new()
-			l.text = line[0]
+		m.add_child(card)
+		var num := PanelContainer.new()
+		num.add_theme_stylebox_override("panel", UITheme.flat(UITheme.OUTLINE, UITheme.OUTLINE, 0, 0, 0))
+		num.custom_minimum_size = Vector2(30, 30)
+		num.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		num.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var n := UITheme.label(str(i + 1), "", 18, UITheme.TEXT_DIM)
+		n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		num.add_child(n)
+		card.add_child(num)
+		card.add_child(UITheme.icon_box(UITheme.icon("up_" + o.id), 112))
+		for line in [[u.name, 28, UITheme.GOLD, true], [u.desc, 19, UITheme.TEXT, false]]:
+			var l := UITheme.label(line[0], "", line[1], line[2])
 			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			l.autowrap_mode = TextServer.AUTOWRAP_WORD
-			l.add_theme_font_size_override("font_size", line[1])
-			l.add_theme_color_override("font_color", line[2])
-			if line[1] == 26:
+			if line[3]:
 				l.add_theme_font_override("font", UITheme.PIXEL_BOLD)
 			card.add_child(l)
+		card.add_child(_spacer())
+		var target := PanelContainer.new()
+		target.add_theme_stylebox_override("panel", UITheme.flat(UITheme.INK, UITheme.RIM, 2, 6, 0))
+		target.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		target.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		target.add_child(UITheme.label("%s · %s" % [tr(Upgrades.SLOT_NAMES[o.slot]), Spell.label(Run.spells[o.slot])], "", 14, UITheme.TEXT_DIM))
+		card.add_child(target)
 		_level_box.add_child(b)
 	screens.levelup.set_meta("focus", _level_box.get_child(0))
 	show_screen("levelup")
 	Sfx.play("level_up")
 
 
-var _stats: Label
+# --- end of run --------------------------------------------------------------
+
+var _end_sub: Label
+var _end_tiles := {}  # "wave", "level", "kills", "score" -> value Label
+var _end_score_name: Label
+var _end_gold: Label
+var _end_scrolls: Label
+var _end_news: VBoxContainer
+var _end_again: Button
 
 
+## End of run: what the run was worth on the left, the scroll panel on the right.
 func _end_screen() -> Control:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 32)
-	_stats = Label.new()
-	_stats.custom_minimum_size.x = 300
-	_stats.autowrap_mode = TextServer.AUTOWRAP_WORD
-	var plate := PanelContainer.new()
-	plate.theme_type_variation = "Plate"
-	plate.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	plate.add_child(_stats)
-	row.add_child(plate)
+	var bg := ColorRect.new()
+	bg.color = UITheme.INK
+	var m := _margin(64, 48, 64, 48)
+	m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.add_child(m)
+	var cols := _hbox(64)
+	m.add_child(cols)
+
+	var left := _vbox(16)
+	left.custom_minimum_size.x = 520
+	cols.add_child(left)
+	left.add_child(UITheme.label("End of run", "Header"))
+	_end_sub = UITheme.label("", "", 20, UITheme.TEXT_DIM)
+	left.add_child(_end_sub)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 14)
+	grid.add_theme_constant_override("v_separation", 14)
+	left.add_child(grid)
+	for k in [["wave", "Wave reached"], ["level", "Level"], ["kills", "Enemies defeated"], ["score", "Score"]]:
+		var tile := PanelContainer.new()
+		tile.theme_type_variation = "Tile"
+		tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var v := _vbox(0)
+		tile.add_child(v)
+		var name := UITheme.label(k[1], "Caption")
+		v.add_child(name)
+		var value := UITheme.label("", "Big")
+		v.add_child(value)
+		_end_tiles[k[0]] = value
+		if k[0] == "score":
+			_end_score_name = name
+		grid.add_child(tile)
+	var gains := PanelContainer.new()
+	gains.theme_type_variation = "Tile"
+	var g_row := _hbox(24)
+	gains.add_child(g_row)
+	for g in [["gold", true], ["scroll", false]]:
+		var r := _hbox(8)
+		r.add_child(UITheme.icon_rect(UITheme.icon(g[0]), 32))
+		var l := UITheme.label("", "", 22, UITheme.GOLD if g[1] else UITheme.TEXT)
+		r.add_child(l)
+		g_row.add_child(r)
+		if g[1]:
+			_end_gold = l
+		else:
+			_end_scrolls = l
+	left.add_child(gains)
+	_end_news = _vbox(8)
+	left.add_child(_end_news)
+	left.add_child(_spacer())
+	var buttons := _hbox(16)
+	_end_again = _button("Play again", _play, "Primary")
+	_end_again.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_end_again.custom_minimum_size.x = 240
+	buttons.add_child(_end_again)
+	buttons.add_child(_button("Main menu", _to_title))
+	left.add_child(buttons)
+	bg.set_meta("focus", _end_again)
+
 	var scroll := preload("res://ui/scroll_panel.gd").new()
 	scroll.main = main
-	row.add_child(scroll)
-	return _menu("End of run", [["Play again", _play], ["Main menu", _to_title]], row)
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	cols.add_child(scroll)
+	return bg
+
+
+func _news(color: Color, head: String, text: String) -> void:
+	var row := _hbox(10)
+	var dot := ColorRect.new()
+	dot.color = color
+	dot.custom_minimum_size = Vector2(12, 12)
+	dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(dot)
+	row.add_child(UITheme.label(head, "", 18, color))
+	row.add_child(UITheme.label(text, "", 18))
+	_end_news.add_child(row)
 
 
 func _on_run_ended() -> void:
 	var r: Dictionary = main.last_run
-	var text := tr("Wave reached: %d\nLevel: %d\nEnemies defeated: %d\nScore: %d\n\nGold earned: %d\nScrolls: %d") % [
-		r.wave, r.level, r.kills, r.score, r.gold, r.scrolls]
+	_end_sub.text = tr("The octo-mage fell at wave %d.") % r.wave
+	_end_tiles.wave.text = str(r.wave)
+	_end_tiles.level.text = str(r.level)
+	_end_tiles.kills.text = str(r.kills)
+	_end_tiles.score.text = str(r.score)
+	var best: bool = not Profile.scores.is_empty() and r.score > 0 and r.score >= Profile.scores[0].score
+	_end_score_name.text = tr("Score · record!") if best else "Score"
+	_end_tiles.score.add_theme_color_override("font_color", UITheme.GOLD if best else UITheme.TEXT)
+	_end_gold.text = tr("+%d gold") % r.gold
+	_end_scrolls.text = tr("+%d scroll(s)") % r.scrolls
+	for c in _end_news.get_children():
+		c.queue_free()
 	for id in r.reached:
-		text += "\n" + tr("Achievement: %s!") % tr(Profile.ACHIEVEMENTS[id].name)
+		_news(UITheme.GOLD, tr("Achievement:"), tr(Profile.ACHIEVEMENTS[id].name))
 	for e in r.unlocked:
-		text += "\n" + tr("Spell unlocked: %s.") % Spell.label(e.spell)
-	_stats.text = text
-	screens.end.get_meta("focus").disabled = not multiplayer.is_server()  # "Play again": the host restarts
+		_news(UITheme.MANA.lightened(0.3), tr("Spell unlocked:"), Spell.label(e.spell))
+	if not multiplayer.is_server():
+		_news(UITheme.TEXT_DIM, "", tr("In coop, only the host starts a new run."))
+	_end_again.disabled = not multiplayer.is_server()  # "Play again": the host restarts
 	show_screen("end")
 
 
