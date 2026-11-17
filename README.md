@@ -8,4 +8,13 @@ Create, combine and cast spells to conquer a dungeon.
   `ANTHROPIC_API_KEY=... python3 server/forge.py`
 - Tests: `GODOT=/path/to/godot tests/run.sh`
 
+Controls: move WASD / arrows / left stick / left half of the screen; aim
+with the mouse / right stick / right half. Main spell: left click (or aim
+stick), secondary: right click / RB, ultimate: space / LB.
+
+Game state: autoloads `Profile` (`game/profile.gd`: gold, shop, bonuses,
+look, achievements, scores, spells; saved in `user://profile.json`) and
+`Run` (`game/run.gd`: XP, level-ups, upgrades, waves). Base spells:
+`game/spells.json`; level-up upgrades: `game/upgrades.gd`.
+
 Design: `docs/design.md`. Spell format: `docs/spells.md`.

@@ -1,0 +1,624 @@
+[
+ {
+  "id": "fire_bolt",
+  "slot": "primary",
+  "unlock": "",
+  "name": "Trait de feu",
+  "description": "Un trait brûlant qui enflamme sa cible.",
+  "element": "fire",
+  "color": "#ff7a2f",
+  "cooldown": 0.35,
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 520,
+    "size": 6,
+    "lifetime": 1.2,
+    "pierce": 0,
+    "bounce": 0,
+    "motion": [],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 9,
+      "radius": 0
+     },
+     {
+      "type": "status",
+      "status": "burn",
+      "power": 3,
+      "duration": 2,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "id": "frost_shard",
+  "slot": "primary",
+  "unlock": "hunter",
+  "name": "Éclat de givre",
+  "description": "Un éclat glacé qui transperce et ralentit.",
+  "element": "ice",
+  "color": "#8fe3ff",
+  "cooldown": 0.4,
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 620,
+    "size": 5,
+    "lifetime": 1.2,
+    "pierce": 1,
+    "bounce": 0,
+    "motion": [],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 7,
+      "radius": 0
+     },
+     {
+      "type": "status",
+      "status": "slow",
+      "power": 2,
+      "duration": 1.5,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "id": "spark",
+  "slot": "primary",
+  "unlock": "boss",
+  "name": "Arc électrique",
+  "description": "Une étincelle qui saute d'ennemi en ennemi.",
+  "element": "lightning",
+  "color": "#fff36b",
+  "cooldown": 0.4,
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 900,
+    "size": 4,
+    "lifetime": 1.2,
+    "pierce": 0,
+    "bounce": 2,
+    "motion": [],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 6,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "id": "venom_dart",
+  "slot": "primary",
+  "unlock": "wave10",
+  "name": "Dard venimeux",
+  "description": "Un dard à tête chercheuse qui empoisonne.",
+  "element": "poison",
+  "color": "#7dff6b",
+  "cooldown": 0.4,
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 420,
+    "size": 5,
+    "lifetime": 1.2,
+    "pierce": 0,
+    "bounce": 0,
+    "motion": [
+     {
+      "type": "homing",
+      "strength": 1
+     }
+    ],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 4,
+      "radius": 0
+     },
+     {
+      "type": "status",
+      "status": "poison",
+      "power": 4,
+      "duration": 3,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "id": "arcane_missiles",
+  "slot": "primary",
+  "unlock": "level10",
+  "name": "Missiles arcaniques",
+  "description": "Trois missiles qui traquent les ennemis.",
+  "element": "arcane",
+  "color": "#c77dff",
+  "cooldown": 0.5,
+  "emit": {
+   "pattern": "aim",
+   "count": 3,
+   "spread": 30,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 380,
+    "size": 4,
+    "lifetime": 1.2,
+    "pierce": 0,
+    "bounce": 0,
+    "motion": [
+     {
+      "type": "homing",
+      "strength": 2
+     }
+    ],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 4,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "id": "fire_nova",
+  "slot": "secondary",
+  "unlock": "",
+  "name": "Nova ardente",
+  "description": "Une couronne de flammes jaillit autour du mage.",
+  "element": "fire",
+  "color": "#ff9a3c",
+  "cooldown": 2.0,
+  "emit": {
+   "pattern": "radial",
+   "count": 8,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 350,
+    "size": 6,
+    "lifetime": 0.5,
+    "pierce": 0,
+    "bounce": 0,
+    "motion": [],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 6,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "id": "frost_ring",
+  "slot": "secondary",
+  "unlock": "veteran",
+  "name": "Anneau de givre",
+  "description": "Gèle tout ce qui entoure le mage.",
+  "element": "ice",
+  "color": "#b8f0ff",
+  "cooldown": 3.0,
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "zone",
+    "speed": 0,
+    "size": 110,
+    "lifetime": 0.3,
+    "on_expire": [
+     {
+      "type": "damage",
+      "amount": 12,
+      "radius": 100
+     },
+     {
+      "type": "status",
+      "status": "freeze",
+      "power": 1,
+      "duration": 1.5,
+      "radius": 100
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "toxic_cloud",
+  "slot": "secondary",
+  "unlock": "slayer",
+  "name": "Nuage toxique",
+  "description": "Une fiole qui libère un nuage empoisonné.",
+  "element": "poison",
+  "color": "#9cff57",
+  "cooldown": 2.5,
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 320,
+    "size": 6,
+    "lifetime": 0.5,
+    "pierce": 0,
+    "bounce": 0,
+    "motion": [],
+    "on_hit": [],
+    "on_expire": [
+     {
+      "type": "cast",
+      "emit": {
+       "pattern": "aim",
+       "count": 1,
+       "spread": 0,
+       "burst_delay": 0,
+       "body": {
+        "shape": "zone",
+        "speed": 0,
+        "size": 70,
+        "lifetime": 4,
+        "tick_interval": 0.5,
+        "on_tick": [
+         {
+          "type": "damage",
+          "amount": 3,
+          "radius": 0
+         },
+         {
+          "type": "status",
+          "status": "poison",
+          "power": 3,
+          "duration": 1,
+          "radius": 0
+         }
+        ]
+       }
+      }
+     }
+    ],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "id": "thunder_chain",
+  "slot": "secondary",
+  "unlock": "wave20",
+  "name": "Chaîne d'orage",
+  "description": "Un éclair qui étourdit en rebondissant.",
+  "element": "lightning",
+  "color": "#ffe95c",
+  "cooldown": 2.0,
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 1000,
+    "size": 5,
+    "lifetime": 1.2,
+    "pierce": 0,
+    "bounce": 5,
+    "motion": [],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 10,
+      "radius": 0
+     },
+     {
+      "type": "status",
+      "status": "stun",
+      "power": 1,
+      "duration": 0.4,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "id": "arcane_orbit",
+  "slot": "secondary",
+  "unlock": "rich",
+  "name": "Orbes gardiens",
+  "description": "Deux orbes tournent autour du mage.",
+  "element": "arcane",
+  "color": "#d29bff",
+  "cooldown": 4.0,
+  "emit": {
+   "pattern": "radial",
+   "count": 2,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 90,
+    "size": 9,
+    "lifetime": 4,
+    "pierce": 20,
+    "bounce": 0,
+    "motion": [
+     {
+      "type": "orbit",
+      "strength": 1.5
+     }
+    ],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 5,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "id": "meteor_rain",
+  "slot": "ultimate",
+  "unlock": "",
+  "name": "Pluie de météores",
+  "description": "Des météores s'écrasent autour du mage.",
+  "element": "fire",
+  "color": "#ff5a1f",
+  "cooldown": 5.0,
+  "emit": {
+   "pattern": "random",
+   "count": 5,
+   "spread": 360,
+   "burst_delay": 0.08,
+   "body": {
+    "shape": "bolt",
+    "speed": 260,
+    "size": 10,
+    "lifetime": 0.7,
+    "pierce": 0,
+    "bounce": 0,
+    "motion": [],
+    "on_hit": [],
+    "on_expire": [
+     {
+      "type": "damage",
+      "amount": 15,
+      "radius": 50
+     },
+     {
+      "type": "status",
+      "status": "burn",
+      "power": 3,
+      "duration": 2,
+      "radius": 50
+     }
+    ],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "id": "blizzard",
+  "slot": "ultimate",
+  "unlock": "boss3",
+  "name": "Blizzard",
+  "description": "Une tempête de glace gèle la zone.",
+  "element": "ice",
+  "color": "#d6f6ff",
+  "cooldown": 5.0,
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "zone",
+    "speed": 0,
+    "size": 170,
+    "lifetime": 3,
+    "tick_interval": 0.5,
+    "on_tick": [
+     {
+      "type": "damage",
+      "amount": 8,
+      "radius": 0
+     },
+     {
+      "type": "status",
+      "status": "slow",
+      "power": 3,
+      "duration": 1,
+      "radius": 0
+     }
+    ]
+   }
+  }
+ },
+ {
+  "id": "storm",
+  "slot": "ultimate",
+  "unlock": "level20",
+  "name": "Tempête",
+  "description": "Huit éclairs rebondissent dans toutes les directions.",
+  "element": "lightning",
+  "color": "#fff9a8",
+  "cooldown": 5.0,
+  "emit": {
+   "pattern": "radial",
+   "count": 8,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 700,
+    "size": 5,
+    "lifetime": 1.2,
+    "pierce": 0,
+    "bounce": 2,
+    "motion": [],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 8,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "id": "plague",
+  "slot": "ultimate",
+  "unlock": "scribe",
+  "name": "Peste",
+  "description": "Seize dards empoisonnés en couronne.",
+  "element": "poison",
+  "color": "#6bff3a",
+  "cooldown": 5.0,
+  "emit": {
+   "pattern": "radial",
+   "count": 16,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 450,
+    "size": 4,
+    "lifetime": 1.2,
+    "pierce": 3,
+    "bounce": 0,
+    "motion": [],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 3,
+      "radius": 0
+     },
+     {
+      "type": "status",
+      "status": "poison",
+      "power": 4,
+      "duration": 3,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "id": "black_hole",
+  "slot": "ultimate",
+  "unlock": "boss10",
+  "name": "Trou noir",
+  "description": "Une singularité attire puis broie les ennemis.",
+  "element": "arcane",
+  "color": "#9a4dff",
+  "cooldown": 5.0,
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 90,
+    "size": 14,
+    "lifetime": 2.5,
+    "pierce": 20,
+    "bounce": 0,
+    "motion": [],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 2,
+      "radius": 0
+     }
+    ],
+    "on_expire": [
+     {
+      "type": "damage",
+      "amount": 40,
+      "radius": 90
+     }
+    ],
+    "tick_interval": 0.2,
+    "on_tick": [
+     {
+      "type": "knockback",
+      "force": -250,
+      "radius": 160
+     }
+    ]
+   }
+  }
+ }
+]

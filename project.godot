@@ -6,6 +6,11 @@ config/name="Octo Magic"
 run/main_scene="res://game/main.tscn"
 config/features=PackedStringArray("4.7")
 
+[autoload]
+
+Profile="*res://game/profile.gd"
+Run="*res://game/run.gd"
+
 [display]
 window/size/viewport_width=1280
 window/size/viewport_height=720
