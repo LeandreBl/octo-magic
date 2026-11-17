@@ -18,6 +18,7 @@ var back_to := "title"  # where options, shop... return
 var hud: Control
 var sticks: Control
 var _dim: ColorRect  # darkens the world behind menus
+var _prompt: Label  # gamepad button prompts, while a gamepad is in use
 
 
 func _ready() -> void:
@@ -76,6 +77,13 @@ func _ready() -> void:
 	main.run_ended.connect(_on_run_ended)
 	main.run_started.connect(show_screen.bind(""))  # also on peers when the host starts
 	Run.leveled_up.connect(_show_level_up)
+	_prompt = Label.new()
+	_prompt.add_theme_font_size_override("font_size", 18)
+	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_prompt.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_prompt.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_prompt.position.y -= 30
+	root.add_child(_prompt)
 	get_viewport().size_changed.connect(_layout)
 	_layout()
 	show_screen("title")
@@ -101,10 +109,39 @@ func show_screen(name: String) -> void:
 	sticks.visible = name == ""
 	_dim.visible = name not in ["", "title"]
 	get_tree().paused = not Run.active or (name != "" and main.solo())
-	if screens[name].has_meta("focus"):
-		screens[name].get_meta("focus").grab_focus()
+	_focus_screen()
+	_update_prompt()
+
+
+## Keyboard/gamepad focus on the screen's "focus" control, else its first
+## button; none in run.
+func _focus_screen() -> void:
+	var s: Control = screens[current]
+	var first: Array = s.find_children("*", "Button", true, false).filter(
+		func(b): return b.is_visible_in_tree() and b.focus_mode != Control.FOCUS_NONE)
+	if current != "" and s.has_meta("focus"):
+		s.get_meta("focus").grab_focus()
+	elif current != "" and not first.is_empty():
+		first[0].grab_focus()
 	elif get_viewport().gui_get_focus_owner():
 		get_viewport().gui_get_focus_owner().release_focus()
+
+
+func _update_prompt() -> void:
+	_prompt.visible = Settings.pad and current != ""
+	var ok := Settings.pad_button("A", "Croix") + " : valider"
+	var cancel := "  ·  " + Settings.pad_button("B", "Rond") + " : retour"
+	_prompt.text = ok + ("" if current in ["title", "end", "levelup"] else cancel)
+
+
+## Tracks the device in use: prompts, and focus back on the screen when the
+## gamepad takes over (a mouse click may have left none).
+func _input(e: InputEvent) -> void:
+	if not Settings.track_device(e):
+		return
+	_update_prompt()
+	if Settings.pad and current != "" and not get_viewport().gui_get_focus_owner():
+		_focus_screen()
 
 
 ## Options and placeholders return to the screen that opened them.

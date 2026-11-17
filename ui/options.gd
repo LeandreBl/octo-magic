@@ -6,7 +6,9 @@ signal closed
 signal scale_changed
 
 const SCHEME := "Souris : viser · clic gauche : lancer le sort\n" \
-	+ "Manette : stick gauche bouger, stick droit viser et lancer, Start pause\n" \
+	+ "Manette : stick gauche bouger, stick droit viser et lancer, RT/RB lancer, Start pause\n" \
+	+ "Menus à la manette : croix directionnelle ou stick gauche, A valider, B retour\n" \
+	+ "Navigateur : appuie sur un bouton de la manette pour qu'elle soit détectée\n" \
 	+ "Tactile : moitié gauche bouger, moitié droite viser et lancer"
 
 var _waiting := ""  # action waiting for its new key
@@ -94,13 +96,22 @@ func _refresh_keys() -> void:
 		_keys[action].text = Settings.key_name(action)
 
 
-## While waiting for a key, the next key press is the new binding (Échap cancels).
+## While waiting for a key, the next key press is the new binding (Échap or a
+## gamepad button cancels). Otherwise Échap / B / Start close and save.
 func _input(e: InputEvent) -> void:
-	if _waiting.is_empty() or not (e is InputEventKey and e.pressed and not e.echo):
+	if not is_visible_in_tree():
+		return
+	if _waiting.is_empty():
+		if e.is_action_pressed("ui_cancel") or e.is_action_pressed("pause"):
+			get_viewport().set_input_as_handled()
+			_close()
+		return
+	if e is InputEventKey and e.pressed and not e.echo:
+		if e.physical_keycode != KEY_ESCAPE:
+			Settings.set_value("controls", _waiting, e.physical_keycode)
+	elif not (e is InputEventJoypadButton and e.pressed):
 		return
 	get_viewport().set_input_as_handled()
-	if e.physical_keycode != KEY_ESCAPE:
-		Settings.set_value("controls", _waiting, e.physical_keycode)
 	_waiting = ""
 	_refresh_keys()
 
