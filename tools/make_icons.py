@@ -63,6 +63,9 @@ def jobs() -> dict[str, str]:
                     "ring": "a magic ring with a gem"}[kind]
             out[id_] = f"{STYLE}: {what}, main color {color}"
     out["gold"] = f"{STYLE}: a small stack of shiny gold coins"
+    # Not STYLE (fantasy object): the account screen's Google login button.
+    out["google"] = ("pixel art Google logo: a bold capital letter G made of four colored segments,"
+                     " blue right bar, red top, yellow bottom left, green bottom, on transparent background")
     out["scroll"] = f"{STYLE}: a blank rolled parchment scroll with a red wax seal"
     return out
 
