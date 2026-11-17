@@ -194,3 +194,38 @@ body.landing h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: .3rem 0 1rem; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before { animation: none !important; transition: none !important; }
 }
+
+/* --- Account: the login card --------------------------------------------- */
+.auth { position: relative; display: grid; place-items: center; min-height: 70vh; }
+.auth .sky { inset: -2rem 0; }
+.auth-card {
+  width: min(26rem, 100%); padding: 2.5rem 2rem 1.5rem; text-align: center;
+  background: linear-gradient(180deg, #2a1d4e, var(--panel)); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 20px 60px #0009, 0 0 80px #8b5cf622;
+}
+.auth-octo { width: 72px; height: 72px; margin-top: -4.5rem; filter: drop-shadow(0 0 18px #8b5cf6); animation: float 4s ease-in-out infinite; }
+.auth h1 { margin: .3rem 0 .4rem; font-size: 1.8rem; line-height: 1.2; }
+.auth .muted { margin: 0 0 1.6rem; font-size: .95rem; }
+.auth form { max-width: none; text-align: left; }
+.auth label { display: grid; gap: .25rem; color: var(--muted); font-size: .9rem; }
+.auth form > button { margin-top: .3rem; box-shadow: 0 0 20px #8b5cf655; }
+button.google {
+  display: flex; align-items: center; justify-content: center; gap: .7rem; width: 100%;
+  background: #f4f0ff; border-color: #f4f0ff; color: #1e1638; font-weight: bold;
+  box-shadow: 0 4px 0 #b9aee0; transition: transform .1s, box-shadow .1s;
+}
+button.google:hover { transform: translateY(-1px); box-shadow: 0 5px 0 #b9aee0, 0 0 20px #ffffff44; }
+button.google:active { transform: translateY(3px); box-shadow: 0 1px 0 #b9aee0; }
+button.google img { width: 32px; height: 32px; margin: -.4rem 0; }
+.or { display: flex; align-items: center; gap: .8rem; color: var(--muted); font-size: .85rem; margin: 1.3rem 0; }
+.or::before, .or::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+.links { display: flex; justify-content: space-between; }
+button.link { padding: 0; border: 0; background: none; color: var(--gold); font-size: .9rem; }
+button.link:hover { text-decoration: underline; }
+.auth .msg:empty { display: none; }
+.auth .msg { margin: 0; text-align: center; }
+.legal { color: var(--muted); font-size: .78rem; margin: 1.2rem 0 0; }
+
+.who { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; padding: 1rem 1.4rem; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+.who img { width: 48px; height: 48px; }
+.who span { margin-right: auto; }

@@ -98,6 +98,7 @@ export async function google(then = "") {
   const d = await identity(`${IDENTITY}createAuthUri?key=${await key()}`, {
     providerId: "google.com",
     continueUri: `${location.origin}/account`,
+    authFlowType: "CODE_FLOW", // ?code= in the query; the default puts an id_token in the #fragment
   });
   sessionStorage.setItem(GOOGLE, JSON.stringify({ sessionId: d.sessionId, then, email: session()?.email }));
   location.assign(d.authUri);

@@ -105,7 +105,7 @@ func login_google() -> String:
 		return "server unreachable"
 	var uri := "http://localhost:%d/" % GOOGLE_PORT
 	var r := await _http(identity + "createAuthUri?key=" + api_key, HTTPClient.METHOD_POST,
-		{"providerId": "google.com", "continueUri": uri})
+		{"providerId": "google.com", "continueUri": uri, "authFlowType": "CODE_FLOW"})  # ?code=, a #fragment never reaches the port
 	if not r.ok:
 		return _error(r)
 	if _google:
