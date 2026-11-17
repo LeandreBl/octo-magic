@@ -69,6 +69,8 @@ services:
       TURN_URL: ${TURN_URL:-}
       TURN_SECRET: ${TURN_SECRET}
       FORGE_URL: http://forge:8765
+      # Who may forge (see example.env); empty: every logged-in player.
+      FORGE_EMAILS: ${FORGE_EMAILS:-}
       PGHOST: postgres
       PGUSER: octo
       PGPASSWORD: ${POSTGRES_PASSWORD}

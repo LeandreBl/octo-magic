@@ -78,10 +78,11 @@ function send(res, code, body, type = "application/json") {
 /**
  * verify(token) -> {uid} or throws; store: getProfile/putProfile/getSpell/putSpell.
  * forgeUrl: base URL of the forge (null: no forge); webDir: the game's web export.
+ * forgeEmails: the only accounts allowed to forge, by email (null: every logged-in player).
  * config: public settings the game reads before logging in.
  * turn: {url, secret} of the TURN server (coturn --use-auth-secret), or null.
  */
-export function createServer({ verify, store, forgeUrl = null, webDir = null, config = {}, turn = null }) {
+export function createServer({ verify, store, forgeUrl = null, forgeEmails = null, webDir = null, config = {}, turn = null }) {
   async function user(req) {
     const m = /^Bearer (.+)$/.exec(req.headers.authorization ?? "");
     if (!m) throw new HttpError(401, "missing token");
@@ -89,7 +90,7 @@ export function createServer({ verify, store, forgeUrl = null, webDir = null, co
   }
 
   async function api(req, res, url) {
-    const { uid } = await user(req);
+    const { uid, email } = await user(req);
     const p = url.pathname;
     if (p === "/api/profile" && req.method === "GET") return send(res, 200, (await store.getProfile(uid)) ?? {});
     if (p === "/api/profile" && req.method === "PUT") {
@@ -115,6 +116,7 @@ export function createServer({ verify, store, forgeUrl = null, webDir = null, co
     }
     m = /^\/api\/forge(\/[\w-]+)?$/.exec(p);
     if (m && forgeUrl) {
+      if (forgeEmails && !forgeEmails.includes(String(email).toLowerCase())) throw new HttpError(403, "forge not open to this account");
       const post = req.method === "POST";
       const reply = await fetch(forgeUrl + "/forge" + (m[1] ?? ""), {
         method: post ? "POST" : "GET",
@@ -283,6 +285,8 @@ if (import.meta.main) {
     verify: await firebaseVerify(),
     store: await postgresStore(),
     forgeUrl: process.env.FORGE_URL || null,
+    // Set while the forge runs on the owner's Claude account (no API key).
+    forgeEmails: process.env.FORGE_EMAILS ? process.env.FORGE_EMAILS.toLowerCase().split(",").map((s) => s.trim()) : null,
     webDir: process.env.WEB_DIR || null,
     // The Firebase web API key is public (it ships in every client).
     config: { firebaseApiKey: process.env.FIREBASE_API_KEY ?? "" },

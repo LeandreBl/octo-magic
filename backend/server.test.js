@@ -5,7 +5,7 @@ import { createHmac } from "node:crypto";
 import { createServer, iceServers } from "./server.js";
 
 // Tokens are "token-<uid>"; profiles and spells live in Maps.
-const verify = async (t) => { if (!t.startsWith("token-")) throw new Error("bad"); return { uid: t.slice(6) }; };
+const verify = async (t) => { if (!t.startsWith("token-")) throw new Error("bad"); return { uid: t.slice(6), email: `${t.slice(6)}@x.org` }; };
 const profiles = new Map(), spells = new Map();
 const store = {
   getProfile: async (uid) => profiles.get(uid),
@@ -45,6 +45,16 @@ test("legal pages are public", async () => {
     assert.match(r.headers.get("content-type"), /text\/html/);
     assert.match(await r.text(), /<h1>/);
   }
+});
+
+test("forge is limited to forgeEmails", async () => {
+  const forge = createServer({ verify, store, forgeUrl: "http://127.0.0.1:1", forgeEmails: ["ann@x.org"] });
+  await new Promise((r) => forge.listen(0, r));
+  const url = `http://127.0.0.1:${forge.address().port}/api/forge/x`;
+  const get = (uid) => fetch(url, { headers: { Authorization: `Bearer token-${uid}` } });
+  assert.equal((await get("bob")).status, 403);
+  assert.equal((await get("ann")).status, 502);  // allowed, the forge is down
+  forge.close();
 });
 
 test("config is public", async () => {
