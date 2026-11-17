@@ -113,7 +113,9 @@ func _apply(l: Dictionary) -> void:
 			look[k] = l.look[k]
 	if l.fresh:
 		setup(l.stats)
-	else:
+	else:  # a hero augment: the extra health and mana come filled
+		hp += maxf(0.0, l.stats.hp - max_hp)
+		mana += maxf(0.0, l.stats.mana - max_mana)
 		max_hp = l.stats.hp
 		max_mana = l.stats.mana
 		mana_regen = l.stats.regen

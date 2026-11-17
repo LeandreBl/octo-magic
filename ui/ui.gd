@@ -322,8 +322,10 @@ func _show_level_up(offers: Array) -> void:
 		var pic := UITheme.icon_rect(UITheme.icon("up_" + o.id), 96)
 		pic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		card.add_child(pic)
-		for line in [[u.name, 26, UITheme.GOLD], [u.desc, 18, UITheme.TEXT],
-				[tr("%s: %s") % [tr(Upgrades.SLOT_NAMES[o.slot]), Spell.label(Run.spells[o.slot])], 14, UITheme.TEXT_DIM]]:
+		var rarity: Dictionary = Upgrades.RARITIES[o.rarity]
+		b.self_modulate = Color(rarity.color).lerp(Color.WHITE, 0.4)  # the card's frame takes the rarity's hue
+		for line in [[tr(rarity.name), 14, Color(rarity.color)], [tr(u.name), 26, Color(rarity.color)],
+				[Upgrades.describe(o.id, o.rarity), 18, UITheme.TEXT]]:
 			var l := Label.new()
 			l.text = line[0]
 			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

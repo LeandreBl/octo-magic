@@ -29,17 +29,17 @@ var gold := 0
 var scrolls := 0
 var spells := {}  # slot -> spell, upgraded copies of the profile's spells
 var mana_mult := {}  # slot -> mana cost multiplier ("mana" upgrades)
-var picked := []  # upgrade ids taken, in order
+var picked := []  # augment ids taken, in order
 var offers := []  # current level-up choice, [] when none
 var pending := 0  # level-ups not chosen yet
 var rng := RandomNumberGenerator.new()
-var stats := {}  # the mage's permanent bonuses for this run
+var stats := {}  # the mage's bonuses: the profile's, + hero augments
 var passive := ""  # a Run.SHOP id, "" until one is bought
 
 
 ## `equipped`: slot -> spell; `bonus`: Profile.total_stats() (damage, gold, xp).
 func start(equipped: Dictionary, bonus := {}) -> void:
-	stats = bonus
+	stats = bonus.duplicate()
 	active = true
 	wave = 0
 	level = 1
@@ -77,7 +77,7 @@ func add_xp(amount: int) -> void:
 
 
 func _offer() -> void:
-	offers = Upgrades.offers(spells, mana_mult, rng)
+	offers = Upgrades.offers(spells.primary, mana_mult.primary, stats, rng)
 	if offers.is_empty():  # nothing left to improve
 		pending = 0
 	else:
@@ -89,10 +89,14 @@ func choose(i: int) -> bool:
 	if i < 0 or i >= offers.size():
 		return not offers.is_empty()
 	var o: Dictionary = offers[i]
-	if o.id == "mana":
-		mana_mult[o.slot] *= 0.85
+	var tier: int = Upgrades.RARITIES[o.rarity].tier
+	var u: Dictionary = Upgrades.LIST[o.id]
+	if u.has("stat"):
+		stats[u.stat] = minf(u.max, stats.get(u.stat, 0.0) + Upgrades.amount(o.id, tier))
+	elif o.id == "mana":
+		mana_mult.primary = maxf(Upgrades.MANA_FLOOR, mana_mult.primary * (1.0 - Upgrades.amount(o.id, tier)))
 	else:
-		spells[o.slot] = Upgrades.apply(spells[o.slot], o.id)
+		spells.primary = Upgrades.apply(spells.primary, o.id, tier)
 	picked.append(o.id)
 	pending -= 1
 	offers = []

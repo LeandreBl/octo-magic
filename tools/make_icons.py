@@ -50,6 +50,12 @@ UPGRADES = {
     "mana": "a blue mana potion flask with a downward arrow rune",
     "area": "an expanding magic circle with arrows pointing outward",
     "pierce": "a silver spear tip piercing through a wooden shield",
+    "toughness": "a red heart wrapped in a sturdy iron band",
+    "reservoir": "a large round blue mana flask filled to the brim, glowing",
+    "flow": "a swirling stream of glowing blue mana droplets in a spiral",
+    "fleetness": "a winged boot with a speed trail",
+    "fortune": "a four-leaf clover over a shiny gold coin",
+    "insight": "a glowing open eye inside a golden star",
 }
 
 

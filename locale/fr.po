@@ -361,38 +361,38 @@ msgstr "Sort"
 msgid "Power"
 msgstr "Puissance"
 
-msgid "+25% damage"
-msgstr "+25 % de dégâts"
+msgid "+%d%% damage"
+msgstr "+%d %% de dégâts"
 
 msgid "Haste"
 msgstr "Cadence"
 
-msgid "-15% cooldown"
-msgstr "-15 % de temps de recharge"
+msgid "-%d%% cooldown"
+msgstr "-%d %% de temps de recharge"
 
 msgid "Velocity"
 msgstr "Vélocité"
 
-msgid "+20% projectile speed"
-msgstr "+20 % de vitesse des projectiles"
+msgid "+%d%% projectile speed"
+msgstr "+%d %% de vitesse des projectiles"
 
 msgid "Thrift"
 msgstr "Économie"
 
-msgid "-15% mana cost"
-msgstr "-15 % de coût en mana"
+msgid "-%d%% mana cost"
+msgstr "-%d %% de coût en mana"
 
 msgid "Amplitude"
 msgstr "Ampleur"
 
-msgid "+20% size and area"
-msgstr "+20 % de taille et de zone"
+msgid "+%d%% size and area"
+msgstr "+%d %% de taille et de zone"
 
 msgid "Piercing"
 msgstr "Perforation"
 
-msgid "Passes through one more enemy"
-msgstr "Traverse un ennemi de plus"
+msgid "+%d enemies pierced"
+msgstr "+%d ennemi(s) transpercé(s)"
 
 msgid "Oak staff"
 msgstr "Bâton de chêne"
@@ -609,3 +609,51 @@ msgstr "PV %d / %d  ·  bouclier %d"
 
 msgid "Passive"
 msgstr "Passif"
+
+msgid "Common"
+msgstr "Commun"
+
+msgid "Rare"
+msgstr "Rare"
+
+msgid "Epic"
+msgstr "Épique"
+
+msgid "Toughness"
+msgstr "Robustesse"
+
+msgid "+%d max health"
+msgstr "+%d de vie max"
+
+msgid "Reservoir"
+msgstr "Réservoir"
+
+msgid "+%d max mana"
+msgstr "+%d de mana max"
+
+msgid "Flow"
+msgstr "Flux"
+
+msgid "+%d mana per second"
+msgstr "+%d mana par seconde"
+
+msgid "Fleetness"
+msgstr "Agilité"
+
+msgid "+%d%% move speed"
+msgstr "+%d %% de vitesse de déplacement"
+
+msgid "Fortune"
+msgstr "Fortune"
+
+msgid "+%d%% gold"
+msgstr "+%d %% d'or"
+
+msgid "Insight"
+msgstr "Clairvoyance"
+
+msgid "+%d%% experience"
+msgstr "+%d %% d'expérience"
+
+msgid "+%d projectile(s)"
+msgstr "+%d projectile(s)"
