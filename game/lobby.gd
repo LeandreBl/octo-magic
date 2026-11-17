@@ -1,7 +1,8 @@
 extends PanelContainer
-## Provisional coop lobby, opened from the hub: host a room, join one by its
-## code, see who is in, start the run. To move behind the menu's Multijoueur
-## button once the menu exists.
+## Coop lobby, behind the menu's Multijoueur button (ui/ui.gd): host a room,
+## join one by its code, see who is in, start the run.
+
+signal closed
 
 var main: Node  # game/main.gd
 var info: Label
@@ -12,11 +13,12 @@ var start: Button
 
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(460, 0)
-	position = get_viewport_rect().size / 2.0 - Vector2(230, 140)
+	custom_minimum_size = Vector2(560, 0)
 	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 12)
 	add_child(box)
 	var title := Label.new()
+	title.theme_type_variation = "Header"
 	title.text = "Multijoueur (coop)"
 	box.add_child(title)
 	url_edit = LineEdit.new()
@@ -32,6 +34,7 @@ func _ready() -> void:
 	code_edit.custom_minimum_size.x = 80
 	row.add_child(code_edit)
 	_button(row, "Rejoindre", func(): info.text = main.join_game(url_edit.text.strip_edges(), code_edit.text))
+	main.net_error.connect(func(m): info.text = m)
 	info = Label.new()
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD
 	box.add_child(info)
@@ -39,9 +42,10 @@ func _ready() -> void:
 	box.add_child(players)
 	row = HBoxContainer.new()
 	box.add_child(row)
-	start = _button(row, "Lancer la partie", func(): main._start_run())
+	start = _button(row, "Lancer la partie", func(): main.start_run())
 	_button(row, "Quitter le salon", func(): main.leave_game())
-	_button(row, "Fermer", hide)
+	_button(row, "Retour", closed.emit)
+	set_meta("focus", start)
 
 
 func _button(row: Control, text: String, on_press: Callable) -> Button:
@@ -53,7 +57,7 @@ func _button(row: Control, text: String, on_press: Callable) -> Button:
 
 
 func _process(_delta: float) -> void:
-	if not visible:
+	if not is_visible_in_tree():
 		return
 	var peer := multiplayer.multiplayer_peer
 	var online := peer is RelayPeer and peer.get_connection_status() != MultiplayerPeer.CONNECTION_DISCONNECTED

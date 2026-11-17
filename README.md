@@ -16,11 +16,15 @@ Create, combine and cast spells to conquer a dungeon.
 
 Controls: move WASD / arrows / left stick / left half of the screen; aim
 with the mouse / right stick / right half. Main spell: left click (or aim
-stick), secondary: right click / RB, ultimate: space / LB.
+stick), secondary: right click / RB, ultimate: space / LB. Pause: Escape /
+Start. Keys can be rebound in Options.
 
 Game state: autoloads `Profile` (`game/profile.gd`: gold, shop, bonuses,
 look, achievements, scores, spells; saved in `user://profile.json`) and
 `Run` (`game/run.gd`: XP, level-ups, upgrades, waves). Base spells:
 `game/spells.json`; level-up upgrades: `game/upgrades.gd`.
+
+Screens (menus, HUD, level-up, shop, options, theme) are in `ui/`, entry
+`ui/ui.gd`; options are saved in `user://settings.cfg`.
 
 Design: `docs/design.md`. Spell format: `docs/spells.md`.

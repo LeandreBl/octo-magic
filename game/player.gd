@@ -151,14 +151,9 @@ func _physics_process(delta: float) -> void:
 
 
 func _steer(delta: float) -> void:
-	var move := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-	var keys := Vector2(
-		float(Input.is_physical_key_pressed(KEY_D)) - float(Input.is_physical_key_pressed(KEY_A)),
-		float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W)))
-	move = (move + keys + _stick(_touch_move)).limit_length(1.0)
-	var pad_move := Vector2(Input.get_joy_axis(0, JOY_AXIS_LEFT_X), Input.get_joy_axis(0, JOY_AXIS_LEFT_Y))
-	if pad_move.length() > 0.2:
-		move = pad_move.limit_length(1.0)
+	# Input actions (project.godot): rebindable keys, arrows, left stick (ui/settings.gd).
+	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	move = (move + _stick(_touch_move)).limit_length(1.0)
 	position = Decor.slide(position, move * speed * delta, radius).clamp(Vector2.ZERO, get_viewport_rect().size)
 
 	var fire := false
@@ -177,7 +172,7 @@ func _steer(delta: float) -> void:
 	firing = {
 		"primary": fire or held.get("primary", false),
 		"secondary": Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) or Input.is_joy_button_pressed(0, JOY_BUTTON_RIGHT_SHOULDER) or held.get("secondary", false),
-		"ultimate": Input.is_physical_key_pressed(KEY_SPACE) or Input.is_joy_button_pressed(0, JOY_BUTTON_LEFT_SHOULDER) or held.get("ultimate", false),
+		"ultimate": Input.is_action_pressed("cast_ultimate") or held.get("ultimate", false),
 	}
 
 

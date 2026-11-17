@@ -27,18 +27,18 @@ func _initialize() -> void:
 	await process_frame
 	var run: Node = root.get_node("Run")
 	if args[0] == "solo":
-		main._start_run()
+		main.start_run()
 		await until("solo run", func(): return run.active and main.local_player().run and not get_nodes_in_group("enemies").is_empty())
 		main.local_player().hurt(1e6)
-		await until("death opens the hub", func(): return not run.active and main.hub.visible and paused)
-		main._start_run()
+		await until("death opens the end screen", func(): return not run.active and main.get_node("UI").current == "end" and paused)
+		main.start_run()
 		await until("new run", func(): return run.active and main.local_player().hp > 0.0 and not paused)
 	elif args[0] == "host":
 		main.host_game(args[1])
 		await until("room code", func(): return main.multiplayer.multiplayer_peer.code != "")
 		print("CODE ", main.multiplayer.multiplayer_peer.code)
 		await until("client spawned", func(): return main.get_node_or_null("P2"))
-		main._start_run()
+		main.start_run()
 		await until("client loadout cleaned and synced", func():
 			var p := main.get_node_or_null("P2")
 			return p and p.run and p.run.spells.has("primary"))
