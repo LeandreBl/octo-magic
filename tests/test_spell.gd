@@ -81,10 +81,38 @@ func _initialize() -> void:
 	boom.emit.body.on_expire = [{"type": "cast", "emit": base.emit}]
 	check(Spell.power(Spell.sanitize(boom)) > Spell.power(base), "sub-casts add power")
 
+	await _check_homing_lifetime()
+
 	# Every example spell in the docs is valid and runs without crashing.
 	var examples: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://spell/examples.json"))
 	check(examples is Array and examples.size() > 0, "example spells load")
 	_run_examples(examples if examples is Array else [])
+
+
+## Auto-aim bolts outlive their lifetime; out of the map they die only once
+## no enemy is left.
+func _check_homing_lifetime() -> void:
+	var world := Node2D.new()
+	root.add_child(world)
+	var spell := Spell.sanitize({"emit": {"body": {"speed": 0, "lifetime": 0.05,
+		"motion": [{"type": "homing", "strength": 1}]}}})
+	SpellBody.cast(spell.emit, Vector2(100, 100), Vector2.RIGHT, null, spell, world)
+	for i in 10:
+		await physics_frame
+	var bolt: SpellBody = world.get_child(0)
+	check(is_instance_valid(bolt), "homing bolt outlives its lifetime")
+	var e := Enemy.new()
+	e.position = Vector2(-500, -500)
+	world.add_child(e)
+	bolt.position = Vector2(-300, 100)  # off the map, an enemy still there
+	await physics_frame
+	await physics_frame
+	check(is_instance_valid(bolt), "off-map homing bolt kept while enemies remain")
+	e.free()
+	await physics_frame
+	await physics_frame
+	check(not is_instance_valid(bolt), "off-map homing bolt freed once no enemy is left")
+	world.free()
 
 
 func _run_examples(examples: Array) -> void:

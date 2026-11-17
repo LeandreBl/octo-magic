@@ -21,6 +21,7 @@ var tick_timer := 0.0
 var hit_ids := {}
 var origin := Vector2.ZERO
 var wave_phase := 0.0
+var homing := false  # auto-aim: no lifetime, see _physics_process
 
 
 ## Emit an "emit" dict from pos toward dir. Bursts are spread over time.
@@ -79,6 +80,7 @@ func _ready() -> void:
 	pierce_left = body.pierce
 	bounce_left = body.bounce
 	origin = position
+	homing = body.motion.any(func(m): return m.type == "homing" and m.strength > 0.0)
 	color = Color.html(spell.color)
 	if not body.sheet.is_empty():
 		sheet_tex = SpellArt.sheet(spell, body.sheet.file)
@@ -104,7 +106,9 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	age += delta
-	if age >= body.lifetime:
+	# Auto-aim bolts never time out: they fly until they hit, or leave the
+	# map while no enemy is left on it.
+	if age >= body.lifetime and not homing:
 		_expire()
 		return
 	_move(delta)
@@ -142,7 +146,11 @@ func _move(delta: float) -> void:
 					position = caster.global_position + Vector2.from_angle(a) * r
 					return
 	position += dir * speed * delta + offset
-	if not get_viewport_rect().grow(200).has_point(global_position):
+	if homing:
+		if not get_viewport_rect().has_point(global_position) \
+				and get_tree().get_nodes_in_group("enemies").is_empty():
+			queue_free()
+	elif not get_viewport_rect().grow(200).has_point(global_position):
 		queue_free()
 
 

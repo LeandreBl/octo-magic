@@ -38,7 +38,8 @@ This file is also sent to the AI as the format reference: keep it accurate.
 - `pierce`: extra enemies a bolt goes through, 0 to 20
 - `bounce`: times a bolt jumps to the next nearest enemy, 0 to 10
 - `motion`: list of `{type, strength}` (strength -10 to 10):
-  `homing` (steers to enemies), `wave` (zigzags), `accelerate` (negative
+  `homing` (steers to enemies; a homing body ignores `lifetime`: it flies until
+  it hits, or leaves the map while no enemy is left), `wave` (zigzags), `accelerate` (negative
   slows down), `boomerang` (returns to the caster), `orbit` (circles the caster)
 - `on_hit`: **Effects** on each enemy a bolt touches
 - `on_expire`: **Effects** where the body ends (lifetime over or stopped)
