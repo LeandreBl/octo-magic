@@ -1,6 +1,7 @@
 extends Node2D
 ## A drop: XP orb, gold coin or blank scroll. Flies to the player once close
 ## (or when `magnet` is raised at the end of a wave), then reports itself.
+## Coop: simulated on the host, flies to the nearest mage; peers get its position.
 
 signal collected(kind: String, value: int)
 
@@ -14,6 +15,11 @@ var speed := 0.0
 
 
 func _physics_process(delta: float) -> void:
+	if not multiplayer.is_server():
+		return
+	var near := preload("res://game/enemy.gd").nearest_player(self)
+	if near:
+		target = near
 	if not is_instance_valid(target):
 		return
 	var to := target.position - position

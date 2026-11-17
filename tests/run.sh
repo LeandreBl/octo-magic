@@ -13,4 +13,5 @@ for t in tests/test_*.gd; do
 	if echo "$out" | grep -q "SCRIPT ERROR"; then code=1; fi
 done
 python3 -m unittest discover -s server -p "test_*.py" -q
+GODOT="$GODOT" python3 -m unittest discover -s relay -p "test_*.py" -q  # + coop end to end
 exit $code

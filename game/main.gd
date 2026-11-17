@@ -5,13 +5,27 @@ extends Node2D
 ## them). Runs are fully offline. Blank scrolls found in a run are kept; in the
 ## hub the player writes a word on one and the forge server rewrites the main
 ## spell with it. If the forge does not answer, the scroll stays for later.
+##
+## Coop (relay/relay.py, game/lobby.gd): the host runs the waves, enemies,
+## drops and damage, spawned through a MultiplayerSpawner; each peer steers
+## its mage and keeps its own Run (level-ups, spells), sent to the host as a
+## loadout. Kills and drops are shared. Solo is a host alone
+## (OfflineMultiplayerPeer): one code path.
 
 const FORGE_URL := "http://localhost:8765/forge"
 const POLL_SECONDS := 3.0
 const Enemy := preload("res://game/enemy.gd")
 const Pickup := preload("res://game/pickup.gd")
+const Player := preload("res://game/player.gd")
+const RELAY_URL := "ws://localhost:8770"
+const ALWAYS := SceneReplicationConfig.REPLICATION_MODE_ALWAYS
+const ON_CHANGE := SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE
 
-var player: Node2D
+var spawner: MultiplayerSpawner
+var lobby: PanelContainer
+var spawned := 0  # names of spawned enemies and drops
+var map_info := ["crypt", 0]  # this run's map and seed, for players dropping in
+var again_button: Button
 var hud: Label
 var hud_icon: TextureRect
 var level_panel: PanelContainer
@@ -28,18 +42,32 @@ var forge_note := ""  # forge news, shown in the HUD and the hub
 
 func _ready() -> void:
 	randomize()
-	player = preload("res://game/player.gd").new()
-	player.run = Run
-	player.died.connect(_end_run)
-	add_child(player)
+	spawner = MultiplayerSpawner.new()
+	spawner.spawn_function = _spawn
+	add_child(spawner)
+	spawner.spawn_path = ^".."
+	multiplayer.peer_connected.connect(_on_peer_joined)
+	multiplayer.peer_disconnected.connect(_on_peer_left)
+	multiplayer.server_disconnected.connect(_go_solo, CONNECT_DEFERRED)
+	multiplayer.connection_failed.connect(_go_solo, CONNECT_DEFERRED)
 	_build_ui()
 	Run.leveled_up.connect(_show_level_up)
 	Profile.changed.connect(_refresh_hub)
+	_reset_world()
 	_show_hub()
 
 
+func local_player() -> Node2D:
+	return get_node_or_null("P%d" % multiplayer.get_unique_id())
+
+
+func _solo() -> bool:
+	return multiplayer.multiplayer_peer is OfflineMultiplayerPeer
+
+
 func _process(_delta: float) -> void:
-	if not Run.active:
+	var player := local_player()
+	if not Run.active or not player:
 		return
 	var s: Dictionary = Run.spells.primary
 	hud_icon.texture = SpellArt.sheet(s, s.icon_file) if s.icon_file else SpellArt.texture(s.icon, s.palette)
@@ -49,51 +77,81 @@ func _process(_delta: float) -> void:
 	hud.text = "Vague %d   Niveau %d (%d/%d XP)   PV %d/%d   Mana %d   Or %d   Parchemins %d   Score %d\n%s\n%s" % [
 		Run.wave, Run.level, Run.xp, Run.xp_to_next(Run.level), player.hp, player.max_hp, player.mana,
 		Run.gold, Run.scrolls, Run.score(), "   |   ".join(slots), forge_note]
-	if get_tree().get_nodes_in_group("enemies").is_empty():
+	if multiplayer.is_server() and get_tree().get_nodes_in_group("enemies").is_empty():
 		for p in get_tree().get_nodes_in_group("pickups"):
 			p.magnet = INF  # wave cleared: the drops fly to the player
 		_next_wave()
 
 
-# --- run ---------------------------------------------------------------------
+# --- run (the host drives it, peers follow through RPCs) ----------------------
 
 func _start_run() -> void:
+	if multiplayer.is_server():
+		_run_started.rpc(Decor.MAPS.keys().pick_random(), randi())
+		_next_wave()
+
+
+## Every peer starts its own Run (progression, spells) on the host's map.
+@rpc("authority", "call_local", "reliable")
+func _run_started(map: String, map_seed: int) -> void:
+	map_info = [map, map_seed]
 	for n in get_children():
-		if n != player and n is Node2D:
+		if n is Node2D and not n.is_in_group("players"):
 			n.free()
-	var stats := Profile.total_stats()
-	Run.start(Profile.equipped_spells(), stats)
-	player.setup(stats)
-	player.look = Profile.look.merged({"robe": Profile.ITEMS[Profile.equipped.robe].color,
-		"staff": Profile.ITEMS[Profile.equipped.staff].color,
-		"ring": Profile.ITEMS[Profile.equipped.ring].color}, true)
-	player.position = get_viewport_rect().size / 2.0
+	Run.start(Profile.equipped_spells(), Profile.total_stats())
+	var p := local_player()
+	if p:
+		p.position = get_viewport_rect().size / 2.0
 	var decor := Decor.new()  # one map per run, placed once
 	decor.broken.connect(func(pos):
 		_drop("gold", 3, pos)
 		_drop("xp", 2, pos + Vector2(10, 0)))
 	add_child(decor)
-	decor.build(Decor.MAPS.keys().pick_random(), get_viewport_rect(), randi())
+	decor.build(map, get_viewport_rect(), map_seed)
 	hub.hide()
+	lobby.hide()
 	get_tree().paused = false
-	_next_wave()
+	_send_loadout(true)
+
+
+## This peer's spells, stats and look, to the host (see Player.clean_loadout).
+func _send_loadout(fresh: bool) -> void:
+	if multiplayer.multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
+		return
+	_offer_loadout.rpc_id(1, JSON.stringify({"fresh": fresh, "spells": Run.spells, "mult": Run.mana_mult,
+		"stats": Profile.total_stats(), "look": Profile.look.merged({
+			"robe": Profile.ITEMS[Profile.equipped.robe].color,
+			"staff": Profile.ITEMS[Profile.equipped.staff].color,
+			"ring": Profile.ITEMS[Profile.equipped.ring].color}, true)}))
+
+
+## A player sends its loadout as JSON; the host cleans it and syncs it to all.
+@rpc("any_peer", "call_local", "reliable")
+func _offer_loadout(text: String) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var p := get_node_or_null("P%d" % (from if from else 1))
+	if multiplayer.is_server() and p:
+		p.loadout_json = JSON.stringify(Player.clean_loadout(JSON.parse_string(text)))
 
 
 func _next_wave() -> void:
-	Run.wave += 1
-	Run.changed.emit()
+	_wave_started.rpc(Run.wave + 1)
 	var size := get_viewport_rect().size
 	for kind in Run.wave_plan(Run.wave):
-		var e := Enemy.new()
-		e.setup(kind, Run.enemy_stats(kind, Run.wave))
-		e.target = player
-		e.position = size / 2.0 + Vector2.from_angle(randf() * TAU) * size.length() * 0.55
-		e.killed.connect(_on_killed)
-		add_child(e)
+		spawned += 1
+		spawner.spawn({"kind": "enemy", "name": "E%d" % spawned, "type": kind,
+			"stats": Run.enemy_stats(kind, Run.wave),
+			"pos": size / 2.0 + Vector2.from_angle(randf() * TAU) * size.length() * 0.55})
+
+
+@rpc("authority", "call_local", "reliable")
+func _wave_started(w: int) -> void:
+	Run.wave = w
+	Run.changed.emit()
 
 
 func _on_killed(e: Node2D) -> void:
-	Run.killed(e.kind)
+	_killed.rpc(e.kind)
 	_drop("xp", e.xp, e.position)
 	if e.kind == "boss" or randf() < 0.5:
 		_drop("gold", e.gold, e.position + Vector2(randf_range(-8, 8), randf_range(-8, 8)))
@@ -101,22 +159,27 @@ func _on_killed(e: Node2D) -> void:
 		_drop("scroll", 1, e.position + Vector2(0, 14))
 
 
+## Kills and drops are shared: every peer counts them in its own Run.
+@rpc("authority", "call_local", "reliable")
+func _killed(kind: String) -> void:
+	Run.killed(kind)
+
+
+@rpc("authority", "call_local", "reliable")
+func _collected(kind: String, value: int) -> void:
+	Run.collect(kind, value)
+	if kind == "scroll":
+		forge_note = "Parchemin vierge trouvé ! Tu pourras l'écrire à la fin de la run."
+
+
 func _drop(kind: String, value: int, pos: Vector2) -> void:
-	var p := Pickup.new()
-	p.kind = kind
-	p.value = value
-	p.target = player
-	p.position = pos
-	p.add_to_group("pickups")
-	p.collected.connect(func(k, v):
-		Run.collect(k, v)
-		if k == "scroll":
-			forge_note = "Parchemin vierge trouvé ! Tu pourras l'écrire à la fin de la run.")
-	add_child.call_deferred(p)
+	if multiplayer.is_server():
+		spawned += 1
+		spawner.spawn.call_deferred({"kind": "pickup", "name": "D%d" % spawned, "type": kind, "value": value, "pos": pos})
 
 
 func _show_level_up(offers: Array) -> void:
-	get_tree().paused = true
+	get_tree().paused = _solo()  # coop: the others play on
 	for c in level_box.get_children():
 		c.free()
 	var title := Label.new()
@@ -129,14 +192,23 @@ func _show_level_up(offers: Array) -> void:
 		b.text = "%d. %s — %s (%s : %s)" % [i + 1, u.name, u.desc, Upgrades.SLOT_NAMES[o.slot], Run.spells[o.slot].name]
 		b.pressed.connect(func():
 			level_panel.hide()
-			if not Run.choose(i):
+			var more := Run.choose(i)
+			_send_loadout(false)
+			if not more:
 				get_tree().paused = false)
 		level_box.add_child(b)
 	level_panel.show()
 	level_box.get_child(1).grab_focus.call_deferred()
 
 
-## Permadeath: the run is lost, its gold and scrolls are kept. Hub.
+## Permadeath: the run ends when every mage is down; its gold and scrolls are
+## kept. Hub.
+func _on_player_died() -> void:
+	if Run.active and get_tree().get_nodes_in_group("players").all(func(p): return p.hp <= 0.0):
+		_end_run.rpc()
+
+
+@rpc("authority", "call_local", "reliable")
 func _end_run() -> void:
 	if not Run.active:
 		return
@@ -191,10 +263,126 @@ func _build_ui() -> void:
 	hub_status = Label.new()
 	hub_status.autowrap_mode = TextServer.AUTOWRAP_WORD
 
+	lobby = preload("res://game/lobby.gd").new()
+	lobby.main = self
+	lobby.hide()
+	layer.add_child(lobby)
+
 	forge_http = HTTPRequest.new()
 	forge_http.timeout = 30.0
 	forge_http.request_completed.connect(_on_forge_reply)
 	layer.add_child(forge_http)
+
+
+# --- coop: spawning and connections -------------------------------------------
+
+func _spawn(d: Dictionary) -> Node:
+	var n: Node2D
+	var sync := MultiplayerSynchronizer.new()
+	if d.kind == "player":
+		n = Player.new()
+		n.peer_id = d.id
+		n.died.connect(_on_player_died)
+		sync.replication_config = _config({"hp": ON_CHANGE, "mana": ALWAYS, "loadout_json": ON_CHANGE}, true)
+		var own := MultiplayerSynchronizer.new()  # what the owner steers
+		own.replication_config = _config({"position": ALWAYS, "aim": ALWAYS, "firing": ALWAYS}, false)
+		own.set_multiplayer_authority(d.id)
+		n.add_child(own)
+	elif d.kind == "enemy":
+		n = Enemy.new()
+		n.setup(d.type, d.stats)
+		n.killed.connect(_on_killed)
+		sync.replication_config = _config({"position": ALWAYS, "hp": ON_CHANGE, "statuses": ALWAYS}, true)
+	else:
+		n = Pickup.new()
+		n.kind = d.type
+		n.value = d.value
+		n.add_to_group("pickups")
+		n.collected.connect(func(k, v): _collected.rpc(k, v))
+		sync.replication_config = _config({"position": ALWAYS}, true)
+	n.name = d.name
+	n.position = d.pos
+	n.add_child(sync)
+	return n
+
+
+static func _config(props: Dictionary, spawn: bool) -> SceneReplicationConfig:
+	var c := SceneReplicationConfig.new()
+	for p in props:
+		var path := NodePath(".:" + p)
+		c.add_property(path)
+		c.property_set_spawn(path, spawn)
+		c.property_set_replication_mode(path, props[p])
+	return c
+
+
+func _spawn_player(id: int) -> void:
+	spawner.spawn({"kind": "player", "name": "P%d" % id, "id": id, "pos": get_viewport_rect().size / 2.0})
+
+
+## Fresh world for a new session: the host (or solo) spawns its mage, a
+## joining peer waits for the host's spawns.
+func _reset_world() -> void:
+	for n in get_children():
+		if n is Node2D:
+			n.free()
+	if multiplayer.is_server():
+		_spawn_player(1)
+
+
+func _on_peer_joined(id: int) -> void:
+	if multiplayer.is_server():
+		_spawn_player(id)
+		if Run.active:  # drop-in: the newcomer starts its run on this map
+			_run_started.rpc_id(id, map_info[0], map_info[1])
+			_wave_started.rpc_id(id, Run.wave)
+
+
+func _on_peer_left(id: int) -> void:
+	var p := get_node_or_null("P%d" % id)
+	if multiplayer.is_server() and p:
+		p.remove_from_group("players")
+		p.queue_free()
+		_on_player_died()  # the leaver may have been the last one standing
+
+
+## Lobby: open a room (its code shows in the lobby once the relay answers),
+## or join one. Returns an error message, or "".
+func host_game(url: String) -> String:
+	return _connect(url, "")
+
+
+func join_game(url: String, code: String) -> String:
+	return _connect(url, code)
+
+
+func _connect(url: String, code: String) -> String:
+	var peer := RelayPeer.new()
+	if (peer.join(url, code) if code else peer.host(url)) != OK:
+		return peer.error
+	multiplayer.multiplayer_peer = peer
+	_reset_world()
+	_show_hub()
+	return ""
+
+
+func leave_game() -> void:
+	multiplayer.multiplayer_peer.close()
+	_go_solo()
+
+
+## Relay lost, room closed or never joined: back to solo, in the hub.
+func _go_solo() -> void:
+	var peer := multiplayer.multiplayer_peer
+	if not peer is RelayPeer:
+		return
+	lobby.info.text = peer.error
+	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+	_reset_world()
+	if Run.active:
+		_end_run()
+	else:
+		_show_hub()
 
 
 func _show_hub() -> void:
@@ -202,7 +390,7 @@ func _show_hub() -> void:
 	hud.text = ""
 	_refresh_hub()
 	hub.show()
-	hub_box.get_child(1).grab_focus()
+	again_button.grab_focus()
 
 
 ## Rebuilds the hub from Profile: shop, bonuses, spells, look, forge, scores.
@@ -214,11 +402,14 @@ func _refresh_hub() -> void:
 		if c != word_edit and c != hub_status:
 			c.queue_free()
 	_label(run_summary)
-	_button(hub_box, "Nouvelle run", _start_run)
+	var row := _row()
+	again_button = _button(row, "Nouvelle run" if multiplayer.is_server() else "L'hôte lance la run", _start_run)
+	again_button.disabled = not multiplayer.is_server()
+	_button(row, "Multijoueur", lobby.show)
 	_label("\nOr : %d   Parchemins vierges : %d" % [Profile.gold, Profile.blank_scrolls])
 
 	_label("\nÉquipement (acheter / équiper) :")
-	var row := _row()
+	row = _row()
 	for id in Profile.ITEMS:
 		var it: Dictionary = Profile.ITEMS[id]
 		var on: bool = Profile.equipped[it.kind] == id

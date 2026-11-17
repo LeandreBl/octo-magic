@@ -2,6 +2,8 @@ extends Node2D
 ## An enemy. Implements the target interface used by SpellBody.
 ## Kinds (stats from Run.enemy_stats): melee chases, fast chases quicker,
 ## ranged keeps its distance and shoots, boss chases and fires rings of shots.
+## Coop: simulated on the host, chasing the nearest mage standing; peers get
+## its position, hp and statuses, and draw its shots.
 
 signal killed(enemy: Node2D)
 
@@ -56,7 +58,22 @@ func push(velocity: Vector2) -> void:
 	knock += velocity * (0.3 if kind == "boss" else 1.0)
 
 
+## The nearest mage standing, or null.
+static func nearest_player(from: Node2D) -> Node2D:
+	var best: Node2D = null
+	for p in from.get_tree().get_nodes_in_group("players"):
+		if p.hp > 0.0 and (not best or from.position.distance_squared_to(p.position) < from.position.distance_squared_to(best.position)):
+			best = p
+	return best
+
+
 func _physics_process(delta: float) -> void:
+	queue_redraw()
+	if not multiplayer.is_server():
+		return
+	var near := nearest_player(self)
+	if near:
+		target = near
 	var slow := 1.0
 	for s in statuses.keys():
 		var p: float = statuses[s][0]
@@ -67,7 +84,7 @@ func _physics_process(delta: float) -> void:
 			"freeze", "stun": slow = 0.0
 		if statuses[s][1] <= 0.0:
 			statuses.erase(s)
-	if hp <= 0.0 or not is_instance_valid(target):
+	if hp <= 0.0 or not is_instance_valid(target) or target.hp <= 0.0:
 		return
 	var to := target.global_position - global_position
 	var dir := to.normalized()
@@ -83,7 +100,6 @@ func _physics_process(delta: float) -> void:
 	shot_timer -= delta * slow
 	if shot_timer <= 0.0 and kind in ["ranged", "boss"]:
 		_shoot(to)
-	queue_redraw()
 
 
 func _shoot(to: Vector2) -> void:
@@ -98,11 +114,15 @@ func _shoot(to: Vector2) -> void:
 
 
 func _shot(dir: Vector2, v: float) -> void:
+	_spawn_shot.rpc(position, dir * v)
+
+
+@rpc("authority", "call_local", "unreliable_ordered")
+func _spawn_shot(pos: Vector2, velocity: Vector2) -> void:
 	var s := Shot.new()
-	s.position = position
-	s.velocity = dir * v
+	s.position = pos
+	s.velocity = velocity
 	s.damage = touch_damage * 0.8
-	s.target = target
 	get_parent().add_child(s)
 
 
@@ -119,19 +139,24 @@ func _draw() -> void:
 	draw_rect(Rect2(-radius, -radius - 8, 2 * radius * maxf(hp, 0.0) / max_hp, 3), Color.RED)
 
 
-## An enemy projectile: flies straight, hurts the player on touch.
+## An enemy projectile: flies straight, hurts a mage on touch (on the host;
+## peers only draw it).
 class Shot extends Node2D:
 	const RADIUS := 5.0
 	var velocity := Vector2.ZERO
 	var damage := 5.0
-	var target: Node2D
 	var age := 0.0
 
 	func _physics_process(delta: float) -> void:
 		position += velocity * delta
 		age += delta
-		if is_instance_valid(target) and position.distance_to(target.position) < RADIUS + target.radius:
-			target.hurt(damage)
+		var hit: Node2D = null
+		for p in get_tree().get_nodes_in_group("players"):
+			if p.hp > 0.0 and position.distance_to(p.position) < RADIUS + p.radius:
+				hit = p
+		if hit:
+			if multiplayer.is_server():
+				hit.hurt(damage)
 			queue_free()
 		elif age > 6.0 or Decor.hit(position, RADIUS):
 			queue_free()

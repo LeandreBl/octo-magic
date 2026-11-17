@@ -80,8 +80,9 @@ static func sheet(spell: Dictionary, file: String) -> Texture2D:
 ## A body's animation, whatever its source: the bundle sheet, else its pixel
 ## grids turned into the same strip format. -> [texture, sheet] or [].
 static func animation(spell: Dictionary, body: Dictionary) -> Array:
-	if body.sheet:
-		return [sheet(spell, body.sheet.file), body.sheet]
+	var tex := sheet(spell, body.sheet.get("file", ""))
+	if tex:  # missing on coop peers: the bundle stays with its owner
+		return [tex, body.sheet]
 	if body.sprite.is_empty():
 		return []
 	var key := "strip" + str(body.sprite) + str(spell.palette)

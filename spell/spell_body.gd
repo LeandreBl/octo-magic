@@ -183,6 +183,8 @@ func _expire() -> void:
 
 func apply_effects(list: Array, pos: Vector2, target: Node2D) -> void:
 	for f in list:
+		if f.type != "cast" and not multiplayer.is_server():
+			continue  # coop: the host applies effects, peers only draw
 		match f.type:
 			"heal":
 				if is_instance_valid(caster):

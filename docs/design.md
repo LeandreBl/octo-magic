@@ -43,11 +43,14 @@
 - Piste : la forge peut aussi générer un petit sprite pixel art par sort (projectile, icône).
 - Assets générés par IA (outils spécialisés pixel art) puis nettoyés à la main (grille, palette commune).
 
-## Multijoueur (piste)
-- **Coopération** : les joueurs affrontent les vagues ensemble.
-- P2P avec un joueur hôte qui fait tourner la partie (le même moteur), les autres sont clients : pas de code serveur de jeu.
-- Web et natif : WebRTC (Godot `WebRTCMultiplayerPeer`) ; un petit serveur de signalisation sert uniquement à mettre les joueurs en relation. Réseau local natif possible en ENet.
-- Les sorts sont des données : un joueur envoie son JSON à l'hôte, qui le nettoie (`Spell.sanitize`) et le simule.
+## Multijoueur
+- **Coopération** : les joueurs affrontent les vagues ensemble (4 max, hôte compris).
+- Un joueur hôte fait tourner la partie (le même moteur), les autres sont clients : pas de code serveur de jeu. Solo = un hôte seul.
+- Web et natif : un **relais WebSocket** (`relay/`, Python stdlib) au lieu de WebRTC (tâche #78) : il passe les NAT sans STUN/TURN et ne fait que router les paquets d'un salon (code court). Côté Godot, `RelayPeer` (`MultiplayerPeerExtension`) donne l'API haut niveau (RPC, `MultiplayerSpawner`, `MultiplayerSynchronizer`).
+- L'hôte fait autorité sur les ennemis, leurs tirs, les drops, les PV, le mana et les dégâts ; chaque joueur déplace et vise son mage lui-même (réactif malgré la latence du relais). Les sorts lancés sont rejoués chez les autres pour l'affichage seulement. La carte (et sa graine) est envoyée à tous.
+- Chaque joueur garde sa propre run (niveau, améliorations, sorts) ; les ennemis tués et les drops ramassés comptent pour tout le monde. Pas de pause au level-up en coop.
+- Les sorts sont des données : un joueur envoie ses sorts en JSON à l'hôte, qui les nettoie (`Spell.sanitize`), calcule leur coût et les synchronise à tous. Les planches PNG d'un bundle restent chez son propriétaire : les autres voient les grilles de pixels du sort.
+- La run se termine quand tous les mages sont à terre. Un joueur peut rejoindre en cours de run. Départ de l'hôte : chacun repasse en solo.
 
 ## Décor des cartes
 - Une carte par run (`crypt`, `cave`, `ruins`), tirée au début de la run ; le décor est placé une fois (graine), il ne change pas pendant la run.
