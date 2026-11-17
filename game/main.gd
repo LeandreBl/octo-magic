@@ -223,6 +223,7 @@ func _spawn(d: Dictionary) -> Node:
 		var own := MultiplayerSynchronizer.new()  # what the owner steers
 		own.replication_config = _config({"position": ALWAYS, "aim": ALWAYS, "firing": ALWAYS}, false)
 		own.set_multiplayer_authority(d.id)
+		own.name = "Own"  # fixed names: peers resolve sync paths by name, auto names differ per peer
 		n.add_child(own)
 	elif d.kind == "enemy":
 		n = Enemy.new()
@@ -238,6 +239,7 @@ func _spawn(d: Dictionary) -> Node:
 		sync.replication_config = _config({"position": ALWAYS}, true)
 	n.name = d.name
 	n.position = d.pos
+	sync.name = "Sync"
 	n.add_child(sync)
 	return n
 

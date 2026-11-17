@@ -31,6 +31,7 @@ static var obstacles: Array = []
 
 var sheet: Texture2D
 var items: Array = []  # every placed item, solid or not
+var arena := Rect2()  # the walkable area: its edge is drawn, the camera scrolls past it
 var glow := Node2D.new()
 var halo: Texture2D
 var t := 0.0
@@ -51,6 +52,7 @@ func build(map: String, rect: Rect2, seed: int) -> void:
 	sheet = load("res://assets/decor/%s.png" % map)
 	var img := sheet.get_image()
 	items = []
+	arena = rect
 	var inner := rect.grow(-EDGE)
 	for kind in COUNTS:
 		var cells: Array = MAPS[map].filter(func(c): return c[1] == kind)
@@ -139,6 +141,7 @@ func _break(o: Dictionary) -> void:
 
 
 func _draw() -> void:
+	draw_rect(arena, Color(0, 0, 0, 0.6), false, 4.0)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * SpellArt.PIXEL)
 	for it in items:
 		draw_texture_rect_region(sheet, Rect2(it.pos / SpellArt.PIXEL - it.foot, it.src.size), it.src)

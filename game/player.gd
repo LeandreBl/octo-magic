@@ -51,6 +51,10 @@ func setup(stats: Dictionary) -> void:
 
 func _ready() -> void:
 	add_to_group("players")
+	if peer_id == multiplayer.get_unique_id():  # this peer's mage stays mid-screen, the map scrolls
+		var cam := Camera2D.new()
+		add_child(cam)
+		cam.make_current()
 
 
 ## A player's loadout as it sends it (untrusted) -> a clean one: spells
