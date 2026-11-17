@@ -6,7 +6,8 @@ extends CanvasLayer
 ## UI is drawn at screen resolution (not pixel-art scaled), scaled by the
 ## "UI size" option. Data comes from the Run and Profile autoloads.
 ## The multiplayer screen is the coop lobby (game/lobby.gd), the account
-## screen game/account.gd (also the title screen while logged out).
+## screen game/account.gd (also the title screen while logged out), then the
+## characters screen game/characters.gd (after login, or without a character).
 
 const UITheme := preload("res://ui/theme.gd")
 
@@ -18,6 +19,7 @@ var back_to := "title"  # where options, shop... return
 var hud: Control
 var sticks: Control
 var _dim: ColorRect  # darkens the world behind menus
+var _logged_in := false  # at the last Online.changed
 
 
 func _ready() -> void:
@@ -63,6 +65,12 @@ func _ready() -> void:
 	account_screen.add_child(account)
 	screens.account = add_screen(account_screen)
 	account_screen.set_meta("focus", account.get_meta("focus"))
+	var chars := preload("res://game/characters.gd").new()
+	chars.closed.connect(show_screen.bind("title"))
+	var chars_screen := CenterContainer.new()
+	chars_screen.add_child(chars)
+	screens.characters = add_screen(chars_screen)
+	chars_screen.set_meta("focus", chars.get_meta("focus"))
 	var shop := preload("res://ui/shop.gd").new()
 	shop.main = main
 	shop.closed.connect(back)
@@ -78,15 +86,26 @@ func _ready() -> void:
 	Run.leveled_up.connect(_show_level_up)
 	get_viewport().size_changed.connect(_layout)
 	_layout()
+	_logged_in = Online.logged_in()  # a session restored at launch: its last character
 	show_screen("title")
 	Online.changed.connect(_on_session_changed)
 
 
-## Logged out, the title menu is the account screen (no play without an account).
+## Just logged in: the characters screen. Otherwise the title menu, or what
+## replaces it (show_screen): a character picked, logged out...
 func _on_session_changed() -> void:
-	var home := "title" if Online.logged_in() else "account"
-	if current in ["title", "account"] and current != home:
-		show_screen(home)
+	var login := Online.logged_in() and not _logged_in
+	_logged_in = Online.logged_in()
+	if login:
+		show_screen("characters")
+	elif current in ["title", "account", "characters"] and current != _home():
+		show_screen("title")
+
+
+## What the title menu is: the account screen logged out, the characters
+## screen without a character (no play without either).
+func _home() -> String:
+	return "account" if not Online.logged_in() else "characters" if Online.character.is_empty() else "title"
 
 
 func _layout() -> void:
@@ -103,8 +122,8 @@ func add_screen(c: Control) -> Control:
 
 
 func show_screen(name: String) -> void:
-	if name == "title" and not Online.logged_in():
-		name = "account"
+	if name == "title":
+		name = _home()
 	current = name
 	for k in screens:
 		screens[k].visible = k == name
@@ -160,6 +179,7 @@ func _unhandled_input(e: InputEvent) -> void:
 		"": open_pause()
 		"pause": resume()
 		"title", "end", "levelup": pass
+		"characters": show_screen("title")
 		_: back()
 
 
@@ -221,7 +241,8 @@ func _title() -> Control:
 	sub.add_theme_color_override("font_color", UITheme.TEXT_DIM)
 	box.add_child(sub)
 	box.add_child(Control.new())  # spacer
-	var items := [["Play", _play], ["Multiplayer", open.bind("multiplayer")], ["Account", open.bind("account")],
+	var items := [["Play", _play], ["Multiplayer", open.bind("multiplayer")], ["Characters", open.bind("characters")],
+		["Account", open.bind("account")],
 		["Shop", open.bind("shop")], ["Achievements", open.bind("achievements")],
 		["Leaderboard", open.bind("leaderboard")], ["Options", open.bind("options")]]
 	if not OS.has_feature("web"):
@@ -351,8 +372,8 @@ func _on_run_ended() -> void:
 
 ## The HUD shows on run_started (in coop only the host starts the run).
 func _play() -> void:
-	if not Online.logged_in():
-		show_screen("account")
+	if not Online.logged_in() or Online.character.is_empty():
+		show_screen("title")
 		return
 	main.start_run()
 

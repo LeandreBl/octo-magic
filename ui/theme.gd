@@ -82,6 +82,7 @@ static func make() -> Theme:
 		t.set_constant("h_separation", type, 8)
 	t.set_type_variation("Card", "Button")
 	t.set_stylebox("hover", "Card", _box(BUTTON_HI, GOLD, 4, 10, 5))
+	t.set_stylebox("pressed", "Card", _box(BUTTON_HI, GOLD, 4, 10, 0, 5))  # also a chosen toggle card
 	t.set_stylebox("focus", "Card", _box(Color.TRANSPARENT, GOLD, 4, 10, 0))
 
 	t.set_stylebox("normal", "LineEdit", _box(Color(OUTLINE, 0.6), OUTLINE, 4, 10, 0))

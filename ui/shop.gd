@@ -1,6 +1,6 @@
 extends CenterContainer
-## Shop, between runs: items, permanent bonuses, equipped spells, the mage's
-## look and the scroll panel. Reads and edits the Profile autoload.
+## Shop, between runs: items, permanent bonuses, the mage's look and the
+## scroll panel (the spell is the character's, chosen at its creation). Reads and edits the Profile autoload.
 
 signal closed
 
@@ -81,14 +81,6 @@ func _rebuild() -> void:
 		var b := _button(row, "%s %d/%d · %s (%s)" % [tr(bo.name), Profile.bonuses.get(id, 0), bo.max, tr(bo.desc),
 			"max" if price < 0 else tr("%d gold") % price], func(): Profile.buy_bonus(id))
 		b.disabled = price < 0 or Profile.gold < price
-
-	for slot in Upgrades.SLOTS:
-		row = _section(tr(Upgrades.SLOT_NAMES[slot]))
-		for e in Profile.available_spells(slot):
-			var b := _button(row, Spell.label(e.spell), func(): Profile.equip_spell(slot, e.id))
-			b.disabled = Profile.spells[slot] == e.id
-			b.tooltip_text = "%s (%d mana)" % [Spell.describe(e.spell), Spell.mana_cost(e.spell)]
-			b.icon = UITheme.spell_icon(e.spell)
 
 	row = _section("Hat")
 	for c in Profile.COLORS:

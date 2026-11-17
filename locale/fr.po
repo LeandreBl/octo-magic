@@ -244,9 +244,6 @@ msgstr "Session expirée, reconnecte-toi."
 msgid "Profile not synced (server unreachable)."
 msgstr "Profil non synchronisé (serveur injoignable)."
 
-msgid "Profile sent to the server."
-msgstr "Profil envoyé sur le serveur."
-
 msgid "Profile synced."
 msgstr "Profil synchronisé."
 
@@ -573,3 +570,27 @@ msgstr "Missiles arcaniques"
 
 msgid "Three missiles that hunt down enemies."
 msgstr "Trois missiles qui traquent les ennemis."
+
+msgid "Characters"
+msgstr "Personnages"
+
+msgid "New character"
+msgstr "Nouveau personnage"
+
+msgid "Create"
+msgstr "Créer"
+
+msgid "name"
+msgstr "nom"
+
+msgid "Loading…"
+msgstr "Chargement…"
+
+msgid "Choose a name."
+msgstr "Choisis un nom."
+
+msgid "Creating…"
+msgstr "Création…"
+
+msgid "Cost: %d mana"
+msgstr "Coût : %d mana"

@@ -5,9 +5,8 @@ extends Node
 ## page (web/site.js); native in the system browser, which comes back on a
 ## local port (GOOGLE_PORT). An account has several
 ## characters, each with its profile; once logged in, the profile is the
-## active character's: pulled at login (the server's copy wins; an account
-## without characters gets one from the local profile), pushed on every save,
-## forged .spell bundles (per account) with it.
+## active character's (picked or created on game/characters.gd): pulled at
+## login, pushed on every save, forged .spell bundles (per account) with it.
 ## The forge (/api/forge) and the coop lobby (game/net.gd) use its token.
 ##
 ## Server URL: OCTO_SERVER, else the page's origin on web, else
@@ -220,11 +219,11 @@ func select(id: String) -> void:
 	changed.emit()
 
 
-## A new character with a fresh profile, made active. Returns an error
-## message, or "".
-func create_character(char_name: String, spell: String) -> String:
+## A new character with a fresh profile (its starting spell and look), made
+## active. Returns an error message, or "".
+func create_character(char_name: String, spell: String, look := {}) -> String:
 	var r := await api("/api/characters", HTTPClient.METHOD_POST,
-		{"name": char_name, "spell": spell, "profile": {"spells": {"primary": spell}}})
+		{"name": char_name, "spell": spell, "profile": {"spells": {"primary": spell}, "look": look}})
 	if not r.ok or not r.json is Dictionary:
 		var e: Variant = r.json.get("error") if r.json is Dictionary else null
 		return str(e) if e else "server unreachable"
@@ -233,8 +232,8 @@ func create_character(char_name: String, spell: String) -> String:
 
 
 ## The active character's profile replaces the local one, with its spell
-## bundles (no saved active character: the first one). An account without
-## characters gets one from the local profile.
+## bundles (no saved active character: the first one; no character: none,
+## game/characters.gd creates one).
 func pull() -> void:
 	var l := await api("/api/characters")
 	if not l.ok or not l.json is Array:
@@ -242,18 +241,9 @@ func pull() -> void:
 		return
 	characters = l.json
 	if characters.is_empty():
-		var c := await api("/api/characters", HTTPClient.METHOD_POST,
-			{"name": "Mage", "spell": Profile.spells.primary, "profile": Profile.to_dict()})
-		if not c.ok:
-			status = "Profile not synced (server unreachable)."
-			return
-		characters = [c.json]
-		character = str(c.json.id)
+		character = ""
 		_save_session()
-		for f in Profile.forged:
-			if FileAccess.file_exists(f.file):
-				api("/api/spells/" + f.id, HTTPClient.METHOD_PUT, FileAccess.get_file_as_bytes(f.file))
-		status = "Profile sent to the server."
+		status = ""
 		return
 	if not characters.any(func(c): return c is Dictionary and str(c.get("id")) == character):
 		character = str(characters[0].id)
