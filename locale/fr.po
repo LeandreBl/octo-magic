@@ -199,6 +199,18 @@ msgstr "Connexion…"
 msgid "Failed: %s"
 msgstr "Échec : %s"
 
+msgid "Log in with Google"
+msgstr "Connexion avec Google"
+
+msgid "Log in with Google in the browser…"
+msgstr "Connecte-toi avec Google dans le navigateur…"
+
+msgid "Google login cancelled or refused"
+msgstr "connexion Google annulée ou refusée"
+
+msgid "this email has a password account: log in with the password, Google will be linked to it"
+msgstr "cette adresse a un compte avec mot de passe : connecte-toi avec, Google y sera lié"
+
 msgid "email already in use"
 msgstr "adresse déjà utilisée"
 

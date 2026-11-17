@@ -1,7 +1,9 @@
 extends Node
 ## Autoload `Online`: the player's account on the online server
-## (backend/, NestJS). Firebase email/password login through the Identity
-## Toolkit REST API, the same code on web and native. An account has several
+## (backend/, NestJS). Firebase email/password or Google login through the
+## Identity Toolkit REST API. Google: on web through the website's account
+## page (web/site.js); native in the system browser, which comes back on a
+## local port (GOOGLE_PORT). An account has several
 ## characters, each with its profile; once logged in, the profile is the
 ## active character's: pulled at login (the server's copy wins; an account
 ## without characters gets one from the local profile), pushed on every save,
@@ -16,13 +18,19 @@ signal changed
 
 const SESSION := "user://session.json"
 const WEB_SESSION := "octo.session"  # localStorage key, shared with the website (web/site.js)
+## The native Google login's redirect, http://localhost:GOOGLE_PORT/, is
+## registered on the Google OAuth client: change both together.
+const GOOGLE_PORT := 47815
+const GOOGLE_PAGE := "<!doctype html><meta charset=utf-8><title>Octo Magic</title><p>Octo Magic: back to the game, you can close this tab."
 const SPELL_ID := "^[\\w-]{1,64}$"
 ## Login errors, in English (translated where shown, locale/fr.po).
 const ERRORS := {"EMAIL_EXISTS": "email already in use", "EMAIL_NOT_FOUND": "invalid credentials",
 	"INVALID_PASSWORD": "invalid credentials", "INVALID_LOGIN_CREDENTIALS": "invalid credentials",
 	"INVALID_EMAIL": "invalid email", "MISSING_PASSWORD": "missing password",
 	"WEAK_PASSWORD": "password too short (6 characters min.)",
-	"TOO_MANY_ATTEMPTS_TRY_LATER": "too many attempts, try again later", "USER_DISABLED": "account disabled"}
+	"TOO_MANY_ATTEMPTS_TRY_LATER": "too many attempts, try again later", "USER_DISABLED": "account disabled",
+	"INVALID_IDP_RESPONSE": "Google login cancelled or refused",
+	"NEED_CONFIRMATION": "this email has a password account: log in with the password, Google will be linked to it"}
 
 var server := ""
 var identity := "https://identitytoolkit.googleapis.com/v1/accounts:"
@@ -39,6 +47,8 @@ var _pulling := false
 var _pushing := false
 var _dirty := false
 var _pending := []  # [character id, profile] of the last save, for _push
+var _google: TCPServer  # the native Google login waiting for the browser
+var _link := ""  # Google ID token to link to the account at the next password login
 
 
 func _ready() -> void:
@@ -74,15 +84,86 @@ func login(mail: String, password: String, create := false) -> String:
 		return "server unreachable"
 	var r := await _http(identity + ("signUp" if create else "signInWithPassword") + "?key=" + api_key,
 		HTTPClient.METHOD_POST, {"email": mail.strip_edges(), "password": password, "returnSecureToken": true})
+	if r.ok and _link:  # see login_google()
+		var link := _link
+		_link = ""
+		var l := await _idp({"idToken": r.json.idToken, "postBody": "id_token=%s&providerId=google.com" % link,
+			"requestUri": "http://localhost"})
+		if l.ok:
+			r = l
+	return await _logged_in(r, mail)
+
+
+## Logs in with Google: on web, the website's account page does it and comes
+## back to the game; native, in the system browser, back on GOOGLE_PORT.
+## Returns an error message, or "".
+func login_google() -> String:
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.top.location.assign('/account?google')")
+		return ""
+	if api_key.is_empty() and not await _config():
+		return "server unreachable"
+	var uri := "http://localhost:%d/" % GOOGLE_PORT
+	var r := await _http(identity + "createAuthUri?key=" + api_key, HTTPClient.METHOD_POST,
+		{"providerId": "google.com", "continueUri": uri})
 	if not r.ok:
-		var e: Variant = r.json.get("error") if r.json is Dictionary else null
-		var code := str(e.get("message", "")) if e is Dictionary else ""
-		return ERRORS.get(code.get_slice(" ", 0), code if code else "identity server unreachable")
+		return _error(r)
+	if _google:
+		_google.stop()  # a login left in the browser: this one replaces it
+	var tcp := TCPServer.new()
+	_google = tcp
+	if tcp.listen(GOOGLE_PORT, "127.0.0.1") != OK:
+		return "local port %d busy" % GOOGLE_PORT
+	OS.shell_open(str(r.json.authUri))
+	# ponytail: reads only the first chunk of each request, enough for its first line.
+	var query := ""
+	var peers: Array[StreamPeerTCP] = []
+	var deadline := Time.get_ticks_msec() + 600000
+	while query.is_empty() and tcp.is_listening() and Time.get_ticks_msec() < deadline:
+		await get_tree().process_frame
+		if tcp.is_connection_available():
+			peers.append(tcp.take_connection())
+		for p in peers:
+			p.poll()
+			if p.get_status() != StreamPeerTCP.STATUS_CONNECTED or p.get_available_bytes() == 0:
+				continue
+			var path := p.get_utf8_string(p.get_available_bytes()).get_slice("\r\n", 0).get_slice(" ", 1)
+			var back := path.begins_with("/?")  # GET /?state=…&code=… (a favicon gets an empty page)
+			p.put_data(("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nConnection: close\r\n\r\n"
+				+ (GOOGLE_PAGE if back else "")).to_utf8_buffer())
+			p.disconnect_from_host()
+			if back:
+				query = path
+	tcp.stop()
+	if query.is_empty():
+		return "Google login cancelled or refused"
+	r = await _idp({"requestUri": uri + query.trim_prefix("/"), "sessionId": r.json.sessionId, "returnIdpCredential": true})
+	if r.ok and r.json is Dictionary and r.json.get("needConfirmation", false):
+		_link = str(r.json.get("oauthIdToken", ""))
+		return ERRORS.NEED_CONFIRMATION
+	return await _logged_in(r, "")
+
+
+func _idp(body: Dictionary) -> Dictionary:
+	body.returnSecureToken = true
+	return await _http(identity + "signInWithIdp?key=" + api_key, HTTPClient.METHOD_POST, body)
+
+
+## The end of a login: the session, then the profile. Returns an error message, or "".
+func _logged_in(r: Dictionary, mail: String) -> String:
+	if not r.ok:
+		return _error(r)
 	email = str(r.json.get("email", mail))
 	_set_session(r.json.idToken, r.json.refreshToken, r.json.expiresIn)
 	await pull()
 	changed.emit()
 	return ""
+
+
+func _error(r: Dictionary) -> String:
+	var e: Variant = r.json.get("error") if r.json is Dictionary else null
+	var code := str(e.get("message", "")) if e is Dictionary else ""
+	return ERRORS.get(code.get_slice(" ", 0), code if code else "identity server unreachable")
 
 
 func logout() -> void:

@@ -28,7 +28,11 @@ Create, combine and cast spells to conquer a dungeon.
 - Coop (menu → Multijoueur, logged in): WebRTC peer to peer, the server only
   introduces the players (`game/net.gd`). The native game needs the WebRTC
   extension: `./webrtc.sh` (downloads `addons/webrtc_native`, not in git).
-- Account in the game: menu → Compte (email/password, Firebase). Logged in,
+- Account in the game: menu → Compte (email/password or Google, Firebase).
+  Google needs, in the Firebase/Google Cloud console: the Google provider on,
+  authorized domain `octo-magic.notdotio.com`, and on its OAuth web client the
+  redirect URIs `https://octo-magic.notdotio.com/account` (site and web game)
+  and `http://localhost:47815/` (native game). Logged in,
   the profile and forged spells follow the account and the forge works. The
   native game talks to https://octo-magic.api.notdotio.com
   (`OCTO_SERVER=http://localhost:8080` for a local server); see

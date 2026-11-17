@@ -33,7 +33,7 @@ func _ready() -> void:
 	var row := HBoxContainer.new()
 	box.add_child(row)
 	for b in [["Log in", func(): _login(false)], ["Create an account", func(): _login(true)],
-			["Log out", Online.logout], ["Back", closed.emit]]:
+			["Log in with Google", _google], ["Log out", Online.logout], ["Back", closed.emit]]:
 		var button := Button.new()
 		button.text = b[0]
 		button.pressed.connect(b[1])
@@ -58,6 +58,14 @@ func _login(create: bool) -> void:
 	info.text = tr("Logging in…")
 	var err := await Online.login(mail.text, password.text, create)
 	password.text = ""
+	_refresh()
+	if err:
+		info.text = tr("Failed: %s") % tr(err)
+
+
+func _google() -> void:
+	info.text = tr("Log in with Google in the browser…")
+	var err := await Online.login_google()
 	_refresh()
 	if err:
 		info.text = tr("Failed: %s") % tr(err)

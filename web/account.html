@@ -17,6 +17,7 @@
 
   <section id="out" hidden>
     <p>Connecte-toi pour retrouver ta progression et tes sorts, et pour forger de nouveaux sorts. Le même compte sert dans le jeu.</p>
+    <p><button id="google" class="ghost">Se connecter avec Google</button></p>
     <form id="login">
       <input name="email" type="email" placeholder="Adresse e-mail" autocomplete="email" required>
       <input name="password" type="password" placeholder="Mot de passe" autocomplete="current-password" required>
@@ -63,6 +64,7 @@
         <p>Efface définitivement ton compte, ta progression en ligne et tes sorts forgés.</p>
         <input name="password" type="password" placeholder="Mot de passe" autocomplete="current-password" required>
         <button class="danger">Supprimer</button>
+        <small data-google hidden>Google te redemandera de te connecter avant la suppression.</small>
         <p class="msg" aria-live="polite"></p>
       </form>
     </div>
@@ -141,8 +143,24 @@
   const del = $("delete");
   del.onsubmit = action(del, async () => {
     if (!confirm("Supprimer définitivement ton compte et ta progression ?")) return;
+    if (del.dataset.google) return site.google("delete"); // deleted back on this page
     await site.deleteAccount(del.elements.password.value);
   }, () => !site.session() && location.reload());
+
+  $("google").onclick = async () => {
+    try {
+      await site.google();
+    } catch (err) {
+      say(login, err);
+    }
+  };
+
+  // An error outside a form submit (Google login, deletion after it).
+  function say(form, err) {
+    const msg = form.querySelector(".msg");
+    msg.className = "msg error";
+    msg.textContent = err.message;
+  }
 
   $("logout").onclick = () => {
     site.logout();
@@ -187,10 +205,32 @@
       })));
   }
 
+  // Back from Google (?state=&code=), or sent here by the web game to log in with Google (?google).
+  try {
+    const then = await site.finishGoogle();
+    if (then === "delete") {
+      await site.deleteAccount();
+    } else if (then) {
+      location.replace(then);
+    } else if (then === null && !site.session() && new URLSearchParams(location.search).has("google")) {
+      await site.google("/game");
+    }
+  } catch (err) {
+    say(site.session() ? del : login, err);
+  }
+
   const s = site.session();
   $(s ? "in" : "out").hidden = false;
   if (s) {
     $("email").textContent = s.email;
+    // A Google-only account has no password: no change, and the deletion re-logs in with Google.
+    site.providers().then((p) => {
+      if (p.includes("password")) return;
+      pw.hidden = true;
+      del.dataset.google = "1";
+      del.elements.password.remove();
+      del.querySelector("[data-google]").hidden = false;
+    }).catch(() => {});
     try {
       // The game's active character, else the first one.
       const chars = await site.api("/api/characters");
