@@ -1,16 +1,16 @@
 """The octopus mage's sprites, made with PixelLab (server/art.py).
 
-Exports the PixelLab character CHARACTER (8 directions, animations "walk" and
-"idle") to assets/octo/<anim>_<direction>.png: one horizontal strip of square
-frames per animation and direction, read by game/player.gd.
+Seen from straight above, head to the top: the game turns it toward where it
+goes. One still (pixen, high top-down), then each animation from it
+(PixMiniMax), written to assets/octo/<anim>.png: a strip of FRAMES square
+frames of SIZE pixels, read by game/player.gd. Each run draws new ones.
 
-Run: python3 tools/make_octopus.py         # export CHARACTER
-     python3 tools/make_octopus.py --new   # generate a new character and its animations, print its id
+Run: python3 tools/make_octopus.py
 """
 
+import base64
 import sys
 import time
-import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -19,56 +19,57 @@ import art  # noqa: E402
 import sheet  # noqa: E402
 
 OUT = ROOT / "assets/octo"
-CHARACTER = "a08bf421-3779-488d-9113-967eef4a2d57"
-DIRECTIONS = ["south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west"]
-LOOK = ("cute purple octopus wizard, round purple head with big shiny eyes, pointed indigo wizard hat"
-        " with a gold band, small violet robe collar, eight curly purple tentacles, holding a wooden"
-        " magic staff with a glowing tip, fantasy pixel art game hero")
+SIZE = 96  # the still (64) centered on a larger canvas: room for the tentacles to spread
+FRAMES = 8
+LOOK = ("purple octopus wizard seen from directly above, bird's-eye view at 90 degrees, top-down game sprite:"
+        " we see the top of its round pointed indigo wizard hat with a gold band in the center, eight curly purple"
+        " tentacles spread out radially around it like a star, a wooden staff with a glowing blue crystal tip held"
+        " by one tentacle pointing up, symmetric overhead view, no face visible")
 ANIMATIONS = {
-    "walk": "scuttling forward on its eight tentacles, the tentacles ripple in a fast rolling wave pushing"
-            " the body along, body bobbing up and down, hat wobbling, looping walk cycle",
-    "idle": "floating in place, the eight tentacles slowly curl and sway like seaweed, body gently bobbing,"
-            " looping idle",
+    "walk": "octopus swimming forward toward the top of the image, seen from directly above: all eight tentacles"
+            " pulse together, sweeping back and contracting then spreading out wide again, a strong rhythmic"
+            " jet-propulsion stroke, seamless loop",
+    "idle": "octopus resting in place seen from directly above: the eight tentacles slowly undulate and curl at"
+            " their tips like seaweed, the body breathes gently, seamless loop",
 }
 
 
-def _wait(job: str) -> None:
-    while art._request("GET", f"/background-jobs/{job}")["status"] in ("pending", "processing"):
+def _b64(png: bytes) -> dict:
+    return {"type": "base64", "base64": base64.b64encode(png).decode()}
+
+
+def still() -> bytes:
+    r = art._request("POST", "/create-image-pixen", {
+        "description": LOOK, "image_size": {"width": 64, "height": 64}, "view": "high top-down",
+        "direction": "north", "no_background": True, "outline": "single color black outline",
+        "detail": "medium detail", "seed": 3})
+    w, h, px = sheet.read_png(base64.b64decode(r["image"]["base64"]))
+    out = bytearray(SIZE * SIZE * 4)  # centered on the SIZE canvas
+    ox, oy = (SIZE - w) // 2, (SIZE - h) // 2
+    for y in range(h):
+        out[((oy + y) * SIZE + ox) * 4:((oy + y) * SIZE + ox + w) * 4] = px[y * w * 4:(y + 1) * w * 4]
+    return sheet.write_png(SIZE, SIZE, bytes(out))
+
+
+def animate(first: bytes, motion: str) -> list[bytearray]:
+    job = art._request("POST", "/animate-pixminimax", {
+        "first_frame": _b64(first), "description": motion, "frame_count": FRAMES, "no_background": True,
+        "view": "high top-down", "direction": "north"})["background_job_id"]
+    while (r := art._request("GET", f"/background-jobs/{job}"))["status"] in ("pending", "processing"):
         time.sleep(10)
+    images = r["last_response"]["images"][1:]  # the first one is the still itself
+    return [sheet.read_png(base64.b64decode(i["base64"]))[2] for i in images]
 
 
-def new() -> str:
-    c = art._request("POST", "/create-character-v3", {
-        "description": LOOK, "image_size": {"width": 64, "height": 64}, "view": "low top-down",
-        "template_id": "custom", "outline": "single color black outline", "detail": "medium detail",
-        "name": "octo-mage"})
-    _wait(c["background_job_id"])
-    for name, action in ANIMATIONS.items():
-        r = art._request("POST", "/characters/animations", {
-            "character_id": c["character_id"], "animation_name": name, "action_description": action,
-            "mode": "v3", "frame_count": 8, "directions": DIRECTIONS, "keep_first_frame": False})
-        for job in r["background_job_ids"]:
-            _wait(job)
-    return c["character_id"]
-
-
-def _png(url: str) -> tuple[int, int, bytearray]:
-    req = urllib.request.Request(url, headers={"User-Agent": "curl/8"})  # the file host refuses urllib's
-    with urllib.request.urlopen(req, timeout=60) as r:
-        return sheet.read_png(r.read())
-
-
-def export(character: str) -> None:
+def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    c = art._request("GET", f"/characters/{character}")
-    for a in c["animations"]:
-        for d in a["directions"]:
-            frames = [_png(u) for u in d["frames"]]
-            w, h = frames[0][0], frames[0][1]
-            rows = b"".join(b"".join(bytes(f[2][y * w * 4:(y + 1) * w * 4]) for f in frames) for y in range(h))
-            (OUT / f"{a['display_name']}_{d['direction']}.png").write_bytes(sheet.write_png(w * len(frames), h, rows))
-            print(a["display_name"], d["direction"], len(frames), f"{w}x{h}")
+    first = still()
+    for name, motion in ANIMATIONS.items():
+        frames = animate(first, motion)
+        rows = b"".join(b"".join(bytes(f[y * SIZE * 4:(y + 1) * SIZE * 4]) for f in frames) for y in range(SIZE))
+        (OUT / f"{name}.png").write_bytes(sheet.write_png(SIZE * len(frames), SIZE, rows))
+        print(name, len(frames))
 
 
 if __name__ == "__main__":
-    export(new() if "--new" in sys.argv else CHARACTER)
+    main()

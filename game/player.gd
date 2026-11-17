@@ -14,9 +14,9 @@ const BASE_SPEED := 220.0
 const STICK_RANGE := 80.0
 const SHIELD_HP := 40.0
 const SHIELD_WAIT := 8.0
-## The octopus sprites (PixelLab, tools/make_octopus.py): animation_direction -> strip.
-const DIRECTIONS := ["east", "south-east", "south", "south-west", "west", "north-west", "north", "north-east"]
-static var SPRITES := _sprites()
+## The octopus seen from above (PixelLab, tools/make_octopus.py): strips of
+## square frames, head to the top, turned toward where it goes.
+const SPRITES := {"walk": preload("res://assets/octo/walk.png"), "idle": preload("res://assets/octo/idle.png")}
 
 var run: Object  # spells and mana costs: a Loadout in game, a Run in tests
 var peer_id := 1  # the owner's peer; 1 = host (or solo)
@@ -44,7 +44,7 @@ var aim := Vector2.RIGHT
 var radius := 12.0
 var look := {"hat": "#3a2a99", "robe": "#6a4cff", "staff": "#8d6e63", "ring": ""}
 
-var _facing := Vector2.DOWN  # where the sprite looks: its move, else its aim
+var _angle := 0.0  # where the sprite heads: its move, else its aim (turned smoothly)
 var _moving := false
 var _last_pos := Vector2.ZERO
 var _heard_hp := max_hp  # hosts and peers hear hurts on the synced hp
@@ -119,14 +119,6 @@ func _apply(l: Dictionary) -> void:
 		shield = SHIELD_HP if passive == "shield" else 0.0
 
 
-static func _sprites() -> Dictionary:
-	var out := {}
-	for anim in ["walk", "idle"]:
-		for d in DIRECTIONS:
-			out[anim + "_" + d] = load("res://assets/octo/%s_%s.png" % [anim, d])
-	return out
-
-
 class Loadout:
 	var spells := {}
 	var costs := {}
@@ -179,7 +171,7 @@ func _physics_process(delta: float) -> void:
 	var step := position - _last_pos  # from the synced position: the same on every peer
 	_last_pos = position
 	_moving = step.length() > 0.5
-	_facing = step if _moving else aim
+	_angle = lerp_angle(_angle, (step if _moving else aim).angle(), minf(1.0, 12.0 * delta))
 	if hp < _heard_hp - 0.5:
 		if hp <= 0.0:
 			Sfx.play("death")
@@ -247,16 +239,12 @@ func _cast_fx(slot: String, pos: Vector2, dir: Vector2) -> void:
 
 func _draw() -> void:
 	modulate.a = 1.0 if hp > 0.0 else 0.3  # down until the next run
-	draw_set_transform(Vector2(0, radius * 1.3), 0.0, Vector2(1.0, 0.35))  # robe colour at its feet: who is who in coop
-	draw_circle(Vector2.ZERO, radius * 2.2, Color(look.robe, 0.5))
-	draw_set_transform(Vector2.ZERO)
-	var anim := "walk" if _moving else "idle"
-	var dir: String = DIRECTIONS[wrapi(roundi(_facing.angle() / (PI / 4.0)), 0, 8)]
-	var tex: Texture2D = SPRITES[anim + "_" + dir]
-	var frames := tex.get_width() / tex.get_height()  # strips of square frames
-	var f := int(Time.get_ticks_msec() / 1000.0 * (14.0 if _moving else 8.0)) % frames
+	draw_circle(Vector2.ZERO, radius * 1.6, Color(look.robe, 0.45))  # robe colour under it: who is who in coop
+	var tex: Texture2D = SPRITES["walk" if _moving else "idle"]
 	var size := float(tex.get_height())
-	draw_texture_rect_region(tex, Rect2(Vector2(-size / 2.0, -size / 2.0 - radius * 0.4), Vector2(size, size)),
-		Rect2(f * size, 0, size, size))
+	var f := int(Time.get_ticks_msec() / 1000.0 * (12.0 if _moving else 8.0)) % (tex.get_width() / tex.get_height())
+	draw_set_transform(Vector2.ZERO, _angle + PI / 2.0)  # the sprite's head is up
+	draw_texture_rect_region(tex, Rect2(Vector2(-size, -size) / 2.0, Vector2(size, size)), Rect2(f * size, 0, size, size))
+	draw_set_transform(Vector2.ZERO)
 	if shield > 0.0:
 		draw_arc(Vector2.ZERO, radius + 6, 0.0, TAU, 32, Color(0.5, 0.85, 1.0, 0.3 + 0.5 * shield / SHIELD_HP), 3.0)
