@@ -99,6 +99,9 @@
     ["scrolls", "Parchemins trouvés"],
   ];
   const $ = (id) => document.getElementById(id);
+  // Where to go once logged in (?then=/game from the game's guard); same-site paths only.
+  const next = new URLSearchParams(location.search).get("then");
+  const then = /^\/[^/\\]/.test(next ?? "") ? next : "";
 
   // Runs an async form action: button disabled meanwhile, message after.
   function action(form, run, done) {
@@ -131,7 +134,7 @@
       return "E-mail de réinitialisation envoyé.";
     }
     await site.login(email.value, password.value, button === "signup");
-  }, () => site.session() && location.reload());
+  }, () => site.session() && (then ? location.replace(then) : location.reload()));
 
   const pw = $("password");
   pw.onsubmit = action(pw, async () => {
@@ -149,7 +152,7 @@
 
   $("google").onclick = async () => {
     try {
-      await site.google();
+      await site.google(then);
     } catch (err) {
       say(login, err);
     }
