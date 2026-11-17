@@ -38,6 +38,15 @@ test("profile and spells are kept per player", async () => {
   assert.equal((await api("/api/spells/..%2Fx", "ann")).status, 400);
 });
 
+test("legal pages are public", async () => {
+  for (const p of ["/terms", "/privacy"]) {
+    const r = await api(p);
+    assert.equal(r.status, 200);
+    assert.match(r.headers.get("content-type"), /text\/html/);
+    assert.match(await r.text(), /<h1>/);
+  }
+});
+
 test("config is public", async () => {
   assert.deepEqual(await (await api("/api/config")).json(), { firebaseApiKey: "k" });
 });

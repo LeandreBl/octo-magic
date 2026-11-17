@@ -25,6 +25,7 @@ ENV NODE_ENV=production WEB_DIR=/app/web
 COPY backend/package*.json ./
 RUN npm ci --omit=dev --no-audit --no-fund
 COPY backend/server.js ./
+COPY backend/legal ./legal
 COPY --from=web /src/export/web ./web
 USER node
 EXPOSE 8080

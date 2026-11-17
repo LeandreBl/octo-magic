@@ -12,6 +12,7 @@
 //   GET  /api/spells/<id>        -> a .spell bundle (zip) of the player
 //   PUT  /api/spells/<id>        <- a .spell bundle
 //   POST /api/forge, GET /api/forge/<job>   proxied to the forge (server/forge.py)
+//   GET  /terms, /privacy        legal pages (legal/*.html), linked from Google sign-in
 //   GET  /...                    the web export of the game
 //
 // WebSocket /play, JSON text messages. The host is peer 1, players 2, 3...;
@@ -43,6 +44,7 @@ const HELLO_TIMEOUT = 10_000;
 const PING_EVERY = 20_000; // keeps proxies from closing quiet lobbies
 const CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no 0/O, 1/I/L
 const TURN_TTL = 12 * 3600; // seconds
+const LEGAL = new URL("legal/", import.meta.url);
 const MIME = {
   ".html": "text/html", ".js": "text/javascript", ".wasm": "application/wasm",
   ".pck": "application/octet-stream", ".png": "image/png", ".svg": "image/svg+xml",
@@ -143,6 +145,9 @@ export function createServer({ verify, store, forgeUrl = null, webDir = null, co
       if (url.pathname === "/health") return send(res, 200, { ok: true });
       if (url.pathname === "/api/config") return send(res, 200, config);
       if (url.pathname.startsWith("/api/")) return await api(req, res, url);
+      if (url.pathname === "/terms" || url.pathname === "/privacy") {
+        return send(res, 200, await readFile(new URL(url.pathname.slice(1) + ".html", LEGAL)), "text/html; charset=utf-8");
+      }
       if (req.method === "GET") return await staticFile(res, url);
       throw new HttpError(404, "not found");
     } catch (e) {
