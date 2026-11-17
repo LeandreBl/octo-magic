@@ -232,6 +232,28 @@ main.legal .note { margin-top: 1rem; font-size: .95rem; }
   background: radial-gradient(ellipse at left, #3a2a99aa, transparent 70%), var(--panel);
 }
 
+/* --- Login (account page, logged out) ------------------------------------ */
+.auth {
+  max-width: 25rem; margin: 2rem auto; padding: 2.2rem 2rem 1.6rem; text-align: center;
+  background: radial-gradient(ellipse at top, #3a2a99aa, transparent 60%), var(--panel);
+  border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 20px 60px #0008;
+}
+.auth-icon { width: 64px; height: 64px; filter: drop-shadow(0 0 16px #8b5cf6); }
+.auth h1 { margin: .3rem 0 .4rem; font-size: 2.2rem; }
+.auth > .muted { margin: 0 0 1.6rem; }
+.auth form { max-width: none; text-align: left; }
+.auth input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.auth label { display: grid; gap: .25rem; font-size: .9rem; color: var(--muted); }
+.auth button { width: 100%; }
+button.google { display: flex; align-items: center; justify-content: center; gap: .7rem; background: white; border-color: white; color: #1f1f1f; }
+button.google svg { width: 20px; height: 20px; }
+.or { display: flex; align-items: center; gap: .8rem; color: var(--muted); font-size: .9rem; margin: 1.2rem 0; }
+.or::before, .or::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+button.link { background: none; border: 0; padding: 0; color: var(--gold); font-size: .9rem; text-align: center; }
+.auth .msg { margin: 0; text-align: center; }
+.auth .msg:empty { display: none; }
+.legal-note { margin: 1.4rem 0 0; font-size: .8rem; color: var(--muted); }
+
 @media (max-width: 800px) {
   main.legal section > :not(h2) { margin-left: 0; }
   body.landing .hero, .forge { grid-template-columns: 1fr; text-align: center; }
