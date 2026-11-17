@@ -190,8 +190,8 @@ msgstr "Déconnexion"
 msgid "Logged in: %s"
 msgstr "Connecté : %s"
 
-msgid "Offline: local profile only."
-msgstr "Hors ligne : profil local seulement."
+msgid "Log in or create an account to play."
+msgstr "Connecte-toi ou crée un compte pour jouer."
 
 msgid "Logging in…"
 msgstr "Connexion…"

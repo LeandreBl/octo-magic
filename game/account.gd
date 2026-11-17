@@ -1,12 +1,13 @@
 extends PanelContainer
-## Account screen, behind the menu's Account button (ui/ui.gd): log in or
-## create an account (game/online.gd), log out.
+## Account screen (ui/ui.gd): log in or create an account (game/online.gd),
+## log out. Logged out, it replaces the title menu: no play without an account.
 
 signal closed
 
 var info: Label
 var mail: LineEdit
 var password: LineEdit
+var buttons := {}
 
 
 func _ready() -> void:
@@ -37,13 +38,19 @@ func _ready() -> void:
 		button.text = b[0]
 		button.pressed.connect(b[1])
 		row.add_child(button)
+		buttons[b[0]] = button
 	set_meta("focus", mail)
 	Online.changed.connect(_refresh)
 	_refresh()
 
 
 func _refresh() -> void:
-	info.text = (tr("Logged in: %s") % Online.email if Online.logged_in() else tr("Offline: local profile only.")) \
+	var on := Online.logged_in()
+	for k in buttons:
+		buttons[k].visible = on == (k in ["Log out", "Back"])
+	mail.visible = not on
+	password.visible = not on
+	info.text = (tr("Logged in: %s") % Online.email if on else tr("Log in or create an account to play.")) \
 		+ ("\n" + tr(Online.status) if Online.status else "")
 
 

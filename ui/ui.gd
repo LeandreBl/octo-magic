@@ -6,7 +6,7 @@ extends CanvasLayer
 ## UI is drawn at screen resolution (not pixel-art scaled), scaled by the
 ## "UI size" option. Data comes from the Run and Profile autoloads.
 ## The multiplayer screen is the coop lobby (game/lobby.gd), the account
-## screen game/account.gd.
+## screen game/account.gd (also the title screen while logged out).
 
 const UITheme := preload("res://ui/theme.gd")
 
@@ -79,6 +79,14 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_layout)
 	_layout()
 	show_screen("title")
+	Online.changed.connect(_on_session_changed)
+
+
+## Logged out, the title menu is the account screen (no play without an account).
+func _on_session_changed() -> void:
+	var home := "title" if Online.logged_in() else "account"
+	if current in ["title", "account"] and current != home:
+		show_screen(home)
 
 
 func _layout() -> void:
@@ -95,6 +103,8 @@ func add_screen(c: Control) -> Control:
 
 
 func show_screen(name: String) -> void:
+	if name == "title" and not Online.logged_in():
+		name = "account"
 	current = name
 	for k in screens:
 		screens[k].visible = k == name
@@ -341,6 +351,9 @@ func _on_run_ended() -> void:
 
 ## The HUD shows on run_started (in coop only the host starts the run).
 func _play() -> void:
+	if not Online.logged_in():
+		show_screen("account")
+		return
 	main.start_run()
 
 
