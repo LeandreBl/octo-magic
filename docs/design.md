@@ -31,11 +31,13 @@
 - **Classement** : local pour l'instant. En ligne plus tard : le serveur signera chaque sort, un score ne sera accepté qu'avec des sorts signés.
 
 ## Direction artistique
-- Pixel art, univers heroic fantasy.
-- Rendu basse résolution (ex. 640x360) agrandi sans lissage : les effets de sorts procéduraux (particules, formes) sortent automatiquement en pixel art, cohérents avec les sprites.
+- Pixel art, univers heroic fantasy, sprites petits et peu détaillés.
+- Jeu en **haute résolution** : seuls les sprites sont en pixel art, agrandis d'un facteur entier sans lissage (filtre « nearest », pas de flou).
+- Effets de sorts procéduraux (particules, lueurs) rendus en haute qualité par-dessus.
 - Assets générés par IA (outils spécialisés pixel art) puis nettoyés à la main (grille, palette commune).
 
 ## Multijoueur (piste)
+- **Coopération** : les joueurs affrontent les vagues ensemble.
 - P2P avec un joueur hôte qui fait tourner la partie (le même moteur), les autres sont clients : pas de code serveur de jeu.
 - Web et natif : WebRTC (Godot `WebRTCMultiplayerPeer`) ; un petit serveur de signalisation sert uniquement à mettre les joueurs en relation. Réseau local natif possible en ENet.
 - Les sorts sont des données : un joueur envoie son JSON à l'hôte, qui le nettoie (`Spell.sanitize`) et le simule.
