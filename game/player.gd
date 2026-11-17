@@ -85,7 +85,7 @@ static func clean_loadout(raw: Variant) -> Dictionary:
 		if s is Dictionary:
 			spells[slot] = Spell.sanitize(s)
 			var mult: Variant = l.get("mult", {}).get(slot, 1.0) if l.get("mult") is Dictionary else 1.0
-			costs[slot] = maxi(1, roundi(Spell.mana_cost(spells[slot]) * clampf(float(mult) if mult is float else 1.0, 0.2, 1.0) * stats.mana_cost))
+			costs[slot] = clampi(roundi(Spell.mana_cost(spells[slot]) * clampf(float(mult) if mult is float else 1.0, 0.2, 100.0) * stats.mana_cost), 1, 100)
 	var look_in: Dictionary = l.get("look") if l.get("look") is Dictionary else {}
 	var out_look := {}
 	for k in ["hat", "robe", "staff", "ring"]:

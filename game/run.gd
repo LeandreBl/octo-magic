@@ -7,6 +7,7 @@ signal changed
 signal leveled_up(offers: Array)  # pause and let the player pick one
 
 const BOSS_EVERY := 5
+const UPGRADE_TAX := 1.1  # an upgraded spell costs 10 % more mana per upgrade
 const RING_OF_FIRE := {"name": "Ring of fire", "element": "fire", "color": "#ff7a1f", "cooldown": 3.0,
 	"emit": {"pattern": "radial", "count": 12, "body": {"shape": "bolt", "speed": 320, "size": 8, "lifetime": 0.9,
 		"on_hit": [{"type": "damage", "amount": 14}, {"type": "status", "status": "burn", "power": 3, "duration": 2}]}}}
@@ -29,6 +30,7 @@ var gold := 0
 var scrolls := 0
 var spells := {}  # slot -> spell, upgraded copies of the profile's spells
 var mana_mult := {}  # slot -> mana cost multiplier ("mana" upgrades)
+var ups := {}  # slot -> upgrades taken on it, each one taxes the cost (UPGRADE_TAX)
 var picked := []  # augment ids taken, in order
 var offers := []  # current level-up choice, [] when none
 var pending := 0  # level-ups not chosen yet
@@ -56,10 +58,12 @@ func start(equipped: Dictionary, bonus_list := []) -> void:
 	pending = 0
 	spells = {}
 	mana_mult = {}
+	ups = {}
 	passive = ""
 	for slot in equipped:
 		spells[slot] = Upgrades.scale_damage(equipped[slot], stats.damage)
 		mana_mult[slot] = 1.0
+		ups[slot] = 0
 	rng.randomize()
 	changed.emit()
 
@@ -101,6 +105,7 @@ func choose(i: int) -> bool:
 		mana_mult.primary = maxf(Upgrades.MANA_FLOOR, mana_mult.primary * (1.0 - Upgrades.amount(o.id, tier)))
 	else:
 		spells.primary = Upgrades.apply(spells.primary, o.id, tier)
+		ups.primary += 1
 	picked.append(o.id)
 	pending -= 1
 	offers = []
@@ -130,8 +135,13 @@ func buy(id: String) -> bool:
 	return true
 
 
+## Mana cost multiplier of `slot`: thrift lowers it, every other upgrade raises it.
+func cost_mult(slot: String) -> float:
+	return mana_mult[slot] * pow(UPGRADE_TAX, ups.get(slot, 0))
+
+
 func mana_cost(slot: String) -> int:
-	return maxi(1, roundi(Spell.mana_cost(spells[slot]) * mana_mult[slot] * stats.mana_cost))
+	return clampi(roundi(Spell.mana_cost(spells[slot]) * cost_mult(slot) * stats.mana_cost), 1, 100)
 
 
 func collect(kind: String, value: int) -> void:

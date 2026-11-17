@@ -127,6 +127,12 @@ func _test_run() -> void:
 	var hp: float = run.stats.hp
 	run.choose(0)
 	check(run.stats.hp == hp + 60.0, "hero augment raises the run stat")
+	run.start(p.equipped_spells())
+	cost = run.mana_cost("primary")
+	run.offers = [{"id": "cooldown", "rarity": "common"}]
+	run.pending = 1
+	run.choose(0)
+	check(run.mana_cost("primary") > cost, "an upgrade raises the mana cost")
 	run.start(p.equipped_spells(), [{"gold%": 0.5}, {"mana_cost%": -0.5}])
 	check(run.mana_cost("primary") == maxi(1, roundi(Spell.mana_cost(run.spells.primary) * 0.5)), "mana cost stat")
 	run.collect("gold", 10)
