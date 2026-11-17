@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   NotFoundException,
   Param,
@@ -52,6 +53,13 @@ export class PlayerController {
       throw new BadRequestException("profile must be an object");
     }
     await this.players.putProfile(user.uid, profile as Prisma.JsonObject);
+    return { ok: true };
+  }
+
+  @Delete("account")
+  @ApiOperation({ summary: "Erase the player's profile and spells (the Firebase account is deleted by the client)" })
+  async deleteAccount(@CurrentUser() user: AuthUser) {
+    await this.players.deleteAll(user.uid);
     return { ok: true };
   }
 

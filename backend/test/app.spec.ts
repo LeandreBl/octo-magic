@@ -28,11 +28,14 @@ const prisma = {
   player: {
     findUnique: async (q: Where) => (players.has(key(q)) ? { profile: players.get(key(q)) } : null),
     upsert: async (q: Where & { create: { profile: unknown } }) => players.set(key(q), q.create.profile),
+    deleteMany: async (q: Where) => players.delete(key(q)),
   },
   spell: {
     findUnique: async (q: Where) => (spells.has(key(q)) ? { bundle: spells.get(key(q)) } : null),
     upsert: async (q: Where & { create: { bundle: Uint8Array } }) => spells.set(key(q), q.create.bundle),
+    deleteMany: async ({ where }: Where) => [...spells.keys()].forEach((k) => k.startsWith(`${where.uid}/`) && spells.delete(k)),
   },
+  $transaction: (ops: Promise<unknown>[]) => Promise.all(ops),
 };
 
 async function start(): Promise<[NestExpressApplication, string]> {
@@ -80,10 +83,15 @@ test("profile and spells are kept per player", async () => {
   assert.equal(await got.text(), "PK\x03\x04zip");
   assert.equal((await api("/api/spells/s1", "bob")).status, 404);
   assert.equal((await api("/api/spells/..%2Fx", "ann")).status, 400);
+
+  assert.equal((await api("/api/account", null, { method: "DELETE" })).status, 401);
+  assert.equal((await api("/api/account", "ann", { method: "DELETE" })).status, 200);
+  assert.deepEqual(await (await api("/api/profile", "ann")).json(), {});
+  assert.equal((await api("/api/spells/s1", "ann")).status, 404);
 });
 
-test("legal pages are public", async () => {
-  for (const p of ["/terms", "/privacy"]) {
+test("website pages are public", async () => {
+  for (const p of ["/", "/account", "/game", "/terms", "/privacy"]) {
     const r = await api(p, null);
     assert.equal(r.status, 200);
     assert.match(r.headers.get("content-type") ?? "", /text\/html/);

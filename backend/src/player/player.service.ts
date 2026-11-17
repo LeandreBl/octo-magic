@@ -19,6 +19,13 @@ export class PlayerService {
     });
   }
 
+  async deleteAll(uid: string): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.player.deleteMany({ where: { uid } }),
+      this.prisma.spell.deleteMany({ where: { uid } }),
+    ]);
+  }
+
   async getSpell(uid: string, id: string): Promise<Buffer | null> {
     const spell = await this.prisma.spell.findUnique({
       where: { uid_id: { uid, id } },

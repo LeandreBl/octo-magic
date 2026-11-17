@@ -50,9 +50,12 @@ COPY --from=build /app/node_modules/@prisma/client ./node_modules/@prisma/client
 COPY --from=build /app/dist ./dist
 COPY backend/prisma ./prisma
 COPY backend/docker ./docker
-# /terms and /privacy, linked from the Google sign-in consent screen.
-COPY backend/legal ./legal
-COPY --from=web /src/export/web ./web
+# The website (web/) on /, its images and fonts, the game under /godot.
+COPY web ./web
+COPY assets/icon.png ./web/assets/
+COPY assets/icons ./web/assets/icons
+COPY assets/fonts ./web/assets/fonts
+COPY --from=web /src/export/web ./web/godot
 USER node
 EXPOSE 8080
 CMD ["sh", "docker/start.sh"]

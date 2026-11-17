@@ -6,17 +6,22 @@ Create, combine and cast spells to conquer a dungeon.
 - Game: open the folder in Godot 4.7 (`godot --path .`).
 - Spell forge (needed only to write on scrolls):
   `ANTHROPIC_API_KEY=... python3 server/forge.py`
-- Online (web game, accounts, forge, coop lobby, TURN): `cp example.env .env`,
-  fill it, `docker compose up -d --build`, then http://localhost:8080.
+- Online (website, web game, accounts, forge, coop lobby, TURN):
+  `cp example.env .env`, fill it, `docker compose up -d --build`, then
+  http://localhost:8080.
   Locally without `ANTHROPIC_API_KEY`, also run `python3 server/forge.py`:
   the forge then uses your logged-in `claude` CLI (Claude account). On the
-  VPS, behind Traefik: https://octo-magic.notdotio.com (game),
+  VPS, behind Traefik: https://octo-magic.notdotio.com (website and game),
   https://octo-magic.api.notdotio.com (API), TURN on
   octo-magic.turn.notdotio.com (see the end of `example.env`).
+  Website: `web/`, static pages without a build (landing `/`, account
+  with stats and deletion `/account`, the game embedded on `/game`,
+  `/terms`, `/privacy`); same Firebase login as the game, shared with the
+  web game through localStorage (`web/site.js`). `./web.sh` exports the
+  game into `web/godot` for local dev.
   Server: `backend/`, NestJS in TypeScript (Firebase login guard,
   profiles and spells in Postgres through Prisma, forge proxy, coop lobby
-  on `/play`, `/terms` and `/privacy` from `backend/legal/`); API docs
-  on `/api/docs`. Local dev: `cd backend && npm i &&
+  on `/play`, serves `web/`); API docs on `/api/docs`. Local dev: `cd backend && npm i &&
   npm run start:dev` (with the variables of `example.env` and a
   `DATABASE_URL`); migrations in `backend/prisma/migrations`, applied at
   container start-up.

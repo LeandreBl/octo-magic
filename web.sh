@@ -1,8 +1,8 @@
 #!/bin/sh
-# Build the web version and serve it on http://localhost:8000
+# Build the web version into web/godot (not in git), served by the backend
+# on /game (`cd backend && npm run start:dev`).
 set -e
 cd "$(dirname "$0")"
 GODOT="${GODOT:-godot}"
-mkdir -p export/web
-"$GODOT" --headless --export-release Web export/web/index.html
-exec python3 -m http.server -d export/web 8000
+mkdir -p web/godot
+"$GODOT" --headless --export-release Web web/godot/index.html

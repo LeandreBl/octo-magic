@@ -1,0 +1,83 @@
+@font-face { font-family: Almendra; src: url(/assets/fonts/Almendra-Regular.ttf); }
+@font-face { font-family: Almendra; font-weight: bold; src: url(/assets/fonts/Almendra-Bold.ttf); }
+@font-face { font-family: Uncial; src: url(/assets/fonts/UncialAntiqua-Regular.ttf); }
+
+:root {
+  --bg: #120d24;
+  --panel: #1e1638;
+  --line: #3a2a6e;
+  --text: #ece6ff;
+  --muted: #a99cd0;
+  --gold: #f9c440;
+  --accent: #8b5cf6;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at top, #2a1b55, var(--bg) 60%) fixed;
+  color: var(--text);
+  font: 17px/1.6 Almendra, Georgia, serif;
+}
+a { color: var(--gold); }
+img.pixel { image-rendering: pixelated; }
+
+header {
+  display: flex; align-items: center; gap: 1.5rem;
+  padding: .6rem 1.5rem; border-bottom: 1px solid var(--line); background: #0d0a1ccc;
+}
+header .brand { display: flex; align-items: center; gap: .5rem; font: 1.4rem Uncial, serif; color: var(--text); text-decoration: none; margin-right: auto; }
+header .brand img { width: 36px; height: 36px; }
+header nav a { color: var(--muted); text-decoration: none; margin-left: 1.2rem; }
+header nav a:hover { color: var(--text); }
+
+main { max-width: 60rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+main.text { max-width: 42rem; }
+h1, h2 { font-family: Uncial, serif; font-weight: normal; color: var(--gold); }
+footer { text-align: center; color: var(--muted); padding: 2rem; border-top: 1px solid var(--line); }
+footer a { color: var(--muted); margin: 0 .6rem; }
+
+.button, button {
+  display: inline-block; padding: .6rem 1.4rem; border: 1px solid var(--accent); border-radius: 6px;
+  background: var(--accent); color: white; font: inherit; text-decoration: none; cursor: pointer;
+}
+.button.ghost, button.ghost { background: transparent; color: var(--text); }
+button.danger { background: #b3261e; border-color: #b3261e; }
+button:disabled { opacity: .5; cursor: wait; }
+
+.hero { text-align: center; padding: 3rem 0 2rem; }
+.hero img { width: 128px; height: 128px; }
+.hero h1 { font-size: 3.5rem; margin: .5rem 0 0; }
+.hero p { font-size: 1.3rem; color: var(--muted); }
+.hero .actions { display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1rem; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 1.2rem 1.4rem; }
+.card h2, .card h3 { margin-top: 0; }
+.card img { width: 48px; height: 48px; float: right; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .8rem; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: .8rem; text-align: center; }
+.stat b { display: block; font-size: 1.8rem; color: var(--gold); }
+.stat span { color: var(--muted); font-size: .9rem; }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: .4rem .6rem; border-bottom: 1px solid var(--line); text-align: left; }
+th { color: var(--muted); font-weight: normal; }
+
+.achievements { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .5rem; }
+.achievements li { padding: .5rem .8rem; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); }
+.achievements li.done { border-color: var(--gold); color: var(--text); }
+.achievements small { display: block; }
+
+form { display: grid; gap: .8rem; max-width: 24rem; }
+input { padding: .55rem .7rem; border: 1px solid var(--line); border-radius: 6px; background: #0d0a1c; color: var(--text); font: inherit; }
+.row { display: flex; gap: .6rem; flex-wrap: wrap; }
+.error { color: #ff8a80; }
+.ok { color: #9be89b; }
+[hidden] { display: none !important; }
+
+/* The game page: the header, then the game filling the rest. */
+body.game { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+body.game h1 { position: absolute; left: -9999px; }
+body.game iframe { flex: 1; width: 100%; border: 0; background: black; }

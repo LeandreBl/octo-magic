@@ -13,6 +13,7 @@ extends Node
 signal changed
 
 const SESSION := "user://session.json"
+const WEB_SESSION := "octo.session"  # localStorage key, shared with the website (web/site.js)
 const SPELL_ID := "^[\\w-]{1,64}$"
 const ERRORS := {"EMAIL_EXISTS": "adresse déjà utilisée", "EMAIL_NOT_FOUND": "identifiants invalides",
 	"INVALID_PASSWORD": "identifiants invalides", "INVALID_LOGIN_CREDENTIALS": "identifiants invalides",
@@ -46,7 +47,7 @@ func _ready() -> void:
 		identity = "http://%s/identitytoolkit.googleapis.com/v1/accounts:" % emulator
 		secure_token = "http://%s/securetoken.googleapis.com/v1/token?key=" % emulator
 	Profile.saved.connect(_on_saved)
-	var s: Variant = JSON.parse_string(FileAccess.get_file_as_string(SESSION)) if FileAccess.file_exists(SESSION) else null
+	var s: Variant = _load_session()
 	if s is Dictionary and s.get("refresh", "") != "":
 		email = str(s.get("email", ""))
 		_refresh = str(s.refresh)
@@ -82,7 +83,10 @@ func logout() -> void:
 	_token = ""
 	_refresh = ""
 	status = ""
-	DirAccess.remove_absolute(SESSION)
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("localStorage.removeItem('%s')" % WEB_SESSION)
+	else:
+		DirAccess.remove_absolute(SESSION)
 	changed.emit()
 
 
@@ -192,8 +196,22 @@ func _set_session(token: String, refresh: String, expires_in: Variant) -> void:
 	_token = token
 	_refresh = refresh
 	_expires = Time.get_unix_time_from_system() + float(expires_in)
-	var f := FileAccess.open(SESSION, FileAccess.WRITE)
-	f.store_string(JSON.stringify({"email": email, "refresh": _refresh}))
+	var s := JSON.stringify({"email": email, "refresh": _refresh})
+	if OS.has_feature("web"):  # JSON of a string is a JS string literal
+		JavaScriptBridge.eval("localStorage.setItem('%s', %s)" % [WEB_SESSION, JSON.stringify(s)])
+	else:
+		FileAccess.open(SESSION, FileAccess.WRITE).store_string(s)
+
+
+## {email, refresh} of the last login, or null. On web, the website's: logged
+## in on the site, logged in in the game.
+func _load_session() -> Variant:
+	var text := ""
+	if OS.has_feature("web"):
+		text = str(JavaScriptBridge.eval("localStorage.getItem('%s') || 'null'" % WEB_SESSION))
+	elif FileAccess.file_exists(SESSION):
+		text = FileAccess.get_file_as_string(SESSION)
+	return JSON.parse_string(text) if text else null
 
 
 ## One request: {ok (200), code, body, json (or null)}.

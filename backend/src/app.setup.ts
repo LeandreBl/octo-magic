@@ -24,10 +24,9 @@ export function setupApp(app: NestExpressApplication, webDir?: string) {
     res.status(err.status ?? 400).json({ error: tooLarge ? "body too large" : "invalid JSON" });
   });
 
-  // /terms and /privacy (legal/*.html), linked from the Google sign-in
-  // consent screen. From src/ or dist/ alike.
-  app.useStaticAssets(resolve(__dirname, "../legal"), { extensions: ["html"] });
-  if (webDir) {
-    app.useStaticAssets(webDir);
-  }
+  // The website (web/: landing, account, /terms, /privacy, the game page)
+  // and, in the image, the game's web export under /godot. Locally (no
+  // WEB_DIR) the repository's web/ and assets/, from src/ or dist/ alike.
+  app.useStaticAssets(webDir || resolve(__dirname, "../../web"), { extensions: ["html"] });
+  app.useStaticAssets(resolve(__dirname, "../../assets"), { prefix: "/assets" });
 }

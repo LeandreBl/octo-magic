@@ -62,7 +62,7 @@ const ENV_SPEC: Record<string, EnvVarSpec> = {
       "logged-in player",
   },
   WEB_DIR: {
-    description: "Directory of the game's web export, served on /",
+    description: "Directory of the website (web/ with the game's web export in godot/), served on /; unset: the repository's web/",
   },
   TURN_URL: {
     description:
