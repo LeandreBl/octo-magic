@@ -68,6 +68,12 @@ func _start_run() -> void:
 		"staff": Profile.ITEMS[Profile.equipped.staff].color,
 		"ring": Profile.ITEMS[Profile.equipped.ring].color}, true)
 	player.position = get_viewport_rect().size / 2.0
+	var decor := Decor.new()  # one map per run, placed once
+	decor.broken.connect(func(pos):
+		_drop("gold", 3, pos)
+		_drop("xp", 2, pos + Vector2(10, 0)))
+	add_child(decor)
+	decor.build(Decor.MAPS.keys().pick_random(), get_viewport_rect(), randi())
 	hub.hide()
 	get_tree().paused = false
 	_next_wave()

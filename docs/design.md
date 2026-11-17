@@ -48,3 +48,10 @@
 - P2P avec un joueur hôte qui fait tourner la partie (le même moteur), les autres sont clients : pas de code serveur de jeu.
 - Web et natif : WebRTC (Godot `WebRTCMultiplayerPeer`) ; un petit serveur de signalisation sert uniquement à mettre les joueurs en relation. Réseau local natif possible en ENet.
 - Les sorts sont des données : un joueur envoie son JSON à l'hôte, qui le nettoie (`Spell.sanitize`) et le simule.
+
+## Décor des cartes
+- Une carte par run (`crypt`, `cave`, `ruins`), tirée au début de la run ; le décor est placé une fois (graine), il ne change pas pendant la run.
+- Planches PixelLab 128x128 (4x4 cases de 32x32), versionnées dans `assets/decor/<carte>.png`, dessinées au même facteur que les sorts (`SpellArt.PIXEL`). Rôle de chaque case : `Decor.MAPS` (`game/decor.gd`).
+- Props non bloquants ; obstacles `wall` (les `bolt` s'y arrêtent) et `rock` (ils rebondissent) ; `crate` cassable par un `bolt`, lâche or et XP. Joueur et ennemis glissent autour des obstacles.
+- Centre et bords (entrées des ennemis) dégagés, passage d'au moins 80 px entre deux obstacles.
+- Lumières : halo pixel art en paliers, additif, qui vacille (pas de `PointLight2D`). Le décor est en `z_index = -1`, le sol doit être dessous.

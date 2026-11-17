@@ -79,7 +79,7 @@ func _physics_process(delta: float) -> void:
 	var pad_move := Vector2(Input.get_joy_axis(0, JOY_AXIS_LEFT_X), Input.get_joy_axis(0, JOY_AXIS_LEFT_Y))
 	if pad_move.length() > 0.2:
 		move = pad_move.limit_length(1.0)
-	position = (position + move * speed * delta).clamp(Vector2.ZERO, get_viewport_rect().size)
+	position = Decor.slide(position, move * speed * delta, radius).clamp(Vector2.ZERO, get_viewport_rect().size)
 
 	var fire := false
 	var pad_aim := Vector2(Input.get_joy_axis(0, JOY_AXIS_RIGHT_X), Input.get_joy_axis(0, JOY_AXIS_RIGHT_Y))
