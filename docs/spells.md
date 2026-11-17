@@ -15,6 +15,8 @@ This file is also sent to the AI as the format reference: keep it accurate.
 - `cooldown`: seconds between casts, 0.08 to 5
 - `words`: the words written on scrolls so far, oldest first
 - `emit`: an **Emit**, what happens when the spell is cast
+- `palette`: up to 8 `#rrggbb` colors used by all the pixel art of the spell
+- `icon`: **pixel grid**, up to 24x24, the spell's icon
 
 ## Emit: how bodies are launched
 
@@ -41,6 +43,19 @@ This file is also sent to the AI as the format reference: keep it accurate.
 - `on_hit`: **Effects** on each enemy a bolt touches
 - `on_expire`: **Effects** where the body ends (lifetime over or stopped)
 - `tick_interval`: seconds, 0.1 to 5; `on_tick`: **Effects** applied every interval
+- `sprite`: 1 to 4 animation frames (**pixel grids**, up to 16x16), played at
+  8 frames/s. A bolt sprite faces right (it is rotated to its direction); a
+  zone sprite is drawn as is, stretched over the zone.
+- `particle`: **pixel grid** up to 8x8, the particle trailing the body
+
+## Pixel art
+
+Everything is pixel art, scaled up without blur. A **pixel grid** is a list of
+strings of the same length, one per row, top to bottom: `.` is transparent,
+`0` to `7` is a color of the spell's `palette`. Draw with care: a clear
+silhouette, a dark outline or darker edge, highlights from the top-left,
+2 to 5 colors per sprite. Each body of the spell (including the ones of
+sub-casts) gets its own sprite matching what it is.
 
 Screen size is 1280x720, an enemy has 20 HP at the start and a radius of 12.
 

@@ -7,7 +7,10 @@ extends Node2D
 
 var body: Dictionary
 var caster: Node2D
+var spell: Dictionary  # the whole spell: color and palette for the art
 var color: Color
+var frames: Array[Texture2D] = []
+var art_scale := 1
 var dir := Vector2.RIGHT
 var speed := 0.0
 var age := 0.0
@@ -20,7 +23,7 @@ var wave_phase := 0.0
 
 
 ## Emit an "emit" dict from pos toward dir. Bursts are spread over time.
-static func cast(emit: Dictionary, pos: Vector2, aim: Vector2, owner_node: Node2D, col: Color, world: Node) -> void:
+static func cast(emit: Dictionary, pos: Vector2, aim: Vector2, owner_node: Node2D, spell: Dictionary, world: Node) -> void:
 	var dirs := _directions(emit, pos, aim, world)
 	for i in dirs.size():
 		if i > 0 and emit.burst_delay > 0.0:
@@ -30,7 +33,7 @@ static func cast(emit: Dictionary, pos: Vector2, aim: Vector2, owner_node: Node2
 		var b := SpellBody.new()
 		b.body = emit.body
 		b.caster = owner_node
-		b.color = col
+		b.spell = spell
 		b.dir = dirs[i]
 		b.position = pos
 		world.add_child(b)
@@ -75,6 +78,25 @@ func _ready() -> void:
 	pierce_left = body.pierce
 	bounce_left = body.bounce
 	origin = position
+	color = Color.html(spell.color)
+	for f in body.sprite:
+		frames.append(SpellArt.texture(f, spell.palette))
+	if not frames.is_empty():
+		art_scale = SpellArt.scale_for(frames[0], body.size * 2.0)
+	var dot := SpellArt.texture(body.particle, spell.palette)
+	if dot:
+		var p := CPUParticles2D.new()
+		p.texture = dot
+		p.amount = 10
+		p.lifetime = 0.35
+		p.local_coords = false
+		p.gravity = Vector2.ZERO
+		p.spread = 180.0
+		p.initial_velocity_min = 10.0
+		p.initial_velocity_max = 40.0
+		p.scale_amount_min = SpellArt.PIXEL
+		p.scale_amount_max = SpellArt.PIXEL
+		add_child(p)
 
 
 func _physics_process(delta: float) -> void:
@@ -155,7 +177,7 @@ func apply_effects(list: Array, pos: Vector2, target: Node2D) -> void:
 				if is_instance_valid(caster):
 					caster.heal(f.amount)
 			"cast":
-				SpellBody.cast(f.emit, pos, dir, caster, color, get_parent())
+				SpellBody.cast(f.emit, pos, dir, caster, spell, get_parent())
 			_:
 				for e in _targets(f.get("radius", 0.0), pos, target):
 					match f.type:
@@ -178,7 +200,12 @@ func _targets(radius: float, pos: Vector2, target: Node2D) -> Array:
 
 
 func _draw() -> void:
-	if body.shape == "zone":
+	if not frames.is_empty():
+		var tex: Texture2D = frames[int(age * 8.0) % frames.size()]
+		var rot := dir.angle() if body.shape == "bolt" else 0.0
+		draw_set_transform(Vector2.ZERO, rot, Vector2.ONE * art_scale)
+		draw_texture(tex, -tex.get_size() / 2.0)
+	elif body.shape == "zone":
 		draw_circle(Vector2.ZERO, body.size, Color(color, 0.25))
 		draw_arc(Vector2.ZERO, body.size, 0, TAU, 32, color, 2.0)
 	else:

@@ -12,24 +12,11 @@ const SHAPES := ["bolt", "zone"]
 const MOTIONS := ["homing", "wave", "accelerate", "boomerang", "orbit"]
 const STATUSES := ["burn", "poison", "slow", "freeze", "stun"]
 const EFFECTS := ["damage", "status", "knockback", "heal", "cast"]
+const PIXELS := ".01234567"  # sprite grid chars: transparent, palette index
 
-const BASE := {
-	"name": "Étincelle",
-	"description": "Une petite boule de feu.",
-	"element": "fire",
-	"color": "#ff7a1a",
-	"cooldown": 0.35,
-	"words": [],
-	"emit": {
-		"pattern": "aim", "count": 1, "spread": 0.0, "burst_delay": 0.0,
-		"body": {
-			"shape": "bolt", "speed": 520.0, "size": 6.0, "lifetime": 1.2,
-			"pierce": 0, "bounce": 0, "motion": [],
-			"on_hit": [{"type": "damage", "amount": 10.0, "radius": 0.0}],
-			"on_expire": [], "tick_interval": 0.5, "on_tick": [],
-		},
-	},
-}
+## The starting spell is the first example (spell/examples.json).
+static func base() -> Dictionary:
+	return sanitize(JSON.parse_string(FileAccess.get_file_as_string("res://spell/examples.json"))[0])
 
 
 # --- sanitize: never trust spell data (AI output, save files) ---------------
@@ -46,6 +33,8 @@ static func sanitize(d: Variant) -> Dictionary:
 		"color": _color(s.get("color")),
 		"cooldown": _num(s.get("cooldown"), 0.5, 0.08, 5.0),
 		"words": words.slice(0, 20),
+		"palette": _palette(s.get("palette")),
+		"icon": _grid(s.get("icon"), 24),
 		"emit": _emit(s.get("emit"), 0),
 	}
 
@@ -82,6 +71,8 @@ static func _body(d: Variant, depth: int) -> Dictionary:
 		"on_expire": _effects(b.get("on_expire"), depth),
 		"tick_interval": _num(b.get("tick_interval"), 0.5, 0.1, 5.0),
 		"on_tick": _effects(b.get("on_tick"), depth),
+		"sprite": _frames(b.get("sprite")),
+		"particle": _grid(b.get("particle"), 8),
 	}
 
 
@@ -106,6 +97,36 @@ static func _effects(d: Variant, depth: int) -> Array:
 				if depth < MAX_DEPTH:
 					out.append({"type": "cast", "emit": _emit(f.get("emit"), depth + 1)})
 	return out
+
+
+static func _palette(v: Variant) -> Array:
+	var out: Array = []
+	for c in _arr(v).slice(0, 8):
+		out.append(_color(c))
+	return out
+
+
+static func _frames(v: Variant) -> Array:
+	var out: Array = []
+	for f in _arr(v).slice(0, 4):
+		var g := _grid(f, 16)
+		if not g.is_empty():
+			out.append(g)
+	return out
+
+
+## A pixel grid: rows of PIXELS chars, at most size x size. Bad chars become
+## transparent; an all-transparent grid is dropped (the engine draws a default).
+static func _grid(v: Variant, size: int) -> Array:
+	var rows: Array = []
+	var visible := false
+	for r in _arr(v).slice(0, size):
+		var row := ""
+		for ch in str(r).substr(0, size):
+			row += ch if ch in PIXELS else "."
+		visible = visible or row.replace(".", "") != ""
+		rows.append(row)
+	return rows if visible else []
 
 
 static func _arr(v: Variant) -> Array:

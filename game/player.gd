@@ -87,7 +87,7 @@ func _physics_process(delta: float) -> void:
 	if fire and cooldown <= 0.0 and mana >= mana_cost:
 		mana -= mana_cost
 		cooldown = spell.cooldown
-		SpellBody.cast(spell.emit, global_position + aim * radius, aim, self, Color.html(spell.color), get_parent())
+		SpellBody.cast(spell.emit, global_position + aim * radius, aim, self, spell, get_parent())
 	queue_redraw()
 
 

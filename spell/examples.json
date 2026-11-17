@@ -1,79 +1,525 @@
 [
-  {
-    "name": "Étincelle", "description": "Une petite boule de feu.", "element": "fire", "color": "#ff7a1a",
-    "cooldown": 0.35, "words": [],
-    "emit": {"pattern": "aim", "count": 1, "spread": 0, "burst_delay": 0,
-      "body": {"shape": "bolt", "speed": 520, "size": 6, "lifetime": 1.2, "pierce": 0, "bounce": 0, "motion": [],
-        "on_hit": [{"type": "damage", "amount": 10, "radius": 0}], "on_expire": [], "tick_interval": 0.5, "on_tick": []}}
+ {
+  "name": "Étincelle",
+  "description": "Une petite boule de feu.",
+  "element": "fire",
+  "color": "#ff7a1a",
+  "cooldown": 0.35,
+  "words": [],
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 520,
+    "size": 6,
+    "lifetime": 1.2,
+    "pierce": 0,
+    "bounce": 0,
+    "motion": [],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 10,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": [],
+    "sprite": [
+     [
+      "..0110..",
+      ".012210.",
+      "01233210",
+      "12344321",
+      "12344321",
+      "01233210",
+      ".012210.",
+      "..0110.."
+     ],
+     [
+      "..0110..",
+      ".012210.",
+      "01234210",
+      "12343321",
+      "12334321",
+      "01243210",
+      ".012210.",
+      "..0110.."
+     ]
+    ],
+    "particle": [
+     "32",
+     "21"
+    ]
+   }
   },
-  {
-    "name": "Étincelle orageuse", "description": "L'étincelle saute d'ennemi en ennemi et les paralyse.", "element": "lightning", "color": "#ffe14d",
-    "cooldown": 0.45, "words": ["tempête"],
-    "emit": {"pattern": "aim", "count": 1, "spread": 0, "burst_delay": 0,
-      "body": {"shape": "bolt", "speed": 900, "size": 5, "lifetime": 1.5, "pierce": 0, "bounce": 4, "motion": [],
-        "on_hit": [{"type": "damage", "amount": 8, "radius": 0}, {"type": "status", "status": "stun", "power": 1, "duration": 0.4, "radius": 0}],
-        "on_expire": [], "tick_interval": 0.5, "on_tick": []}}
+  "palette": [
+   "#3b1203",
+   "#a8320a",
+   "#ff7a1a",
+   "#ffd24a",
+   "#fff6c2"
+  ],
+  "icon": [
+   ".....2......",
+   "....232.....",
+   "....232..2..",
+   "...23432.2..",
+   "..2344432...",
+   "..2344432...",
+   ".123444321..",
+   ".123444321..",
+   ".12234321...",
+   "..1223221...",
+   "...11111....",
+   "............"
+  ]
+ },
+ {
+  "name": "Étincelle orageuse",
+  "description": "L'étincelle saute d'ennemi en ennemi et les paralyse.",
+  "element": "lightning",
+  "color": "#ffe14d",
+  "cooldown": 0.45,
+  "words": [
+   "tempête"
+  ],
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 900,
+    "size": 5,
+    "lifetime": 1.5,
+    "pierce": 0,
+    "bounce": 4,
+    "motion": [],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 8,
+      "radius": 0
+     },
+     {
+      "type": "status",
+      "status": "stun",
+      "power": 1,
+      "duration": 0.4,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": [],
+    "sprite": [
+     [
+      "..2.....",
+      ".232.2..",
+      "23332332",
+      ".2..232."
+     ],
+     [
+      ".....2..",
+      "..2.232.",
+      "23323332",
+      ".232..2."
+     ]
+    ],
+    "particle": [
+     "3"
+    ]
+   }
   },
-  {
-    "name": "Étincelle vampire", "description": "Une boule rouge qui traque sa proie et rend la vie volée.", "element": "arcane", "color": "#c2185b",
-    "cooldown": 0.4, "words": ["vampire"],
-    "emit": {"pattern": "aim", "count": 1, "spread": 0, "burst_delay": 0,
-      "body": {"shape": "bolt", "speed": 420, "size": 7, "lifetime": 2.0, "pierce": 0, "bounce": 0, "motion": [{"type": "homing", "strength": 1.5}],
-        "on_hit": [{"type": "damage", "amount": 9, "radius": 0}, {"type": "heal", "amount": 2}], "on_expire": [], "tick_interval": 0.5, "on_tick": []}}
-  },
-  {
-    "name": "Feu d'artifice", "description": "La boule explose en une gerbe d'étincelles.", "element": "fire", "color": "#ff4081",
-    "cooldown": 0.8, "words": ["fête"],
-    "emit": {"pattern": "aim", "count": 1, "spread": 0, "burst_delay": 0,
-      "body": {"shape": "bolt", "speed": 380, "size": 8, "lifetime": 0.6, "pierce": 0, "bounce": 0, "motion": [],
-        "on_hit": [{"type": "damage", "amount": 6, "radius": 0}],
-        "on_expire": [{"type": "cast", "emit": {"pattern": "radial", "count": 8, "spread": 0, "burst_delay": 0,
-          "body": {"shape": "bolt", "speed": 300, "size": 4, "lifetime": 0.5, "pierce": 0, "bounce": 0, "motion": [],
-            "on_hit": [], "on_expire": [{"type": "damage", "amount": 5, "radius": 30}], "tick_interval": 0.5, "on_tick": []}}}],
-        "tick_interval": 0.5, "on_tick": []}}
-  },
-  {
-    "name": "Blizzard", "description": "Un éclat de glace qui laisse une tempête de neige gelante.", "element": "ice", "color": "#80d8ff",
-    "cooldown": 1.5, "words": ["hiver"],
-    "emit": {"pattern": "nearest", "count": 1, "spread": 0, "burst_delay": 0,
-      "body": {"shape": "bolt", "speed": 600, "size": 6, "lifetime": 0.4, "pierce": 0, "bounce": 0, "motion": [],
-        "on_hit": [], "on_expire": [{"type": "cast", "emit": {"pattern": "aim", "count": 1, "spread": 0, "burst_delay": 0,
-          "body": {"shape": "zone", "speed": 0, "size": 90, "lifetime": 3, "pierce": 0, "bounce": 0, "motion": [],
-            "on_hit": [], "on_expire": [], "tick_interval": 0.5,
-            "on_tick": [{"type": "damage", "amount": 3, "radius": 0}, {"type": "status", "status": "slow", "power": 2, "duration": 0.6, "radius": 0}]}}}],
-        "tick_interval": 0.5, "on_tick": []}}
-  },
-  {
-    "name": "Couronne de flammes", "description": "Trois flammes tournent autour du mage.", "element": "fire", "color": "#ff9100",
-    "cooldown": 3, "words": ["couronne"],
-    "emit": {"pattern": "radial", "count": 3, "spread": 0, "burst_delay": 0,
-      "body": {"shape": "bolt", "speed": 110, "size": 9, "lifetime": 4, "pierce": 20, "bounce": 0, "motion": [{"type": "orbit", "strength": 1}],
-        "on_hit": [{"type": "damage", "amount": 6, "radius": 0}, {"type": "status", "status": "burn", "power": 3, "duration": 2, "radius": 0}],
-        "on_expire": [], "tick_interval": 0.5, "on_tick": []}}
-  },
-  {
-    "name": "Trou noir", "description": "Une sphère lente qui aspire les ennemis puis implose.", "element": "arcane", "color": "#7c4dff",
-    "cooldown": 4, "words": ["vide"],
-    "emit": {"pattern": "aim", "count": 1, "spread": 0, "burst_delay": 0,
-      "body": {"shape": "bolt", "speed": 90, "size": 14, "lifetime": 2.5, "pierce": 20, "bounce": 0, "motion": [],
-        "on_hit": [{"type": "damage", "amount": 2, "radius": 0}],
-        "on_expire": [{"type": "damage", "amount": 40, "radius": 90}], "tick_interval": 0.2,
-        "on_tick": [{"type": "knockback", "force": -250, "radius": 160}]}}
-  },
-  {
-    "name": "Rafale serpentine", "description": "Une salve de traits qui ondulent et reviennent comme des boomerangs.", "element": "poison", "color": "#76ff03",
-    "cooldown": 0.9, "words": ["serpent", "retour"],
-    "emit": {"pattern": "aim", "count": 3, "spread": 30, "burst_delay": 0.08,
-      "body": {"shape": "bolt", "speed": 450, "size": 5, "lifetime": 1.6, "pierce": 2, "bounce": 0,
-        "motion": [{"type": "wave", "strength": 1.5}, {"type": "boomerang", "strength": 1}],
-        "on_hit": [{"type": "damage", "amount": 4, "radius": 0}, {"type": "status", "status": "poison", "power": 4, "duration": 3, "radius": 0}],
-        "on_expire": [], "tick_interval": 0.5, "on_tick": []}}
-  },
-  {
-    "name": "Comète", "description": "Un projectile qui accélère et repousse tout sur son passage.", "element": "physical", "color": "#bdbdbd",
-    "cooldown": 0.7, "words": ["comète"],
-    "emit": {"pattern": "aim", "count": 1, "spread": 0, "burst_delay": 0,
-      "body": {"shape": "bolt", "speed": 150, "size": 10, "lifetime": 1.5, "pierce": 5, "bounce": 0, "motion": [{"type": "accelerate", "strength": 3}],
-        "on_hit": [{"type": "damage", "amount": 12, "radius": 0}, {"type": "knockback", "force": 500, "radius": 0}], "on_expire": [], "tick_interval": 0.5, "on_tick": []}}
+  "palette": [
+   "#2a2a60",
+   "#4d7cff",
+   "#ffe14d",
+   "#ffffff"
+  ],
+  "icon": [
+   "......22....",
+   ".....232....",
+   "....232.....",
+   "...2332.....",
+   "..2333222...",
+   "...2223332..",
+   ".....2332...",
+   "....232.....",
+   "...232......",
+   "..22........",
+   "............",
+   "............"
+  ]
+ },
+ {
+  "name": "Étincelle vampire",
+  "description": "Une boule rouge qui traque sa proie et rend la vie volée.",
+  "element": "arcane",
+  "color": "#c2185b",
+  "cooldown": 0.4,
+  "words": [
+   "vampire"
+  ],
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 420,
+    "size": 7,
+    "lifetime": 2.0,
+    "pierce": 0,
+    "bounce": 0,
+    "motion": [
+     {
+      "type": "homing",
+      "strength": 1.5
+     }
+    ],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 9,
+      "radius": 0
+     },
+     {
+      "type": "heal",
+      "amount": 2
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
   }
+ },
+ {
+  "name": "Feu d'artifice",
+  "description": "La boule explose en une gerbe d'étincelles.",
+  "element": "fire",
+  "color": "#ff4081",
+  "cooldown": 0.8,
+  "words": [
+   "fête"
+  ],
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 380,
+    "size": 8,
+    "lifetime": 0.6,
+    "pierce": 0,
+    "bounce": 0,
+    "motion": [],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 6,
+      "radius": 0
+     }
+    ],
+    "on_expire": [
+     {
+      "type": "cast",
+      "emit": {
+       "pattern": "radial",
+       "count": 8,
+       "spread": 0,
+       "burst_delay": 0,
+       "body": {
+        "shape": "bolt",
+        "speed": 300,
+        "size": 4,
+        "lifetime": 0.5,
+        "pierce": 0,
+        "bounce": 0,
+        "motion": [],
+        "on_hit": [],
+        "on_expire": [
+         {
+          "type": "damage",
+          "amount": 5,
+          "radius": 30
+         }
+        ],
+        "tick_interval": 0.5,
+        "on_tick": []
+       }
+      }
+     }
+    ],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "name": "Blizzard",
+  "description": "Un éclat de glace qui laisse une tempête de neige gelante.",
+  "element": "ice",
+  "color": "#80d8ff",
+  "cooldown": 1.5,
+  "words": [
+   "hiver"
+  ],
+  "emit": {
+   "pattern": "nearest",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 600,
+    "size": 6,
+    "lifetime": 0.4,
+    "pierce": 0,
+    "bounce": 0,
+    "motion": [],
+    "on_hit": [],
+    "on_expire": [
+     {
+      "type": "cast",
+      "emit": {
+       "pattern": "aim",
+       "count": 1,
+       "spread": 0,
+       "burst_delay": 0,
+       "body": {
+        "shape": "zone",
+        "speed": 0,
+        "size": 90,
+        "lifetime": 3,
+        "pierce": 0,
+        "bounce": 0,
+        "motion": [],
+        "on_hit": [],
+        "on_expire": [],
+        "tick_interval": 0.5,
+        "on_tick": [
+         {
+          "type": "damage",
+          "amount": 3,
+          "radius": 0
+         },
+         {
+          "type": "status",
+          "status": "slow",
+          "power": 2,
+          "duration": 0.6,
+          "radius": 0
+         }
+        ]
+       }
+      }
+     }
+    ],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "name": "Couronne de flammes",
+  "description": "Trois flammes tournent autour du mage.",
+  "element": "fire",
+  "color": "#ff9100",
+  "cooldown": 3,
+  "words": [
+   "couronne"
+  ],
+  "emit": {
+   "pattern": "radial",
+   "count": 3,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 110,
+    "size": 9,
+    "lifetime": 4,
+    "pierce": 20,
+    "bounce": 0,
+    "motion": [
+     {
+      "type": "orbit",
+      "strength": 1
+     }
+    ],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 6,
+      "radius": 0
+     },
+     {
+      "type": "status",
+      "status": "burn",
+      "power": 3,
+      "duration": 2,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "name": "Trou noir",
+  "description": "Une sphère lente qui aspire les ennemis puis implose.",
+  "element": "arcane",
+  "color": "#7c4dff",
+  "cooldown": 4,
+  "words": [
+   "vide"
+  ],
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 90,
+    "size": 14,
+    "lifetime": 2.5,
+    "pierce": 20,
+    "bounce": 0,
+    "motion": [],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 2,
+      "radius": 0
+     }
+    ],
+    "on_expire": [
+     {
+      "type": "damage",
+      "amount": 40,
+      "radius": 90
+     }
+    ],
+    "tick_interval": 0.2,
+    "on_tick": [
+     {
+      "type": "knockback",
+      "force": -250,
+      "radius": 160
+     }
+    ]
+   }
+  }
+ },
+ {
+  "name": "Rafale serpentine",
+  "description": "Une salve de traits qui ondulent et reviennent comme des boomerangs.",
+  "element": "poison",
+  "color": "#76ff03",
+  "cooldown": 0.9,
+  "words": [
+   "serpent",
+   "retour"
+  ],
+  "emit": {
+   "pattern": "aim",
+   "count": 3,
+   "spread": 30,
+   "burst_delay": 0.08,
+   "body": {
+    "shape": "bolt",
+    "speed": 450,
+    "size": 5,
+    "lifetime": 1.6,
+    "pierce": 2,
+    "bounce": 0,
+    "motion": [
+     {
+      "type": "wave",
+      "strength": 1.5
+     },
+     {
+      "type": "boomerang",
+      "strength": 1
+     }
+    ],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 4,
+      "radius": 0
+     },
+     {
+      "type": "status",
+      "status": "poison",
+      "power": 4,
+      "duration": 3,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "name": "Comète",
+  "description": "Un projectile qui accélère et repousse tout sur son passage.",
+  "element": "physical",
+  "color": "#bdbdbd",
+  "cooldown": 0.7,
+  "words": [
+   "comète"
+  ],
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 150,
+    "size": 10,
+    "lifetime": 1.5,
+    "pierce": 5,
+    "bounce": 0,
+    "motion": [
+     {
+      "type": "accelerate",
+      "strength": 3
+     }
+    ],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 12,
+      "radius": 0
+     },
+     {
+      "type": "knockback",
+      "force": 500,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ }
 ]

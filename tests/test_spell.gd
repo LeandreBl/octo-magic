@@ -27,6 +27,17 @@ func _initialize() -> void:
 	check(Spell.sanitize(null).emit.body.shape == "bolt", "null -> default spell")
 	check(Spell.sanitize(s) == s, "sanitize is idempotent")
 
+	# Pixel art: grids are clipped, bad chars become transparent.
+	var art := Spell.sanitize({"palette": ["#ff0000", "nope", 3], "icon": ["0x9", "", "1"],
+		"emit": {"body": {"sprite": [["0" .repeat(40)], ["..."], 7], "particle": ["0"]}}})
+	check(art.palette == ["#ff0000", "#ffffff", "#ffffff"], "palette sanitized")
+	check(art.icon == ["0..", "", "1"], "grid chars sanitized")
+	check(art.emit.body.sprite.size() == 1 and art.emit.body.sprite[0][0].length() == 16, "frames clipped, empty dropped")
+	var tex := SpellArt.texture(art.icon, art.palette)
+	check(tex.get_size() == Vector2(3, 3), "texture size from grid")
+	check(tex.get_image().get_pixel(0, 0) == Color.RED and tex.get_image().get_pixel(1, 0).a == 0.0, "texture pixels")
+	check(Spell.base().icon.size() > 0 and Spell.base().emit.body.sprite.size() == 2, "base spell has art")
+
 	# Recursion is depth-limited.
 	var nested := {"type": "cast", "emit": {"body": {"on_expire": []}}}
 	for i in 10:
@@ -40,7 +51,7 @@ func _initialize() -> void:
 	check(depth == Spell.MAX_DEPTH, "cast depth limited to MAX_DEPTH (got %d)" % depth)
 
 	# Stronger spells cost more mana.
-	var base := Spell.sanitize(Spell.BASE)
+	var base := Spell.base()
 	var big := base.duplicate(true)
 	big.emit.count = 5
 	check(Spell.mana_cost(big) > Spell.mana_cost(base), "more projectiles cost more mana")
@@ -77,7 +88,7 @@ func _run_examples(examples: Array) -> void:
 			hp_before += e.hp
 		for frame in 180:
 			if frame % 20 == 0:
-				SpellBody.cast(spell.emit, p.position, Vector2.RIGHT, p, Color.html(spell.color), world)
+				SpellBody.cast(spell.emit, p.position, Vector2.RIGHT, p, spell, world)
 			await physics_frame
 		var hp_after := 0.0
 		for e in get_nodes_in_group("enemies"):

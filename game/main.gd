@@ -10,6 +10,7 @@ const BOSS_EVERY := 5
 var player: Node2D
 var wave := 0
 var hud: Label
+var hud_icon: TextureRect
 var scroll_panel: PanelContainer
 var word_edit: LineEdit
 var scroll_status: Label
@@ -31,7 +32,7 @@ func _load_spell() -> Dictionary:
 	var f := FileAccess.open(SAVE_PATH, FileAccess.READ)
 	if f:
 		return Spell.sanitize(JSON.parse_string(f.get_as_text()))
-	return Spell.sanitize(Spell.BASE)
+	return Spell.base()
 
 
 func _save_spell(s: Dictionary) -> void:
@@ -40,6 +41,7 @@ func _save_spell(s: Dictionary) -> void:
 
 func _process(_delta: float) -> void:
 	var s: Dictionary = player.spell
+	hud_icon.texture = SpellArt.texture(s.icon, s.palette)
 	hud.text = "Vague %d   PV %d   Mana %d   |   %s (%d mana)%s\n%s" % [
 		wave, player.hp, player.mana, s.name, player.mana_cost,
 		"  [" + " + ".join(s.words) + "]" if not s.words.is_empty() else "",
@@ -76,8 +78,13 @@ func _build_ui() -> void:
 	var layer := CanvasLayer.new()
 	layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(layer)
+	hud_icon = TextureRect.new()
+	hud_icon.position = Vector2(12, 8)
+	hud_icon.stretch_mode = TextureRect.STRETCH_SCALE
+	hud_icon.size = Vector2(48, 48)
+	layer.add_child(hud_icon)
 	hud = Label.new()
-	hud.position = Vector2(12, 8)
+	hud.position = Vector2(68, 8)
 	layer.add_child(hud)
 
 	scroll_panel = PanelContainer.new()
