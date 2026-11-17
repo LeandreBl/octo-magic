@@ -8,26 +8,30 @@ extends Node
 
 const RATE := 22050
 ## name -> wave, frequencies (slid between, or played as notes if "notes"),
-## length (s), noise mix, volume (dB), bus. Spells cast at -8 dB: the
-## swarm (hits, shots, pickups) stays well under them.
+## length (s), noise mix, sparkle (random high chimes per second), echo
+## (repeats of a resonant tail), volume (dB), bus. Magic flavour: glassy
+## bells, sparkles and echoes; enemy hits and hurts stay short and dry.
+## Spells cast at -8 dB: the swarm (hits, shots, pickups) stays well under them.
 const RECIPES := {
-	"hit": {"wave": "square", "f": [320, 120], "len": 0.05, "noise": 0.5, "db": -22.0},
-	"die": {"wave": "square", "f": [420, 60], "len": 0.18, "noise": 0.35, "db": -16.0},
-	"shot": {"wave": "square", "f": [760, 280], "len": 0.08, "db": -24.0},
-	"crate": {"wave": "noise", "f": [0], "len": 0.22, "db": -12.0},
-	"boss": {"wave": "saw", "f": [55, 85, 50], "len": 1.6, "noise": 0.35, "db": -6.0},
-	"boss_die": {"wave": "saw", "f": [180, 25], "len": 1.4, "noise": 0.5, "db": -4.0},
+	"hit": {"wave": "bell", "f": [880, 620], "len": 0.06, "noise": 0.3, "db": -22.0},
+	"die": {"wave": "bell", "f": [700, 180], "len": 0.25, "noise": 0.2, "sparkle": 30.0, "echo": 1, "db": -16.0},
+	"shot": {"wave": "sine", "f": [1100, 420], "len": 0.1, "sparkle": 40.0, "db": -24.0},
+	"crate": {"wave": "noise", "f": [0], "len": 0.25, "sparkle": 40.0, "echo": 1, "db": -12.0},
+	"boss": {"wave": "saw", "f": [55, 85, 50], "len": 1.6, "noise": 0.3, "sparkle": 6.0, "echo": 2, "db": -6.0},
+	"boss_die": {"wave": "bell", "f": [300, 40], "len": 1.4, "noise": 0.35, "sparkle": 25.0, "echo": 3, "db": -4.0},
 	"hurt": {"wave": "saw", "f": [240, 110], "len": 0.2, "noise": 0.3, "db": -10.0},
-	"death": {"wave": "saw", "f": [330, 40], "len": 1.0, "noise": 0.2, "db": -6.0},
-	"xp": {"wave": "sine", "f": [1150, 1500], "len": 0.06, "db": -22.0},
-	"gold": {"wave": "square", "f": [988, 1319], "notes": true, "len": 0.14, "db": -22.0},
-	"scroll": {"wave": "sine", "f": [523, 659, 784, 1047], "notes": true, "len": 0.5, "db": -10.0},
-	"level_up": {"wave": "square", "f": [392, 523, 659, 784, 1047], "notes": true, "len": 0.6, "db": -14.0},
-	"wave": {"wave": "bell", "f": [110, 104], "len": 1.2, "db": -8.0},
-	"game_over": {"wave": "sine", "f": [392, 330, 262, 196], "notes": true, "len": 1.6, "db": -6.0},
-	"click": {"wave": "square", "f": [900, 700], "len": 0.035, "db": -18.0, "bus": "UI"},
-	"hover": {"wave": "sine", "f": [1800], "len": 0.02, "db": -28.0, "bus": "UI"},
+	"death": {"wave": "bell", "f": [440, 55], "len": 1.0, "noise": 0.15, "echo": 3, "db": -6.0},
+	"xp": {"wave": "bell", "f": [1500, 1900], "len": 0.07, "echo": 1, "db": -22.0},
+	"gold": {"wave": "bell", "f": [1319, 1976], "notes": true, "len": 0.16, "echo": 1, "db": -20.0},
+	"scroll": {"wave": "bell", "f": [523, 659, 784, 1047, 1319], "notes": true, "len": 0.6, "sparkle": 20.0, "echo": 3, "db": -10.0},
+	"level_up": {"wave": "bell", "f": [392, 523, 659, 784, 1047, 1568], "notes": true, "len": 0.7, "sparkle": 25.0, "echo": 3, "db": -12.0},
+	"wave": {"wave": "bell", "f": [110, 104], "len": 1.2, "sparkle": 4.0, "echo": 2, "db": -8.0},
+	"game_over": {"wave": "bell", "f": [392, 330, 262, 196], "notes": true, "len": 1.6, "echo": 3, "db": -6.0},
+	"click": {"wave": "bell", "f": [1400, 1250], "len": 0.05, "echo": 1, "db": -18.0, "bus": "UI"},
+	"hover": {"wave": "sine", "f": [2400, 2600], "len": 0.03, "db": -28.0, "bus": "UI"},
 }
+const ECHO_DELAY := 0.11  # s between repeats of the tail
+const ECHO_FEEDBACK := 0.4
 const GAP := 0.04  # s: the same sound twice closer than this plays once (boss rings, swarms)
 const MUSIC_DB := -6.0
 
@@ -145,4 +149,24 @@ static func synth(r: Dictionary) -> PackedFloat32Array:
 		lp += (rng.randf_range(-1.0, 1.0) - lp) * 0.3  # darker noise
 		s = s * (1.0 - noise_mix) + lp * 1.5 * noise_mix
 		out[i] = s * minf(1.0, t / 0.005) * env
+	# Sparkle: short high chimes scattered over the sound.
+	for g in int(r.get("sparkle", 0.0) * length):
+		var at := rng.randi_range(0, n - 1)
+		var hz := rng.randf_range(2500.0, 5000.0)
+		var amp := rng.randf_range(0.1, 0.25) * (1.0 - float(at) / n)
+		for i in mini(int(RATE * 0.04), n - at):
+			out[at + i] += sin(TAU * hz * i / RATE) * amp * (1.0 - i / (RATE * 0.04))
+	# Echo: the sound repeats fainter, a resonant tail.
+	var repeats: int = r.get("echo", 0)
+	if repeats:
+		var d := int(RATE * ECHO_DELAY)
+		out.resize(n + d * repeats)
+		for i in range(d, n + d * repeats):  # forwards: echoes of echoes
+			out[i] += out[i - d] * ECHO_FEEDBACK
+	var peak := 0.0
+	for x in out:
+		peak = maxf(peak, absf(x))
+	if peak > 0.9:
+		for i in out.size():
+			out[i] *= 0.9 / peak
 	return out
