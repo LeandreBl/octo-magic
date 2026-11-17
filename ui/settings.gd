@@ -5,7 +5,7 @@ class_name Settings
 const PATH := "user://settings.cfg"
 const BUSES := ["Master", "Music", "SFX"]
 const REBINDABLE := {"move_up": "Haut", "move_down": "Bas", "move_left": "Gauche",
-	"move_right": "Droite", "cast_ultimate": "Ultime", "pause": "Pause"}
+	"move_right": "Droite", "pause": "Pause"}
 const UI_SCALES := [0.75, 1.0, 1.25, 1.5]
 
 static var cfg := ConfigFile.new()

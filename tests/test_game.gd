@@ -48,7 +48,7 @@ func _test_upgrades() -> void:
 		"on_hit": [{"type": "damage", "amount": 10}]}}}]}}})
 	check(Upgrades.scale_damage(boom, 2.0).emit.body.on_expire[0].emit.body.on_hit[0].amount == 20.0, "nested damage scaled")
 	var rng := RandomNumberGenerator.new()
-	var offers := Upgrades.offers({"primary": s, "secondary": s}, {}, rng)
+	var offers := Upgrades.offers({"primary": s}, {}, rng)
 	check(offers.size() == 3 and offers[0] != offers[1] and offers[1] != offers[2], "3 distinct offers")
 
 
@@ -56,7 +56,7 @@ func _test_run() -> void:
 	var run := RunState.new()
 	var p := ProfileState.new()
 	run.start(p.equipped_spells(), {"damage": 0.5, "xp": 0.0})
-	check(run.spells.size() == 3, "three spell slots")
+	check(run.spells.keys() == ["primary"], "one spell, no secondary or ultimate")
 	check(is_equal_approx(_damage(run.spells.primary), _damage(p.equipped_spells().primary) * 1.5), "damage bonus applied")
 	var got := []
 	run.leveled_up.connect(func(o): got.append(o))

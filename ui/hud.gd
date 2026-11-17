@@ -5,7 +5,6 @@ extends Control
 signal paused
 
 const UITheme := preload("res://ui/theme.gd")
-const KEYS := {"primary": "Clic G", "secondary": "Clic D"}
 
 var main: Node
 var _hp: ProgressBar
@@ -156,7 +155,7 @@ func _process(_delta: float) -> void:
 		if not is_same(sp, ui[2]):
 			ui[2] = sp
 			ui[0].texture = _icon(sp)
-			ui[4].text = "%s\n%s" % [sp.name, KEYS.get(slot, Settings.key_name("cast_ultimate"))]
+			ui[4].text = "%s\n%s" % [sp.name, "Clic G"]
 		ui[3].text = str(cost)
 		ui[1].offset_top = -ui[1].get_parent().size.y * clampf(p.cooldowns.get(slot, 0.0) / sp.cooldown, 0.0, 1.0)
 		ui[0].modulate = Color.WHITE if p.mana >= cost else Color(0.45, 0.45, 0.6)

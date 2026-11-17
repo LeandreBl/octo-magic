@@ -1,8 +1,8 @@
 extends Node2D
 ## The mage. Twin-stick: keyboard/mouse, gamepad, or touch (left half of the
 ## screen moves, right half aims and fires the main spell).
-## Spells: primary = left click / right stick / touch aim, secondary = right
-## click / RB, ultimate = space / LB. `held` lets a touch UI fire any slot.
+## One spell: left click / right stick / touch aim. `held` lets a touch UI
+## fire it.
 ## Coop (see main.gd): the owner peer steers its mage (position, aim, firing
 ## are synced from it); the host owns the rest (hp, mana, loadout) and casts.
 
@@ -175,8 +175,6 @@ func _steer(delta: float) -> void:
 
 	firing = {
 		"primary": fire or held.get("primary", false),
-		"secondary": Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) or Input.is_joy_button_pressed(0, JOY_BUTTON_RIGHT_SHOULDER) or held.get("secondary", false),
-		"ultimate": Input.is_action_pressed("cast_ultimate") or held.get("ultimate", false),
 	}
 
 

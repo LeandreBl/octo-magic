@@ -5,9 +5,9 @@ extends CenterContainer
 signal closed
 signal scale_changed
 
-const SCHEME := "Souris : viser · clic gauche : sort principal · clic droit : sort secondaire\n" \
-	+ "Manette : stick gauche bouger, stick droit viser et lancer, RB secondaire, LB ultime, Start pause\n" \
-	+ "Tactile : moitié gauche bouger, moitié droite viser et lancer, toucher un sort pour le lancer"
+const SCHEME := "Souris : viser · clic gauche : lancer le sort\n" \
+	+ "Manette : stick gauche bouger, stick droit viser et lancer, Start pause\n" \
+	+ "Tactile : moitié gauche bouger, moitié droite viser et lancer"
 
 var _waiting := ""  # action waiting for its new key
 var _keys := {}  # action -> Button
