@@ -91,7 +91,7 @@ test("profile and spells are kept per player", async () => {
 });
 
 test("website pages are public", async () => {
-  for (const p of ["/", "/account", "/game", "/terms", "/privacy"]) {
+  for (const p of ["/", "/account", "/game", "/terms", "/privacy", "/en/", "/en/account", "/en/game", "/en/terms", "/en/privacy"]) {
     const r = await api(p, null);
     assert.equal(r.status, 200);
     assert.match(r.headers.get("content-type") ?? "", /text\/html/);

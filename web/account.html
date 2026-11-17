@@ -4,13 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Octo Magic — Mon compte</title>
+<link rel="alternate" hreflang="fr" href="https://octo-magic.notdotio.com/account">
+<link rel="alternate" hreflang="en" href="https://octo-magic.notdotio.com/en/account">
+<link rel="alternate" hreflang="x-default" href="https://octo-magic.notdotio.com/en/account">
 <link rel="icon" href="/assets/icon.png">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <header>
   <a class="brand" href="/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
-  <nav><a href="/game">Jouer</a><a href="/account" data-who>Connexion</a></nav>
+  <nav><a href="/game">Jouer</a><a href="/account" data-who>Connexion</a><a class="lang" href="/en/account" hreflang="en" lang="en" title="English" data-lang="en">EN</a></nav>
 </header>
 <main>
   <h1>Mon compte</h1>
@@ -72,133 +75,6 @@
 <footer>
   <a href="/privacy">Confidentialité</a><a href="/terms">Conditions d'utilisation</a>
 </footer>
-<script type="module">
-  import * as site from "/site.js";
-
-  // Same ids, names and goals as Profile.ACHIEVEMENTS (game/profile.gd).
-  const ACHIEVEMENTS = {
-    first_blood: ["Premier sang", "Vaincre un ennemi", "kills", 1],
-    hunter: ["Chasseur", "Vaincre 100 ennemis", "kills", 100],
-    slayer: ["Fléau", "Vaincre 1000 ennemis", "kills", 1000],
-    boss: ["Tueur de géants", "Vaincre un boss", "bosses", 1],
-    boss3: ["Chasseur de géants", "Vaincre 3 boss", "bosses", 3],
-    boss10: ["Fléau des géants", "Vaincre 10 boss", "bosses", 10],
-    wave10: ["Endurant", "Atteindre la vague 10", "best_wave", 10],
-    wave20: ["Inarrêtable", "Atteindre la vague 20", "best_wave", 20],
-    level10: ["Érudit", "Atteindre le niveau 10 en une run", "best_level", 10],
-    level20: ["Archimage", "Atteindre le niveau 20 en une run", "best_level", 20],
-    rich: ["Fortuné", "Gagner 1000 pièces d'or au total", "gold_total", 1000],
-    scribe: ["Scribe", "Trouver 5 parchemins vierges", "scrolls", 5],
-    veteran: ["Vétéran", "Jouer 10 runs", "runs", 10],
-  };
-  const STATS = [
-    ["gold", "Or"], ["runs", "Runs"], ["kills", "Ennemis vaincus"], ["bosses", "Boss vaincus"],
-    ["best_wave", "Meilleure vague"], ["best_level", "Meilleur niveau"], ["gold_total", "Or gagné"],
-    ["scrolls", "Parchemins trouvés"],
-  ];
-  const $ = (id) => document.getElementById(id);
-
-  // Runs an async form action: button disabled meanwhile, message after.
-  function action(form, run, done) {
-    const msg = form.querySelector(".msg");
-    return async (e) => {
-      e.preventDefault();
-      const buttons = form.querySelectorAll("button");
-      buttons.forEach((b) => (b.disabled = true));
-      msg.className = "msg";
-      msg.textContent = "";
-      try {
-        const ok = await run(e.submitter?.name);
-        msg.className = "msg ok";
-        msg.textContent = ok ?? "";
-        done?.();
-      } catch (err) {
-        msg.className = "msg error";
-        msg.textContent = err.message;
-      }
-      buttons.forEach((b) => (b.disabled = false));
-    };
-  }
-
-  const login = $("login");
-  login.onsubmit = action(login, async (button) => {
-    const { email, password } = login.elements;
-    if (button === "reset") {
-      if (!email.value) throw new Error("Indique ton adresse e-mail.");
-      await site.resetPassword(email.value);
-      return "E-mail de réinitialisation envoyé.";
-    }
-    await site.login(email.value, password.value, button === "signup");
-  }, () => site.session() && location.reload());
-
-  const pw = $("password");
-  pw.onsubmit = action(pw, async () => {
-    await site.changePassword(pw.elements.current.value, pw.elements.password.value);
-    pw.reset();
-    return "Mot de passe changé.";
-  });
-
-  const del = $("delete");
-  del.onsubmit = action(del, async () => {
-    if (!confirm("Supprimer définitivement ton compte et ta progression ?")) return;
-    await site.deleteAccount(del.elements.password.value);
-  }, () => !site.session() && location.reload());
-
-  $("logout").onclick = () => {
-    site.logout();
-    location.reload();
-  };
-
-  function render(p) {
-    const stats = { ...(p.stats ?? {}), gold: p.gold ?? 0 };
-    $("empty").hidden = Object.keys(p).length > 0;
-    $("stats").replaceChildren(...STATS.map(([k, label]) => {
-      const d = document.createElement("div");
-      d.className = "stat";
-      d.append(Object.assign(document.createElement("b"), { textContent: Number(stats[k] ?? 0).toLocaleString("fr") }),
-        Object.assign(document.createElement("span"), { textContent: label }));
-      return d;
-    }));
-
-    const scores = Array.isArray(p.scores) ? p.scores : [];
-    $("scores").replaceChildren(...(scores.length ? scores : [null]).map((s) => {
-      const tr = document.createElement("tr");
-      const cells = s
-        ? [s.score, s.wave, s.level, s.kills, s.time ? new Date(s.time * 1000).toLocaleDateString("fr") : ""]
-        : ["Aucun score pour l'instant."];
-      tr.append(...cells.map((c) => Object.assign(document.createElement("td"), { textContent: c ?? "" })));
-      return tr;
-    }));
-
-    const reached = p.achievements ?? {};
-    $("achievements").replaceChildren(...Object.entries(ACHIEVEMENTS).map(([id, [name, desc, stat, goal]]) => {
-      const li = document.createElement("li");
-      li.className = id in reached ? "done" : "";
-      const progress = id in reached ? "✦ obtenu" : `${Math.min(stats[stat] ?? 0, goal)} / ${goal}`;
-      li.append(Object.assign(document.createElement("b"), { textContent: name }),
-        Object.assign(document.createElement("small"), { textContent: `${desc} — ${progress}` }));
-      return li;
-    }));
-
-    const forged = Array.isArray(p.forged) ? p.forged : [];
-    $("forged").replaceChildren(...(forged.length ? forged : [null]).map((f) =>
-      Object.assign(document.createElement("li"), {
-        textContent: f ? `${f.spell?.name ?? f.id}${f.spell?.description ? ` — ${f.spell.description}` : ""}` : "Aucun sort forgé.",
-      })));
-  }
-
-  const s = site.session();
-  $(s ? "in" : "out").hidden = false;
-  if (s) {
-    $("email").textContent = s.email;
-    try {
-      render(await site.api("/api/profile"));
-    } catch (err) {
-      $("empty").hidden = false;
-      $("empty").textContent = err.message;
-      if (!site.session()) location.reload();
-    }
-  }
-</script>
+<script type="module" src="/account.js"></script>
 </body>
 </html>
