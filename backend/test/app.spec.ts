@@ -221,7 +221,7 @@ test("lobby: bad token, unknown room, full room", async () => {
   assert.deepEqual(await lost.next(), { op: "error", msg: "no such room" });
   const host = await player({ op: "host", token: "token-h" });
   const { code } = await host.next();
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 7; i++) {
     assert.equal((await (await player({ op: "join", code, token: "token-p" })).next()).op, "joined");
   }
   assert.deepEqual(await (await player({ op: "join", code, token: "token-p" })).next(), {

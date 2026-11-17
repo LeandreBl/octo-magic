@@ -8,7 +8,7 @@ import { FirebaseService } from "../auth/firebase.service";
 import { iceServers, Turn } from "./ice";
 
 const MAX_SIGNAL = 64 * 1024;
-const MAX_PLAYERS = 4;
+const MAX_PLAYERS = 8;
 const MAX_ROOMS = 1000;
 const HELLO_TIMEOUT = 10_000;
 const PING_EVERY = 20_000; // keeps proxies from closing quiet lobbies
