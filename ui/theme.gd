@@ -1,15 +1,14 @@
 extends RefCounted
 ## The shared "pixel arcade" Theme, matching the PixelLab pixel art: hard
-## edges, thick dark outlines, hard drop shadows; slate panels, rust
-## buttons, gold accent.
+## edges, thick dark outlines, hard drop shadows; rust (brick) panels,
+## slate buttons, gold accent.
 ## Type variations: "Title" and "Header" (Label), "Slot" (Panel),
 ## "Plate" (PanelContainer, tight margins, for the HUD), "Card" (Button).
 
 const INK := Color("#16181d")  # backgrounds
-const PANEL := Color("#262a33")
-const PANEL_HI := Color("#3a404c")
-const BUTTON := Color("#8a3b2a")
-const BUTTON_HI := Color("#b4532f")
+const PANEL := Color("#8a3b2a")
+const BUTTON := Color("#3a404c")
+const BUTTON_HI := Color("#525a69")
 const OUTLINE := Color("#0b0c10")
 const GOLD := Color("#ffc94a")  # accent: titles, focus, gold
 const GOLD_DIM := Color("#a07a1f")
@@ -68,7 +67,7 @@ static func make() -> Theme:
 		t.set_stylebox("normal", type, _box(BUTTON, OUTLINE, 4, 10, 5))
 		t.set_stylebox("hover", type, _box(BUTTON_HI, OUTLINE, 4, 10, 5))
 		t.set_stylebox("pressed", type, _box(BUTTON.darkened(0.2), OUTLINE, 4, 10, 0, 5))
-		t.set_stylebox("disabled", type, _box(Color(PANEL_HI, 0.7), OUTLINE, 4, 10, 0))
+		t.set_stylebox("disabled", type, _box(Color(BUTTON.darkened(0.3), 0.7), OUTLINE, 4, 10, 0))
 		var focus := _box(Color.TRANSPARENT, GOLD, 4, 10, 0)
 		focus.set_expand_margin_all(4)
 		t.set_stylebox("focus", type, focus)
