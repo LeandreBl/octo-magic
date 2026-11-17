@@ -8,7 +8,7 @@ const MAX_LIST := 6  # effects / motions per list
 
 const ELEMENTS := ["fire", "ice", "lightning", "poison", "arcane", "physical"]
 const PATTERNS := ["aim", "radial", "random", "nearest"]
-const SHAPES := ["bolt", "zone"]
+const SHAPES := ["bolt", "zone", "beam", "cone"]
 const MOTIONS := ["homing", "wave", "accelerate", "boomerang", "orbit"]
 const STATUSES := ["burn", "poison", "slow", "freeze", "stun"]
 const EFFECTS := ["damage", "status", "knockback", "heal", "cast"]
@@ -66,6 +66,7 @@ static func _body(d: Variant, depth: int) -> Dictionary:
 		"speed": _num(b.get("speed"), 400.0, 0.0, 1400.0),
 		"size": _num(b.get("size"), 6.0, 2.0, 220.0),
 		"lifetime": _num(b.get("lifetime"), 1.0, 0.05, 10.0),
+		"angle": _num(b.get("angle"), 60.0, 0.0, 180.0),
 		"pierce": int(_num(b.get("pierce"), 0, 0, 20)),
 		"bounce": int(_num(b.get("bounce"), 0, 0, 10)),
 		"motion": motion,
@@ -192,8 +193,10 @@ static func _emit_power(e: Dictionary) -> float:
 
 static func _body_power(b: Dictionary) -> float:
 	var hits: float = 1.0 + b.pierce + b.bounce
-	if b.shape == "zone":
-		hits = 0.0  # zones only act through on_tick / on_expire
+	match b.shape:
+		"zone": hits = 0.0  # zones only act through on_tick / on_expire
+		"beam": hits = 1.0
+		"cone": hits = 3.0  # ponytail: guess of enemies in a cone, tune in a balance pass
 	var ticks: float = b.lifetime / b.tick_interval
 	return hits * _effects_power(b.on_hit) + _effects_power(b.on_expire) \
 		+ ticks * _effects_power(b.on_tick)

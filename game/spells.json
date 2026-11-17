@@ -1,13 +1,13 @@
 [
  {
-  "id": "fire_bolt",
+  "id": "fireball",
   "slot": "primary",
   "unlock": "",
-  "name": "Trait de feu",
-  "description": "Un trait brûlant qui enflamme sa cible.",
+  "name": "Boule de feu",
+  "description": "Une lourde boule de feu qui explose à l'impact. Gros dégâts, gros coût en mana.",
   "element": "fire",
-  "color": "#ff7a2f",
-  "cooldown": 0.35,
+  "color": "#ff6a1f",
+  "cooldown": 0.6,
   "emit": {
    "pattern": "aim",
    "count": 1,
@@ -15,16 +15,16 @@
    "burst_delay": 0,
    "body": {
     "shape": "bolt",
-    "speed": 520,
-    "size": 6,
-    "lifetime": 1.2,
+    "speed": 380,
+    "size": 9,
+    "lifetime": 1.4,
     "pierce": 0,
     "bounce": 0,
     "motion": [],
     "on_hit": [
      {
       "type": "damage",
-      "amount": 9,
+      "amount": 28,
       "radius": 0
      },
      {
@@ -32,6 +32,131 @@
       "status": "burn",
       "power": 3,
       "duration": 2,
+      "radius": 0
+     }
+    ],
+    "on_expire": [
+     {
+      "type": "damage",
+      "amount": 10,
+      "radius": 45
+     }
+    ],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "id": "lightning",
+  "slot": "primary",
+  "unlock": "",
+  "name": "Foudre",
+  "description": "Maintenu, un arc électrique s'agrippe à l'ennemi visé le plus proche et le frappe à chaque instant, contre du mana.",
+  "element": "lightning",
+  "color": "#9fd8ff",
+  "cooldown": 0.15,
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "beam",
+    "speed": 320,
+    "size": 4,
+    "angle": 70,
+    "lifetime": 0.15,
+    "pierce": 0,
+    "bounce": 0,
+    "motion": [],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 6,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "id": "magic_missile",
+  "slot": "primary",
+  "unlock": "",
+  "name": "Missile magique",
+  "description": "Un projectile qui vise tout seul. Peu de dégâts, peu de mana.",
+  "element": "arcane",
+  "color": "#c77dff",
+  "cooldown": 0.3,
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "bolt",
+    "speed": 450,
+    "size": 5,
+    "lifetime": 1.2,
+    "pierce": 0,
+    "bounce": 0,
+    "motion": [
+     {
+      "type": "homing",
+      "strength": 3
+     }
+    ],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 5,
+      "radius": 0
+     }
+    ],
+    "on_expire": [],
+    "tick_interval": 0.5,
+    "on_tick": []
+   }
+  }
+ },
+ {
+  "id": "frost_jet",
+  "slot": "primary",
+  "unlock": "",
+  "name": "Jet de givre",
+  "description": "Maintenu, un cône de givre à très courte portée blesse et ralentit tous les ennemis qu'il touche.",
+  "element": "ice",
+  "color": "#8fe3ff",
+  "cooldown": 0.15,
+  "emit": {
+   "pattern": "aim",
+   "count": 1,
+   "spread": 0,
+   "burst_delay": 0,
+   "body": {
+    "shape": "cone",
+    "speed": 90,
+    "size": 4,
+    "angle": 50,
+    "lifetime": 0.18,
+    "pierce": 0,
+    "bounce": 0,
+    "motion": [],
+    "on_hit": [
+     {
+      "type": "damage",
+      "amount": 3,
+      "radius": 0
+     },
+     {
+      "type": "status",
+      "status": "slow",
+      "power": 2,
+      "duration": 0.5,
       "radius": 0
      }
     ],

@@ -101,6 +101,7 @@ func _initialize() -> void:
 	check(SpellSound.cast_stream("fire", base.emit.body, 0) != SpellSound.cast_stream("fire", base.emit.body, 1), "sub-casts sound different")
 
 	await _check_homing_lifetime()
+	await _check_channel()
 
 	# Every example spell in the docs is valid and runs without crashing.
 	var examples: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://spell/examples.json"))
@@ -131,6 +132,41 @@ func _check_homing_lifetime() -> void:
 	await physics_frame
 	await physics_frame
 	check(not is_instance_valid(bolt), "off-map homing bolt freed once no enemy is left")
+	world.free()
+
+
+## Beam: grips the nearest enemy within its angle, once per cast. Cone: hits
+## every enemy within its short reach and angle.
+func _check_channel() -> void:
+	var world := Node2D.new()
+	root.add_child(world)
+	var spells := {}
+	for d in JSON.parse_string(FileAccess.get_file_as_string("res://game/spells.json")):
+		spells[d.id] = Spell.sanitize(d)
+	var at := func(pos: Vector2) -> Node2D:
+		var e := Enemy.new()
+		e.speed = 0.0
+		e.max_hp = 1000.0
+		e.hp = 1000.0
+		e.position = pos
+		world.add_child(e)
+		return e
+	var near_behind: Node2D = at.call(Vector2(60, 100))  # nearest, but behind the aim
+	var aimed: Node2D = at.call(Vector2(300, 120))
+	var far: Node2D = at.call(Vector2(380, 100))
+	SpellBody.cast(spells.lightning.emit, Vector2(100, 100), Vector2.RIGHT, null, spells.lightning, world)
+	for i in 3:
+		await physics_frame
+	check(aimed.hp < 1000.0 and near_behind.hp == 1000.0 and far.hp == 1000.0, "beam grips the nearest enemy in its angle")
+	var hp: float = aimed.hp
+	for i in 3:
+		await physics_frame
+	check(aimed.hp == hp, "beam strikes once per cast")
+	SpellBody.cast(spells.frost_jet.emit, Vector2(230, 100), Vector2.RIGHT, null, spells.frost_jet, world)
+	for i in 3:
+		await physics_frame
+	check(aimed.hp < hp and near_behind.hp == 1000.0 and far.hp == 1000.0, "cone hits in reach and angle only")
+	check(Spell.mana_cost(spells.fireball) > 3 * Spell.mana_cost(spells.magic_missile), "fireball costs far more than a missile")
 	world.free()
 
 

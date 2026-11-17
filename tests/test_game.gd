@@ -96,8 +96,8 @@ func _test_profile() -> void:
 	DirAccess.remove_absolute(path)
 	var p := ProfileState.new()
 	p.load_profile(path)
-	check(p.gold == 0 and p.spells.primary == "fire_bolt", "fresh profile")
-	check(p.available_spells("primary").size() == 1, "only the starter spell unlocked")
+	check(p.gold == 0 and p.spells.primary == "fireball", "fresh profile")
+	check(p.available_spells("primary").size() == 4, "only the base spells unlocked")
 	# Bonus prices grow, and stop at max.
 	check(p.bonus_price("vitality") == 50 and not p.buy_bonus("vitality"), "too poor")
 	p.gold = 1000
@@ -116,7 +116,7 @@ func _test_profile() -> void:
 	check(p.gold == 905 and p.blank_scrolls == 1, "gold and scrolls kept")
 	check(p.scores[0].score == 900 and p.scores.size() == 2, "scores sorted")
 	check("hunter" in reached and "boss" in reached and "wave10" in reached, "achievements reached")
-	check(p.available_spells("primary").size() == 4, "achievements unlock spells")
+	check(p.available_spells("primary").size() == 7, "achievements unlock spells")
 	check(p.equip_spell("primary", "spark") and not p.equip_spell("primary", "arcane_missiles"), "equip unlocked only")
 	check(p.add_forged(Spell.base(), "user://missing.spell") == "forged_1", "forged spell kept")
 	p.set_look("hat", "#123456")
@@ -134,7 +134,7 @@ func _test_profile() -> void:
 	f.close()
 	var c := ProfileState.new()
 	c.load_profile(path)
-	check(c.gold == 0 and c.equipped.robe == "robe_novice" and c.bonuses.power == 10 and c.spells.primary == "fire_bolt", "corrupt save sanitized")
+	check(c.gold == 0 and c.equipped.robe == "robe_novice" and c.bonuses.power == 10 and c.spells.primary == "fireball", "corrupt save sanitized")
 	for x in [p, q, c]:
 		x.free()
 

@@ -21,6 +21,9 @@ var origin := Vector2.ZERO
 var wave_phase := 0.0
 var homing := false  # auto-aim: no lifetime, see _physics_process
 var depth := 0  # 0 = cast by the player, n = sub-cast n levels deep
+var anchor := Vector2.ZERO  # beam / cone: offset from the caster, kept while it moves
+var struck := false  # beam / cone: strike once, when cast
+var target: Node2D  # beam: the enemy the arc grips
 
 
 ## Emit an "emit" dict from pos toward dir. Bursts are spread over time.
@@ -83,6 +86,8 @@ func _ready() -> void:
 	pierce_left = body.pierce
 	bounce_left = body.bounce
 	origin = position
+	if is_instance_valid(caster):
+		anchor = position - caster.global_position
 	homing = body.motion.any(func(m): return m.type == "homing" and m.strength > 0.0)
 	color = Color.html(spell.color)
 	anim = SpellArt.animation(spell, body)
@@ -109,7 +114,10 @@ func _physics_process(delta: float) -> void:
 	if age >= body.lifetime and not homing:
 		_expire()
 		return
-	_move(delta)
+	if body.shape in ["beam", "cone"]:
+		_channel()
+	else:
+		_move(delta)
 	if body.shape == "bolt":
 		_check_hits()
 	if not body.on_tick.is_empty():
@@ -150,6 +158,46 @@ func _move(delta: float) -> void:
 			queue_free()
 	elif not get_viewport_rect().grow(200).has_point(global_position):
 		queue_free()
+
+
+## Beam and cone stay on the caster and strike once, when cast: a channeled
+## spell is recast every `cooldown`, so each cast is one tick (and costs mana).
+func _channel() -> void:
+	if is_instance_valid(caster):
+		global_position = caster.global_position + anchor
+	if struck:
+		return
+	struck = true
+	if body.shape == "beam":
+		target = _beam_target()
+		if target:
+			apply_effects(body.on_hit, global_position, target)
+	else:
+		for e in get_tree().get_nodes_in_group("enemies"):
+			if _in_reach(e):
+				apply_effects(body.on_hit, global_position, e)
+
+
+## Within `speed` px and `angle` degrees (full width) around the aim.
+func _in_reach(e: Node2D) -> bool:
+	var to := e.global_position - global_position
+	return to.length() <= body.speed + e.radius \
+		and absf(angle_difference(dir.angle(), to.angle())) <= deg_to_rad(body.angle) / 2.0
+
+
+## The arc grips its last target while it stays in reach, else the nearest one.
+func _beam_target() -> Node2D:
+	var last: Variant = caster.get_meta("beam_target") if is_instance_valid(caster) and caster.has_meta("beam_target") else null
+	if is_instance_valid(last) and _in_reach(last):
+		return last
+	var best: Node2D = null
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if _in_reach(e) and (not best or global_position.distance_squared_to(e.global_position)
+				< global_position.distance_squared_to(best.global_position)):
+			best = e
+	if is_instance_valid(caster):
+		caster.set_meta("beam_target", best)
+	return best
 
 
 func _check_hits() -> void:
@@ -218,7 +266,11 @@ func _targets(radius: float, pos: Vector2, target: Node2D) -> Array:
 
 
 func _draw() -> void:
-	if anim:  # bolts face their direction (sheets are drawn facing right)
+	if body.shape == "beam":
+		_draw_arc()
+	elif body.shape == "cone":
+		_draw_cone()
+	elif anim:  # bolts face their direction (sheets are drawn facing right)
 		SpellArt.draw_sheet(self, anim[0], anim[1], age, dir.angle() if body.shape == "bolt" else 0.0)
 	elif body.shape == "zone":
 		draw_circle(Vector2.ZERO, body.size, Color(color, 0.25))
@@ -226,6 +278,31 @@ func _draw() -> void:
 	else:
 		draw_circle(Vector2.ZERO, body.size, color)
 		draw_circle(-dir * body.size * 1.2, body.size * 0.6, Color(color, 0.4))
+
+
+## A jagged electric arc to the gripped enemy, or into the void at full reach.
+## Redrawn every frame, so it crackles.
+func _draw_arc() -> void:
+	var end: Vector2 = target.global_position - global_position if is_instance_valid(target) else dir * body.speed
+	var side := end.orthogonal().normalized()
+	var n := maxi(2, int(end.length() / 16.0))
+	var pts := PackedVector2Array([Vector2.ZERO])
+	for i in range(1, n):
+		pts.append(end * i / n + side * randf_range(-9.0, 9.0))
+	pts.append(end)
+	draw_polyline(pts, Color(color, 0.3), 7.0)
+	draw_polyline(pts, color, 3.0)
+	draw_polyline(pts, Color.WHITE, 1.0)
+
+
+func _draw_cone() -> void:
+	var half := deg_to_rad(maxf(body.angle, 4.0)) / 2.0
+	var pts := PackedVector2Array([Vector2.ZERO])
+	for i in 9:
+		pts.append(dir.rotated(lerpf(-half, half, i / 8.0)) * body.speed * randf_range(0.85, 1.0))
+	draw_colored_polygon(pts, Color(color, 0.35))
+	for i in 12:
+		draw_circle(dir.rotated(randf_range(-half, half)) * body.speed * randf(), 2.0, Color(Color.WHITE, 0.8))
 
 
 ## One-shot impact animation from the bundle.

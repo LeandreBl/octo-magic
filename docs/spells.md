@@ -34,9 +34,15 @@ This file is also sent to the AI as the format reference: keep it accurate.
 
 - `shape`: `bolt` (hits enemies it touches) or `zone` (a lingering area that
   acts only through `on_tick` / `on_expire`; give it `speed` 0 to stay put)
+  or a channeled shape, recast every `cooldown` while the button is held (each
+  cast is one tick and costs mana; give it `lifetime` = `cooldown`). Both stay
+  on the caster and apply `on_hit` once per cast: `beam` (an electric arc that
+  grips the nearest enemy within `speed` px and `angle`, the same one while it
+  stays there) or `cone` (every enemy within `speed` px and `angle`)
 - `speed`: pixels/s, 0 to 1400 (for `orbit` motion: the orbit radius)
 - `size`: radius in pixels, 2 to 220
 - `lifetime`: seconds, 0.05 to 10
+- `angle`: degrees, 0 to 180, full width of a `beam`'s or `cone`'s reach
 - `pierce`: extra enemies a bolt goes through, 0 to 20
 - `bounce`: times a bolt jumps to the next nearest enemy, 0 to 10
 - `motion`: list of `{type, strength}` (strength -10 to 10):
