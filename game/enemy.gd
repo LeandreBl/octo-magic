@@ -96,7 +96,7 @@ func _physics_process(delta: float) -> void:
 	if kind == "ranged":  # hold the range, strafe around the player
 		var d := to.length()
 		dir = dir if d > RANGE + 30.0 else -dir if d < RANGE - 30.0 else dir.orthogonal()
-	position = Decor.slide(position, dir * speed * slow * delta + knock * delta, radius)
+	position += (dir * speed * slow + knock) * delta
 	knock = knock.move_toward(Vector2.ZERO, 1500.0 * delta)
 	hit_cooldown -= delta
 	if to.length() < radius + target.radius and hit_cooldown <= 0.0:
@@ -164,7 +164,7 @@ class Shot extends Node2D:
 			if multiplayer.is_server():
 				hit.hurt(damage)
 			queue_free()
-		elif age > 6.0 or Decor.hit(position, RADIUS):
+		elif age > 6.0:
 			queue_free()
 		queue_redraw()
 
