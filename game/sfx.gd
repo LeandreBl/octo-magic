@@ -38,6 +38,8 @@ var _music: AudioStreamPlayer
 
 
 func _enter_tree() -> void:
+	if DisplayServer.get_name() == "headless":
+		return  # nobody listens, and streams playing at quit leak (coop tests)
 	_node = self
 	process_mode = PROCESS_MODE_ALWAYS  # menus and level-ups pause the game, not the sound
 	for n in RECIPES:
@@ -58,6 +60,10 @@ func _enter_tree() -> void:
 		if n is BaseButton:
 			n.pressed.connect(play.bind("click"))
 			n.mouse_entered.connect(func(): if not n.disabled: play("hover")))
+
+
+func _exit_tree() -> void:
+	_node = null
 
 
 static func play(sound: String) -> void:
