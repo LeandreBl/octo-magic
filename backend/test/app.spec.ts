@@ -13,22 +13,41 @@ import { FirebaseService } from "../src/auth/firebase.service";
 import { iceServers } from "../src/lobby/ice";
 import { PrismaService } from "../src/prisma/prisma.service";
 
-// Tokens are "token-<uid>"; players and spells live in Maps.
+// Tokens are "token-<uid>"; characters and spells live in Maps.
 const firebase = {
   verifyToken: async (t: string) => {
     if (!t.startsWith("token-")) throw new Error("bad token");
     return { uid: t.slice(6), email: `${t.slice(6)}@x.org` };
   },
 };
-type Where = { where: { uid?: string; uid_id?: { uid: string; id: string } } };
-const players = new Map<string, unknown>();
+type Where = { where: { uid?: string; id?: string; uid_id?: { uid: string; id: string } } };
+type Row = { id: string; uid: string; name: string; spell: string; profile: unknown; updatedAt: Date };
+const characters: Row[] = [];
 const spells = new Map<string, Uint8Array>();
-const key = ({ where }: Where) => (where.uid_id ? `${where.uid_id.uid}/${where.uid_id.id}` : where.uid!);
+const key = ({ where }: Where) => `${where.uid_id!.uid}/${where.uid_id!.id}`;
+const mine = ({ where }: Where) =>
+  characters.filter((c) => c.uid === where.uid && (where.id === undefined || c.id === where.id));
+const pick = ({ id, name, spell, updatedAt }: Row) => ({ id, name, spell, updatedAt });
+const drop = (q: Where) => {
+  const gone = mine(q);
+  gone.forEach((c) => characters.splice(characters.indexOf(c), 1));
+  return { count: gone.length };
+};
 const prisma = {
-  player: {
-    findUnique: async (q: Where) => (players.has(key(q)) ? { profile: players.get(key(q)) } : null),
-    upsert: async (q: Where & { create: { profile: unknown } }) => players.set(key(q), q.create.profile),
-    deleteMany: async (q: Where) => players.delete(key(q)),
+  character: {
+    findMany: async (q: Where) => mine(q).map(pick),
+    findFirst: async (q: Where) => mine(q)[0] ?? null,
+    count: async (q: Where) => mine(q).length,
+    create: async ({ data }: { data: Omit<Row, "id" | "updatedAt"> }) => {
+      const c = { ...data, id: `c${characters.length + 1}-${data.uid}`, updatedAt: new Date() };
+      characters.push(c);
+      return pick(c);
+    },
+    updateMany: async (q: Where & { data: { profile: unknown } }) => {
+      mine(q).forEach((c) => (c.profile = q.data.profile));
+      return { count: mine(q).length };
+    },
+    deleteMany: async (q: Where) => drop(q),
   },
   spell: {
     findUnique: async (q: Where) => (spells.has(key(q)) ? { bundle: spells.get(key(q)) } : null),
@@ -62,19 +81,48 @@ after(() => app.close());
 const api = (p: string, uid: string | null, init: RequestInit = {}) =>
   fetch(base + p, { ...init, headers: uid ? { Authorization: `Bearer token-${uid}` } : init.headers });
 
-test("profile and spells are kept per player", async () => {
-  assert.equal((await api("/api/profile", null)).status, 401);
-  const bad = await api("/api/profile", null, { headers: { Authorization: "Bearer nope" } });
+const post = (uid: string, body: unknown) =>
+  api("/api/characters", uid, { method: "POST", body: JSON.stringify(body) });
+
+test("characters, their profiles and spells are kept per player", async () => {
+  assert.equal((await api("/api/characters", null)).status, 401);
+  const bad = await api("/api/characters", null, { headers: { Authorization: "Bearer nope" } });
   assert.equal(bad.status, 401);
   assert.deepEqual(await bad.json(), { error: "invalid token" });
-  assert.deepEqual(await (await api("/api/profile", "ann")).json(), {});
-  assert.equal((await api("/api/profile", "ann", { method: "PUT", body: '{"gold": 42}' })).status, 200);
-  assert.deepEqual(await (await api("/api/profile", "ann")).json(), { gold: 42 });
-  assert.deepEqual(await (await api("/api/profile", "bob")).json(), {});
-  assert.equal((await api("/api/profile", "ann", { method: "PUT", body: "[1]" })).status, 400);
-  assert.equal((await api("/api/profile", "ann", { method: "PUT", body: "{" })).status, 400);
-  const big = await api("/api/profile", "ann", { method: "PUT", body: `{"x": "${"a".repeat(600_000)}"}` });
+  assert.deepEqual(await (await api("/api/characters", "ann")).json(), []);
+
+  const made = await post("ann", { name: " Zed ", spell: "fireball", profile: { gold: 42 } });
+  assert.equal(made.status, 201);
+  const zed = await made.json();
+  assert.equal(zed.name, "Zed");
+  assert.equal(zed.spell, "fireball");
+  const kim = await (await post("ann", { name: "Kim", spell: "frost" })).json();
+  const list = await (await api("/api/characters", "ann")).json();
+  assert.deepEqual(list.map((c: { name: string }) => c.name), ["Zed", "Kim"]);
+  for (const body of [{ spell: "x" }, { name: "a".repeat(25), spell: "x" }, { name: "a", spell: "../x" },
+    { name: "a", spell: "x", profile: [1] }, [1]]) {
+    assert.equal((await post("ann", body)).status, 400, JSON.stringify(body));
+  }
+
+  const profile = (uid: string, id: string, init?: RequestInit) => api(`/api/characters/${id}/profile`, uid, init);
+  assert.deepEqual(await (await profile("ann", zed.id)).json(), { gold: 42 });
+  assert.deepEqual(await (await profile("ann", kim.id)).json(), {});
+  assert.equal((await profile("ann", kim.id, { method: "PUT", body: '{"gold": 7}' })).status, 200);
+  assert.deepEqual(await (await profile("ann", kim.id)).json(), { gold: 7 });
+  assert.deepEqual(await (await profile("ann", zed.id)).json(), { gold: 42 });
+  assert.equal((await profile("bob", zed.id)).status, 404);
+  assert.equal((await profile("bob", zed.id, { method: "PUT", body: "{}" })).status, 404);
+  assert.equal((await api(`/api/characters/${zed.id}`, "bob", { method: "DELETE" })).status, 404);
+  assert.equal((await profile("ann", zed.id, { method: "PUT", body: "[1]" })).status, 400);
+  assert.equal((await profile("ann", zed.id, { method: "PUT", body: "{" })).status, 400);
+  const big = await profile("ann", zed.id, { method: "PUT", body: `{"x": "${"a".repeat(600_000)}"}` });
   assert.equal(big.status, 413);
+
+  assert.equal((await api(`/api/characters/${kim.id}`, "ann", { method: "DELETE" })).status, 200);
+  assert.equal((await profile("ann", kim.id)).status, 404);
+  for (let i = 1; i < 10; i++) assert.equal((await post("bob", { name: `b${i}`, spell: "x" })).status, 201);
+  assert.equal((await post("bob", { name: "b10", spell: "x" })).status, 201);
+  assert.equal((await post("bob", { name: "b11", spell: "x" })).status, 400);
 
   assert.equal((await api("/api/spells/s1", "ann", { method: "PUT", body: "nope" })).status, 400);
   assert.equal((await api("/api/spells/s1", "ann", { method: "PUT", body: "PK\x03\x04zip" })).status, 200);
@@ -86,7 +134,8 @@ test("profile and spells are kept per player", async () => {
 
   assert.equal((await api("/api/account", null, { method: "DELETE" })).status, 401);
   assert.equal((await api("/api/account", "ann", { method: "DELETE" })).status, 200);
-  assert.deepEqual(await (await api("/api/profile", "ann")).json(), {});
+  assert.deepEqual(await (await api("/api/characters", "ann")).json(), []);
+  assert.equal((await profile("ann", zed.id)).status, 404);
   assert.equal((await api("/api/spells/s1", "ann")).status, 404);
 });
 

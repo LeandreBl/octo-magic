@@ -1,9 +1,11 @@
 extends Node
 ## Autoload `Online`: the player's account on the online server
 ## (backend/, NestJS). Firebase email/password login through the Identity
-## Toolkit REST API, the same code on web and native. Once logged in, the
-## profile follows the account: pulled at login (the server's copy wins
-## unless it is empty), pushed on every save, forged .spell bundles with it.
+## Toolkit REST API, the same code on web and native. An account has several
+## characters, each with its profile; once logged in, the profile is the
+## active character's: pulled at login (the server's copy wins; an account
+## without characters gets one from the local profile), pushed on every save,
+## forged .spell bundles (per account) with it.
 ## The forge (/api/forge) and the coop lobby (game/net.gd) use its token.
 ##
 ## Server URL: OCTO_SERVER, else the page's origin on web, else
@@ -27,6 +29,8 @@ var identity := "https://identitytoolkit.googleapis.com/v1/accounts:"
 var secure_token := "https://securetoken.googleapis.com/v1/token?key="
 var api_key := ""  # Firebase web API key, from /api/config
 var email := ""
+var character := ""  # active character's id, kept in the session
+var characters := []  # the account's [{id, name, spell, updatedAt}], from the last pull
 var status := ""  # last news, for the account panel (English, translated there)
 var _token := ""
 var _refresh := ""
@@ -34,6 +38,7 @@ var _expires := 0.0  # unix time of _token's end
 var _pulling := false
 var _pushing := false
 var _dirty := false
+var _pending := []  # [character id, profile] of the last save, for _push
 
 
 func _ready() -> void:
@@ -51,6 +56,7 @@ func _ready() -> void:
 	var s: Variant = _load_session()
 	if s is Dictionary and s.get("refresh", "") != "":
 		email = str(s.get("email", ""))
+		character = str(s.get("character", ""))
 		_refresh = str(s.refresh)
 		if await _config() and not (await id_token()).is_empty():
 			await pull()
@@ -81,6 +87,8 @@ func login(mail: String, password: String, create := false) -> String:
 
 func logout() -> void:
 	email = ""
+	character = ""
+	characters = []
 	_token = ""
 	_refresh = ""
 	status = ""
@@ -123,21 +131,57 @@ func api(path: String, method := HTTPClient.METHOD_GET, body: Variant = null) ->
 	return await _http(server + path, method, body, headers)
 
 
-## The server's profile replaces the local one, with its spell bundles; a new
-## account gets the local profile instead.
-func pull() -> void:
-	var r := await api("/api/profile")
+## Makes `id` the active character and loads its profile.
+func select(id: String) -> void:
+	character = id
+	_save_session()
+	await pull()
+	changed.emit()
+
+
+## A new character with a fresh profile, made active. Returns an error
+## message, or "".
+func create_character(char_name: String, spell: String) -> String:
+	var r := await api("/api/characters", HTTPClient.METHOD_POST,
+		{"name": char_name, "spell": spell, "profile": {"spells": {"primary": spell}}})
 	if not r.ok or not r.json is Dictionary:
+		var e: Variant = r.json.get("error") if r.json is Dictionary else null
+		return str(e) if e else "server unreachable"
+	await select(str(r.json.id))
+	return ""
+
+
+## The active character's profile replaces the local one, with its spell
+## bundles (no saved active character: the first one). An account without
+## characters gets one from the local profile.
+func pull() -> void:
+	var l := await api("/api/characters")
+	if not l.ok or not l.json is Array:
 		status = "Profile not synced (server unreachable)."
 		return
-	var d: Dictionary = r.json
-	if d.is_empty():
-		_push()
+	characters = l.json
+	if characters.is_empty():
+		var c := await api("/api/characters", HTTPClient.METHOD_POST,
+			{"name": "Mage", "spell": Profile.spells.primary, "profile": Profile.to_dict()})
+		if not c.ok:
+			status = "Profile not synced (server unreachable)."
+			return
+		characters = [c.json]
+		character = str(c.json.id)
+		_save_session()
 		for f in Profile.forged:
 			if FileAccess.file_exists(f.file):
 				api("/api/spells/" + f.id, HTTPClient.METHOD_PUT, FileAccess.get_file_as_bytes(f.file))
 		status = "Profile sent to the server."
 		return
+	if not characters.any(func(c): return c is Dictionary and str(c.get("id")) == character):
+		character = str(characters[0].id)
+		_save_session()
+	var r := await api("/api/characters/%s/profile" % character.uri_encode())
+	if not r.ok or not r.json is Dictionary:
+		status = "Profile not synced (server unreachable)."
+		return
+	var d: Dictionary = r.json
 	var forged: Array = d.get("forged") if d.get("forged") is Array else []
 	DirAccess.make_dir_recursive_absolute("user://spells")
 	for f in forged:
@@ -166,12 +210,14 @@ func push_spell(id: String, path: String) -> void:
 
 
 func _on_saved() -> void:
-	if logged_in() and not _pulling:
+	if logged_in() and not _pulling and not character.is_empty():
 		_push()
 
 
-## One PUT at a time, the last save wins.
+## One PUT at a time, the last save wins. Taken at the save: a character
+## switch meanwhile does not send one character's profile to the other.
 func _push() -> void:
+	_pending = [character, Profile.to_dict()]
 	if _pushing:
 		_dirty = true
 		return
@@ -179,7 +225,7 @@ func _push() -> void:
 	_dirty = true
 	while _dirty:
 		_dirty = false
-		var r := await api("/api/profile", HTTPClient.METHOD_PUT, Profile.to_dict())
+		var r := await api("/api/characters/%s/profile" % _pending[0].uri_encode(), HTTPClient.METHOD_PUT, _pending[1])
 		status = "Profile synced." if r.ok else "Profile not synced (server unreachable)."
 	_pushing = false
 
@@ -197,14 +243,18 @@ func _set_session(token: String, refresh: String, expires_in: Variant) -> void:
 	_token = token
 	_refresh = refresh
 	_expires = Time.get_unix_time_from_system() + float(expires_in)
-	var s := JSON.stringify({"email": email, "refresh": _refresh})
+	_save_session()
+
+
+func _save_session() -> void:
+	var s := JSON.stringify({"email": email, "refresh": _refresh, "character": character})
 	if OS.has_feature("web"):  # JSON of a string is a JS string literal
 		JavaScriptBridge.eval("localStorage.setItem('%s', %s)" % [WEB_SESSION, JSON.stringify(s)])
 	else:
 		FileAccess.open(SESSION, FileAccess.WRITE).store_string(s)
 
 
-## {email, refresh} of the last login, or null. On web, the website's: logged
+## {email, refresh, character} of the last login, or null. On web, the website's: logged
 ## in on the site, logged in in the game.
 func _load_session() -> Variant:
 	var text := ""
@@ -215,7 +265,7 @@ func _load_session() -> Variant:
 	return JSON.parse_string(text) if text else null
 
 
-## One request: {ok (200), code, body, json (or null)}.
+## One request: {ok (2xx), code, body, json (or null)}.
 func _http(url: String, method := HTTPClient.METHOD_GET, body: Variant = null, headers := PackedStringArray()) -> Dictionary:
 	var req := HTTPRequest.new()
 	req.timeout = 20.0
@@ -233,4 +283,4 @@ func _http(url: String, method := HTTPClient.METHOD_GET, body: Variant = null, h
 	req.queue_free()
 	var json := JSON.new()
 	var parsed: Variant = json.data if json.parse(r[3].get_string_from_utf8()) == OK else null
-	return {"ok": r[0] == HTTPRequest.RESULT_SUCCESS and r[1] == 200, "code": r[1], "body": r[3], "json": parsed}
+	return {"ok": r[0] == HTTPRequest.RESULT_SUCCESS and r[1] >= 200 and r[1] < 300, "code": r[1], "body": r[3], "json": parsed}

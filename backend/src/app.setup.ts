@@ -15,7 +15,7 @@ export function setupApp(app: NestExpressApplication, webDir?: string) {
   // Bodies per route, whatever the Content-Type the game sends: the profile
   // is JSON, spells are zips, the forge's requests pass through untouched.
   const any = () => true;
-  app.use("/api/profile", json({ limit: MAX_JSON, type: any }));
+  app.use("/api/characters", json({ limit: MAX_JSON, type: any }));
   app.use("/api/forge", raw({ limit: MAX_JSON, type: any }));
   app.use("/api/spells", raw({ limit: MAX_BUNDLE, type: any }));
   app.use((err: { status?: number; type?: string }, _req: Request, res: Response, next: NextFunction) => {

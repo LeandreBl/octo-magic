@@ -192,7 +192,10 @@
   if (s) {
     $("email").textContent = s.email;
     try {
-      render(await site.api("/api/profile"));
+      // The game's active character, else the first one.
+      const chars = await site.api("/api/characters");
+      const c = chars.find((c) => c.id === s.character) ?? chars[0];
+      render(c ? await site.api(`/api/characters/${c.id}/profile`) : {});
     } catch (err) {
       $("empty").hidden = false;
       $("empty").textContent = err.message;

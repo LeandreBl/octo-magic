@@ -10,13 +10,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// A player's saved profile (game/profile.gd, Profile.to_dict()).
-model Player {
-  uid       String   @id
+/// One of an account's characters, with its own profile (game/profile.gd,
+/// Profile.to_dict()): gold, items, bonuses, look, stats, achievements...
+model Character {
+  id        String   @id @default(uuid())
+  uid       String
+  name      String
+  spell     String   /// starting spell id (game/spells.json)
   profile   Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
-  @@map("players")
+  @@index([uid])
+  @@map("characters")
 }
 
 /// A .spell bundle (zip) forged by a player.

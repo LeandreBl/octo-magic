@@ -6,6 +6,7 @@ import {
   Get,
   NotFoundException,
   Param,
+  Post,
   Put,
   StreamableFile,
   UseGuards,
@@ -25,11 +26,18 @@ import { PlayerService } from "./player.service";
 
 const SPELL_ID = /^[\w-]{1,64}$/;
 
-function spellId(id: string): string {
-  if (!SPELL_ID.test(id)) {
+function spellId(id: unknown): string {
+  if (typeof id !== "string" || !SPELL_ID.test(id)) {
     throw new BadRequestException("invalid spell id");
   }
   return id;
+}
+
+function jsonObject(v: unknown, what: string): Prisma.JsonObject {
+  if (!v || typeof v !== "object" || Array.isArray(v)) {
+    throw new BadRequestException(`${what} must be an object`);
+  }
+  return v as Prisma.JsonObject;
 }
 
 @ApiTags("player")
@@ -39,25 +47,49 @@ function spellId(id: string): string {
 export class PlayerController {
   constructor(private readonly players: PlayerService) {}
 
-  @Get("profile")
-  @ApiOperation({ summary: "The saved profile ({} for a new player)" })
-  getProfile(@CurrentUser() user: AuthUser) {
-    return this.players.getProfile(user.uid);
+  @Get("characters")
+  @ApiOperation({ summary: "The account's characters [{id, name, spell, updatedAt}], oldest first" })
+  listCharacters(@CurrentUser() user: AuthUser) {
+    return this.players.listCharacters(user.uid);
   }
 
-  @Put("profile")
-  @ApiOperation({ summary: "Save the profile (game/profile.gd, Profile.to_dict())" })
+  @Post("characters")
+  @ApiOperation({ summary: "A new character: {name, spell (starting spell id), profile? ({} by default)}" })
   @ApiBody({ schema: { type: "object" } })
-  async putProfile(@CurrentUser() user: AuthUser, @Body() profile: unknown) {
-    if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
-      throw new BadRequestException("profile must be an object");
+  async createCharacter(@CurrentUser() user: AuthUser, @Body() body: unknown) {
+    const { name, spell, profile = {} } = jsonObject(body, "body");
+    const trimmed = typeof name === "string" ? name.trim() : "";
+    if (!trimmed || trimmed.length > 24) {
+      throw new BadRequestException("name must be 1 to 24 characters");
     }
-    await this.players.putProfile(user.uid, profile as Prisma.JsonObject);
+    const c = await this.players.createCharacter(user.uid, trimmed, spellId(spell), jsonObject(profile, "profile"));
+    if (!c) throw new BadRequestException("too many characters");
+    return c;
+  }
+
+  @Delete("characters/:id")
+  @ApiOperation({ summary: "Delete a character and its profile" })
+  async deleteCharacter(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    await this.players.deleteCharacter(user.uid, id);
+    return { ok: true };
+  }
+
+  @Get("characters/:id/profile")
+  @ApiOperation({ summary: "A character's saved profile" })
+  getProfile(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.players.getProfile(user.uid, id);
+  }
+
+  @Put("characters/:id/profile")
+  @ApiOperation({ summary: "Save a character's profile (game/profile.gd, Profile.to_dict())" })
+  @ApiBody({ schema: { type: "object" } })
+  async putProfile(@CurrentUser() user: AuthUser, @Param("id") id: string, @Body() profile: unknown) {
+    await this.players.putProfile(user.uid, id, jsonObject(profile, "profile"));
     return { ok: true };
   }
 
   @Delete("account")
-  @ApiOperation({ summary: "Erase the player's profile and spells (the Firebase account is deleted by the client)" })
+  @ApiOperation({ summary: "Erase the player's characters and spells (the Firebase account is deleted by the client)" })
   async deleteAccount(@CurrentUser() user: AuthUser) {
     await this.players.deleteAll(user.uid);
     return { ok: true };

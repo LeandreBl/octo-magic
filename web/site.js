@@ -35,7 +35,8 @@ export function session() {
 function save(email, idToken, refresh, expiresIn) {
   token = idToken;
   expires = Date.now() + Number(expiresIn) * 1000;
-  localStorage.setItem(SESSION, JSON.stringify({ email, refresh }));
+  // Keeps the game's other fields (its active character).
+  localStorage.setItem(SESSION, JSON.stringify({ ...session(), email, refresh }));
 }
 
 export function logout() {
