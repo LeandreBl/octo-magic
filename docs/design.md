@@ -13,6 +13,13 @@
 - Or → boutique entre les runs (bâtons, robes, anneaux) + bonus permanents.
 - Succès, déblocages, scores, classement (local d'abord).
 
+## Monstres (tâche #140)
+- Table de données `Run.ENEMIES` (`game/run.gd`) : stats, vague d'apparition et poids, IA, forme, sorts ; `game/enemy.gd` les joue.
+- IA de déplacement : `chase` (fonce), `weave` (zigzague), `flank` (arrive par le côté), `kite` (garde sa distance et tourne autour).
+- Sorts de monstres : `bolt`, `spread` (éventail), `ring` (360°), `nova` (onde télégraphiée), `fuse` (kamikaze), `puddle` (flaque de poison), `charge` (élan puis ruée), `blink` (téléportation), `heal` (soigne les alliés), `summon` ; `split` à la mort (slime).
+- Zones au sol télégraphiées (contour qui se remplit) avant de faire mal : le joueur a toujours le temps d'esquiver.
+- Vagues : mélange pondéré des types débloqués, tiré avec la vague pour graine (même plan chez tous les pairs). Trois boss en alternance toutes les 5 vagues : liche (`boss`), seigneur de guerre, mère des couvées.
+
 ## Personnage
 - Pas de classes : chaque joueur personnalise son mage (apparence + équipement).
 - Sorts de base élémentaires (feu, glace, foudre, poison, arcane…), assets faits maison.

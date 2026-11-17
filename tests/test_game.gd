@@ -6,6 +6,7 @@ const RunState := preload("res://game/run.gd")
 const ProfileState := preload("res://game/profile.gd")
 const Enemy := preload("res://game/enemy.gd")
 const Player := preload("res://game/player.gd")
+const SPELL_TYPES := ["bolt", "spread", "ring", "nova", "fuse", "puddle", "charge", "blink", "heal", "summon"]
 
 var failures := 0
 
@@ -148,8 +149,25 @@ func _test_run_shop(run: Object) -> void:
 func _test_waves() -> void:
 	check(RunState.wave_plan(1).all(func(k): return k == "melee"), "wave 1 is melee only")
 	var w4 := RunState.wave_plan(4)
-	check("fast" in w4 and "ranged" in w4, "fast and ranged later")
-	check(RunState.wave_plan(RunState.BOSS_EVERY)[0] == "boss", "boss wave")
+	check("fast" in w4 and w4.all(func(k): return RunState.ENEMIES[k].from <= 4), "kinds join wave after wave")
+	check(RunState.wave_plan(4) == w4, "the same plan on every peer")
+	var w12 := {}
+	for k in RunState.wave_plan(12):
+		w12[k] = true
+	check(w12.size() >= 6, "late waves mix many kinds (%d)" % w12.size())
+	var bosses := []
+	for i in RunState.BOSSES.size():
+		var plan := RunState.wave_plan(RunState.BOSS_EVERY * (i + 1))
+		check(RunState.is_boss(plan[0]) and plan.count(plan[0]) == 1, "boss wave")
+		bosses.append(plan[0])
+	check(bosses == RunState.BOSSES, "bosses in turn")
+	for k in RunState.ENEMIES:
+		for sp in RunState.ENEMIES[k].get("spells", []):
+			check(sp.type in SPELL_TYPES, "%s casts a known spell" % k)
+		var split: Array = RunState.ENEMIES[k].get("split", [])
+		var summons: Array = RunState.ENEMIES[k].get("spells", []).filter(func(sp): return sp.type == "summon")
+		for other in summons.map(func(sp): return sp.kind) + ([split[0]] if split else []):
+			check(RunState.ENEMIES.has(other), "%s summons a known kind" % k)
 	check(RunState.wave_plan(9).size() > RunState.wave_plan(4).size(), "waves grow")
 	check(RunState.enemy_stats("melee", 10).hp > RunState.enemy_stats("melee", 1).hp, "enemies get tougher")
 
@@ -223,6 +241,10 @@ func _test_sfx() -> void:
 	Sfx.play("hit")  # no autoload in tests: a no-op, not a crash
 
 
+static func bomber_blast() -> float:
+	return RunState.ENEMIES.bomber.damage * RunState.ENEMIES.bomber.spells[0].dmg
+
+
 func _test_play() -> void:
 	var world := Node2D.new()
 	root.add_child(world)
@@ -237,8 +259,10 @@ func _test_play() -> void:
 	player.position = Vector2(640, 360)
 	world.add_child(player)
 	player.set_physics_process(false)
-	for kind in ["melee", "fast", "ranged", "boss"]:
+	var summons := []
+	for kind in RunState.ENEMIES:
 		var e := Enemy.new()
+		e.summoned.connect(func(k, _pos): summons.append(k))
 		e.setup(kind, RunState.enemy_stats(kind, 1))
 		e.hp = 1e6
 		e.max_hp = 1e6
@@ -247,6 +271,23 @@ func _test_play() -> void:
 		world.add_child(e)
 	await physics_frame
 	var hp_before := 0.0
+	for e in get_nodes_in_group("enemies"):
+		hp_before += e.hp
+	var cast := {}
+	for e in get_nodes_in_group("enemies"):  # every spell, where it fits
+		for sp in e.data.get("spells", []):
+			e.hp = e.max_hp * 0.5
+			if sp.type != "fuse" and e.cast(sp, Vector2(200.0 if sp.type == "blink" else 40.0, 0.0)):
+				cast[sp.type] = true
+			e.hp = e.max_hp
+		e.windup = 0.0
+		e.dash = Vector2.ZERO
+	check(cast.size() == SPELL_TYPES.size() - 1, "every enemy spell casts: %s" % str(cast.keys()))
+	check("fast" in summons and "melee" in summons, "summons asked from main")
+	var zones := root.find_children("*", "Node2D", true, false).filter(func(n): return n is Enemy.Zone)
+	check(zones.size() > 5, "spells leave zones")
+	await physics_frame
+	hp_before = 0.0
 	for e in get_nodes_in_group("enemies"):
 		hp_before += e.hp
 	for id in spells:
@@ -261,6 +302,15 @@ func _test_play() -> void:
 	for e in get_nodes_in_group("enemies"):
 		hp_after += e.hp
 	check(hp_after < hp_before, "base spells damage enemies")
+	var bomber := Enemy.new()  # walks up, lights its fuse, blows up on the mage
+	bomber.setup("bomber", RunState.enemy_stats("bomber", 1))
+	bomber.position = player.position + Vector2(80, 0)
+	world.add_child(bomber)
+	player.hp = player.max_hp
+	player.shield = 0.0
+	for i in 90:
+		await physics_frame
+	check(not is_instance_valid(bomber) and player.hp <= player.max_hp - bomber_blast(), "bomber blows up")
 	check(player.hp < player.max_hp, "enemies hurt the player")
 	world.free()
 	run.free()

@@ -150,15 +150,23 @@ func _next_wave() -> void:
 func _wave_started(w: int) -> void:
 	Run.wave = w
 	Run.changed.emit()
-	Sfx.play("boss" if "boss" in Run.wave_plan(w) else "wave")
+	Sfx.play("boss" if Run.wave_plan(w).any(Run.is_boss) else "wave")
+
+
+## An enemy's summon or split: `kind` at `pos`, at the current wave's stats.
+func _on_summoned(kind: String, pos: Vector2) -> void:
+	if multiplayer.is_server() and get_tree().get_nodes_in_group("enemies").size() < Enemy.CROWD:
+		spawned += 1
+		spawner.spawn.call_deferred({"kind": "enemy", "name": "E%d" % spawned, "type": kind,
+			"stats": Run.enemy_stats(kind, Run.wave), "pos": pos.clamp(Decor.ARENA.position, Decor.ARENA.end)})
 
 
 func _on_killed(e: Node2D) -> void:
 	_killed.rpc(e.kind)
 	_drop("xp", e.xp, e.position)
-	if e.kind == "boss" or randf() < 0.5:
+	if Run.is_boss(e.kind) or randf() < 0.5:
 		_drop("gold", e.gold, e.position + Vector2(randf_range(-8, 8), randf_range(-8, 8)))
-	if e.kind == "boss" or randf() < 0.01:
+	if Run.is_boss(e.kind) or randf() < 0.01:
 		_drop("scroll", 1, e.position + Vector2(0, 14))
 
 
@@ -166,7 +174,7 @@ func _on_killed(e: Node2D) -> void:
 @rpc("authority", "call_local", "reliable")
 func _killed(kind: String) -> void:
 	Run.killed(kind)
-	Sfx.play("boss_die" if kind == "boss" else "die")
+	Sfx.play("boss_die" if Run.is_boss(kind) else "die")
 
 
 @rpc("authority", "call_local", "reliable")
@@ -238,6 +246,7 @@ func _spawn(d: Dictionary) -> Node:
 		n = Enemy.new()
 		n.setup(d.type, d.stats)
 		n.killed.connect(_on_killed)
+		n.summoned.connect(_on_summoned)
 		sync.replication_config = _config({"position": ALWAYS, "hp": ON_CHANGE, "statuses": ALWAYS}, true)
 	else:
 		n = Pickup.new()
