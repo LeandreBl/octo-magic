@@ -1,12 +1,11 @@
 extends PanelContainer
 ## Coop lobby, behind the menu's Multijoueur button (ui/ui.gd): host a room,
-## join one by its code, see who is in, start the run.
+## join one by its code (logged in), see who is in, start the run.
 
 signal closed
 
 var main: Node  # game/main.gd
 var info: Label
-var url_edit: LineEdit
 var code_edit: LineEdit
 var players: Label
 var start: Button
@@ -21,20 +20,15 @@ func _ready() -> void:
 	title.theme_type_variation = "Header"
 	title.text = "Multijoueur (coop)"
 	box.add_child(title)
-	url_edit = LineEdit.new()
-	url_edit.text = Online.relay_url
-	Online.changed.connect(func(): url_edit.text = Online.relay_url)  # from the server's config
-	url_edit.tooltip_text = "Adresse du relais"
-	box.add_child(url_edit)
 	var row := HBoxContainer.new()
 	box.add_child(row)
-	_button(row, "Créer un salon", func(): info.text = main.host_game(url_edit.text.strip_edges()))
+	_button(row, "Créer un salon", func(): info.text = await main.host_game())
 	code_edit = LineEdit.new()
 	code_edit.placeholder_text = "CODE"
 	code_edit.max_length = 4
 	code_edit.custom_minimum_size.x = 80
 	row.add_child(code_edit)
-	_button(row, "Rejoindre", func(): info.text = main.join_game(url_edit.text.strip_edges(), code_edit.text))
+	_button(row, "Rejoindre", func(): info.text = await main.join_game(code_edit.text))
 	main.net_error.connect(func(m): info.text = m)
 	info = Label.new()
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD
@@ -61,15 +55,18 @@ func _process(_delta: float) -> void:
 	if not is_visible_in_tree():
 		return
 	var peer := multiplayer.multiplayer_peer
-	var online := peer is RelayPeer and peer.get_connection_status() != MultiplayerPeer.CONNECTION_DISCONNECTED
 	start.disabled = not multiplayer.is_server()
-	if not online:
+	if not peer is WebRTCMultiplayerPeer:
 		players.text = "Hors ligne : partie solo."
+		if main.net.waiting:
+			info.text = "Connexion au salon…"
+		elif main.net.error:
+			info.text = main.net.error
 		return
 	if peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTING:
-		info.text = "Connexion au relais…"
+		info.text = "Connexion à l'hôte…"
 	elif multiplayer.is_server():
-		info.text = "Code du salon : %s  (à donner aux autres joueurs)" % peer.code
+		info.text = "Code du salon : %s  (à donner aux autres joueurs)" % main.net.code
 	else:
 		info.text = "Connecté. L'hôte lance la partie."
 	var ids := Array(multiplayer.get_peers())

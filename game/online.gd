@@ -4,12 +4,11 @@ extends Node
 ## Toolkit REST API, the same code on web and native. Once logged in, the
 ## profile follows the account: pulled at login (the server's copy wins
 ## unless it is empty), pushed on every save, forged .spell bundles with it.
-## The forge (/api/forge) and the coop relay are reached from here.
+## The forge (/api/forge) and the coop lobby (game/net.gd) use its token.
 ##
 ## Server URL: OCTO_SERVER, else the page's origin on web, else
-## octo/server_url in project.godot. Relay URL: OCTO_RELAY, else the
-## server's /api/config, else ws://<server host>:8770. OCTO_AUTH_EMULATOR
-## (host:port) logs in on the Firebase Auth emulator instead.
+## octo/server_url in project.godot. OCTO_AUTH_EMULATOR (host:port) logs in
+## on the Firebase Auth emulator instead.
 
 signal changed
 
@@ -24,7 +23,6 @@ const ERRORS := {"EMAIL_EXISTS": "adresse déjà utilisée", "EMAIL_NOT_FOUND": 
 var server := ""
 var identity := "https://identitytoolkit.googleapis.com/v1/accounts:"
 var secure_token := "https://securetoken.googleapis.com/v1/token?key="
-var relay_url := ""
 var api_key := ""  # Firebase web API key, from /api/config
 var email := ""
 var status := ""  # last news, for the account panel
@@ -43,10 +41,6 @@ func _ready() -> void:
 	if server.is_empty():
 		server = ProjectSettings.get_setting("octo/server_url", "http://localhost:8080")
 	server = server.trim_suffix("/")
-	relay_url = OS.get_environment("OCTO_RELAY")
-	if relay_url.is_empty():
-		var host := server.get_slice("://", 1).get_slice("/", 0).get_slice(":", 0)
-		relay_url = "%s://%s:8770" % ["wss" if server.begins_with("https") else "ws", host]
 	var emulator := OS.get_environment("OCTO_AUTH_EMULATOR")
 	if emulator:
 		identity = "http://%s/identitytoolkit.googleapis.com/v1/accounts:" % emulator
@@ -56,7 +50,7 @@ func _ready() -> void:
 	if s is Dictionary and s.get("refresh", "") != "":
 		email = str(s.get("email", ""))
 		_refresh = str(s.refresh)
-		if await _config() and not (await auth_headers()).is_empty():
+		if await _config() and not (await id_token()).is_empty():
 			await pull()
 		changed.emit()
 
@@ -92,11 +86,17 @@ func logout() -> void:
 	changed.emit()
 
 
-## ["Authorization: Bearer <ID token>"], refreshed when needed; [] when logged
-## out or the session is gone.
+## ["Authorization: Bearer <ID token>"]; [] when logged out.
 func auth_headers() -> PackedStringArray:
+	var token := await id_token()
+	return PackedStringArray(["Authorization: Bearer " + token] if token else [])
+
+
+## The Firebase ID token, refreshed when needed; "" when logged out or the
+## session is gone.
+func id_token() -> String:
 	if not logged_in():
-		return PackedStringArray()
+		return ""
 	if _token.is_empty() or Time.get_unix_time_from_system() > _expires - 60.0:
 		var r := await _http(secure_token + api_key, HTTPClient.METHOD_POST,
 			"grant_type=refresh_token&refresh_token=" + _refresh.uri_encode(),
@@ -105,9 +105,9 @@ func auth_headers() -> PackedStringArray:
 			logout()
 			status = "Session expirée, reconnecte-toi."
 		if not r.ok:
-			return PackedStringArray()
+			return ""
 		_set_session(r.json.id_token, r.json.refresh_token, r.json.expires_in)
-	return PackedStringArray(["Authorization: Bearer " + _token])
+	return _token
 
 
 ## GET/PUT on the server's /api, logged in. Body: a Dictionary (JSON) or bytes.
@@ -184,8 +184,6 @@ func _config() -> bool:
 	if not r.ok or not r.json is Dictionary:
 		return false
 	api_key = str(r.json.get("firebaseApiKey", ""))
-	if r.json.get("relayUrl") and OS.get_environment("OCTO_RELAY").is_empty():
-		relay_url = str(r.json.relayUrl)
 	changed.emit()
 	return not api_key.is_empty()
 

@@ -4,3 +4,4 @@ export
 .env
 **/node_modules
 **/__pycache__
+addons/webrtc_native

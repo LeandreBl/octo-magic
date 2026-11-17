@@ -50,12 +50,12 @@
 ## Multijoueur
 - **Coopération** : les joueurs affrontent les vagues ensemble (4 max, hôte compris).
 - Un joueur hôte fait tourner la partie (le même moteur), les autres sont clients : pas de code serveur de jeu. Solo = un hôte seul.
-- Web et natif : un **relais WebSocket** (`relay/`, Python stdlib) au lieu de WebRTC (tâche #78) : il passe les NAT sans STUN/TURN et ne fait que router les paquets d'un salon (code court). Côté Godot, `RelayPeer` (`MultiplayerPeerExtension`) donne l'API haut niveau (RPC, `MultiplayerSpawner`, `MultiplayerSynchronizer`).
-- L'hôte fait autorité sur les ennemis, leurs tirs, les drops, les PV, le mana et les dégâts ; chaque joueur déplace et vise son mage lui-même (réactif malgré la latence du relais). Les sorts lancés sont rejoués chez les autres pour l'affichage seulement. La carte (et sa graine) est envoyée à tous.
+- Web et natif : **WebRTC en pair à pair** (tâche #93, remplace le relais WebSocket de #78) : les paquets du jeu vont directement entre joueurs en UDP (positions et visée en non fiable, sans blocage en tête de file). Le serveur ne fait que la mise en relation : salon à code court et signalisation sur `/play` (`backend/server.js`), connexion requise. STUN public pour traverser les NAT, TURN (coturn, `docker-compose.yml`) quand le direct échoue. Côté Godot, `WebRTCMultiplayerPeer` (`game/net.gd`, intégré sur web, extension `webrtc-native` en natif) donne l'API haut niveau (RPC, `MultiplayerSpawner`, `MultiplayerSynchronizer`) ; les joueurs ne se connectent qu'à l'hôte, qui relaie entre eux.
+- L'hôte fait autorité sur les ennemis, leurs tirs, les drops, les PV, le mana et les dégâts ; chaque joueur déplace et vise son mage lui-même (réactif malgré la latence). Les sorts lancés sont rejoués chez les autres pour l'affichage seulement. La carte (et sa graine) est envoyée à tous.
 - Chaque joueur garde sa propre run (niveau, améliorations, sorts) ; les ennemis tués et les drops ramassés comptent pour tout le monde. Pas de pause au level-up en coop.
 - Les sorts sont des données : un joueur envoie ses sorts en JSON à l'hôte, qui les nettoie (`Spell.sanitize`), calcule leur coût et les synchronise à tous. Les planches PNG d'un bundle restent chez son propriétaire : les autres voient les grilles de pixels du sort.
 - La run se termine quand tous les mages sont à terre. Un joueur peut rejoindre en cours de run. Départ de l'hôte : chacun repasse en solo.
-- En ligne (`docker compose`, tâche #86) : le relais tourne dans son propre conteneur, à côté du serveur ; d'autres workers pourront héberger des parties plus tard.
+- En ligne (`docker compose`) : le salon est dans le serveur, coturn dans son propre conteneur (réseau de l'hôte, ports UDP).
 
 ## Décor des cartes
 - Une carte par run (`crypt`, `cave`, `ruins`), tirée au début de la run ; le décor est placé une fois (graine), il ne change pas pendant la run.

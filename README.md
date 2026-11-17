@@ -6,13 +6,14 @@ Create, combine and cast spells to conquer a dungeon.
 - Game: open the folder in Godot 4.7 (`godot --path .`).
 - Spell forge (needed only to write on scrolls):
   `ANTHROPIC_API_KEY=... python3 server/forge.py`
-- Coop relay (needed only for multiplayer): `python3 relay/relay.py`, then
-  hub → Multijoueur. See `relay/README.md` to host it on a VPS.
-- Online (web game, accounts, forge, coop relay): `cp example.env .env`, fill
-  it, `docker compose up -d --build`, then http://localhost:8080 (relay on
-  `ws://localhost:8770`). Server: `backend/server.js` (Firebase login,
-  profiles and spells in Postgres).
-- Account in the game: hub → Compte (email/password, Firebase). Logged in,
+- Online (web game, accounts, forge, coop lobby, TURN): `cp example.env .env`,
+  fill it, `docker compose up -d --build`, then http://localhost:8080.
+  Server: `backend/server.js` (Firebase login, profiles and spells in
+  Postgres, coop lobby on `/play`).
+- Coop (menu → Multijoueur, logged in): WebRTC peer to peer, the server only
+  introduces the players (`game/net.gd`). The native game needs the WebRTC
+  extension: `./webrtc.sh` (downloads `addons/webrtc_native`, not in git).
+- Account in the game: menu → Compte (email/password, Firebase). Logged in,
   the profile and forged spells follow the account and the forge works. The
   native game talks to `http://localhost:8080` (`OCTO_SERVER` or
   `octo/server_url` in `project.godot` to change it); see `game/online.gd`.

@@ -8,7 +8,7 @@ extends Node2D
 ## with them, cancelling meaningless words (their scrolls come back). If the
 ## forge does not answer, the scrolls stay for later.
 ##
-## Coop (relay/relay.py, game/lobby.gd): the host runs the waves, enemies,
+## Coop (game/net.gd: WebRTC, game/lobby.gd): the host runs the waves, enemies,
 ## drops and damage, spawned through a MultiplayerSpawner; each peer steers
 ## its mage and keeps its own Run (level-ups, spells), sent to the host as a
 ## loadout. Kills and drops are shared. Solo is a host alone
@@ -23,9 +23,10 @@ const ON_CHANGE := SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE
 
 signal run_started  # on every peer
 signal run_ended  # last_run holds the result
-signal net_error(message: String)  # relay lost or room closed: back to solo
+signal net_error(message: String)  # host lost or room closed: back to solo
 
 var spawner: MultiplayerSpawner
+var net: Node  # game/net.gd
 var spawned := 0  # names of spawned enemies and drops
 var map_info := ["crypt", 0]  # this run's map and seed, for players dropping in
 var forge_http: HTTPRequest
@@ -46,6 +47,11 @@ func _ready() -> void:
 	multiplayer.peer_disconnected.connect(_on_peer_left)
 	multiplayer.server_disconnected.connect(_go_solo, CONNECT_DEFERRED)
 	multiplayer.connection_failed.connect(_go_solo, CONNECT_DEFERRED)
+	net = preload("res://game/net.gd").new()
+	net.process_mode = Node.PROCESS_MODE_ALWAYS
+	net.joined.connect(_on_net_joined)
+	net.lost.connect(_go_solo)
+	add_child(net)
 	forge_http = HTTPRequest.new()
 	forge_http.timeout = 30.0
 	forge_http.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -276,36 +282,35 @@ func _on_peer_left(id: int) -> void:
 		_on_player_died()  # the leaver may have been the last one standing
 
 
-## Lobby: open a room (its code shows in the lobby once the relay answers),
+## Lobby: open a room (its code shows in the lobby once the server answers),
 ## or join one. Returns an error message, or "".
-func host_game(url: String) -> String:
-	return _connect(url, "")
+func host_game() -> String:
+	_go_solo()
+	return await net.start()
 
 
-func join_game(url: String, code: String) -> String:
-	return _connect(url, code)
+func join_game(code: String) -> String:
+	_go_solo()
+	return await net.start(code)
 
 
-func _connect(url: String, code: String) -> String:
-	var peer := RelayPeer.new()
-	if (peer.join(url, code) if code else peer.host(url)) != OK:
-		return peer.error
-	multiplayer.multiplayer_peer = peer
+## The lobby gave this game its peer id: play through WebRTC.
+func _on_net_joined() -> void:
+	multiplayer.multiplayer_peer = net.rtc
 	_reset_world()
-	return ""
 
 
 func leave_game() -> void:
-	multiplayer.multiplayer_peer.close()
+	net.close()
 	_go_solo()
 
 
-## Relay lost, room closed or never joined: back to solo.
+## Host lost, left the room or never reached it: back to solo.
 func _go_solo() -> void:
-	var peer := multiplayer.multiplayer_peer
-	if not peer is RelayPeer:
+	if not multiplayer.multiplayer_peer is WebRTCMultiplayerPeer:
 		return
-	net_error.emit(peer.error)
+	net.close()
+	net_error.emit(net.error)
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 	_reset_world()
 	if Run.active:

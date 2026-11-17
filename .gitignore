@@ -4,3 +4,4 @@ export/
 __pycache__/
 .env
 node_modules/
+addons/webrtc_native/

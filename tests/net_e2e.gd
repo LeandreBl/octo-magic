@@ -1,8 +1,9 @@
 extends SceneTree
-## Coop end to end through a running relay, driven by relay/test_relay.py:
-##   godot --headless --script tests/net_e2e.gd -- host URL
-##   godot --headless --script tests/net_e2e.gd -- join URL CODE
-##   godot --headless --script tests/net_e2e.gd -- solo   (no relay)
+## Coop end to end over WebRTC, the lobby of a running backend/server.js
+## (OCTO_SERVER, tokens "token-<role>"), driven by backend/server.test.js:
+##   godot --headless --script tests/net_e2e.gd -- host
+##   godot --headless --script tests/net_e2e.gd -- join CODE
+##   godot --headless --script tests/net_e2e.gd -- solo   (no server)
 ## Prints "E2E OK" on success.
 
 var main: Node
@@ -26,6 +27,10 @@ func _initialize() -> void:
 	root.add_child(main)
 	await process_frame
 	var run: Node = root.get_node("Run")
+	var online: Node = root.get_node("Online")
+	online._refresh = "e2e"  # logged in, without Firebase
+	online._token = "token-" + args[0]
+	online._expires = 1e12
 	if args[0] == "solo":
 		main.start_run()
 		await until("solo run", func(): return run.active and main.local_player().run and not get_nodes_in_group("enemies").is_empty())
@@ -34,9 +39,9 @@ func _initialize() -> void:
 		main.start_run()
 		await until("new run", func(): return run.active and main.local_player().hp > 0.0 and not paused)
 	elif args[0] == "host":
-		main.host_game(args[1])
-		await until("room code", func(): return main.multiplayer.multiplayer_peer.code != "")
-		print("CODE ", main.multiplayer.multiplayer_peer.code)
+		main.host_game()
+		await until("room code", func(): return main.net.code != "")
+		print("CODE ", main.net.code)
 		await until("client spawned", func(): return main.get_node_or_null("P2"))
 		main.start_run()
 		await until("client loadout cleaned and synced", func():
@@ -46,7 +51,7 @@ func _initialize() -> void:
 			var p := main.get_node_or_null("P2")
 			return p and p.position.distance_to(Vector2(123, 45)) < 1.0)
 	else:
-		main.join_game(args[1], args[2])
+		main.join_game(args[1])
 		await until("joined and players spawned", func():
 			return main.get_node_or_null("P1") and main.get_node_or_null("P2"))
 		await until("run started, enemies synced", func():
@@ -59,7 +64,7 @@ func _initialize() -> void:
 		Input.parse_input_event(click)  # fire: the host casts, peers draw it
 		await until("cast drawn from the host", func(): return main.get_children().any(func(n): return n is SpellBody))
 		main.get_node("P2").position = Vector2(123, 45)
-		await until("back to solo once the host leaves", func(): return not main.multiplayer.multiplayer_peer is RelayPeer)
+		await until("back to solo once the host leaves", func(): return not main.multiplayer.multiplayer_peer is WebRTCMultiplayerPeer)
 	DirAccess.remove_absolute(profile)
 	print("E2E OK")
 	quit(0)

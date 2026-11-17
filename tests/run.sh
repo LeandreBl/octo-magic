@@ -3,6 +3,7 @@
 set -e
 cd "$(dirname "$0")/.."
 GODOT="${GODOT:-godot}"
+./webrtc.sh  # coop end to end needs WebRTC on native
 "$GODOT" --headless --import >/dev/null 2>&1 || true
 code=0
 for t in tests/test_*.gd; do
@@ -13,7 +14,7 @@ for t in tests/test_*.gd; do
 	if echo "$out" | grep -q "SCRIPT ERROR"; then code=1; fi
 done
 python3 -m unittest discover -s server -p "test_*.py" -q
-GODOT="$GODOT" python3 -m unittest discover -s relay -p "test_*.py" -q  # + coop end to end
-[ -d backend/node_modules ] || npm ci --prefix backend --no-audit --no-fund --silent
-(cd backend && node --test) || code=1
+# Reinstall when package-lock.json changed since the last install.
+[ backend/node_modules/.package-lock.json -nt backend/package-lock.json ] || npm ci --prefix backend --no-audit --no-fund --silent
+(cd backend && GODOT="$GODOT" node --test) || code=1  # + coop end to end
 exit $code
