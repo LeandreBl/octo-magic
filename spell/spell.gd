@@ -35,6 +35,8 @@ static func sanitize(d: Variant) -> Dictionary:
 		"words": words.slice(0, 20),
 		"palette": _palette(s.get("palette")),
 		"icon": _grid(s.get("icon"), 24),
+		"icon_file": _file(s.get("icon_file")),
+		"bundle": str(s.get("bundle", "")).substr(0, 64),
 		"emit": _emit(s.get("emit"), 0),
 	}
 
@@ -73,6 +75,8 @@ static func _body(d: Variant, depth: int) -> Dictionary:
 		"on_tick": _effects(b.get("on_tick"), depth),
 		"sprite": _frames(b.get("sprite")),
 		"particle": _grid(b.get("particle"), 8),
+		"sheet": _sheet(b.get("sheet")),
+		"burst_sheet": _sheet(b.get("burst_sheet")),
 	}
 
 
@@ -97,6 +101,27 @@ static func _effects(d: Variant, depth: int) -> Array:
 				if depth < MAX_DEPTH:
 					out.append({"type": "cast", "emit": _emit(f.get("emit"), depth + 1)})
 	return out
+
+
+## A PNG of the spell's bundle. Plain names only: no paths.
+static func _file(v: Variant) -> String:
+	var s := str(v) if v is String else ""
+	var re := RegEx.create_from_string("^[a-z0-9_]{1,32}\\.png$")
+	return s if re.search(s) else ""
+
+
+## An animated sprite sheet of the bundle: frames of w x h, row by row.
+static func _sheet(v: Variant) -> Dictionary:
+	var d: Dictionary = v if v is Dictionary else {}
+	var file := _file(d.get("file"))
+	if file.is_empty():
+		return {}
+	return {
+		"file": file,
+		"w": int(_num(d.get("w"), 16, 1, 512)), "h": int(_num(d.get("h"), 16, 1, 512)),
+		"frames": int(_num(d.get("frames"), 1, 1, 64)), "fps": int(_num(d.get("fps"), 12, 1, 60)),
+		"cols": int(_num(d.get("cols"), 1, 1, 64)),
+	}
 
 
 static func _palette(v: Variant) -> Array:

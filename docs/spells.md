@@ -48,6 +48,15 @@ This file is also sent to the AI as the format reference: keep it accurate.
   zone sprite is drawn as is, stretched over the zone.
 - `particle`: **pixel grid** up to 8x8, the particle trailing the body
 
+## Bundle and art briefs
+
+The forge returns a `.spell` bundle: a zip of `manifest.json` (this spell) and
+PNG sprite sheets drawn by PixelLab from art briefs written with the spell:
+`icon_brief` on the spell, `look` and `burst` on each body (English, a few
+sentences each). The forge then adds `icon_file` and, on bodies, `sheet` /
+`burst_sheet` = `{file, w, h, frames, fps, cols}` (frames of w x h, row by row).
+The engine draws a sheet when there is one, else the pixel grids below.
+
 ## Pixel art
 
 Everything is pixel art, scaled up without blur. A **pixel grid** is a list of

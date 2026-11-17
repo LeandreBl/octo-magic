@@ -38,6 +38,28 @@ func _initialize() -> void:
 	check(tex.get_image().get_pixel(0, 0) == Color.RED and tex.get_image().get_pixel(1, 0).a == 0.0, "texture pixels")
 	check(Spell.base().icon.size() > 0 and Spell.base().emit.body.sprite.size() == 2, "base spell has art")
 
+	# Bundles: manifest + PNG sheets, loaded at runtime.
+	var img := Image.create_empty(8, 4, false, Image.FORMAT_RGBA8)
+	img.fill(Color.RED)
+	var zp := ZIPPacker.new()
+	zp.open("user://test.spell")
+	zp.start_file("manifest.json")
+	zp.write_file(JSON.stringify({"name": "B", "icon_file": "icon.png", "emit": {"body": {
+		"sheet": {"file": "body0.png", "w": 4, "h": 4, "frames": 2, "fps": 12, "cols": 2},
+		"burst_sheet": {"file": "../evil.png"}}}}).to_utf8_buffer())
+	zp.close_file()
+	for f in ["body0.png", "icon.png"]:
+		zp.start_file(f)
+		zp.write_file(img.save_png_to_buffer())
+		zp.close_file()
+	zp.close()
+	var b := SpellArt.load_bundle("user://test.spell")
+	check(b.name == "B" and b.emit.body.sheet.frames == 2, "bundle manifest loaded")
+	check(b.emit.body.burst_sheet.is_empty(), "path-like file names refused")
+	check(SpellArt.sheet(b, "body0.png").get_size() == Vector2(8, 4), "bundle PNG loaded")
+	check(SpellArt.sheet(b, b.icon_file) != null, "bundle icon loaded")
+	check(SpellArt.load_bundle("user://missing.spell").is_empty(), "missing bundle -> {}")
+
 	# Recursion is depth-limited.
 	var nested := {"type": "cast", "emit": {"body": {"on_expire": []}}}
 	for i in 10:

@@ -10,6 +10,7 @@ var caster: Node2D
 var spell: Dictionary  # the whole spell: color and palette for the art
 var color: Color
 var frames: Array[Texture2D] = []
+var sheet_tex: Texture2D  # PixelLab sheet from the spell's bundle, if any
 var art_scale := 1
 var dir := Vector2.RIGHT
 var speed := 0.0
@@ -79,12 +80,14 @@ func _ready() -> void:
 	bounce_left = body.bounce
 	origin = position
 	color = Color.html(spell.color)
+	if not body.sheet.is_empty():
+		sheet_tex = SpellArt.sheet(spell, body.sheet.file)
 	for f in body.sprite:
 		frames.append(SpellArt.texture(f, spell.palette))
 	if not frames.is_empty():
 		art_scale = SpellArt.scale_for(frames[0], body.size * 2.0)
 	var dot := SpellArt.texture(body.particle, spell.palette)
-	if dot:
+	if dot and not sheet_tex:
 		var p := CPUParticles2D.new()
 		p.texture = dot
 		p.amount = 10
@@ -167,6 +170,13 @@ func _expire() -> void:
 	if is_queued_for_deletion():
 		return
 	apply_effects(body.on_expire, global_position, null)
+	var burst := SpellArt.sheet(spell, body.burst_sheet.get("file", ""))
+	if burst:
+		var fx := Burst.new()
+		fx.tex = burst
+		fx.s = body.burst_sheet
+		fx.position = position
+		get_parent().add_child(fx)
 	queue_free()
 
 
@@ -200,7 +210,9 @@ func _targets(radius: float, pos: Vector2, target: Node2D) -> Array:
 
 
 func _draw() -> void:
-	if not frames.is_empty():
+	if sheet_tex:
+		SpellArt.draw_sheet(self, sheet_tex, body.sheet, age, dir.angle() if body.shape == "bolt" else 0.0)
+	elif not frames.is_empty():
 		var tex: Texture2D = frames[int(age * 8.0) % frames.size()]
 		var rot := dir.angle() if body.shape == "bolt" else 0.0
 		draw_set_transform(Vector2.ZERO, rot, Vector2.ONE * art_scale)
@@ -211,3 +223,19 @@ func _draw() -> void:
 	else:
 		draw_circle(Vector2.ZERO, body.size, color)
 		draw_circle(-dir * body.size * 1.2, body.size * 0.6, Color(color, 0.4))
+
+
+## One-shot impact animation from the bundle.
+class Burst extends Node2D:
+	var tex: Texture2D
+	var s: Dictionary
+	var age := 0.0
+
+	func _process(delta: float) -> void:
+		age += delta
+		if age * s.fps >= s.frames:
+			queue_free()
+		queue_redraw()
+
+	func _draw() -> void:
+		SpellArt.draw_sheet(self, tex, s, age, 0.0, false)
