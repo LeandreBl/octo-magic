@@ -108,7 +108,8 @@ static func animation(spell: Dictionary, body: Dictionary) -> Array:
 ## Looping sheets wrap; one-shot sheets hold their last frame.
 static func draw_sheet(canvas: CanvasItem, tex: Texture2D, s: Dictionary, t: float, angle: float) -> void:
 	var i := int(t * s.fps)
-	i = i % s.frames if s.loop else mini(i, s.frames - 1)
+	var n := int(s.frames)  # float when the spell came through JSON (coop peers)
+	i = i % n if s.loop else mini(i, n - 1)
 	canvas.draw_set_transform(Vector2.ZERO, angle, Vector2.ONE * PIXEL)
 	canvas.draw_texture_rect_region(tex, Rect2(-s.size / 2.0, -s.size / 2.0, s.size, s.size),
 		Rect2(i * s.size, 0, s.size, s.size))
