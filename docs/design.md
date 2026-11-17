@@ -11,7 +11,7 @@
 - XP en run → level up → choix d'une amélioration.
 - Mort permanente : la run est perdue, l'or est conservé.
 - Or → boutique entre les runs (bâtons, robes, anneaux) + bonus permanents.
-- Succès, déblocages, scores, classement en ligne.
+- Succès, déblocages, scores, classement (local d'abord).
 
 ## Personnage
 - Pas de classes : chaque joueur personnalise son mage (apparence + équipement).
@@ -28,7 +28,7 @@
 - Le moteur calcule un **budget de puissance** : l'IA décrit, le moteur équilibre.
 - Temps d'attente façon Clash of Clans pendant la génération.
 - Le sort est lié au compte, stocké en local, jouable hors ligne.
-- **Classement** : le serveur signe chaque sort généré ; un score n'est accepté que si ses sorts ont une signature valide.
+- **Classement** : local pour l'instant. En ligne plus tard : le serveur signera chaque sort, un score ne sera accepté qu'avec des sorts signés.
 
 ## Direction artistique
 - Pixel art, univers heroic fantasy.
