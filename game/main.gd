@@ -354,12 +354,12 @@ func write_scroll(words: String) -> void:
 	if auth.is_empty():
 		forge_status = tr("Log in (main menu → Account) to write the scrolls.")
 		return
-	forge_status = tr("Sending to the forge…")
+	forge_status = tr("Writing the scrolls…")
 	var body := JSON.stringify({"spell": Profile.equipped_spells().primary, "words": word,
 		"scrolls": Profile.blank_scrolls, "lang": TranslationServer.get_locale()})
 	if forge_http.request(Online.server + "/api/forge", auth + PackedStringArray(["Content-Type: application/json"]),
 			HTTPClient.METHOD_POST, body) != OK:
-		forge_status = tr("Cannot reach the forge. Your scrolls are kept.")
+		forge_status = tr("The scrolls cannot be written right now. Your scrolls are kept.")
 
 
 func _poll() -> void:
@@ -381,11 +381,11 @@ func _on_forge_reply(result: int, code: int, headers: PackedStringArray, data: P
 	if result != HTTPRequest.RESULT_SUCCESS or code != 200 or reply.has("error"):
 		var msg: String = tr(str(reply.get("error", tr("error %d") % code if result == HTTPRequest.RESULT_SUCCESS else tr("offline"))))
 		if forge_job.is_empty():  # words refused or forge unreachable: scrolls kept
-			forge_status = tr("The forge refused or did not answer (%s). Your scrolls are kept.") % msg
+			forge_status = tr("The scrolls could not be written (%s). Your scrolls are kept.") % msg
 		else:
 			forge_job = ""
 			Profile.blank_scrolls += forge_words  # the scrolls were not used up
-			forge_note = tr("The forge failed (%s). Your scrolls are given back.") % msg
+			forge_note = tr("Writing the scrolls failed (%s). Your scrolls are given back.") % msg
 			forge_status = forge_note
 			Profile.save()
 		return

@@ -16,7 +16,7 @@
   <h1>Mon compte</h1>
 
   <section id="out" hidden>
-    <p>Connecte-toi pour retrouver ta progression et tes sorts, et pour forger de nouveaux sorts. Le même compte sert dans le jeu.</p>
+    <p>Connecte-toi pour retrouver ta progression et tes sorts, et pour inscrire tes parchemins. Le même compte sert dans le jeu.</p>
     <p><button id="google" class="ghost">Se connecter avec Google</button></p>
     <form id="login">
       <input name="email" type="email" placeholder="Adresse e-mail" autocomplete="email" required>
@@ -47,7 +47,7 @@
     <h2>Succès</h2>
     <ul class="achievements" id="achievements"></ul>
 
-    <h2>Sorts forgés</h2>
+    <h2>Mes sorts</h2>
     <ul id="forged"></ul>
 
     <h2>Gérer le compte</h2>
@@ -61,7 +61,7 @@
       </form>
       <form id="delete" class="card">
         <h3>Supprimer le compte</h3>
-        <p>Efface définitivement ton compte, ta progression en ligne et tes sorts forgés.</p>
+        <p>Efface définitivement ton compte, ta progression en ligne et tes sorts.</p>
         <input name="password" type="password" placeholder="Mot de passe" autocomplete="current-password" required>
         <button class="danger">Supprimer</button>
         <small data-google hidden>Google te redemandera de te connecter avant la suppression.</small>
@@ -201,7 +201,7 @@
     const forged = Array.isArray(p.forged) ? p.forged : [];
     $("forged").replaceChildren(...(forged.length ? forged : [null]).map((f) =>
       Object.assign(document.createElement("li"), {
-        textContent: f ? `${f.spell?.name ?? f.id}${f.spell?.description ? ` — ${f.spell.description}` : ""}` : "Aucun sort forgé.",
+        textContent: f ? `${f.spell?.name ?? f.id}${f.spell?.description ? ` — ${f.spell.description}` : ""}` : "Aucun sort créé pour l'instant.",
       })));
   }
 

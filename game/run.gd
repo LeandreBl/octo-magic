@@ -13,7 +13,7 @@ const RING_OF_FIRE := {"name": "Ring of fire", "element": "fire", "color": "#ff7
 ## Bought with the run's gold, one active (slot "secondary") and one passive
 ## per run, empty at the start. A passive is applied by game/player.gd.
 const SHOP := {
-	"ring_of_fire": {"name": "Ring of fire", "desc": "Fireballs burst out all around you (right click)",
+	"ring_of_fire": {"name": "Ring of fire", "desc": "Fireballs burst out all around you",
 		"price": 40, "slot": "secondary", "spell": RING_OF_FIRE},
 	"shield": {"name": "Shield", "desc": "Absorbs 40 damage, back 8 s after it breaks",
 		"price": 30, "slot": "passive"},

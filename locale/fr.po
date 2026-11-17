@@ -22,8 +22,8 @@ msgstr "Classement"
 msgid "Level up!"
 msgstr "Niveau supérieur !"
 
-msgid "Write your spells, survive the waves."
-msgstr "Écris tes sorts, survis aux vagues."
+msgid "Create your spells, combine them, survive the waves."
+msgstr "Crée tes sorts, combine-les, survis aux vagues."
 
 msgid "Play"
 msgstr "Jouer"
@@ -319,11 +319,11 @@ msgstr "Parchemin vierge trouvé ! Tu pourras l'écrire à la fin de la run."
 msgid "Log in (main menu → Account) to write the scrolls."
 msgstr "Connecte-toi (menu principal → Compte) pour écrire les parchemins."
 
-msgid "Sending to the forge…"
-msgstr "Envoi à la forge…"
+msgid "Writing the scrolls…"
+msgstr "Inscription des parchemins…"
 
-msgid "Cannot reach the forge. Your scrolls are kept."
-msgstr "Impossible de joindre la forge. Tes parchemins sont gardés."
+msgid "The scrolls cannot be written right now. Your scrolls are kept."
+msgstr "Impossible d'inscrire les parchemins pour l'instant. Tes parchemins sont gardés."
 
 msgid "error %d"
 msgstr "erreur %d"
@@ -331,11 +331,11 @@ msgstr "erreur %d"
 msgid "offline"
 msgstr "hors ligne"
 
-msgid "The forge refused or did not answer (%s). Your scrolls are kept."
-msgstr "La forge a refusé ou n'a pas répondu (%s). Tes parchemins sont gardés."
+msgid "The scrolls could not be written (%s). Your scrolls are kept."
+msgstr "Les parchemins n'ont pas pu être inscrits (%s). Tes parchemins sont gardés."
 
-msgid "The forge failed (%s). Your scrolls are given back."
-msgstr "La forge a échoué (%s). Tes parchemins te sont rendus."
+msgid "Writing the scrolls failed (%s). Your scrolls are given back."
+msgstr "L'inscription a échoué (%s). Tes parchemins te sont rendus."
 
 msgid "%d scroll(s) being written…"
 msgstr "%d parchemin(s) en cours d'écriture…"
@@ -586,8 +586,8 @@ msgstr "Clic D"
 msgid "Ring of fire"
 msgstr "Anneau de feu"
 
-msgid "Fireballs burst out all around you (right click)"
-msgstr "Des boules de feu jaillissent tout autour de vous (clic droit)"
+msgid "Fireballs burst out all around you"
+msgstr "Des boules de feu jaillissent tout autour de toi"
 
 msgid "Shield"
 msgstr "Bouclier"
