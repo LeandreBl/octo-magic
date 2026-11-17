@@ -29,3 +29,13 @@
 - Temps d'attente façon Clash of Clans pendant la génération.
 - Le sort est lié au compte, stocké en local, jouable hors ligne.
 - **Classement** : le serveur signe chaque sort généré ; un score n'est accepté que si ses sorts ont une signature valide.
+
+## Direction artistique
+- Pixel art, univers heroic fantasy.
+- Rendu basse résolution (ex. 640x360) agrandi sans lissage : les effets de sorts procéduraux (particules, formes) sortent automatiquement en pixel art, cohérents avec les sprites.
+- Assets générés par IA (outils spécialisés pixel art) puis nettoyés à la main (grille, palette commune).
+
+## Multijoueur (piste)
+- P2P avec un joueur hôte qui fait tourner la partie (le même moteur), les autres sont clients : pas de code serveur de jeu.
+- Web et natif : WebRTC (Godot `WebRTCMultiplayerPeer`) ; un petit serveur de signalisation sert uniquement à mettre les joueurs en relation. Réseau local natif possible en ENet.
+- Les sorts sont des données : un joueur envoie son JSON à l'hôte, qui le nettoie (`Spell.sanitize`) et le simule.
