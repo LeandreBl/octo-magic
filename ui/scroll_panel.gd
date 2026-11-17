@@ -28,7 +28,7 @@ func _ready() -> void:
 	add_child(_spell)
 	_edit = LineEdit.new()
 	_edit.max_length = 200
-	_edit.placeholder_text = "un mot par parchemin, ex : tempête, vampire, miroir"
+	_edit.placeholder_text = "un mot par parchemin, en langue morte, ex : ignis, πῦρ, umbra"
 	_edit.text_submitted.connect(func(_t): _on_write())
 	add_child(_edit)
 	_write = Button.new()
@@ -59,5 +59,5 @@ func _process(_delta: float) -> void:
 	elif Profile.blank_scrolls == 0:
 		state = "Aucun parchemin vierge : les boss en laissent tomber."
 	else:
-		state = "Tu as %d parchemin(s) vierge(s). Écris un mot par parchemin (séparés par des espaces ou des virgules) pour transformer ton sort principal." % Profile.blank_scrolls
+		state = "Tu as %d parchemin(s) vierge(s). Écris un mot en langue morte (latin, grec ancien…) par parchemin (séparés par des espaces ou des virgules) pour transformer ton sort principal." % Profile.blank_scrolls
 	_status.text = main.forge_status + "\n" + state if main.forge_status else state

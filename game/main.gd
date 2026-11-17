@@ -389,5 +389,5 @@ func _on_bundle(data: PackedByteArray, cancelled: int) -> void:
 	Profile.add_forged(s, path)
 	forge_note = "Parchemin écrit : %s sera ton sort principal à la prochaine run." % s.name
 	if cancelled > 0:
-		forge_note += " %d mot(s) sans sens annulé(s), parchemin(s) rendu(s)." % cancelled
+		forge_note += " %d mot(s) annulé(s) (sans sens ou pas en langue morte), parchemin(s) rendu(s)." % cancelled
 	forge_status = forge_note

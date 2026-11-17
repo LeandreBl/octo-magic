@@ -92,6 +92,10 @@ class ForgeTest(unittest.TestCase):
     def test_prompt_contains_format_and_examples(self):
         self.assertIn("on_expire", forge.SYSTEM)
         self.assertIn("Étincelle", forge.SYSTEM)
+        self.assertIn("dead language", forge.SYSTEM)
+
+    def test_greek_letters_are_words(self):
+        self.assertEqual(forge.parse_words("πῦρ, ignis"), ["πῦρ", "ignis"])
 
 
 def grid_png(frames=4, still=False):

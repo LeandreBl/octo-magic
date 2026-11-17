@@ -26,6 +26,7 @@
 - La boucle de jeu est **toujours hors ligne** (sauf la coop P2P). La forge a lieu **entre deux runs**, jamais pendant (décision tâche #75).
 - En run, on trouve des parchemins vierges : ils sont gardés. À la fin de la run (dans le hub), le joueur en écrit un ou plusieurs d'un coup : un mot libre par parchemin, séparés par des espaces ou des virgules (tâche #85).
 - Parser strict côté forge : lettres, `'` et `-` seulement, autant de mots que de parchemins (8 max) ; sinon refusé avant l'IA, parchemins intacts.
+- Les parchemins n'acceptent que les **langues mortes** (latin, grec ancien, vieux norrois, sanskrit…) : un mot d'une langue vivante est annulé comme un mot sans sens. Le sort prend un nom dans cette langue, sa description reste en français (tâche #97).
 - Un mot qui ne veut rien dire est **annulé** par l'IA : il ne change pas le sort et son parchemin est rendu.
 - Anti-injection : les mots et le sort envoyés par le joueur sont passés à l'IA comme données balisées (`<` et `>` échappés), jamais comme instructions ; la sortie reste nettoyée et équilibrée par le moteur.
 - Le mot part à la forge (modération, puis IA) qui renvoie un **bundle `.spell`** : un zip avec `manifest.json` (le sort : briques connues du moteur, forme, trajectoire, élément, effets) et les planches PNG de ses sprites.
