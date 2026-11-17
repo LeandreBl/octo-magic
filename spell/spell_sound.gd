@@ -25,6 +25,7 @@ static func is_continuous(body: Dictionary) -> bool:
 static func play(spell: Dictionary, body: Dictionary, depth: int, node: Node2D, world: Node) -> void:
 	var p := AudioStreamPlayer2D.new()
 	p.autoplay = true  # also when the world enters the tree later
+	p.bus = "SFX"
 	if is_continuous(body):
 		p.stream = loop_stream(spell.element, body, depth)
 		p.volume_db = LOOP_DB - 3.0 * depth

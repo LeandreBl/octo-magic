@@ -34,6 +34,7 @@ var aim := Vector2.RIGHT
 var radius := 12.0
 var look := {"hat": "#3a2a99", "skin": "#f1c27d", "robe": "#6a4cff", "staff": "#8d6e63", "ring": ""}
 
+var _heard_hp := max_hp  # hosts and peers hear hurts on the synced hp
 var _touch_move := {}  # finger index -> [start, current]
 var _touch_aim := {}
 
@@ -143,6 +144,12 @@ func _stick(slot: Dictionary) -> Vector2:
 
 func _physics_process(delta: float) -> void:
 	queue_redraw()
+	if hp < _heard_hp - 0.5:
+		if hp <= 0.0:
+			Sfx.play("death")
+		elif peer_id == multiplayer.get_unique_id():
+			Sfx.play("hurt")
+	_heard_hp = hp
 	if peer_id == multiplayer.get_unique_id() and hp > 0.0:
 		_steer(delta)
 	if not multiplayer.is_server() or hp <= 0.0:

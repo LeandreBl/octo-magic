@@ -5,7 +5,7 @@ class_name Settings
 ## on web it is shared with the website through localStorage (WEB_LANG).
 
 const PATH := "user://settings.cfg"
-const BUSES := ["Master", "Music", "SFX"]
+const BUSES := ["Master", "Music", "SFX", "UI"]
 const REBINDABLE := {"move_up": "Up", "move_down": "Down", "move_left": "Left",
 	"move_right": "Right", "pause": "Pause"}
 const LANGUAGES := {"en": "English", "fr": "Français"}

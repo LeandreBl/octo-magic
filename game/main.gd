@@ -93,6 +93,7 @@ func start_run() -> void:
 @rpc("authority", "call_local", "reliable")
 func _run_started(map: String, map_seed: int) -> void:
 	map_info = [map, map_seed]
+	Sfx.music(map)
 	for n in get_children():
 		if n is Node2D and not n.is_in_group("players"):
 			n.free()
@@ -102,6 +103,7 @@ func _run_started(map: String, map_seed: int) -> void:
 		p.position = Decor.ARENA.get_center()
 	var decor := Decor.new()  # one map per run, placed once
 	decor.broken.connect(func(pos):
+		Sfx.play("crate")
 		_drop("gold", 3, pos)
 		_drop("xp", 2, pos + Vector2(10, 0)))
 	add_child(decor)
@@ -148,6 +150,7 @@ func _next_wave() -> void:
 func _wave_started(w: int) -> void:
 	Run.wave = w
 	Run.changed.emit()
+	Sfx.play("boss" if "boss" in Run.wave_plan(w) else "wave")
 
 
 func _on_killed(e: Node2D) -> void:
@@ -163,11 +166,13 @@ func _on_killed(e: Node2D) -> void:
 @rpc("authority", "call_local", "reliable")
 func _killed(kind: String) -> void:
 	Run.killed(kind)
+	Sfx.play("boss_die" if kind == "boss" else "die")
 
 
 @rpc("authority", "call_local", "reliable")
 func _collected(kind: String, value: int) -> void:
 	Run.collect(kind, value)
+	Sfx.play(kind)
 	if kind == "scroll":
 		forge_note = tr("Blank scroll found! You can write on it at the end of the run.")
 
@@ -193,6 +198,8 @@ func _end_run() -> void:
 	last_run.reached = Profile.record_run(last_run)
 	last_run.unlocked = Profile.unlocked_by(last_run.reached)
 	get_tree().paused = true
+	Sfx.music("")
+	Sfx.play("game_over")
 	run_ended.emit()
 
 
@@ -263,6 +270,7 @@ func _spawn_player(id: int) -> void:
 ## Fresh world for a new session: the host (or solo) spawns its mage, a
 ## joining peer waits for the host's spawns.
 func _reset_world() -> void:
+	Sfx.music("")
 	for n in get_children():
 		if n is Node2D:
 			n.free()

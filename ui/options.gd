@@ -35,7 +35,7 @@ func _ready() -> void:
 	lang.select(Settings.LANGUAGES.keys().find(Settings.language()))
 	lang.item_selected.connect(func(i): Settings.set_language(Settings.LANGUAGES.keys()[i]))
 	_row(general, "Language", lang)
-	for bus in [["Master", "Master volume"], ["Music", "Music"], ["SFX", "Effects"]]:
+	for bus in [["Master", "Master volume"], ["Music", "Music"], ["SFX", "Effects"], ["UI", "Interface"]]:
 		var s := HSlider.new()
 		s.max_value = 1.0
 		s.step = 0.05

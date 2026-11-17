@@ -12,6 +12,7 @@ config/icon="res://assets/icon.png"
 Profile="*res://game/profile.gd"
 Run="*res://game/run.gd"
 Online="*res://game/online.gd"
+SfxPlayer="*res://game/sfx.gd"
 
 [display]
 window/size/viewport_width=1280

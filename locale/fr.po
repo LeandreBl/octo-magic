@@ -85,6 +85,9 @@ msgstr "Musique"
 msgid "Effects"
 msgstr "Effets"
 
+msgid "Interface"
+msgstr "Interface"
+
 msgid "Fullscreen"
 msgstr "Plein écran"
 

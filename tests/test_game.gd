@@ -22,6 +22,7 @@ func _initialize() -> void:
 	_test_waves()
 	_test_profile()
 	_test_french()
+	_test_sfx()
 	await _test_play()
 	print("game tests: %s" % ("OK" if failures == 0 else "%d failure(s)" % failures))
 	quit(1 if failures else 0)
@@ -181,6 +182,17 @@ func Profile_max(id: String) -> int:
 
 
 ## Every base spell and enemy kind runs in a real scene.
+func _test_sfx() -> void:
+	for n in Sfx.RECIPES:
+		var s := Sfx.synth(Sfx.RECIPES[n])
+		var peak := 0.0
+		for x in s:
+			peak = maxf(peak, absf(x))
+		check(s.size() > 0 and peak > 0.05 and peak <= 1.0, "sound %s is audible and does not clip (peak %.2f)" % [n, peak])
+	check(Sfx.stream("hit").data.size() == Sfx.synth(Sfx.RECIPES.hit).size() * 2, "16-bit sound data")
+	Sfx.play("hit")  # no autoload in tests: a no-op, not a crash
+
+
 func _test_play() -> void:
 	var world := Node2D.new()
 	root.add_child(world)

@@ -314,6 +314,7 @@ func _show_level_up(offers: Array) -> void:
 		_level_box.add_child(b)
 	screens.levelup.set_meta("focus", _level_box.get_child(0))
 	show_screen("levelup")
+	Sfx.play("level_up")
 
 
 var _stats: Label

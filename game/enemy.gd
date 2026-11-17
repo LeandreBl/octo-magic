@@ -23,6 +23,7 @@ var statuses := {}  # name -> [power, time_left]
 var knock := Vector2.ZERO
 var hit_cooldown := 0.0
 var shot_timer := 2.0
+var _heard_hp := 0.0  # hp at the last hit sound: hosts and peers hear hits on the synced hp
 
 
 func setup(k: String, s: Dictionary) -> void:
@@ -34,6 +35,7 @@ func setup(k: String, s: Dictionary) -> void:
 	touch_damage = s.damage
 	xp = s.xp
 	gold = s.gold
+	_heard_hp = hp
 
 
 func _ready() -> void:
@@ -69,6 +71,9 @@ static func nearest_player(from: Node2D) -> Node2D:
 
 func _physics_process(delta: float) -> void:
 	queue_redraw()
+	if hp < _heard_hp - 1.0:  # not every tick of burn or poison
+		Sfx.play("hit")
+		_heard_hp = hp
 	if not multiplayer.is_server():
 		return
 	var near := nearest_player(self)
@@ -119,6 +124,7 @@ func _shot(dir: Vector2, v: float) -> void:
 
 @rpc("authority", "call_local", "unreliable_ordered")
 func _spawn_shot(pos: Vector2, velocity: Vector2) -> void:
+	Sfx.play("shot")
 	var s := Shot.new()
 	s.position = pos
 	s.velocity = velocity
