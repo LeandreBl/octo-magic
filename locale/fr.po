@@ -606,3 +606,6 @@ msgstr "%s : acquis"
 
 msgid "HP %d / %d  ·  shield %d"
 msgstr "PV %d / %d  ·  bouclier %d"
+
+msgid "Passive"
+msgstr "Passif"

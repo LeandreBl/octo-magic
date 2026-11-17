@@ -1,6 +1,7 @@
 extends Control
 ## In-run HUD: HP, mana, XP/level, wave, gold, score, spell slots with
-## cooldown (touch a slot to cast it), scroll status, a pause button for touch.
+## cooldown (touch a slot to cast it), the passive (shield left, time
+## until it is back), scroll status, a pause button for touch.
 
 signal paused
 
@@ -73,8 +74,9 @@ func _ready() -> void:
 	bottom.add_theme_constant_override("separation", 12)
 	bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margin.add_child(bottom)
-	for slot in Upgrades.RUN_SLOTS:
+	for slot in Upgrades.RUN_SLOTS + ["passive"]:
 		bottom.add_child(_slot(slot))
+	_slots.passive[0].texture = UITheme.icon("ring_sapphire")
 
 
 ## A "Plate" panel in `parent`, at the top, aligned by `h_flags`.
@@ -160,7 +162,13 @@ func _process(_delta: float) -> void:
 	var s: Dictionary = Run.spells.primary
 	_spell.text = Spell.label(s) + ("  [" + " + ".join(s.words) + "]" if not s.words.is_empty() else "")
 	_scrolls.text = tr("Scrolls found: %d%s") % [Run.scrolls, "\n" + main.forge_note if main.forge_note else ""]
-	for slot in _slots:
+	var pas: Array = _slots.passive
+	pas[0].get_parent().get_parent().visible = p.passive != ""  # no key: it applies itself
+	if p.passive:
+		pas[3].text = str(int(p.shield))
+		pas[4].text = "%s\n%s" % [tr(Run.SHOP[p.passive].name), tr("Passive")]
+		pas[1].offset_top = -pas[1].get_parent().size.y * clampf(p.shield_wait / p.SHIELD_WAIT, 0.0, 1.0)
+	for slot in Upgrades.RUN_SLOTS:
 		var ui: Array = _slots[slot]
 		ui[0].get_parent().get_parent().visible = Run.spells.has(slot)  # secondary: once bought
 		if not Run.spells.has(slot):
