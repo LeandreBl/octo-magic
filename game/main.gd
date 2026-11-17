@@ -28,7 +28,7 @@ signal net_error(message: String)  # host lost or room closed: back to solo
 var spawner: MultiplayerSpawner
 var net: Node  # game/net.gd
 var spawned := 0  # names of spawned enemies and drops
-var map_info := ["crypt", 0]  # this run's map and seed, for players dropping in
+var map_name := "crypt"  # this run's map (its music), for players dropping in
 var forge_http: HTTPRequest
 var forge_job := ""  # scrolls being written on the forge
 var forge_words := 0  # scrolls used by that job
@@ -85,14 +85,14 @@ func _process(_delta: float) -> void:
 
 func start_run() -> void:
 	if multiplayer.is_server():
-		_run_started.rpc(Decor.MAPS.keys().pick_random(), randi())
+		_run_started.rpc(Arena.MAPS.pick_random())
 		_next_wave()
 
 
 ## Every peer starts its own Run (progression, spells) on the host's map.
 @rpc("authority", "call_local", "reliable")
-func _run_started(map: String, map_seed: int) -> void:
-	map_info = [map, map_seed]
+func _run_started(map: String) -> void:
+	map_name = map
 	Sfx.music(map)
 	for n in get_children():
 		if n is Node2D and not n.is_in_group("players"):
@@ -100,14 +100,8 @@ func _run_started(map: String, map_seed: int) -> void:
 	Run.start(Profile.equipped_spells(), Profile.total_stats())
 	var p := local_player()
 	if p:
-		p.position = Decor.ARENA.get_center()
-	var decor := Decor.new()  # one map per run, placed once
-	decor.broken.connect(func(pos):
-		Sfx.play("crate")
-		_drop("gold", 3, pos)
-		_drop("xp", 2, pos + Vector2(10, 0)))
-	add_child(decor)
-	decor.build(map, Decor.ARENA, map_seed)
+		p.position = Arena.RECT.get_center()
+	add_child(Arena.new())
 	forge_status = ""
 	get_tree().paused = false
 	send_loadout(true)
@@ -140,10 +134,10 @@ func _next_wave() -> void:
 	var alive := get_tree().get_nodes_in_group("players").filter(func(p): return p.hp > 0.0)
 	for kind in Run.wave_plan(Run.wave):
 		spawned += 1
-		var near: Vector2 = alive.pick_random().position if alive else Decor.ARENA.get_center()
+		var near: Vector2 = alive.pick_random().position if alive else Arena.RECT.get_center()
 		spawner.spawn({"kind": "enemy", "name": "E%d" % spawned, "type": kind,
 			"stats": Run.enemy_stats(kind, Run.wave),  # just off a mage's screen, inside the arena
-			"pos": (near + Vector2.from_angle(randf() * TAU) * off_screen).clamp(Decor.ARENA.position, Decor.ARENA.end)})
+			"pos": (near + Vector2.from_angle(randf() * TAU) * off_screen).clamp(Arena.RECT.position, Arena.RECT.end)})
 
 
 @rpc("authority", "call_local", "reliable")
@@ -158,7 +152,7 @@ func _on_summoned(kind: String, pos: Vector2) -> void:
 	if multiplayer.is_server() and get_tree().get_nodes_in_group("enemies").size() < Enemy.CROWD:
 		spawned += 1
 		spawner.spawn.call_deferred({"kind": "enemy", "name": "E%d" % spawned, "type": kind,
-			"stats": Run.enemy_stats(kind, Run.wave), "pos": pos.clamp(Decor.ARENA.position, Decor.ARENA.end)})
+			"stats": Run.enemy_stats(kind, Run.wave), "pos": pos.clamp(Arena.RECT.position, Arena.RECT.end)})
 
 
 func _on_killed(e: Node2D) -> void:
@@ -273,7 +267,7 @@ static func _config(props: Dictionary, spawn: bool) -> SceneReplicationConfig:
 
 
 func _spawn_player(id: int) -> void:
-	spawner.spawn({"kind": "player", "name": "P%d" % id, "id": id, "pos": Decor.ARENA.get_center()})
+	spawner.spawn({"kind": "player", "name": "P%d" % id, "id": id, "pos": Arena.RECT.get_center()})
 
 
 ## Fresh world for a new session: the host (or solo) spawns its mage, a
@@ -291,7 +285,7 @@ func _on_peer_joined(id: int) -> void:
 	if multiplayer.is_server():
 		_spawn_player(id)
 		if Run.active:  # drop-in: the newcomer starts its run on this map
-			_run_started.rpc_id(id, map_info[0], map_info[1])
+			_run_started.rpc_id(id, map_name)
 			_wave_started.rpc_id(id, Run.wave)
 
 
@@ -354,12 +348,12 @@ func write_scroll(words: String) -> void:
 	if auth.is_empty():
 		forge_status = tr("Log in (main menu → Account) to write the scrolls.")
 		return
-	forge_status = tr("Sending to the forge…")
+	forge_status = tr("Writing the scrolls…")
 	var body := JSON.stringify({"spell": Profile.equipped_spells().primary, "words": word,
 		"scrolls": Profile.blank_scrolls, "lang": TranslationServer.get_locale()})
 	if forge_http.request(Online.server + "/api/forge", auth + PackedStringArray(["Content-Type: application/json"]),
 			HTTPClient.METHOD_POST, body) != OK:
-		forge_status = tr("Cannot reach the forge. Your scrolls are kept.")
+		forge_status = tr("The scrolls cannot be written right now. Your scrolls are kept.")
 
 
 func _poll() -> void:
@@ -381,11 +375,11 @@ func _on_forge_reply(result: int, code: int, headers: PackedStringArray, data: P
 	if result != HTTPRequest.RESULT_SUCCESS or code != 200 or reply.has("error"):
 		var msg: String = tr(str(reply.get("error", tr("error %d") % code if result == HTTPRequest.RESULT_SUCCESS else tr("offline"))))
 		if forge_job.is_empty():  # words refused or forge unreachable: scrolls kept
-			forge_status = tr("The forge refused or did not answer (%s). Your scrolls are kept.") % msg
+			forge_status = tr("The scrolls could not be written (%s). Your scrolls are kept.") % msg
 		else:
 			forge_job = ""
 			Profile.blank_scrolls += forge_words  # the scrolls were not used up
-			forge_note = tr("The forge failed (%s). Your scrolls are given back.") % msg
+			forge_note = tr("Writing the scrolls failed (%s). Your scrolls are given back.") % msg
 			forge_status = forge_note
 			Profile.save()
 		return

@@ -4,6 +4,8 @@ extends PanelContainer
 
 signal closed
 
+const UITheme := preload("res://ui/theme.gd")
+
 var info: Label
 var mail: LineEdit
 var password: LineEdit
@@ -36,6 +38,10 @@ func _ready() -> void:
 			["Log in with Google", _google], ["Log out", Online.logout], ["Back", closed.emit]]:
 		var button := Button.new()
 		button.text = b[0]
+		if b[0] == "Log in with Google":  # the pixel art logo, the text as tooltip
+			button.text = ""
+			button.tooltip_text = b[0]
+			button.icon = UITheme.icon("google")
 		button.pressed.connect(b[1])
 		row.add_child(button)
 		buttons[b[0]] = button

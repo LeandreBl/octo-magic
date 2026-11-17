@@ -204,7 +204,7 @@ func _steer(delta: float) -> void:
 	# Input actions (project.godot): rebindable keys, arrows, left stick (ui/settings.gd).
 	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	move = (move + _stick(_touch_move)).limit_length(1.0)
-	position = Decor.slide(position, move * speed * delta, radius).clamp(Decor.ARENA.position, Decor.ARENA.end)
+	position = (position + move * speed * delta).clamp(Arena.RECT.position, Arena.RECT.end)
 
 	var fire := false
 	var pad_aim := Vector2(Input.get_joy_axis(0, JOY_AXIS_RIGHT_X), Input.get_joy_axis(0, JOY_AXIS_RIGHT_Y))

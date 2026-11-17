@@ -226,7 +226,7 @@ func _title() -> Control:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
 	var sub := Label.new()
-	sub.text = "Write your spells, survive the waves."
+	sub.text = "Create your spells, combine them, survive the waves."
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.add_theme_color_override("font_color", UITheme.TEXT_DIM)
 	box.add_child(sub)

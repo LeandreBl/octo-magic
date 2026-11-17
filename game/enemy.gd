@@ -4,11 +4,18 @@ extends Node2D
 ## the AI moves it, each of its spells is cast on its own timer (see cast).
 ## Coop: simulated on the host, chasing the nearest mage standing; peers get
 ## its position, hp and statuses, and draw its shots and zones.
+## Look: PixelLab sprites (tools/make_monsters.py), assets/monsters/<kind>/
+## <anim>.png strips of square frames facing right, and the effects of its
+## attacks in assets/monsters/fx/.
 
 signal killed(enemy: Node2D)
 signal summoned(kind: String, pos: Vector2)  # summon spells and splits, spawned by main.gd
 
 const CROWD := 120  # no summons past this many enemies
+const FPS := 12.0
+const Self := preload("res://game/enemy.gd")  # its static art for the inner classes
+## The move a spell plays (assets/monsters/<kind>/<anim>.png, if any).
+const SPELL_ANIM := {"charge": "windup", "fuse": "fuse", "heal": "heal", "summon": "summon", "blink": "blink"}
 
 var kind := "melee"
 var data := {}  # its Run.ENEMIES entry, scaled to the wave
@@ -30,6 +37,32 @@ var dash_time := 0.0
 var age := 0.0
 var side := 1.0  # flank: which side it comes from
 var _heard_hp := 0.0  # hp at the last hit sound: hosts and peers hear hits on the synced hp
+var _last_pos := Vector2.ZERO
+var _flip := false  # facing left: from the synced position, the same on every peer
+var _moving := false
+var _act := ""  # a special move playing (SPELL_ANIM), for _act_time seconds
+var _act_time := 0.0
+var _act_len := 1.0
+
+static var _textures := {}
+
+
+## res://assets/monsters/<file>.png, null when not generated.
+static func art(file: String) -> Texture2D:
+	if not _textures.has(file):
+		var path := "res://assets/monsters/%s.png" % file
+		_textures[file] = load(path) if ResourceLoader.exists(path) else null
+	return _textures[file]
+
+
+## Draws frame `f` (wrapped) of strip `tex` on `item`, centered, `size` wide.
+static func draw_frame(item: CanvasItem, tex: Texture2D, f: int, size: float, flip := false, tint := Color.WHITE) -> void:
+	var n := tex.get_height()
+	var src := Rect2(wrapi(f, 0, tex.get_width() / n) * n, 0, n, n)
+	var dst := Rect2(-size / 2.0, -size / 2.0, size, size)
+	if flip:
+		dst = Rect2(size / 2.0, -size / 2.0, -size, size)
+	item.draw_texture_rect_region(tex, dst, src, tint)
 
 
 func setup(k: String, s: Dictionary) -> void:
@@ -83,6 +116,12 @@ static func nearest_player(from: Node2D) -> Node2D:
 
 func _physics_process(delta: float) -> void:
 	queue_redraw()
+	var step := position - _last_pos
+	_last_pos = position
+	_moving = step.length() > 0.2
+	if absf(step.x) > 0.2:
+		_flip = step.x < 0.0
+	_act_time -= delta
 	if hp < _heard_hp - 1.0:  # not every tick of burn or poison
 		Sfx.play("hit")
 		_heard_hp = hp
@@ -118,7 +157,7 @@ func _physics_process(delta: float) -> void:
 		motion = dash * slow
 		if dash_time <= 0.0:
 			dash = Vector2.ZERO
-	position = Decor.slide(position, (motion + knock) * delta, radius)
+	position += (motion + knock) * delta
 	knock = knock.move_toward(Vector2.ZERO, 1500.0 * delta)
 	hit_cooldown -= delta
 	if to.length() < radius + target.radius and hit_cooldown <= 0.0:
@@ -129,6 +168,8 @@ func _physics_process(delta: float) -> void:
 		timers[i] -= delta * slow
 		if timers[i] <= 0.0 and windup <= 0.0 and dash == Vector2.ZERO and cast(spells[i], to):
 			timers[i] = spells[i].every
+			if SPELL_ANIM.has(spells[i].type):
+				_play.rpc(SPELL_ANIM[spells[i].type], {"charge": 0.6, "fuse": 0.7, "blink": 0.4}.get(spells[i].type, 0.7))
 
 
 ## The direction its AI walks, `to`: from it to its mage.
@@ -163,30 +204,30 @@ func cast(sp: Dictionary, to: Vector2) -> bool:
 		"nova":  # a slam around it, after a warning
 			if d > sp.radius:
 				return false
-			_zone.rpc(position, sp.radius, 0.8, dmg, 0.0, Color(data.color), 0.0)
+			_zone.rpc(position, sp.radius, 0.8, dmg, 0.0, Color(data.color), 0.0, "shockwave")
 		"fuse":  # stops, glows, blows up
 			if d > sp.range + radius:
 				return false
-			_zone.rpc(position, sp.radius, 0.7, dmg, 0.0, Color("#ff7043"), 0.0)
+			_zone.rpc(position, sp.radius, 0.7, dmg, 0.0, Color("#ff7043"), 0.0, "explosion")
 			windup = INF
 			get_tree().create_timer(0.7, false, true).timeout.connect(queue_free)
 		"puddle":  # a poison pool where the mage stands
 			if d > 550.0:
 				return false
-			_zone.rpc(target.position, sp.radius, 1.0, 0.0, dmg, Color(data.color), 4.0)
+			_zone.rpc(target.position, sp.radius, 1.0, 0.0, dmg, Color(data.color), 4.0, "poison")
 		"charge":  # stops, then dashes at the mage
 			if d > sp.range:
 				return false
 			windup = 0.6
 			dash = Vector2.ONE  # dashing once the windup ends
-			_zone.rpc(position, radius + 10.0, 0.6, 0.0, 0.0, Color.WHITE, 0.0)
+			_zone.rpc(position, radius + 10.0, 0.6, 0.0, 0.0, Color.WHITE, 0.0, "")
 		"blink":  # vanishes, comes back next to the mage
 			var to_pos := target.position + Vector2.from_angle(randf() * TAU) * 110.0
-			if d < 160.0 or Decor.hit(to_pos, radius):
+			if d < 160.0:
 				return false
-			_zone.rpc(position, radius + 6.0, 0.3, 0.0, 0.0, Color(data.color), 0.0)
+			_zone.rpc(position, radius + 12.0, 0.0, 0.0, 0.0, Color(data.color), 0.0, "blink")
 			position = to_pos
-			_zone.rpc(position, radius + 6.0, 0.3, 0.0, 0.0, Color(data.color), 0.0)
+			_zone.rpc(position, radius + 12.0, 0.0, 0.0, 0.0, Color(data.color), 0.0, "blink")
 		"heal":  # mends the wounded around it, itself included
 			var hurt := get_tree().get_nodes_in_group("enemies").filter(
 				func(e): return e.hp < e.max_hp and e.position.distance_to(position) < sp.radius)
@@ -194,33 +235,44 @@ func cast(sp: Dictionary, to: Vector2) -> bool:
 				return false
 			for e in hurt:
 				e.hp = minf(e.max_hp, e.hp + e.max_hp * sp.ratio)
-			_zone.rpc(position, sp.radius, 0.4, 0.0, 0.0, Color("#69f0ae"), 0.0)
+			_zone.rpc(position, sp.radius, 0.0, 0.0, 0.0, Color("#69f0ae"), 0.0, "heal")
 		"summon":
 			if get_tree().get_nodes_in_group("enemies").size() >= CROWD:
 				return false
 			for i in sp.count:
-				summoned.emit(sp.kind, position + Vector2.from_angle(randf() * TAU) * (radius + 20.0))
+				var at := position + Vector2.from_angle(randf() * TAU) * (radius + 20.0)
+				_zone.rpc(at, 24.0, 0.0, 0.0, 0.0, Color(data.color), 0.0, "summon")
+				summoned.emit(sp.kind, at)
 	return true
 
 
 func _shot(dir: Vector2, v: float, dmg: float) -> void:
-	_spawn_shot.rpc(position, dir * v, dmg)
+	_spawn_shot.rpc(position, dir * v, dmg, "acid" if kind == "broodmother" else "bolt")
 
 
 @rpc("authority", "call_local", "unreliable_ordered")
-func _spawn_shot(pos: Vector2, velocity: Vector2, dmg: float) -> void:
+func _spawn_shot(pos: Vector2, velocity: Vector2, dmg: float, fx: String) -> void:
 	Sfx.play("shot")
 	var s := Shot.new()
 	s.position = pos
 	s.velocity = velocity
 	s.damage = dmg
+	s.fx = fx
 	get_parent().add_child(s)
 
 
-## A zone: warns for `delay` seconds, then hurts once (`damage`) and/or
-## every second for `linger` seconds (`dps`). Damage 0: a warning only.
 @rpc("authority", "call_local", "reliable")
-func _zone(pos: Vector2, r: float, delay: float, damage: float, dps: float, color: Color, linger: float) -> void:
+func _play(anim: String, duration: float) -> void:
+	_act = anim
+	_act_time = duration
+	_act_len = duration
+
+
+## A zone: warns for `delay` seconds, then hurts once (`damage`) and/or
+## every second for `linger` seconds (`dps`), showing effect `fx`
+## (assets/monsters/fx/). Damage 0: a warning (or an effect) only.
+@rpc("authority", "call_local", "reliable")
+func _zone(pos: Vector2, r: float, delay: float, damage: float, dps: float, color: Color, linger: float, fx: String) -> void:
 	var z := Zone.new()
 	z.position = pos
 	z.radius = r
@@ -229,27 +281,29 @@ func _zone(pos: Vector2, r: float, delay: float, damage: float, dps: float, colo
 	z.dps = dps
 	z.color = color
 	z.linger = linger
+	z.fx = fx
 	get_parent().add_child(z)
 
 
 func _draw() -> void:
-	var c := Color(data.get("color", "#4caf50"))
-	if statuses.has("freeze"): c = Color("#9be7ff")
-	elif statuses.has("burn"): c = Color("#ff8a50")
-	elif statuses.has("poison"): c = Color("#b388ff")
-	var sides: int = data.get("sides", 0)
-	if sides:
-		var pts := PackedVector2Array()
-		for i in sides:
-			pts.append(Vector2.from_angle(-PI / 2 + TAU * i / sides) * radius * 1.15)
-		draw_colored_polygon(pts, c)
-	else:
-		draw_circle(Vector2.ZERO, radius, c)
-	if data.get("ai") == "kite":
-		draw_circle(Vector2.ZERO, radius * 0.45, c.darkened(0.6))
-	if data.get("boss", false):
-		draw_arc(Vector2.ZERO, radius + 3, 0, TAU, 40, Color("#ffd54f"), 3.0)
-	draw_rect(Rect2(-radius, -radius - 8, 2 * radius * maxf(hp, 0.0) / max_hp, 3), Color.RED)
+	var tint := Color.WHITE
+	if statuses.has("freeze"): tint = Color("#9be7ff")
+	elif statuses.has("burn"): tint = Color("#ffb08a")
+	elif statuses.has("poison"): tint = Color("#d1b8ff")
+	var size := radius * 4.0  # the drawing overflows its hit circle a bit
+	var anim := _act if _act_time > 0.0 and art(kind + "/" + _act) else "walk"
+	var tex := art(kind + "/" + anim)
+	if tex:
+		var n := tex.get_width() / tex.get_height()
+		var f := int(Time.get_ticks_msec() / 1000.0 * FPS) if _moving else 0
+		if anim != "walk":  # the move plays once over its duration (blink backwards: it reappears)
+			f = mini(int((1.0 - _act_time / _act_len) * n), n - 1)
+			if anim == "blink":
+				f = n - 1 - f
+		draw_frame(self, tex, f, size, _flip, tint)
+	else:  # not generated yet
+		draw_circle(Vector2.ZERO, radius, Color(data.get("color", "#4caf50")) * tint)
+	draw_rect(Rect2(-radius, -size * 0.45 - 6, 2 * radius * maxf(hp, 0.0) / max_hp, 3), Color.RED)
 
 
 ## A ground zone cast by an enemy (see _zone); hurts mages on the host only.
@@ -260,10 +314,13 @@ class Zone extends Node2D:
 	var dps := 0.0
 	var linger := 0.0
 	var color := Color.RED
+	var fx := ""
 	var age := 0.0
+	var _fx_tex: Texture2D
 
 	func _ready() -> void:
 		z_index = -1  # under the mages and enemies
+		_fx_tex = Self.art("fx/" + fx) if fx else null
 
 	func _physics_process(delta: float) -> void:
 		var was := age
@@ -276,13 +333,23 @@ class Zone extends Node2D:
 						p.hurt(damage)
 					if dps > 0.0:
 						p.hurt(dps * delta)
-		if age > delay + maxf(linger, 0.2):
+		if age > delay + maxf(linger, _fx_len()):
 			queue_free()
+
+	## Seconds the effect plays once.
+	func _fx_len() -> float:
+		return _fx_tex.get_width() / _fx_tex.get_height() / FPS if _fx_tex else 0.2
 
 	func _draw() -> void:
 		if age < delay:  # the warning: an outline filling up
 			draw_arc(Vector2.ZERO, radius, 0, TAU, 48, Color(color, 0.8), 2.0)
 			draw_circle(Vector2.ZERO, radius * age / delay, Color(color, 0.25))
+		elif _fx_tex:  # once, or looping while it lingers; fades out at the end
+			var n := _fx_tex.get_width() / _fx_tex.get_height()
+			var f := int((age - delay) * FPS)
+			var left := delay + maxf(linger, _fx_len()) - age
+			Self.draw_frame(self, _fx_tex, f if linger > 0.0 else mini(f, n - 1), radius * 2.4, false,
+				Color(1, 1, 1, clampf(left / 0.3, 0.0, 1.0)))
 		else:
 			draw_circle(Vector2.ZERO, radius, Color(color, 0.45 if linger > 0.0 else 0.6 * (1.0 - (age - delay) / 0.2)))
 
@@ -293,6 +360,7 @@ class Shot extends Node2D:
 	const RADIUS := 5.0
 	var velocity := Vector2.ZERO
 	var damage := 5.0
+	var fx := "bolt"
 	var age := 0.0
 
 	func _physics_process(delta: float) -> void:
@@ -306,10 +374,14 @@ class Shot extends Node2D:
 			if multiplayer.is_server():
 				hit.hurt(damage)
 			queue_free()
-		elif age > 6.0 or Decor.hit(position, RADIUS):
+		elif age > 6.0:
 			queue_free()
 		queue_redraw()
 
 	func _draw() -> void:
-		draw_circle(Vector2.ZERO, RADIUS, Color("#ff5252"))
-		draw_circle(Vector2.ZERO, RADIUS * 0.5, Color.WHITE)
+		var tex: Texture2D = Self.art("fx/" + fx)
+		if not tex:
+			draw_circle(Vector2.ZERO, RADIUS, Color("#ff5252"))
+			return
+		draw_set_transform(Vector2.ZERO, velocity.angle())  # the art flies right
+		Self.draw_frame(self, tex, int(age * FPS), RADIUS * 6.0)

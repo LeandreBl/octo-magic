@@ -1,4 +1,5 @@
-"""PixelLab client: animated VFX sprite sheets and icons for spells.
+"""PixelLab client: animated VFX sprite sheets and icons for spells, and
+animated sprites for the monsters (tools/make_monsters.py).
 
 Token: PIXELLAB_TOKEN, or the file ~/.config/octo-magic/pixellab.token.
 """
@@ -43,18 +44,22 @@ def _download(url: str) -> bytes:
         return r.read()
 
 
-def vfx(description: str, name: str, timeout: float = 300) -> tuple[bytes, dict]:
-    """One animated effect -> (png sheet, {w, h, frames, fps, cols})."""
-    job = _request("POST", "/vfx", {"description": description, "artist": "lite", "name": name})
+def _wait(job: dict, what: str, timeout: float) -> dict:
+    """Polls a background job until done -> its last response."""
     deadline = time.monotonic() + timeout
     while True:
         time.sleep(6)
         done = _request("GET", f"/background-jobs/{job['background_job_id']}")
         if done["status"] == "completed":
-            break
+            return done["last_response"]
         if done["status"] != "processing" or time.monotonic() > deadline:
-            raise RuntimeError(f"vfx {name}: {done['status']}")
-    res = done["last_response"]
+            raise RuntimeError(f"{what}: {done['status']} {str(done.get('last_response'))[:300]}")
+
+
+def vfx(description: str, name: str, timeout: float = 300) -> tuple[bytes, dict]:
+    """One animated effect -> (png sheet, {w, h, frames, fps, cols})."""
+    job = _request("POST", "/vfx", {"description": description, "artist": "lite", "name": name})
+    res = _wait(job, f"vfx {name}", timeout)
     files = res["files"]
     png = _download(next(u for f, u in files.items() if f.endswith(".png") and "normals" not in f))
     meta = json.loads(_download(next(u for f, u in files.items() if f.endswith(".json"))))
@@ -73,3 +78,23 @@ def icon(description: str) -> bytes:
         "outline": "single color black outline", "detail": "medium detail",
     })
     return base64.b64decode(res["image"]["base64"])
+
+
+def sprite(description: str, size: int, detail: str = "medium detail") -> bytes:
+    """A creature seen from the side, facing right (east): size x size PNG."""
+    res = _request("POST", "/create-image-pixen", {
+        "description": description, "image_size": {"width": size, "height": size},
+        "no_background": True, "view": "side", "direction": "east",
+        "outline": "single color black outline", "detail": detail,
+    })
+    return base64.b64decode(res["image"]["base64"])
+
+
+def animate(png: bytes, action: str, frames: int = 8, timeout: float = 400) -> list[bytes]:
+    """`png` (first frame) doing `action` -> the frames, PNGs of its size."""
+    job = _request("POST", "/animate-with-text-v3", {
+        "first_frame": {"type": "base64", "base64": base64.b64encode(png).decode()},
+        "action": action, "frame_count": frames, "no_background": True,
+    })
+    res = _wait(job, f"animate {action[:40]}", timeout)
+    return [base64.b64decode(i["base64"]) for i in res["images"]]
