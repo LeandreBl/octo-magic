@@ -38,27 +38,36 @@ func _initialize() -> void:
 	check(tex.get_image().get_pixel(0, 0) == Color.RED and tex.get_image().get_pixel(1, 0).a == 0.0, "texture pixels")
 	check(Spell.base().icon.size() > 0 and Spell.base().emit.body.sprite.size() == 2, "base spell has art")
 
-	# Bundles: manifest + PNG sheets, loaded at runtime.
-	var img := Image.create_empty(8, 4, false, Image.FORMAT_RGBA8)
-	img.fill(Color.RED)
+	# Bundles: manifest + PNG strips, loaded at runtime (docs/spells.md).
+	var strip := Image.create_empty(16, 8, false, Image.FORMAT_RGBA8)  # 2 frames of 8x8
+	strip.fill(Color.RED)
 	var zp := ZIPPacker.new()
 	zp.open("user://test.spell")
 	zp.start_file("manifest.json")
-	zp.write_file(JSON.stringify({"name": "B", "icon_file": "icon.png", "emit": {"body": {
-		"sheet": {"file": "body0.png", "w": 4, "h": 4, "frames": 2, "fps": 12, "cols": 2},
-		"burst_sheet": {"file": "../evil.png"}}}}).to_utf8_buffer())
+	zp.write_file(JSON.stringify({"format": 1, "name": "B", "icon_file": "icon.png", "emit": {"body": {
+		"sheet": {"file": "body0.png", "size": 8, "frames": 2, "fps": 12, "loop": true},
+		"burst_sheet": {"file": "../evil.png"},
+		"on_expire": [{"type": "cast", "emit": {"body": {
+			"sheet": {"file": "body1.png", "size": 8, "frames": 3, "fps": 12}}}}]}}}).to_utf8_buffer())
 	zp.close_file()
-	for f in ["body0.png", "icon.png"]:
+	for f in ["body0.png", "body1.png", "icon.png"]:
 		zp.start_file(f)
-		zp.write_file(img.save_png_to_buffer())
+		zp.write_file(strip.save_png_to_buffer())
 		zp.close_file()
 	zp.close()
 	var b := SpellArt.load_bundle("user://test.spell")
 	check(b.name == "B" and b.emit.body.sheet.frames == 2, "bundle manifest loaded")
 	check(b.emit.body.burst_sheet.is_empty(), "path-like file names refused")
-	check(SpellArt.sheet(b, "body0.png").get_size() == Vector2(8, 4), "bundle PNG loaded")
+	check(b.emit.body.on_expire[0].emit.body.sheet.is_empty(), "sheet not matching its PNG dropped")
+	var anim := SpellArt.animation(b, b.emit.body)
+	check(anim[0].get_size() == Vector2(16, 8) and anim[1].size == 8, "bundle sheet animation")
 	check(SpellArt.sheet(b, b.icon_file) != null, "bundle icon loaded")
 	check(SpellArt.load_bundle("user://missing.spell").is_empty(), "missing bundle -> {}")
+
+	# Pixel grids become the same strip format as bundle sheets.
+	var grid := SpellArt.animation(Spell.base(), Spell.base().emit.body)
+	check(grid[0].get_size() == Vector2(16, 8) and grid[1].frames == 2 and grid[1].loop, "grid sprites -> strip")
+	check(SpellArt.animation(Spell.base(), Spell.sanitize({}).emit.body).is_empty(), "no art -> no animation")
 
 	# Recursion is depth-limited.
 	var nested := {"type": "cast", "emit": {"body": {"on_expire": []}}}

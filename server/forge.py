@@ -25,11 +25,13 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import art
+import sheet
 
 ROOT = Path(__file__).resolve().parent.parent
 MODEL = os.environ.get("FORGE_MODEL", "claude-haiku-5-5")
 PORT = int(os.environ.get("FORGE_PORT", "8765"))
 MAX_BODY = 64 * 1024
+BUNDLE_FORMAT = 1  # docs/spells.md, "Bundle format"
 ART_BODIES = int(os.environ.get("FORGE_ART_BODIES", "2"))  # PixelLab credits per spell
 WORD_RE = re.compile(r"^[^\W\d_]+(?:[ '\-][^\W\d_]+)*$")  # letters, single spaces/'/-
 
@@ -198,16 +200,17 @@ def bundle(spell: dict, draw=art) -> bytes:
         for i, b in enumerate(bodies(spell.get("emit"))[:ART_BODIES]):
             look = str(b.get("look") or spell.get("description") or "magic projectile")
             if b.get("shape") == "zone":
-                look += ". Seen from above, a magic area on the ground, seamless loop, fills the canvas."
+                look += ". Seen from above, a magic area on the ground, seamless loop, fits within 64x64 pixels."
             else:
-                look += ". Top-down game projectile flying to the right, seamless loop, centered, small."
-            tasks[f"body{i}.png"] = (b, "sheet", lambda d=look, n=f"body{i}": draw.vfx(d, n))
+                look += (". Top-down game projectile flying to the right, seamless loop, centered,"
+                         " fits within 24x24 pixels.")
+            tasks[f"body{i}.png"] = (b, "sheet", lambda d=look, n=f"body{i}": sheet.normalize(*draw.vfx(d, n), loop=True))
             if i == 0:
                 burst = str(b.get("burst") or "small magic impact burst") + \
-                    ". Seen from above, one-shot burst, short, centered."
-                tasks["burst0.png"] = (b, "burst_sheet", lambda d=burst: draw.vfx(d, "burst0"))
+                    ". Seen from above, one-shot burst, short, centered, fits within 48x48 pixels."
+                tasks["burst0.png"] = (b, "burst_sheet", lambda d=burst: sheet.normalize(*draw.vfx(d, "burst0"), loop=False))
         brief = str(spell.get("icon_brief") or spell.get("name")) + ", fantasy spell icon"
-        tasks["icon.png"] = (None, "icon_file", lambda d=brief: (draw.icon(d), None))
+        tasks["icon.png"] = (None, "icon_file", lambda d=brief: (sheet.normalize_icon(draw.icon(d)), None))
     out = io.BytesIO()
     with zipfile.ZipFile(out, "w") as z, ThreadPoolExecutor(4) as pool:
         futures = {name: pool.submit(fn) for name, (_, _, fn) in tasks.items()}
@@ -223,6 +226,7 @@ def bundle(spell: dict, draw=art) -> bytes:
                 spell[key] = name
             else:
                 body[key] = {"file": name, **meta}
+        spell["format"] = BUNDLE_FORMAT
         z.writestr("manifest.json", json.dumps(spell, ensure_ascii=False, indent=1))
     return out.getvalue()
 

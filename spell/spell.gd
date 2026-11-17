@@ -110,7 +110,8 @@ static func _file(v: Variant) -> String:
 	return s if re.search(s) else ""
 
 
-## An animated sprite sheet of the bundle: frames of w x h, row by row.
+## An animated sprite sheet of the bundle (docs/spells.md, "Bundle format"):
+## one strip of `frames` square frames of `size` px, drawing centered.
 static func _sheet(v: Variant) -> Dictionary:
 	var d: Dictionary = v if v is Dictionary else {}
 	var file := _file(d.get("file"))
@@ -118,9 +119,10 @@ static func _sheet(v: Variant) -> Dictionary:
 		return {}
 	return {
 		"file": file,
-		"w": int(_num(d.get("w"), 16, 1, 512)), "h": int(_num(d.get("h"), 16, 1, 512)),
-		"frames": int(_num(d.get("frames"), 1, 1, 64)), "fps": int(_num(d.get("fps"), 12, 1, 60)),
-		"cols": int(_num(d.get("cols"), 1, 1, 64)),
+		"size": int(_num(d.get("size"), 16, 8, 256)),
+		"frames": int(_num(d.get("frames"), 1, 1, 64)),
+		"fps": int(_num(d.get("fps"), 12, 1, 60)),
+		"loop": d.get("loop", true) == true,
 	}
 
 

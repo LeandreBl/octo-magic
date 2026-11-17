@@ -49,14 +49,34 @@ This file is also sent to the AI as the format reference: keep it accurate.
   zone sprite is drawn as is, stretched over the zone.
 - `particle`: **pixel grid** up to 8x8, the particle trailing the body
 
-## Bundle and art briefs
+## Bundle format (version 1)
 
-The forge returns a `.spell` bundle: a zip of `manifest.json` (this spell) and
-PNG sprite sheets drawn by PixelLab from art briefs written with the spell:
-`icon_brief` on the spell, `look` and `burst` on each body (English, a few
-sentences each). The forge then adds `icon_file` and, on bodies, `sheet` /
-`burst_sheet` = `{file, w, h, frames, fps, cols}` (frames of w x h, row by row).
-The engine draws a sheet when there is one, else the pixel grids below.
+The forge returns a `.spell` bundle, a zip:
+
+- `manifest.json`: this spell, plus `"format": 1`.
+- `icon.png`: 32x32 RGBA, drawing centered. Named by the spell's `icon_file`.
+- One PNG per animated **sheet**, named by a body's `sheet` (its looping
+  animation) or `burst_sheet` (its one-shot impact, played where it expires):
+  `{file, size, frames, fps, loop}`.
+
+Every sheet follows the same convention, so the engine loads and plays them
+all the same way:
+
+- one horizontal strip of `frames` square frames of `size` x `size` pixels
+  (PNG `size * frames` x `size`), `size` a multiple of 8, RGBA, transparent;
+- the drawing centered in each frame: the engine anchors sheets on the body's
+  position; bolt sheets face right and are rotated to the body's direction;
+- 12 frames per second, at least 2 different frames;
+- drawn at the art scale (one art pixel = 3 screen pixels), never resized.
+
+The forge enforces it (`server/sheet.py` normalizes what PixelLab draws and
+rejects still drawings); `python3 server/check_bundle.py file.spell` checks a
+bundle; the game drops a sheet that does not match its PNG and falls back to
+the body's pixel grids, which it turns into the same strip format.
+
+Art briefs: with the spell, write in English `icon_brief` on the spell and
+`look` (the moving body) and `burst` (its impact) on each body. PixelLab
+draws the first 2 bodies and the main body's impact from them.
 
 ## Pixel art
 

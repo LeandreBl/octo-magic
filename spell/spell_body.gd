@@ -9,9 +9,7 @@ var body: Dictionary
 var caster: Node2D
 var spell: Dictionary  # the whole spell: color and palette for the art
 var color: Color
-var frames: Array[Texture2D] = []
-var sheet_tex: Texture2D  # PixelLab sheet from the spell's bundle, if any
-var art_scale := 1
+var anim: Array = []  # [texture, sheet] from SpellArt.animation, or [] (no art)
 var dir := Vector2.RIGHT
 var speed := 0.0
 var age := 0.0
@@ -82,14 +80,9 @@ func _ready() -> void:
 	origin = position
 	homing = body.motion.any(func(m): return m.type == "homing" and m.strength > 0.0)
 	color = Color.html(spell.color)
-	if not body.sheet.is_empty():
-		sheet_tex = SpellArt.sheet(spell, body.sheet.file)
-	for f in body.sprite:
-		frames.append(SpellArt.texture(f, spell.palette))
-	if not frames.is_empty():
-		art_scale = SpellArt.scale_for(frames[0], body.size * 2.0)
+	anim = SpellArt.animation(spell, body)
 	var dot := SpellArt.texture(body.particle, spell.palette)
-	if dot and not sheet_tex:
+	if dot and body.sheet.is_empty():
 		var p := CPUParticles2D.new()
 		p.texture = dot
 		p.amount = 10
@@ -179,10 +172,10 @@ func _expire() -> void:
 		return
 	apply_effects(body.on_expire, global_position, null)
 	var burst := SpellArt.sheet(spell, body.burst_sheet.get("file", ""))
-	if burst:
+	if burst:  # one-shot by convention, whatever its "loop" says
 		var fx := Burst.new()
 		fx.tex = burst
-		fx.s = body.burst_sheet
+		fx.s = body.burst_sheet.merged({"loop": false}, true)
 		fx.position = position
 		get_parent().add_child(fx)
 	queue_free()
@@ -218,13 +211,8 @@ func _targets(radius: float, pos: Vector2, target: Node2D) -> Array:
 
 
 func _draw() -> void:
-	if sheet_tex:
-		SpellArt.draw_sheet(self, sheet_tex, body.sheet, age, dir.angle() if body.shape == "bolt" else 0.0)
-	elif not frames.is_empty():
-		var tex: Texture2D = frames[int(age * 8.0) % frames.size()]
-		var rot := dir.angle() if body.shape == "bolt" else 0.0
-		draw_set_transform(Vector2.ZERO, rot, Vector2.ONE * art_scale)
-		draw_texture(tex, -tex.get_size() / 2.0)
+	if anim:  # bolts face their direction (sheets are drawn facing right)
+		SpellArt.draw_sheet(self, anim[0], anim[1], age, dir.angle() if body.shape == "bolt" else 0.0)
 	elif body.shape == "zone":
 		draw_circle(Vector2.ZERO, body.size, Color(color, 0.25))
 		draw_arc(Vector2.ZERO, body.size, 0, TAU, 32, color, 2.0)
@@ -246,4 +234,4 @@ class Burst extends Node2D:
 		queue_redraw()
 
 	func _draw() -> void:
-		SpellArt.draw_sheet(self, tex, s, age, 0.0, false)
+		SpellArt.draw_sheet(self, tex, s, age, 0.0)
