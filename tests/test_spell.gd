@@ -90,6 +90,16 @@ func _initialize() -> void:
 	boom.emit.body.on_expire = [{"type": "cast", "emit": base.emit}]
 	check(Spell.power(Spell.sanitize(boom)) > Spell.power(base), "sub-casts add power")
 
+	# Sounds: synthesized from the data, a loop for continuous bodies.
+	for el in Spell.ELEMENTS:
+		var w := SpellSound.cast_stream(el, base.emit.body, 0)
+		check(w.data.count(0) < w.data.size() / 2 and w.loop_mode == AudioStreamWAV.LOOP_DISABLED, "%s cast sound" % el)
+		var l := SpellSound.loop_stream(el, base.emit.body, 1)
+		check(l.data.count(0) < l.data.size() / 2 and l.loop_mode == AudioStreamWAV.LOOP_FORWARD, "%s loop sound" % el)
+	check(SpellSound.is_continuous(Spell.sanitize({"emit": {"body": {"shape": "zone"}}}).emit.body), "zones loop")
+	check(not SpellSound.is_continuous(base.emit.body), "bolts play once")
+	check(SpellSound.cast_stream("fire", base.emit.body, 0) != SpellSound.cast_stream("fire", base.emit.body, 1), "sub-casts sound different")
+
 	await _check_homing_lifetime()
 
 	# Every example spell in the docs is valid and runs without crashing.

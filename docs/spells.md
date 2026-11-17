@@ -10,7 +10,9 @@ This file is also sent to the AI as the format reference: keep it accurate.
 ## Spell
 
 - `name` (string), `description` (string, one sentence, player-facing)
-- `element`: `fire` | `ice` | `lightning` | `poison` | `arcane` | `physical` (flavour)
+- `element`: `fire` | `ice` | `lightning` | `poison` | `arcane` | `physical` (flavour,
+  and the texture of the spell's sounds, synthesized by the engine from the
+  element and each body's shape, size and speed: `spell/spell_sound.gd`)
 - `color`: `#rrggbb`, main color of the visuals
 - `cooldown`: seconds between casts, 0.08 to 5
 - `words`: the words written on scrolls so far, oldest first

@@ -20,10 +20,11 @@ var hit_ids := {}
 var origin := Vector2.ZERO
 var wave_phase := 0.0
 var homing := false  # auto-aim: no lifetime, see _physics_process
+var depth := 0  # 0 = cast by the player, n = sub-cast n levels deep
 
 
 ## Emit an "emit" dict from pos toward dir. Bursts are spread over time.
-static func cast(emit: Dictionary, pos: Vector2, aim: Vector2, owner_node: Node2D, spell: Dictionary, world: Node) -> void:
+static func cast(emit: Dictionary, pos: Vector2, aim: Vector2, owner_node: Node2D, spell: Dictionary, world: Node, depth := 0) -> void:
 	var dirs := _directions(emit, pos, aim, world)
 	for i in dirs.size():
 		if i > 0 and emit.burst_delay > 0.0:
@@ -36,7 +37,11 @@ static func cast(emit: Dictionary, pos: Vector2, aim: Vector2, owner_node: Node2
 		b.spell = spell
 		b.dir = dirs[i]
 		b.position = pos
+		b.depth = depth
 		world.add_child(b)
+		# One sound per emit; each body of a timed burst gets its own one-shot.
+		if i == 0 or (emit.burst_delay > 0.0 and not SpellSound.is_continuous(emit.body)):
+			SpellSound.play(spell, emit.body, depth, b, world)
 
 
 static func _directions(emit: Dictionary, pos: Vector2, aim: Vector2, world: Node) -> Array:
@@ -190,7 +195,7 @@ func apply_effects(list: Array, pos: Vector2, target: Node2D) -> void:
 				if is_instance_valid(caster):
 					caster.heal(f.amount)
 			"cast":
-				SpellBody.cast(f.emit, pos, dir, caster, spell, get_parent())
+				SpellBody.cast(f.emit, pos, dir, caster, spell, get_parent(), depth + 1)
 			_:
 				for e in _targets(f.get("radius", 0.0), pos, target):
 					match f.type:
