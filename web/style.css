@@ -125,7 +125,7 @@ body.landing .hero h1 {
 /* The octopus with its spells orbiting around. */
 .orbit { position: relative; width: min(26rem, 80vw); aspect-ratio: 1; margin: 0 auto; }
 .orbit::before {
-  content: ""; position: absolute; inset: 12%; border-radius: 50%;
+  content: ""; position: absolute; inset: 8%; border-radius: 50%;
   border: 1px dashed #8b5cf666; box-shadow: 0 0 80px #8b5cf644 inset, 0 0 60px #8b5cf633;
 }
 .orbit .core {
