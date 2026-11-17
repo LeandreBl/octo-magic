@@ -14,7 +14,15 @@ Create, combine and cast spells to conquer a dungeon.
   https://octo-magic.api.notdotio.com (API), TURN on
   octo-magic.turn.notdotio.com (see the end of `example.env`).
   Server: `backend/server.js` (Firebase login, profiles and spells in
-  Postgres, coop lobby on `/play`).
+  Postgres, coop lobby on the `/play` WebSocket).
+- Website: `frontend/` (React, Vite), served by the server: landing `/`,
+  login `/login` (email/password or Google, Firebase), account `/account`
+  (the online save) and `/play`, the web game already logged in with the
+  site's account (`window.octoSession`, read by `game/online.gd`). Dev:
+  `cd frontend && npm i && npm run dev` against a server on :8080
+  (`OCTO_SERVER` to change it). Google sign-in: enable it in Firebase
+  (Authentication > Sign-in method) and add the site's domain to the
+  authorized domains.
 - Coop (menu → Multijoueur, logged in): WebRTC peer to peer, the server only
   introduces the players (`game/net.gd`). The native game needs the WebRTC
   extension: `./webrtc.sh` (downloads `addons/webrtc_native`, not in git).

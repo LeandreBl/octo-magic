@@ -2,6 +2,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
 import { createHmac } from "node:crypto";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { createServer, iceServers } from "./server.js";
 
 // Tokens are "token-<uid>"; profiles and spells live in Maps.
@@ -59,6 +62,24 @@ test("forge is limited to forgeEmails", async () => {
 
 test("config is public", async () => {
   assert.deepEqual(await (await api("/api/config")).json(), { firebaseApiKey: "k" });
+});
+
+test("frontend routes serve its index, files under /game as is", async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "octo-web-"));
+  mkdirSync(path.join(dir, "game"));
+  writeFileSync(path.join(dir, "index.html"), "<p>front</p>");
+  writeFileSync(path.join(dir, "game", "index.html"), "<p>game</p>");
+  const web = createServer({ verify, store, webDir: dir });
+  await new Promise((r) => web.listen(0, r));
+  const at = (p) => fetch(`http://127.0.0.1:${web.address().port}${p}`);
+  try {
+    for (const p of ["/", "/play", "/account"]) assert.equal(await (await at(p)).text(), "<p>front</p>");
+    assert.equal(await (await at("/game/index.html")).text(), "<p>game</p>");
+    assert.equal((await at("/game/missing.js")).status, 404);
+  } finally {
+    web.close();
+    rmSync(dir, { recursive: true });
+  }
 });
 
 // A lobby client: messages are queued, next() waits for one.

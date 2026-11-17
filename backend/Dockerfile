@@ -19,6 +19,16 @@ RUN godot --headless --import >/dev/null 2>&1 || true; \
     mkdir -p export/web && godot --headless --export-release Web export/web/index.html \
     && test -f export/web/index.pck
 
+# The frontend (landing, login, account, /play around the game).
+FROM node:24-alpine AS front
+WORKDIR /src/frontend
+COPY frontend/package*.json ./
+RUN npm ci --no-audit --no-fund
+COPY frontend ./
+COPY assets/icons /src/assets/icons
+COPY assets/fonts /src/assets/fonts
+RUN npm run build
+
 FROM node:24-alpine
 WORKDIR /app
 ENV NODE_ENV=production WEB_DIR=/app/web
@@ -26,7 +36,8 @@ COPY backend/package*.json ./
 RUN npm ci --omit=dev --no-audit --no-fund
 COPY backend/server.js ./
 COPY backend/legal ./legal
-COPY --from=web /src/export/web ./web
+COPY --from=front /src/frontend/dist ./web
+COPY --from=web /src/export/web ./web/game
 USER node
 EXPOSE 8080
 CMD ["node", "server.js"]

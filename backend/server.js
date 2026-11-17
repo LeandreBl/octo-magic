@@ -6,14 +6,15 @@
 //
 // HTTP (Authorization: Bearer <Firebase ID token> on /api):
 //   GET  /health
-//   GET  /api/config             -> {firebaseApiKey} for the game (no login)
+//   GET  /api/config             -> {firebaseApiKey, firebaseProjectId} (no login)
 //   GET  /api/profile            -> the saved profile ({} for a new player)
 //   PUT  /api/profile            <- the profile (JSON object, Profile.save())
 //   GET  /api/spells/<id>        -> a .spell bundle (zip) of the player
 //   PUT  /api/spells/<id>        <- a .spell bundle
 //   POST /api/forge, GET /api/forge/<job>   proxied to the forge (server/forge.py)
 //   GET  /terms, /privacy        legal pages (legal/*.html), linked from Google sign-in
-//   GET  /...                    the web export of the game
+//   GET  /...                    the frontend (frontend/: landing, login, account,
+//                                /play), the game's web export under /game/
 //
 // WebSocket /play, JSON text messages. The host is peer 1, players 2, 3...;
 // a player talks to the host only (the host's game relays between players).
@@ -48,7 +49,7 @@ const LEGAL = new URL("legal/", import.meta.url);
 const MIME = {
   ".html": "text/html", ".js": "text/javascript", ".wasm": "application/wasm",
   ".pck": "application/octet-stream", ".png": "image/png", ".svg": "image/svg+xml",
-  ".ico": "image/x-icon", ".json": "application/json",
+  ".ico": "image/x-icon", ".json": "application/json", ".css": "text/css", ".ttf": "font/ttf",
 };
 
 class HttpError extends Error {
@@ -77,7 +78,7 @@ function send(res, code, body, type = "application/json") {
 
 /**
  * verify(token) -> {uid} or throws; store: getProfile/putProfile/getSpell/putSpell.
- * forgeUrl: base URL of the forge (null: no forge); webDir: the game's web export.
+ * forgeUrl: base URL of the forge (null: no forge); webDir: the frontend build, with the game's web export in game/.
  * forgeEmails: the only accounts allowed to forge, by email (null: every logged-in player).
  * config: public settings the game reads before logging in.
  * turn: {url, secret} of the TURN server (coturn --use-auth-secret), or null.
@@ -131,7 +132,9 @@ export function createServer({ verify, store, forgeUrl = null, forgeEmails = nul
   async function staticFile(res, url) {
     if (!webDir) throw new HttpError(404, "not found");
     const root = path.resolve(webDir);
-    const file = path.resolve(root, "." + decodeURIComponent(url.pathname === "/" ? "/index.html" : url.pathname));
+    // Paths without an extension are the frontend's routes (/, /account, /play...).
+    const page = !path.extname(url.pathname);
+    const file = path.resolve(root, "." + decodeURIComponent(page ? "/index.html" : url.pathname));
     if (!file.startsWith(root + path.sep)) throw new HttpError(404, "not found");
     const data = await readFile(file).catch(() => { throw new HttpError(404, "not found"); });
     send(res, 200, data, MIME[path.extname(file)] ?? "application/octet-stream");
@@ -289,7 +292,7 @@ if (import.meta.main) {
     forgeEmails: process.env.FORGE_EMAILS ? process.env.FORGE_EMAILS.toLowerCase().split(",").map((s) => s.trim()) : null,
     webDir: process.env.WEB_DIR || null,
     // The Firebase web API key is public (it ships in every client).
-    config: { firebaseApiKey: process.env.FIREBASE_API_KEY ?? "" },
+    config: { firebaseApiKey: process.env.FIREBASE_API_KEY ?? "", firebaseProjectId: process.env.FIREBASE_PROJECT_ID },
     turn: { url: process.env.TURN_URL, secret: process.env.TURN_SECRET },
   }).listen(port, () => console.log(`octo-magic server on :${port}`));
 }

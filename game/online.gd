@@ -5,6 +5,7 @@ extends Node
 ## profile follows the account: pulled at login (the server's copy wins
 ## unless it is empty), pushed on every save, forged .spell bundles with it.
 ## The forge (/api/forge) and the coop lobby (game/net.gd) use its token.
+## On the website's /play, the game starts logged in with the page's account.
 ##
 ## Server URL: OCTO_SERVER, else the page's origin on web, else
 ## octo/server_url in project.godot, else the production API. OCTO_AUTH_EMULATOR (host:port) logs in
@@ -46,7 +47,9 @@ func _ready() -> void:
 		identity = "http://%s/identitytoolkit.googleapis.com/v1/accounts:" % emulator
 		secure_token = "http://%s/securetoken.googleapis.com/v1/token?key=" % emulator
 	Profile.saved.connect(_on_saved)
-	var s: Variant = JSON.parse_string(FileAccess.get_file_as_string(SESSION)) if FileAccess.file_exists(SESSION) else null
+	var s: Variant = _page_session()
+	if s == null and FileAccess.file_exists(SESSION):
+		s = JSON.parse_string(FileAccess.get_file_as_string(SESSION))
 	if s is Dictionary and s.get("refresh", "") != "":
 		email = str(s.get("email", ""))
 		_refresh = str(s.refresh)
@@ -177,6 +180,17 @@ func _push() -> void:
 		var r := await api("/api/profile", HTTPClient.METHOD_PUT, Profile.to_dict())
 		status = "Profil synchronisé." if r.ok else "Profil non synchronisé (serveur injoignable)."
 	_pushing = false
+
+
+## On the website's /play (frontend/), the account the page is logged in
+## with: {email, refresh} from window.octoSession of the parent page; null
+## elsewhere (the game's own session file then).
+func _page_session() -> Variant:
+	if not OS.has_feature("web"):
+		return null
+	var js := "(() => { try { return JSON.stringify(parent.octoSession ?? null) } catch (e) { return 'null' } })()"
+	var s: Variant = JSON.parse_string(str(JavaScriptBridge.eval(js)))
+	return s if s is Dictionary else null
 
 
 func _config() -> bool:
