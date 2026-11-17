@@ -2,7 +2,8 @@
 
 Run: python3 server/forge.py   (listens on :8765)
 With ANTHROPIC_API_KEY set it calls the API; otherwise it goes through the
-logged-in `claude` CLI (Claude Code account), fine for development only.
+`claude` CLI on a Claude subscription (logged in, or CLAUDE_CODE_OAUTH_TOKEN
+from `claude setup-token`), for personal tests only.
 POST /forge {"spell": {...}, "words": "ignis, vampyrus", "scrolls": 2}
   -> {"job": id, "words": ["ignis", "vampyrus"]}   (one blank scroll per word)
 GET /forge/<id> -> {"status": "pending"} | {"error": ...} | the .spell bundle (zip),
@@ -145,6 +146,7 @@ def call_cli(payload: dict) -> dict:
          "--tools", "", "--no-session-persistence", "--setting-sources", "",
          "--output-format", "json", "--json-schema", json.dumps(CLI_SCHEMA)],
         capture_output=True, text=True, timeout=180, cwd="/tmp",
+        env={k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"},  # empty in compose
     )
     reply = json.loads(out.stdout or "{}")
     data = reply.get("structured_output")

@@ -32,7 +32,9 @@ services:
       context: .
       dockerfile: server/Dockerfile
     environment:
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY is required, see example.env}
+      # One of the two (see example.env): an API key, else a Claude subscription.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
       PIXELLAB_TOKEN: ${PIXELLAB_TOKEN:-}
       FORGE_MODEL: ${FORGE_MODEL:-claude-haiku-5-5}
 
