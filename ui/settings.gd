@@ -13,6 +13,32 @@ const WEB_LANG := "octo.lang"  # localStorage key, shared with the website
 const UI_SCALES := [0.75, 1.0, 1.25, 1.5]
 
 static var cfg := ConfigFile.new()
+## The last input came from a gamepad (set by ui/ui.gd): button prompts, and
+## the mage stops aiming at the mouse.
+static var pad := false
+static var playstation := false  # that gamepad is a PlayStation one
+
+
+## Name of a gamepad button for the prompts: Xbox name, or PlayStation one.
+static func pad_button(xbox: String, ps: String) -> String:
+	return ps if playstation else xbox
+
+
+## Updates `pad` from an input event; true when it changed.
+static func track_device(e: InputEvent) -> bool:
+	var was := pad
+	if e is InputEventJoypadButton or (e is InputEventJoypadMotion and absf(e.axis_value) > 0.5):
+		pad = true
+		var n := Input.get_joy_name(e.device)
+		if OS.has_feature("web"):  # Godot names a standard pad "Standard Gamepad Mapping": ask the browser
+			n = str(JavaScriptBridge.eval("(navigator.getGamepads()[%d] || {}).id || ''" % e.device))
+		n = n.to_lower()
+		playstation = ["playstation", "dualshock", "dualsense", "ps3", "ps4", "ps5", "sony", "054c",
+			"wireless controller"].any(func(w): return n.contains(w))
+	elif e is InputEventKey or e is InputEventMouseButton or e is InputEventScreenTouch \
+			or (e is InputEventMouseMotion and e.relative.length() > 2.0):
+		pad = false
+	return pad != was
 
 
 static func get_value(section: String, key: String, default: Variant) -> Variant:

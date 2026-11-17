@@ -179,7 +179,7 @@ func _process(_delta: float) -> void:
 			ui[2] = sp
 			ui[0].texture = _icon(sp)
 		ui[3].text = str(cost)
-		ui[4].text = "%s\n%s" % [Spell.label(sp), tr("Left click" if slot == "primary" else "Right click")]  # follows a language change
+		ui[4].text = "%s\n%s" % [Spell.label(sp), _binding(slot)]  # follows a language change
 		ui[1].offset_top = -ui[1].get_parent().size.y * clampf(p.cooldowns.get(slot, 0.0) / sp.cooldown, 0.0, 1.0)
 		ui[0].modulate = Color.WHITE if p.mana >= cost else Color(0.45, 0.45, 0.6)
 
@@ -204,3 +204,10 @@ static func _icon(s: Dictionary) -> Texture2D:
 			if Vector2(x - 5.5, y - 5.5).length() < 5.5:
 				img.set_pixel(x, y, Color(s.color))
 	return ImageTexture.create_from_image(img)
+
+
+## The button of a spell slot, for the device in use.
+func _binding(slot: String) -> String:
+	if Settings.pad:
+		return Settings.pad_button("RT", "R2") if slot == "primary" else Settings.pad_button("RB", "R1")
+	return tr("Left click" if slot == "primary" else "Right click")

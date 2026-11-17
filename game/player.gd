@@ -1,7 +1,7 @@
 extends Node2D
 ## The mage. Twin-stick: keyboard/mouse, gamepad, or touch (left half of the
 ## screen moves, right half aims and fires the main spell).
-## Main spell: left click / right stick / touch aim; secondary (bought in the
+## Main spell: left click / right stick or RT / touch aim; secondary (bought in the
 ## run): right click / Space / RB. `held` lets a touch UI fire them.
 ## Passive "shield" (bought in the run): absorbs SHIELD_HP damage, comes back
 ## SHIELD_WAIT seconds after it breaks.
@@ -206,15 +206,20 @@ func _steer(delta: float) -> void:
 	move = (move + _stick(_touch_move)).limit_length(1.0)
 	position = (position + move * speed * delta).clamp(Arena.RECT.position, Arena.RECT.end)
 
-	var fire := false
-	var pad_aim := Vector2(Input.get_joy_axis(0, JOY_AXIS_RIGHT_X), Input.get_joy_axis(0, JOY_AXIS_RIGHT_Y))
+	# Gamepad (any connected one): right stick aims and fires, RT fires
+	# where the mage aims; with the right stick idle it aims where it walks.
+	var fire := Input.is_action_pressed("fire")
+	var pad_aim := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
 	var touch_aim := _stick(_touch_aim)
-	if pad_aim.length() > 0.3:
+	if pad_aim != Vector2.ZERO:
 		aim = pad_aim.normalized()
 		fire = true
 	elif touch_aim.length() > 0.2:
 		aim = touch_aim.normalized()
 		fire = true
+	elif Settings.pad:
+		if move.length() > 0.3:
+			aim = move.normalized()
 	elif _touch_aim.is_empty():
 		aim = (get_global_mouse_position() - global_position).normalized()
 		fire = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)

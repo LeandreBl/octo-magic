@@ -70,8 +70,8 @@ msgstr "Succès : %s !"
 msgid "Spell unlocked: %s."
 msgstr "Sort débloqué : %s."
 
-msgid "Mouse: aim · left click: cast the spell · right click or Space: secondary spell\nGamepad: left stick move, right stick aim and cast, RB secondary spell, Start pause\nTouch: left half move, right half aim and cast, touch a slot to cast it"
-msgstr "Souris : viser · clic gauche : lancer le sort · clic droit ou Espace : sort secondaire\nManette : stick gauche bouger, stick droit viser et lancer, RB sort secondaire, Start pause\nTactile : moitié gauche bouger, moitié droite viser et lancer, toucher un emplacement pour le lancer"
+msgid "Mouse: aim · left click: cast the spell · right click or Space: secondary spell\nGamepad: left stick move, right stick aim and cast, RT cast, RB secondary spell, Start pause\nMenus with a gamepad: d-pad or left stick, A confirm, B back\nBrowser: press a gamepad button so it is detected\nTouch: left half move, right half aim and cast, touch a slot to cast it"
+msgstr "Souris : viser · clic gauche : lancer le sort · clic droit ou Espace : sort secondaire\nManette : stick gauche bouger, stick droit viser et lancer, RT lancer, RB sort secondaire, Start pause\nMenus à la manette : croix directionnelle ou stick gauche, A valider, B retour\nNavigateur : appuie sur un bouton de la manette pour qu'elle soit détectée\nTactile : moitié gauche bouger, moitié droite viser et lancer, toucher un emplacement pour le lancer"
 
 msgid "Language"
 msgstr "Langue"
@@ -246,9 +246,6 @@ msgstr "Session expirée, reconnecte-toi."
 
 msgid "Profile not synced (server unreachable)."
 msgstr "Profil non synchronisé (serveur injoignable)."
-
-msgid "Profile sent to the server."
-msgstr "Profil envoyé sur le serveur."
 
 msgid "Profile synced."
 msgstr "Profil synchronisé."
@@ -609,3 +606,39 @@ msgstr "PV %d / %d  ·  bouclier %d"
 
 msgid "Passive"
 msgstr "Passif"
+
+msgid "Characters"
+msgstr "Personnages"
+
+msgid "New character"
+msgstr "Nouveau personnage"
+
+msgid "Create"
+msgstr "Créer"
+
+msgid "name"
+msgstr "nom"
+
+msgid "Loading…"
+msgstr "Chargement…"
+
+msgid "Choose a name."
+msgstr "Choisis un nom."
+
+msgid "Creating…"
+msgstr "Création…"
+
+msgid "Cost: %d mana"
+msgstr "Coût : %d mana"
+
+msgid "%s: confirm"
+msgstr "%s : valider"
+
+msgid "%s: back"
+msgstr "%s : retour"
+
+msgid "Cross"
+msgstr "Croix"
+
+msgid "Circle"
+msgstr "Rond"

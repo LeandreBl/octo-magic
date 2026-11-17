@@ -312,6 +312,28 @@ func _test_play() -> void:
 		await physics_frame
 	check(not is_instance_valid(bomber) and player.hp <= player.max_hp - bomber_blast(), "bomber blows up")
 	check(player.hp < player.max_hp, "enemies hurt the player")
+	_test_gamepad(player)
 	world.free()
 	run.free()
 	p.free()
+
+
+## Gamepad: right stick aims and fires, RT fires where the mage walks; the
+## device in use switches on input events.
+func _test_gamepad(player: Node2D) -> void:
+	var b := InputEventJoypadButton.new()
+	b.pressed = true
+	check(Settings.track_device(b) and Settings.pad, "a gamepad button switches to gamepad")
+	Input.action_press("aim_up")
+	player._steer(0.0)
+	check(player.aim.is_equal_approx(Vector2.UP) and player.firing.primary, "right stick aims and fires")
+	Input.action_release("aim_up")
+	Input.action_press("move_left")
+	player._steer(0.0)
+	check(player.aim.is_equal_approx(Vector2.LEFT) and not player.firing.primary, "idle stick: aims where it walks")
+	Input.action_press("fire")
+	player._steer(0.0)
+	check(player.firing.primary, "RT fires")
+	Input.action_release("fire")
+	Input.action_release("move_left")
+	check(Settings.track_device(InputEventKey.new()) and not Settings.pad, "a key switches back to keyboard")
