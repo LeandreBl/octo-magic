@@ -77,6 +77,9 @@ func _process(_delta: float) -> void:
 	var slots := []
 	for slot in Upgrades.SLOTS:
 		slots.append("%s (%d)" % [Run.spells[slot].name, Run.mana_cost(slot)])
+	if player.skill:
+		var k: Dictionary = Skills.LIST[player.skill]
+		slots.append("%s (%d) %s" % [k.name, k.mana, "prêt" if player.skill_cooldown <= 0.0 else "%.0f s" % player.skill_cooldown])
 	hud.text = "Vague %d   Niveau %d (%d/%d XP)   PV %d/%d   Mana %d   Or %d   Parchemins %d   Score %d\n%s\n%s" % [
 		Run.wave, Run.level, Run.xp, Run.xp_to_next(Run.level), player.hp, player.max_hp, player.mana,
 		Run.gold, Run.scrolls, Run.score(), "   |   ".join(slots), forge_note]
@@ -121,7 +124,7 @@ func _run_started(map: String, map_seed: int) -> void:
 func _send_loadout(fresh: bool) -> void:
 	if multiplayer.multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
 		return
-	_offer_loadout.rpc_id(1, JSON.stringify({"fresh": fresh, "spells": Run.spells, "mult": Run.mana_mult,
+	_offer_loadout.rpc_id(1, JSON.stringify({"fresh": fresh, "spells": Run.spells, "mult": Run.mana_mult, "skill": Profile.skill,
 		"stats": Profile.total_stats(), "look": Profile.look.merged({
 			"robe": Profile.ITEMS[Profile.equipped.robe].color,
 			"staff": Profile.ITEMS[Profile.equipped.staff].color,
@@ -222,8 +225,8 @@ func _end_run() -> void:
 		r.wave, r.level, r.kills, r.score, r.gold, r.scrolls]
 	for id in reached:
 		run_summary += "\nSuccès : %s !" % Profile.ACHIEVEMENTS[id].name
-	for e in Profile.unlocked_by(reached):
-		run_summary += "\nNouveau sort débloqué : %s." % e.spell.name
+	for n in Profile.unlocked_by(reached):
+		run_summary += "\nDébloqué : %s." % n
 	_show_hub()
 
 
@@ -439,6 +442,14 @@ func _refresh_hub() -> void:
 			b.disabled = Profile.spells[slot] == e.id
 			b.tooltip_text = "%s (%d mana)" % [e.spell.description, Spell.mana_cost(e.spell)]
 
+	_label("\nSkill (clic droit / espace / RB / LB) :")
+	row = _row()
+	for id in Profile.available_skills():
+		var k: Dictionary = Skills.LIST[id]
+		var b := _button(row, k.name, func(): Profile.equip_skill(id))
+		b.disabled = Profile.skill == id
+		b.tooltip_text = "%s (%d mana, %d s)" % [k.desc, k.mana, k.cooldown]
+
 	_label("\nChapeau :")
 	row = _row()
 	for c in Profile.COLORS:
@@ -459,7 +470,7 @@ func _refresh_hub() -> void:
 	elif Profile.blank_scrolls == 0:
 		hub_status.text = "Aucun parchemin vierge : les boss en laissent tomber. %s" % forge_note
 	elif hub_status.text.is_empty():
-		hub_status.text = "Écris un mot par parchemin (séparés par des espaces ou des virgules) pour transformer ton sort principal."
+		hub_status.text = "Écris un mot par parchemin (séparés par des espaces ou des virgules) pour transformer ton sort."
 
 	var done := Profile.ACHIEVEMENTS.keys().filter(func(id): return Profile.achievements.has(id))
 	_label("\nSuccès %d/%d : %s" % [done.size(), Profile.ACHIEVEMENTS.size(),
@@ -560,7 +571,7 @@ func _on_bundle(data: PackedByteArray, cancelled: int) -> void:
 		return
 	Profile.blank_scrolls += cancelled
 	Profile.add_forged(s, path)
-	forge_note = "Parchemin écrit : %s sera ton sort principal à la prochaine run." % s.name
+	forge_note = "Parchemin écrit : %s sera ton sort à la prochaine run." % s.name
 	if cancelled > 0:
 		forge_note += " %d mot(s) sans sens annulé(s), parchemin(s) rendu(s)." % cancelled
 	_refresh_hub()

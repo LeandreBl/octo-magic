@@ -38,8 +38,8 @@ const BONUSES := {
 	"wisdom": {"name": "Sagesse", "desc": "+10 % d'XP", "price": 60, "max": 5, "bonus": {"xp": 0.1}},
 }
 
-## Achievements: reached when stats[stat] >= goal. Some unlock spells
-## (the "unlock" field of game/spells.json).
+## Achievements: reached when stats[stat] >= goal. Some unlock spells or
+## skills (the "unlock" field of game/spells.json and Skills.LIST).
 const ACHIEVEMENTS := {
 	"first_blood": {"name": "Premier sang", "desc": "Vaincre un ennemi", "stat": "kills", "goal": 1},
 	"hunter": {"name": "Chasseur", "desc": "Vaincre 100 ennemis", "stat": "kills", "goal": 100},
@@ -69,6 +69,7 @@ var stats := {"kills": 0, "bosses": 0, "best_wave": 0, "best_level": 0, "gold_to
 var achievements := {}  # id -> unix time reached
 var scores := []  # best first: {score, wave, level, kills, time}
 var spells := {}  # slot -> spell id equipped
+var skill := "shield"  # Skills.LIST id equipped
 var forged := []  # spells from the forge: {id, slot, file, spell}
 var base_spells := []  # game/spells.json: {id, slot, unlock, spell}
 
@@ -125,6 +126,8 @@ func load_profile(p := PATH) -> void:
 	for slot in _dict(d.get("spells")):
 		if slot in Upgrades.SLOTS and _entry(str(d.spells[slot]), slot):
 			spells[slot] = str(d.spells[slot])
+	if str(d.get("skill")) in available_skills():
+		skill = str(d.skill)
 	changed.emit()
 
 
@@ -133,7 +136,7 @@ func save() -> void:
 	if f:
 		f.store_string(JSON.stringify({"version": 1, "gold": gold, "blank_scrolls": blank_scrolls,
 			"owned": owned, "equipped": equipped, "bonuses": bonuses, "look": look, "stats": stats,
-			"achievements": achievements, "scores": scores, "spells": spells, "forged": forged}, " "))
+			"achievements": achievements, "scores": scores, "spells": spells, "skill": skill, "forged": forged}, " "))
 
 
 static func _dict(v: Variant) -> Dictionary:
@@ -242,6 +245,19 @@ func equipped_spells() -> Dictionary:
 	return out
 
 
+## Skill ids the player can equip: the unlocked ones.
+func available_skills() -> Array:
+	return Skills.LIST.keys().filter(func(id): return is_unlocked(Skills.LIST[id]))
+
+
+func equip_skill(id: String) -> bool:
+	if not id in available_skills():
+		return false
+	skill = id
+	_saved()
+	return true
+
+
 ## A spell written by the forge (bundle saved at `file`): kept, and equipped
 ## in `slot` for the next run.
 func add_forged(spell: Dictionary, file: String, slot := "primary") -> String:
@@ -285,6 +301,7 @@ func record_run(r: Dictionary) -> Array:
 	return reached
 
 
-## Base spells unlocked by these achievements, for the "new spell" message.
+## Names of the base spells and skills unlocked by these achievements.
 func unlocked_by(ids: Array) -> Array:
-	return base_spells.filter(func(e): return e.unlock in ids)
+	return base_spells.filter(func(e): return e.unlock in ids).map(func(e): return e.spell.name) \
+		+ Skills.LIST.values().filter(func(k): return k.unlock in ids).map(func(k): return k.name)

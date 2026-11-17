@@ -18,7 +18,7 @@
 - Sorts de base élémentaires (feu, glace, foudre, poison, arcane…), assets faits maison.
 
 ## Sorts
-- Emplacements : sort principal, sort secondaire, ultime.
+- Un seul sort équipé (pas de secondaire ni d'ultime, tâche #94), plus un **skill** au choix : bouclier, cercle de soin, puits de mana (`game/skills.gd`). Les skills agissent sur les mages, pas sur les ennemis.
 - Améliorations par sort : vitesse du projectile (si pertinent), nombre de projectiles, coût en mana, dégâts, cadence, zone…
 - Inspiration : sorts de base et augments de Solomon's Boneyard, **avec nos noms, nos valeurs et nos visuels** (on reprend la mécanique, pas le contenu).
 

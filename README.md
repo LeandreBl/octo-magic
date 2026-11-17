@@ -15,8 +15,9 @@ Create, combine and cast spells to conquer a dungeon.
 - Tests: `GODOT=/path/to/godot tests/run.sh`
 
 Controls: move WASD / arrows / left stick / left half of the screen; aim
-with the mouse / right stick / right half. Main spell: left click (or aim
-stick), secondary: right click / RB, ultimate: space / LB.
+with the mouse / right stick / right half. Spell: left click (or aim
+stick); skill (shield, heal zone, mana zone: `game/skills.gd`): right click /
+space / RB / LB.
 
 Game state: autoloads `Profile` (`game/profile.gd`: gold, shop, bonuses,
 look, achievements, scores, spells; saved in `user://profile.json`) and

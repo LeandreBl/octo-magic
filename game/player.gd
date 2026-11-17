@@ -1,8 +1,8 @@
 extends Node2D
 ## The mage. Twin-stick: keyboard/mouse, gamepad, or touch (left half of the
 ## screen moves, right half aims and fires the main spell).
-## Spells: primary = left click / right stick / touch aim, secondary = right
-## click / RB, ultimate = space / LB. `held` lets a touch UI fire any slot.
+## One spell (left click / right stick / touch aim) and one skill (see
+## Skills: right click / RB / space / LB). `held` lets a touch UI fire either.
 ## Coop (see main.gd): the owner peer steers its mage (position, aim, firing
 ## are synced from it); the host owns the rest (hp, mana, loadout) and casts.
 
@@ -13,7 +13,7 @@ const STICK_RANGE := 80.0
 
 var run: Object  # spells and mana costs: a Loadout in game, a Run in tests
 var peer_id := 1  # the owner's peer; 1 = host (or solo)
-var firing := {}  # slot -> bool, from the owner
+var firing := {}  # "primary" / "skill" -> bool, from the owner
 ## Spells, stats and look as sanitized JSON (see clean_loadout), synced from
 ## the host to every peer.
 var loadout_json := "":
@@ -29,7 +29,10 @@ var speed := BASE_SPEED
 var hp := max_hp
 var mana := max_mana
 var cooldowns := {}  # slot -> seconds left
-var held := {}  # slot -> bool, from a touch UI
+var held := {}  # "primary" / "skill" -> bool, from a touch UI
+var skill := ""  # Skills.LIST id, from the loadout
+var skill_cooldown := 0.0
+var shield := 0.0  # seconds of shield left: no damage taken
 var aim := Vector2.RIGHT
 var radius := 12.0
 var look := {"hat": "#3a2a99", "skin": "#f1c27d", "robe": "#6a4cff", "staff": "#8d6e63", "ring": ""}
@@ -47,6 +50,8 @@ func setup(stats: Dictionary) -> void:
 	hp = max_hp
 	mana = max_mana
 	cooldowns = {}
+	skill_cooldown = 0.0
+	shield = 0.0
 
 
 func _ready() -> void:
@@ -70,7 +75,8 @@ static func clean_loadout(raw: Variant) -> Dictionary:
 	var out_look := {}
 	for k in ["hat", "skin", "robe", "staff", "ring"]:
 		out_look[k] = Spell._color(look_in.get(k)) if look_in.get(k) else ""
-	return {"spells": spells, "costs": costs, "look": out_look, "fresh": l.get("fresh") == true,
+	var sk := str(l.get("skill", ""))
+	return {"spells": spells, "costs": costs, "skill": sk if Skills.LIST.has(sk) else "", "look": out_look, "fresh": l.get("fresh") == true,
 		"stats": {"hp": _clamp(st.get("hp"), 100.0, 1.0, 1000.0), "mana": _clamp(st.get("mana"), 100.0, 1.0, 1000.0),
 			"regen": _clamp(st.get("regen"), 25.0, 0.0, 200.0), "speed": _clamp(st.get("speed"), 0.0, 0.0, 2.0)}}
 
@@ -84,6 +90,7 @@ func _apply(l: Dictionary) -> void:
 	lo.spells = l.spells
 	lo.costs = l.costs
 	run = lo
+	skill = l.skill
 	for k in l.look:
 		if l.look[k] or k == "ring":
 			look[k] = l.look[k]
@@ -109,7 +116,7 @@ func heal(amount: float) -> void:
 
 
 func hurt(amount: float) -> void:
-	if hp <= 0.0:
+	if hp <= 0.0 or shield > 0.0:
 		return
 	hp -= amount
 	if hp <= 0.0:
@@ -139,6 +146,7 @@ func _stick(slot: Dictionary) -> Vector2:
 
 func _physics_process(delta: float) -> void:
 	queue_redraw()
+	shield -= delta  # counted down everywhere: peers draw it
 	if peer_id == multiplayer.get_unique_id() and hp > 0.0:
 		_steer(delta)
 	if not multiplayer.is_server() or hp <= 0.0:
@@ -148,6 +156,9 @@ func _physics_process(delta: float) -> void:
 		cooldowns[slot] = cooldowns.get(slot, 0.0) - delta
 		if firing.get(slot, false) and run and run.spells.has(slot):
 			cast(slot)
+	skill_cooldown -= delta
+	if firing.get("skill", false) and skill:
+		use_skill()
 
 
 func _steer(delta: float) -> void:
@@ -176,8 +187,9 @@ func _steer(delta: float) -> void:
 
 	firing = {
 		"primary": fire or held.get("primary", false),
-		"secondary": Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) or Input.is_joy_button_pressed(0, JOY_BUTTON_RIGHT_SHOULDER) or held.get("secondary", false),
-		"ultimate": Input.is_physical_key_pressed(KEY_SPACE) or Input.is_joy_button_pressed(0, JOY_BUTTON_LEFT_SHOULDER) or held.get("ultimate", false),
+		"skill": Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) or Input.is_physical_key_pressed(KEY_SPACE)
+			or Input.is_joy_button_pressed(0, JOY_BUTTON_RIGHT_SHOULDER) or Input.is_joy_button_pressed(0, JOY_BUTTON_LEFT_SHOULDER)
+			or held.get("skill", false),
 	}
 
 
@@ -200,6 +212,30 @@ func _cast_fx(slot: String, pos: Vector2, dir: Vector2) -> void:
 		SpellBody.cast(run.spells[slot].emit, pos, dir, self, run.spells[slot], get_parent())
 
 
+## Host: the equipped skill, if ready and affordable.
+func use_skill() -> bool:
+	var k: Dictionary = Skills.LIST[skill]
+	if skill_cooldown > 0.0 or mana < k.mana:
+		return false
+	mana -= k.mana
+	skill_cooldown = k.cooldown
+	_skill_fx.rpc(skill, global_position)
+	return true
+
+
+## Everyone: the shield shows, the zone appears (only the host's one heals).
+@rpc("authority", "call_local", "reliable")
+func _skill_fx(id: String, pos: Vector2) -> void:
+	var k: Dictionary = Skills.LIST.get(id, {})
+	if id == "shield":
+		shield = k.duration
+	elif k.has("radius"):
+		var z := Skills.Zone.new()
+		z.skill = k
+		z.position = pos
+		get_parent().add_child(z)
+
+
 func _draw() -> void:
 	modulate.a = 1.0 if hp > 0.0 else 0.3  # down until the next run
 	draw_circle(Vector2.ZERO, radius, Color(look.robe))
@@ -208,3 +244,5 @@ func _draw() -> void:
 		Vector2(radius * 0.8, -radius * 0.5), Vector2(0, -radius * 1.8)]), Color(look.hat))
 	draw_line(Vector2.ZERO, aim * (radius + 12), Color(look.staff), 3.0)  # staff
 	draw_circle(aim * (radius + 12), 3.0, Color(look.ring) if look.ring else Color.WHITE)
+	if shield > 0.0:
+		draw_arc(Vector2.ZERO, radius + 6, 0, TAU, 32, Color(Skills.LIST.shield.color), 3.0)

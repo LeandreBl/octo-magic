@@ -48,7 +48,7 @@ func _test_upgrades() -> void:
 		"on_hit": [{"type": "damage", "amount": 10}]}}}]}}})
 	check(Upgrades.scale_damage(boom, 2.0).emit.body.on_expire[0].emit.body.on_hit[0].amount == 20.0, "nested damage scaled")
 	var rng := RandomNumberGenerator.new()
-	var offers := Upgrades.offers({"primary": s, "secondary": s}, {}, rng)
+	var offers := Upgrades.offers({"primary": s}, {}, rng)
 	check(offers.size() == 3 and offers[0] != offers[1] and offers[1] != offers[2], "3 distinct offers")
 
 
@@ -56,7 +56,7 @@ func _test_run() -> void:
 	var run := RunState.new()
 	var p := ProfileState.new()
 	run.start(p.equipped_spells(), {"damage": 0.5, "xp": 0.0})
-	check(run.spells.size() == 3, "three spell slots")
+	check(run.spells.keys() == ["primary"], "one spell, no secondary or ultimate")
 	check(is_equal_approx(_damage(run.spells.primary), _damage(p.equipped_spells().primary) * 1.5), "damage bonus applied")
 	var got := []
 	run.leveled_up.connect(func(o): got.append(o))
@@ -118,13 +118,16 @@ func _test_profile() -> void:
 	check("hunter" in reached and "boss" in reached and "wave10" in reached, "achievements reached")
 	check(p.available_spells("primary").size() == 4, "achievements unlock spells")
 	check(p.equip_spell("primary", "spark") and not p.equip_spell("primary", "arcane_missiles"), "equip unlocked only")
+	check(p.available_skills() == ["shield"] and not p.equip_skill("heal_zone"), "only the starter skill unlocked")
+	p.achievements.boss3 = 1
+	check(p.equip_skill("heal_zone"), "achievements unlock skills")
 	check(p.add_forged(Spell.base(), "user://missing.spell") == "forged_1", "forged spell kept")
 	p.set_look("hat", "#123456")
 	p.set_look("hat", "not a color")
 	# Save -> load round trip.
 	var q := ProfileState.new()
 	q.load_profile(path)
-	for k in ["gold", "blank_scrolls", "owned", "equipped", "bonuses", "look", "stats", "spells", "scores"]:
+	for k in ["gold", "blank_scrolls", "owned", "equipped", "bonuses", "look", "stats", "spells", "skill", "scores"]:
 		check(q.get(k) == p.get(k), "%s saved" % k)
 	check(q.achievements == p.achievements, "achievements saved")
 	check(q.equipped_spells().primary.name == Spell.base().name, "forged spell restored from its JSON")
@@ -183,6 +186,21 @@ func _test_play() -> void:
 		hp_after += e.hp
 	check(hp_after < hp_before, "base spells damage enemies")
 	check(player.hp < player.max_hp, "enemies hurt the player")
+	# Skills: the shield blocks damage, the zones give hp and mana back.
+	for id in Skills.LIST:
+		player.skill = id
+		player.skill_cooldown = 0.0
+		player.mana = 100.0
+		check(player.use_skill() and not player.use_skill(), "%s used, then on cooldown" % id)
+	var hp := player.hp
+	player.hurt(5.0)
+	check(player.hp == hp, "shield blocks damage")
+	player.hp = 1.0
+	player.mana = 0.0
+	for i in 30:
+		await physics_frame
+	check(player.hp > 1.0 and player.mana > 0.0, "zones heal and give mana")
+	check(Player.clean_loadout({"skill": "nope"}).skill == "" and Player.clean_loadout({"skill": "shield"}).skill == "shield", "loadout skill checked")
 	world.free()
 	run.free()
 	p.free()

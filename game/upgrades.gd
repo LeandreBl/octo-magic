@@ -3,8 +3,8 @@ class_name Upgrades
 ## clamps it again; "mana" is the only one kept outside the spell (the cost is
 ## derived from the spell's power, see Run.mana_cost).
 
-const SLOTS := ["primary", "secondary", "ultimate"]
-const SLOT_NAMES := {"primary": "Sort principal", "secondary": "Sort secondaire", "ultimate": "Ultime"}
+const SLOTS := ["primary"]  # one spell; skills are apart (Skills)
+const SLOT_NAMES := {"primary": "Sort"}
 const LIST := {
 	"damage": {"name": "Puissance", "desc": "+25 % de dégâts"},
 	"cooldown": {"name": "Cadence", "desc": "-15 % de temps de recharge"},
