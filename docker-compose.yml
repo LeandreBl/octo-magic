@@ -37,6 +37,9 @@ services:
       CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
       PIXELLAB_TOKEN: ${PIXELLAB_TOKEN:-}
       FORGE_MODEL: ${FORGE_MODEL:-claude-haiku-5-5}
+    volumes:
+      # Every combination forged so far: the same words give the same spell.
+      - forge_cache:/cache
 
   # TURN (coturn): relays the coop traffic only between players who cannot
   # reach each other directly (strict NATs); the others play peer to peer.
@@ -88,4 +91,5 @@ services:
       retries: 20
 
 volumes:
+  forge_cache:
   postgres_data:

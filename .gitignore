@@ -8,3 +8,4 @@ addons/webrtc_native/
 web/godot/
 assets/maps/*/map.json.bak
 tools/tentacle_choices/
+server/cache/

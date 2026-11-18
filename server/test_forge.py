@@ -91,6 +91,35 @@ class ForgeTest(unittest.TestCase):
             h.do_GET()
         self.assertEqual(sent, [(200, b"PK", {"X-Forge-Applied": "2"})])
 
+    def test_known_combination_gives_the_same_bundle(self):
+        import tempfile
+        calls = []
+
+        def fake_forge(spell, words, lang="en"):
+            calls.append(words)
+            return {"name": f"n{len(calls)}", "words": [*spell.get("words", []), *words[:1]], "origin": forge.origin(spell)}
+
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(forge, "CACHE", forge.Path(d)), \
+                mock.patch.object(forge, "forge", fake_forge), \
+                mock.patch.object(forge.art, "token", return_value=None):
+            first = forge.forge_bundle({"name": "Lightning"}, ["ignis", "blah"])
+            self.assertEqual(first[1], 1)  # blah cancelled
+            self.assertEqual(forge.forge_bundle({"name": "Lightning"}, ["Ignis", "blah"]), first)
+            self.assertEqual(forge.forge_bundle({"name": "Lightning"}, ["ignis"]), first)  # what was kept is known too
+            self.assertEqual(len(calls), 1)
+            forged = json.loads(zipfile.ZipFile(io.BytesIO(first[0])).read("manifest.json"))
+            self.assertEqual(forge.forge_bundle(forged, ["vampyrus"])[0], forge.forge_bundle(forged, ["vampyrus"])[0])
+            self.assertNotEqual(forge.forge_bundle({"name": "Fireball"}, ["ignis"]), first)
+            self.assertEqual(len(calls), 3)
+
+    def test_jobs_wait_at_least_the_fake_timer(self):
+        with mock.patch.object(forge, "forge_bundle", return_value=(b"PK", 1)), \
+                mock.patch.object(forge, "WAIT", (0.2, 0.2)):
+            job = forge.start_job({}, ["ignis"])
+            self.assertEqual(forge.JOBS[job]["status"], "pending")
+            forge.time.sleep(0.4)
+            self.assertEqual(forge.JOBS[job]["status"], "done")
+
     def test_prompt_contains_format_and_examples(self):
         self.assertIn("on_expire", forge.SYSTEM)
         self.assertIn("Étincelle", forge.SYSTEM)

@@ -10,6 +10,9 @@ WORKDIR /app
 COPY docs docs
 COPY spell spell
 COPY server server
+# Forged bundles, kept on the forge_cache volume (docker-compose.yml).
+RUN mkdir /cache && chown nobody /cache
+ENV FORGE_CACHE=/cache
 USER nobody
 # Claude Code writes its config under $HOME.
 ENV HOME=/tmp

@@ -46,6 +46,7 @@ static func sanitize(d: Variant) -> Dictionary:
 		"color": _color(s.get("color")),
 		"cooldown": _num(s.get("cooldown"), 0.5, 0.08, 5.0),
 		"words": words.slice(0, 20),
+		"origin": str(s.get("origin", "")).substr(0, 40),
 		"palette": _palette(s.get("palette")),
 		"icon": _grid(s.get("icon"), 24),
 		"icon_file": _file(s.get("icon_file")),

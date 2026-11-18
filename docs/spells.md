@@ -16,6 +16,7 @@ This file is also sent to the AI as the format reference: keep it accurate.
 - `color`: `#rrggbb`, main color of the visuals
 - `cooldown`: seconds between casts, 0.08 to 5
 - `words`: the words written on scrolls so far, oldest first
+- `origin`: set by the forge, the name of the base spell it was forged from
 - `emit`: an **Emit**, what happens when the spell is cast
 - `palette`: up to 8 `#rrggbb` colors used by all the pixel art of the spell
 - `icon`: **pixel grid**, up to 24x24, the spell's icon

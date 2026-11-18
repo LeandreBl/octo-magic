@@ -10,17 +10,25 @@ GET /forge/<id> -> {"status": "pending"} | {"error": ...} | the .spell bundle (z
   with header X-Forge-Applied: how many words were kept (the others were
   cancelled as meaningless or not in a dead language; the game gives their scrolls back)
 
+A combination already forged (same original spell, same words in the same
+order) gives back the same bundle, from FORGE_CACHE, for every player. Every
+job, cached or not, answers after 30 to 40 s at the earliest: a hit must not
+look instant.
+
 A bundle is a zip: manifest.json (the spell) + the PNG sprite sheets PixelLab
 drew for it (see server/art.py). The game sanitizes and prices whatever comes
 back; this server only asks.
 """
 
+import hashlib
 import io
 import json
 import os
+import random
 import re
 import subprocess
 import threading
+import time
 import uuid
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
@@ -41,6 +49,8 @@ WORD_RE = re.compile(r"^[^\W\d_]+(?:['\-][^\W\d_]+)*$")  # letters, inner ' or -
 WORD_SEP = re.compile(r"[\s,;+/|]+")  # what the player may put between words
 MAX_WORDS = 8
 MAX_REASON = 120
+CACHE = Path(os.environ.get("FORGE_CACHE", ROOT / "server/cache"))  # forged bundles, by combination
+WAIT = (30.0, 40.0)  # seconds, the least a job takes
 
 SYSTEM = f"""You are the spell forge of a top-down roguelike. The player wrote words
 on blank scrolls, one word per scroll. Rewrite their current spell so that each
@@ -264,9 +274,56 @@ def forge(spell: dict, words, call=None, lang: str = "en") -> dict:
             reasons.append(say(lang, "{w}: {reason}", w=hit, reason=short(r.get("reason") or say(lang, "meaningless"))))
     if not applied:
         raise ForgeError("{reason}", reason="; ".join(reasons)) if reasons else ForgeError("no valid word")
-    old = spell.get("words") if isinstance(spell.get("words"), list) else []
-    new["words"] = [*old, *applied]  # the server, not the model, owns the history
+    new["words"] = [*old_words(spell), *applied]  # the server, not the model, owns the history
+    new["origin"] = origin(spell)
     return new
+
+
+def old_words(spell: dict) -> list:
+    return spell.get("words") if isinstance(spell.get("words"), list) else []
+
+
+def origin(spell: dict) -> str:
+    """The base spell a forged spell comes from (its name, before any word)."""
+    return str(spell.get("origin") or spell.get("name") or "")
+
+
+def cache_path(spell: dict, words: list) -> Path:
+    """Where the bundle of `words` written on `spell` is kept: one file per
+    combination (original spell + whole word history), whoever forged it."""
+    key = [origin(spell), *old_words(spell), *words]
+    return CACHE / (hashlib.sha256(json.dumps([str(k).casefold() for k in key]).encode()).hexdigest() + ".zip")
+
+
+def remember(path: Path, data: bytes) -> bytes:
+    """Keep `data` at `path` unless a bundle is already there; return the
+    kept one (a concurrent forge of the same combination gets the first)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f"{uuid.uuid4().hex}.tmp")
+    tmp.write_bytes(data)
+    try:
+        os.link(tmp, path)  # atomic, fails if the file exists
+    except FileExistsError:
+        pass
+    finally:
+        tmp.unlink()
+    return path.read_bytes()
+
+
+def forge_bundle(spell: dict, words: list[str], lang: str = "en") -> tuple[bytes, int]:
+    """The bundle for `words` on `spell` and how many words it applied:
+    from the cache when that combination was forged before."""
+    asked = cache_path(spell, words)
+    if asked.exists():
+        data = asked.read_bytes()
+    else:
+        new = forge(spell, words, lang=lang)
+        # what was kept first (it may be known without the cancelled words), then what was asked
+        data = remember(cache_path(spell, new["words"][len(old_words(spell)):]), bundle(new))
+        data = remember(asked, data)
+    with zipfile.ZipFile(io.BytesIO(data)) as z:
+        kept = json.loads(z.read("manifest.json")).get("words") or []
+    return data, len(kept) - len(old_words(spell))
 
 
 def bodies(emit, out=None) -> list:
@@ -336,15 +393,17 @@ def start_job(spell: dict, words: list[str], lang: str = "en") -> str:
     JOBS[job_id] = {"status": "pending"}
 
     def run():
+        ready = time.monotonic() + random.uniform(*WAIT)
         try:
-            new = forge(spell, words, lang=lang)
-            applied = len(new["words"]) - len(spell.get("words") if isinstance(spell.get("words"), list) else [])
-            JOBS[job_id] = {"status": "done", "zip": bundle(new), "applied": applied}
+            data, applied = forge_bundle(spell, words, lang)
+            result = {"status": "done", "zip": data, "applied": applied}
         except ForgeError as e:
-            JOBS[job_id] = {"status": "error", "error": e.say(lang)}
+            result = {"status": "error", "error": e.say(lang)}
         except Exception as e:
             print(f"job {job_id} failed: {e!r}", flush=True)
-            JOBS[job_id] = {"status": "error", "error": say(lang, "the forge is unavailable")}
+            result = {"status": "error", "error": say(lang, "the forge is unavailable")}
+        time.sleep(max(0.0, ready - time.monotonic()))
+        JOBS[job_id] = result
 
     threading.Thread(target=run, daemon=True).start()
     return job_id
