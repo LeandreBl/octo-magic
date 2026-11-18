@@ -1,7 +1,18 @@
 """Generate the monster sprites with PixelLab (server/art.py): per kind of
-Run.ENEMIES (game/run.gd), and per variant (<kind>_<variant>), a side view
-facing right, its walk cycle (an idle for the still ones) and its special
-moves; plus the effects of their attacks.
+Run.ENEMIES (game/run.gd), and per variant (<kind>_<variant>), seen from
+straight above like the octopus mage, its front toward the bottom of the image
+(PixMiniMax strikes that way): game/enemy.gd turns it toward where it goes. Its
+walk cycle (an idle for the still ones) and its special moves; plus the
+effects of their attacks.
+
+A monster with a look is drawn in the style (and overhead framing) of the
+octopus still tools/octo_still.png, at its size: ~25 choices are kept in
+tools/monster_choices/<kind>/, the first becomes base.png (copy another one
+over it, delete its animations, and run again to change). One with "from" is
+a Pixen edit of that monster's base: its overhead pose kept, which a new
+look loses (PixelLab draws faces again). One with "front" (the bosses) is
+seen from above but a bit from the front, facing the bottom: its face gives it
+weight, and game/enemy.gd mirrors it instead of turning it.
 
 Writes assets/monsters/<kind>/<anim>.png, strips of square frames (the
 frame size is the strip height), and assets/monsters/fx/<name>.png (same
@@ -12,6 +23,7 @@ Run: python3 tools/make_monsters.py [kind or fx name ...]
 """
 
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -21,48 +33,61 @@ import art  # noqa: E402
 import sheet  # noqa: E402
 
 OUT = ROOT / "assets/monsters"
-STYLE = "dark heroic fantasy game undead graveyard monster, full body, side view facing right, menacing"
-BOSS = "huge imposing boss monster, highly detailed, ornate, " + STYLE
-WALK = "walking forward, looping walk cycle"
-IDLE = "standing still, breathing, looping idle"
-BOW = {"walk": IDLE, "attack": "draws its bow and shoots an arrow to the right"}
-CAST = {"walk": IDLE, "attack": "thrusts its hands forward and casts a spell to the right"}
+CHOICES = ROOT / "tools/monster_choices"
+STILL = ROOT / "tools/octo_still.png"  # 96 pixels
+TOP = ("{look}, seen from directly above, bird's-eye view at 90 degrees like the reference: we see the top of its {head}"
+       " in the center, its shoulders and arms around it, its feet barely visible, it faces the bottom of the image,"
+       " no face visible")
+KEEP = ", keep the view from directly above and the same pose"
+WALK = "walking forward toward the bottom of the image, seen from directly above, seamless loop"
+IDLE = "standing still seen from directly above, breathing gently, seamless loop"
+BOW = {"walk": IDLE, "attack": "draws its bow and shoots an arrow toward the bottom of the image"}
+CAST = {"walk": IDLE, "attack": "thrusts its hands forward and casts a spell toward the bottom of the image"}
+SHIELD = "surround it with a big round translucent glowing magic shield bubble" + KEEP
+DARK = "dark heroic fantasy game undead graveyard monster, full body, menacing, "
 MAGE = "a skeleton mage in a tattered dark robe"
-# look (kind or kind_variant) -> (canvas size, look, {anim: action}); "walk" defaults to WALK.
+# look (kind or kind_variant) -> (size, {"look": (what, its head)} or {"from": (look, change)}, {anim: action});
+# "walk" defaults to WALK.
 MONSTERS = {
-    "skeleton": (48, "a plain skeleton, bare bones", {}),
-    "archer": (48, "a skeleton archer with a bow and a brown scarf", BOW),
-    "marksman": (48, "a skeleton marksman with a longbow and a brown hood", BOW),
-    "imp": (40, "a small red imp with tiny horns, claws and a pointy tail", {"walk": "scampering forward fast"}),
-    "zombie": (48, "a grey skinned shambling zombie in torn rags", {"walk": "shambling forward slowly"}),
-    "rotting_zombie": (48, "a grey skinned rotting zombie oozing green, surrounded by a green aura of buzzing flies",
-                       {"walk": "shambling forward slowly, flies buzzing around"}),
-    "skeletal_warrior": (48, "an undead skeleton warrior, bare white skull and bony ribs, iron gauntlets, a rusty sword, no helmet", {}),
-    "skeletal_warrior_helmet": (48, "an undead skeleton warrior, white skull face under an iron helmet, bony ribs, iron gauntlets, a rusty sword", {}),
-    "skeletal_knight": (48, "a skeleton knight with an iron helmet and an iron chestplate, bare bony hands, a sword", {}),
-    "skeletal_knight_gauntlets": (48, "an undead skeleton knight, white skull face under an iron helmet, an iron chestplate, iron gauntlets, bony legs, a sword", {}),
-    "wraith": (48, "a pure white ghostly wraith with a tattered cloak and no legs, glowing icy eyes",
-               {"walk": "floating forward, cloak fluttering"}),
-    "putrid_archer": (48, "a skeleton archer in a brown hood dripping green poison, with a bow", BOW),
-    "burning_archer": (48, "a skeleton archer engulfed in orange flames, with a bow", BOW),
-    "burning_skeleton": (48, "a skeleton engulfed in orange flames", {}),
-    "fire_mage": (48, MAGE + ", its hands on fire", CAST),
-    "fire_mage_shield": (48, MAGE + ", its hands on fire, inside a translucent glowing magic shield bubble", CAST),
-    "poison_mage": (48, MAGE + ", glowing green balls in its hands", CAST),
-    "poison_mage_shield": (48, MAGE + ", glowing green balls in its hands, inside a translucent glowing magic shield bubble", CAST),
-    "frost_mage": (48, MAGE + ", glowing blue balls in its hands", CAST),
-    "frost_mage_shield": (48, MAGE + ", glowing blue balls in its hands, inside a translucent glowing magic shield bubble", CAST),
-    "lightning_mage": (48, MAGE + ", crackling white balls of lightning in its hands", CAST),
-    "lightning_mage_shield": (48, MAGE + ", crackling white balls of lightning in its hands, surrounded by a big round translucent white magic shield bubble", CAST),
-    "boss": (96, "a towering lich king, a skeleton in ornate violet robes with a crown and a glowing staff", {
-        "walk": "floating forward, robes flowing",
-        "summon": "raises its glowing staff high, violet necrotic magic swirls around it, summoning",
+    "skeleton": (48, {"look": ("a plain undead skeleton, empty handed", "bare white skull")}, {}),
+    "archer": (48, {"look": ("a skeleton archer with a brown scarf, a wooden bow held in front of it", "bare white skull")}, BOW),
+    "marksman": (48, {"from": ("archer", "make it a marksman: a longbow and a brown hood over the skull" + KEEP)}, BOW),
+    "imp": (48, {"look": ("a small red imp with clawed hands, a pointy tail behind it", "red head with two tiny horns")},
+            {"walk": "scampering fast toward the bottom of the image, seen from directly above, seamless loop"}),
+    "zombie": (48, {"look": ("a grey skinned shambling zombie in torn rags, arms reaching forward", "bald grey head")},
+               {"walk": "shambling slowly toward the bottom of the image, seen from directly above, seamless loop"}),
+    "rotting_zombie": (48, {"from": ("zombie", "make it rotting, oozing green, with a green aura of buzzing flies around it" + KEEP)},
+                       {"walk": "shambling slowly toward the bottom of the image, flies buzzing around, seen from directly above, seamless loop"}),
+    "skeletal_warrior": (48, {"look": ("an undead skeleton warrior with iron gauntlets and a rusty sword, no helmet", "bare white skull")}, {}),
+    "skeletal_warrior_helmet": (48, {"from": ("skeletal_warrior", "put a round iron helmet on its skull" + KEEP)}, {}),
+    "skeletal_knight": (48, {"look": ("a skeleton knight with an iron chestplate and iron pauldrons, bare bony hands, a sword",
+                                      "round iron helmet")}, {}),
+    "skeletal_knight_gauntlets": (48, {"from": ("skeletal_knight", "give it iron gauntlets on its hands" + KEEP)}, {}),
+    "wraith": (48, {"look": ("a pure white ghostly wraith with a tattered cloak and no legs, glowing icy wisps", "white tattered hood")},
+               {"walk": "floating toward the bottom of the image, cloak fluttering, seen from directly above, seamless loop"}),
+    "putrid_archer": (48, {"from": ("archer", "put a brown hood on its skull, dripping green poison" + KEEP)}, BOW),
+    "burning_archer": (48, {"from": ("archer", "engulf it in orange flames" + KEEP)}, BOW),
+    "burning_skeleton": (48, {"from": ("skeleton", "engulf it in orange flames" + KEEP)}, {}),
+    "fire_mage": (48, {"look": (MAGE + ", its two hands on fire", "dark pointed hood")}, CAST),
+    "fire_mage_shield": (48, {"from": ("fire_mage", SHIELD)}, CAST),
+    "poison_mage": (48, {"from": ("fire_mage", "replace the fire in its hands with glowing green balls" + KEEP)}, CAST),
+    "poison_mage_shield": (48, {"from": ("poison_mage", SHIELD)}, CAST),
+    "frost_mage": (48, {"from": ("fire_mage", "replace the fire in its hands with glowing icy blue balls" + KEEP)}, CAST),
+    "frost_mage_shield": (48, {"from": ("frost_mage", SHIELD)}, CAST),
+    "lightning_mage": (48, {"from": ("fire_mage", "replace the fire in its hands with crackling white balls of lightning" + KEEP)}, CAST),
+    "lightning_mage_shield": (48, {"from": ("lightning_mage", SHIELD)}, CAST),
+    "boss": (96, {"front": "a towering lich king, a skeleton in ornate violet robes with a golden crown, holding a glowing staff,"
+                           " huge imposing boss"}, {
+        "walk": "floating toward the viewer, robes flowing, seamless loop",
+        "summon": "raises its glowing staff, violet necrotic magic swirls around it, summoning",
         "death": "staggers in agony, cracks of blinding violet light burst out of its body, about to explode"}),
-    "death_knight": (96, "a huge undead death knight, a skeleton in black spiked plate armor with a frost glowing greatsword", {
-        "windup": "raises its greatsword and roars, bracing to charge",
+    "death_knight": (96, {"front": "a huge undead death knight in black spiked plate armor and spiked helmet,"
+                                   " a frost glowing greatsword, huge imposing boss"}, {
+        "windup": "raises its greatsword and roars, bracing to charge toward the viewer",
         "death": "staggers and drops to its knees, blinding icy blue light bursting through cracks in its armor, about to explode"}),
-    "abomination": (96, "a giant bloated undead flesh abomination stitched from corpses, green ooze dripping", {
-        "walk": "lumbering forward heavily",
+    "abomination": (96, {"front": "a giant bloated undead flesh abomination stitched from corpses, green ooze dripping,"
+                                  " small stitched head sunk between huge shoulders, huge imposing boss"}, {
+        "walk": "lumbering heavily toward the viewer, seamless loop",
         "summon": "its belly bursts open and small red imps crawl out",
         "death": "swells up grotesquely, bloating bigger and bigger, glowing green light bursting through its seams, about to burst"}),
 }
@@ -100,19 +125,43 @@ def _strip(frames: list[bytes]) -> bytes:
     return sheet.write_png(w * n, h, out)
 
 
+def _style(size: int) -> bytes:
+    """The octopus still at `size` pixels (96, or halved)."""
+    png = STILL.read_bytes()
+    if size == 96:
+        return png
+    w, _, px = sheet.read_png(png)
+    k = w // size
+    return sheet.write_png(size, size, b"".join(bytes(px[(k * y * w + k * x) * 4:(k * y * w + k * x) * 4 + 4])
+                                                for y in range(size) for x in range(size)))
+
+
 def monster(kind: str) -> None:
-    size, look, anims = MONSTERS[kind]
+    size, how, anims = MONSTERS[kind]
     d = OUT / kind
     d.mkdir(parents=True, exist_ok=True)
     base = d / "base.png"
     if not base.exists():
-        base.write_bytes(art.sprite(f"{BOSS if size >= 96 else STYLE}, {look}", size,
-                                    "highly detailed" if size >= 96 else "medium detail"))
+        if "front" in how:
+            base.write_bytes(art.front(DARK + how["front"], size))
+        elif "from" in how:
+            src = OUT / how["from"][0] / "base.png"
+            for _ in range(180):  # drawn by another job of this run
+                if src.exists():
+                    break
+                time.sleep(10)
+            base.write_bytes(art.edit(src.read_bytes(), how["from"][1]))
+        else:
+            what, head = how["look"]
+            choices = art.styled(_style(size), TOP.format(look=what, head=head))
+            (CHOICES / kind).mkdir(parents=True, exist_ok=True)
+            for i, png in enumerate(choices):
+                (CHOICES / kind / f"{i}.png").write_bytes(png)
+            base.write_bytes(choices[0])
     for anim, action in ({"walk": WALK} | anims).items():
         path = d / f"{anim}.png"
         if not path.exists():
-            frames = art.animate(base.read_bytes(), action, 8)
-            path.write_bytes(_strip(frames[-8:]))  # without the reference frame
+            path.write_bytes(_strip(art.animate(base.read_bytes(), action, 8)))
         print("ok", kind, anim)
 
 
@@ -135,7 +184,7 @@ def main() -> None:
     only = set(sys.argv[1:])
     todo = [(monster, k) for k in MONSTERS if not only or k in only]
     todo += [(fx, n) for n in FX if (not only or n in only) and not (OUT / "fx" / f"{n}.png").exists()]
-    with ThreadPoolExecutor(6) as pool:
+    with ThreadPoolExecutor(12) as pool:
         for job, arg in todo:
             pool.submit(_safe, job, arg)
 

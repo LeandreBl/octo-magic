@@ -5,7 +5,9 @@ extends Node2D
 ## Coop: simulated on the host, chasing the nearest mage standing; peers get
 ## its position, hp and statuses, and draw its shots and zones.
 ## Look: PixelLab sprites (tools/make_monsters.py), assets/monsters/<kind>/
-## <anim>.png strips of square frames facing right, and the effects of its
+## <anim>.png strips of square frames seen from straight above, facing down,
+## turned toward where it goes (or its mage when still; the bosses, a bit
+## from the front, only mirrored), and the effects of its
 ## attacks in assets/monsters/fx/.
 
 signal killed(enemy: Node2D)
@@ -38,7 +40,9 @@ var age := 0.0
 var side := 1.0  # kite: which way it strafes
 var _heard_hp := 0.0  # hp at the last hit sound: hosts and peers hear hits on the synced hp
 var _last_pos := Vector2.ZERO
-var _flip := false  # facing left: from the synced position, the same on every peer
+var _flip: bool:  # a boss faces left: mirrored (its death too, main.gd)
+	get: return data.get("boss", false) and cos(_angle) < 0.0
+var _angle := PI / 2.0  # its heading: from the synced position (or the nearest mage), the same on every peer
 var _moving := false
 var _act := ""  # a special move playing (SPELL_ANIM), for _act_time seconds
 var _act_time := 0.0
@@ -119,8 +123,10 @@ func _physics_process(delta: float) -> void:
 	var step := position - _last_pos
 	_last_pos = position
 	_moving = step.length() > 0.2
-	if absf(step.x) > 0.2:
-		_flip = step.x < 0.0
+	var near_mage := nearest_player(self)
+	var heading := step if _moving or not near_mage else near_mage.position - position
+	if heading.length() > 0.2:
+		_angle = lerp_angle(_angle, heading.angle(), minf(1.0, 10.0 * delta))
 	_act_time -= delta
 	if hp < _heard_hp - 1.0:  # not every tick of burn or poison
 		Sfx.play("hit")
@@ -129,9 +135,8 @@ func _physics_process(delta: float) -> void:
 	if not multiplayer.is_server():
 		return
 	age += delta
-	var near := nearest_player(self)
-	if near:
-		target = near
+	if near_mage:
+		target = near_mage
 	var slow := 1.0
 	for s in statuses.keys():
 		var p: float = statuses[s][0]
@@ -288,7 +293,10 @@ func _draw() -> void:
 		var f := int(Arena.clock * FPS) if _moving or data.get("ai") == "still" else 0
 		if anim != "walk":  # the move plays once over its duration
 			f = mini(int((1.0 - _act_time / _act_len) * n), n - 1)
+		if not data.get("boss", false):  # bosses, seen a bit from the front: mirrored (_flip), never turned
+			draw_set_transform(Vector2.ZERO, _angle - PI / 2.0)  # the art faces down
 		draw_frame(self, tex, f, size, _flip, tint)
+		draw_set_transform(Vector2.ZERO)
 	else:  # not generated yet
 		draw_circle(Vector2.ZERO, radius, Color(data.get("color", "#4caf50")) * tint)
 	draw_rect(Rect2(-radius, -size * 0.45 - 6, 2 * radius * maxf(hp, 0.0) / max_hp, 3), Color.RED)

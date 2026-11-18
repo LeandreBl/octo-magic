@@ -1,5 +1,5 @@
 """PixelLab client: animated VFX sprite sheets and icons for spells, and
-animated sprites for the monsters (tools/make_monsters.py).
+animated sprites for the monsters, seen from above (tools/make_monsters.py).
 
 Token: PIXELLAB_TOKEN, or the file ~/.config/octo-magic/pixellab.token.
 """
@@ -81,21 +81,47 @@ def icon(description: str) -> bytes:
     return base64.b64decode(res["image"]["base64"])
 
 
-def sprite(description: str, size: int, detail: str = "medium detail") -> bytes:
-    """A creature seen from the side, facing right (east): size x size PNG."""
+def front(description: str, size: int) -> bytes:
+    """A creature seen from above but a bit from the front (high top-down,
+    facing south): size x size PNG. The bosses: their face gives them weight."""
     res = _request("POST", "/create-image-pixen", {
         "description": description, "image_size": {"width": size, "height": size},
-        "no_background": True, "view": "side", "direction": "east",
-        "outline": "single color black outline", "detail": detail,
+        "no_background": True, "view": "high top-down", "direction": "south",
+        "outline": "single color black outline", "detail": "highly detailed",
     })
     return base64.b64decode(res["image"]["base64"])
 
 
-def animate(png: bytes, action: str, frames: int = 8, timeout: float = 400) -> list[bytes]:
-    """`png` (first frame) doing `action` -> the frames, PNGs of its size."""
-    job = _request("POST", "/animate-with-text-v3", {
-        "first_frame": {"type": "base64", "base64": base64.b64encode(png).decode()},
-        "action": action, "frame_count": frames, "no_background": True,
+def styled(style: bytes, description: str, timeout: float = 600) -> list[bytes]:
+    """Creatures drawn in the framing and look of the PNG `style` (its size,
+    square) -> ~25 choices, PNGs."""
+    w, h = _png_size(style)
+    job = _request("POST", "/generate-with-style-v2", {
+        "style_images": [{"image": _b64(style), "width": w, "height": h}], "description": description,
+        "style_description": "seen from straight above like the reference, same outline and shading",
+        "no_background": True})
+    return [base64.b64decode(i["base64"]) for i in _wait(job, f"style {description[:40]}", timeout)["images"]]
+
+
+def edit(png: bytes, change: str, timeout: float = 600) -> bytes:
+    """`png` with `change` (Pixen edit: its pose and framing kept) -> PNG of its size."""
+    job = _request("POST", "/edit-image-pixen", {"image": _b64(png), "description": change, "no_background": True})
+    return base64.b64decode(_wait(job, f"edit {change[:40]}", timeout)["image"]["base64"])
+
+
+def _b64(png: bytes) -> dict:
+    return {"type": "base64", "base64": base64.b64encode(png).decode()}
+
+
+def _png_size(png: bytes) -> tuple[int, int]:
+    return int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big")
+
+
+def animate(png: bytes, action: str, frames: int = 8, timeout: float = 600) -> list[bytes]:
+    """`png` (first frame, seen from above) doing `action` (PixMiniMax) -> the
+    frames after it, PNGs of its size."""
+    job = _request("POST", "/animate-pixminimax", {
+        "first_frame": _b64(png), "description": action, "frame_count": frames, "no_background": True, "view": "high top-down",
     })
     res = _wait(job, f"animate {action[:40]}", timeout)
-    return [base64.b64decode(i["base64"]) for i in res["images"]]
+    return [base64.b64decode(i["base64"]) for i in res["images"][1:]]  # the first one is the input itself
