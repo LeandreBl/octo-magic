@@ -127,7 +127,7 @@ func _ready() -> void:
 	line_on.border_color = EMBER
 	_edit.add_theme_stylebox_override("focus", line_on)
 	_edit.add_theme_stylebox_override("read_only", line)
-	_edit.placeholder_text = "one word per scroll, in a dead language, e.g. ignis, πῦρ, umbra"
+	_edit.placeholder_text = "e.g. ignis, πῦρ, umbra"
 	_edit.text_submitted.connect(func(_t): _on_write())
 	_page.add_child(_edit)
 	var rule := _chalk(Label.new(), 15, CHALK_DIM)

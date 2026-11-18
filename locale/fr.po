@@ -134,8 +134,8 @@ msgstr "or"
 msgid "Scroll"
 msgstr "Parchemin"
 
-msgid "one word per scroll, in a dead language, e.g. ignis, πῦρ, umbra"
-msgstr "un mot par parchemin, en langue morte, ex : ignis, πῦρ, umbra"
+msgid "e.g. ignis, πῦρ, umbra"
+msgstr "ex : ignis, πῦρ, umbra"
 
 msgid "Previous spell"
 msgstr "Sort précédent"
