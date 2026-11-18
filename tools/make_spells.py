@@ -4,8 +4,8 @@ burst (one-shot), as strips following server/sheet.py.
 
 Writes assets/spells/<id>.png and <id>_burst.png and records them in
 game/spells.json (body.sheet / body.burst_sheet, bundle res://assets/spells).
-Existing files are kept (delete one to redo it). Beams and cones are drawn
-by the engine (spell_body.gd), not here.
+Existing files are kept (delete one to redo it). Beams are drawn by the
+engine (spell_body.gd); a cone's sheet is its whole spray, apex on the left.
 
 Run: python3 tools/make_spells.py [id ...]
 """
@@ -23,12 +23,16 @@ import sheet  # noqa: E402
 OUT = ROOT / "assets/spells"
 SPELLS_JSON = ROOT / "game/spells.json"
 BOLT = ". Top-down game projectile flying to the right, seamless loop, centered, fits within {n}x{n} pixels."
+CONE = (". Top-down game spell effect, seamless loop: a cone spray blowing to the right, its tip"
+        " a point at the left edge, widening to the right edge, about 60 degrees wide, fits within {n}x{n} pixels.")
 BURST = ". Seen from above, one-shot burst, short, centered, fits within {n}x{n} pixels."
 # id -> (projectile look, size, impact look, size); no impact look = no burst
 SPELLS = {
     "fireball": ("a blazing orange and yellow fireball with a flickering flame tail", 32, None, 0),
     "magic_missile": ("a glowing violet arcane bolt with a short sparkling trail", 24,
                       "a small violet arcane spark burst", 32),
+    "frost_jet": ("a gust of freezing breath: wispy semi-transparent white and pale cyan frost mist puffs, swirling icy wind streaks, sparkling ice crystals and snowflakes, soft ragged edges fading out, no solid shape, no outline", 64,
+                  None, 0),
     "frost_shard": ("a sharp pale blue ice shard spinning slightly, frosty glints", 24,
                     "pale blue ice shards shattering, frost sparkles", 32),
     "spark": ("a crackling bright yellow electric spark ball with tiny lightning arcs", 24,
@@ -38,13 +42,14 @@ SPELLS = {
     "arcane_missiles": ("a bright glowing purple arcane orb missile with a pink comet trail", 24,
                         "a small purple magic sparkle burst", 24),
 }
+CONES = {"frost_jet"}
 
 
 def draw(sid: str, burst: bool) -> dict:
     look, n, blook, bn = SPELLS[sid]
     name = f"{sid}_burst" if burst else sid
     path = OUT / f"{name}.png"
-    desc = blook + BURST.format(n=bn) if burst else look + BOLT.format(n=n)
+    desc = blook + BURST.format(n=bn) if burst else look + (CONE if sid in CONES else BOLT).format(n=n)
     if path.exists():
         strip = path.read_bytes()
         w, h, _ = sheet.read_png(strip)

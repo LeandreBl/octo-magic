@@ -338,8 +338,17 @@ func _draw_arc() -> void:
 	draw_polyline(pts, Color.WHITE, 1.0, true)
 
 
+## The cone's sheet (apex on its left edge) stretched over the area it hurts;
+## no sheet: a flickering polygon.
 func _draw_cone() -> void:
 	var half := deg_to_rad(maxf(body.angle, 4.0)) / 2.0
+	if anim:
+		var s: Dictionary = anim[1]
+		var i := int(Arena.clock * s.fps) % int(s.frames)  # the clock: ticks renew age, not the animation
+		var h := 2.0 * body.speed * tan(minf(half, 1.4))
+		draw_set_transform(Vector2.ZERO, dir.angle())
+		draw_texture_rect_region(anim[0], Rect2(0, -h / 2.0, body.speed, h), Rect2(i * s.size, 0, s.size, s.size))
+		return
 	var pts := PackedVector2Array([Vector2.ZERO])
 	for i in 9:
 		pts.append(dir.rotated(lerpf(-half, half, i / 8.0)) * body.speed * randf_range(0.85, 1.0))

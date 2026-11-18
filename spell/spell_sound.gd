@@ -3,7 +3,8 @@ class_name SpellSound
 ## spell (forged, levelled up, hand made) gets its own sounds. Same data ->
 ## same sound (the noise is seeded by the data).
 ## - a one-shot sound when an emit is cast (sub-casts too: higher, quieter);
-## - a looping sound on continuous bodies (zones, orbits, ticking bodies),
+## - a looping sound on continuous bodies (zones, orbits, ticking bodies,
+##   cones: a soft breath, not a one-shot per channel tick),
 ##   instead of the one-shot, for as long as the body lives. One loop per
 ##   sound: overlapping bodies with the same loop (two burning zones) play it
 ##   once, a surviving body takes it over when the playing one dies.
@@ -19,7 +20,7 @@ static var _loops := {}  # loop stream -> live bodies wanting it, the first one 
 
 
 static func is_continuous(body: Dictionary) -> bool:
-	return body.shape == "zone" or not body.on_tick.is_empty() \
+	return body.shape in ["zone", "cone"] or not body.on_tick.is_empty() \
 		or body.motion.any(func(m): return m.type == "orbit")
 
 
@@ -90,7 +91,8 @@ static func cast_stream(element: String, body: Dictionary, depth: int) -> AudioS
 static func loop_stream(element: String, body: Dictionary, depth: int) -> AudioStreamWAV:
 	var key := ["loop", element, body.hash(), depth]
 	if not _cache.has(key):
-		_cache[key] = _wav(_loop(element, _pitch(body, depth), hash(key)), true)
+		var pitch := _pitch(body, depth)
+		_cache[key] = _wav(_breath(element, pitch, hash(key)) if body.shape == "cone" else _loop(element, pitch, hash(key)), true)
 	return _cache[key]
 
 
@@ -166,6 +168,31 @@ static func _loop(element: String, pitch: float, seed_: int) -> PackedFloat32Arr
 				lp += (noise - lp) * 0.08
 				s = lp * 2.0 * (0.6 + 0.4 * sin(TAU * 4.0 * t))
 		out[i] = s
+	return out
+
+
+## A cone's breath: band-passed noise swelling softly, brighter for ice (a
+## frosty hiss), lower for the rest; one second, its tail crossfaded into its
+## head so the loop never clicks.
+static func _breath(element: String, pitch: float, seed_: int) -> PackedFloat32Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_
+	var fade := RATE / 5
+	var lo := 0.0
+	var hi := 0.0
+	var cut := (0.25 if element == "ice" else 0.1) * clampf(pitch, 0.7, 1.4)
+	var raw := PackedFloat32Array()
+	raw.resize(RATE + fade)
+	for i in raw.size():
+		var t := float(i) / RATE
+		var noise := rng.randf_range(-1.0, 1.0)
+		hi += (noise - hi) * cut
+		lo += (hi - lo) * cut * 0.15
+		raw[i] = (hi - lo) * 1.6 * (0.75 + 0.25 * sin(TAU * 2.0 * t))
+	var out := raw.slice(0, RATE)
+	for i in fade:
+		var k := float(i) / fade
+		out[i] = raw[i] * k + raw[RATE + i] * (1.0 - k)
 	return out
 
 

@@ -110,6 +110,7 @@ func _initialize() -> void:
 		check(l.data.count(0) < l.data.size() / 2 and l.loop_mode == AudioStreamWAV.LOOP_FORWARD, "%s loop sound" % el)
 	check(SpellSound.is_continuous(Spell.sanitize({"emit": {"body": {"shape": "zone"}}}).emit.body), "zones loop")
 	check(not SpellSound.is_continuous(base.emit.body), "bolts play once")
+	check(SpellSound.is_continuous(Spell.sanitize({"emit": {"body": {"shape": "cone"}}}).emit.body), "cones breathe, not one chime per tick")
 	check(SpellSound.cast_stream("fire", base.emit.body, 0) != SpellSound.cast_stream("fire", base.emit.body, 1), "sub-casts sound different")
 
 	await _check_homing_lifetime()
@@ -196,7 +197,7 @@ func _check_channel() -> void:
 	for i in 3:
 		await physics_frame
 	check(wide.hp == wide_hp, "beam strikes once per cast")
-	SpellBody.cast(spells.frost_jet.emit, Vector2(230, 100), Vector2.RIGHT, null, spells.frost_jet, world)
+	SpellBody.cast(spells.frost_jet.emit, Vector2(210, 100), Vector2.RIGHT, null, spells.frost_jet, world)
 	for i in 3:
 		await physics_frame
 	check(aimed.hp < 1000.0 and near_behind.hp == 1000.0 and wide.hp == wide_hp and far.hp == 1000.0, "cone hits in reach and angle only")
