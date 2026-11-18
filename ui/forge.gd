@@ -30,7 +30,6 @@ const CHALK_DIM := Color(0.85, 0.8, 0.72, 0.72)
 const CARVED := Color("#c9965f")  # carved in the wood: the fresh wood under the dark top
 const GROOVE := Color("#0d0703")  # the groove's shaded upper wall
 const EMBER := Color("#ffb347")  # chalk lit by the forge
-const RED_CHALK := Color(1.0, 0.3, 0.22)  # the words, written in the magic circle
 
 var main: Node
 var _circle: Control  # the big magic circle, the words' circles in it
@@ -427,7 +426,7 @@ func _draw_circle() -> void:
 			var gold := Color(UITheme.GOLD, _drawn)
 			# a 1px gold rim (the outline size is its full width, both sides)
 			_circle.draw_string_outline(font, pos, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 2, gold)
-			_circle.draw_string(font, pos, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(RED_CHALK, _drawn))
+			_circle.draw_string(font, pos, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.from_hsv((hash(word) % 360) / 360.0, 0.85, 0.95, _drawn))  # a hue per word, from its letters
 
 
 ## A job's circle: the spell's icon in it, its glyphs lit one after the other,
