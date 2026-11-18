@@ -198,9 +198,13 @@ func _physics_process(delta: float) -> void:
 	var heading := aim if _cast_t > 0.0 or _channel_t > 0.0 or not _moving else step  # casting: faces its aim
 	_angle = lerp_angle(_angle, heading.angle(), minf(1.0, 12.0 * delta))
 	var t := Time.get_ticks_msec() / 1000.0
+	var near := []  # the enemies within a tentacle's reach: its obstacles
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if e.global_position.distance_to(global_position) < Tentacle.ROOT + Tentacle.LENGTH + e.radius:
+			near.append([e.global_position, e.radius])
 	for c in get_children():
 		if c is Tentacle:
-			c.follow(global_position, _angle, delta, t)
+			c.follow(global_position, _angle, delta, t, Arena.RECT, near)
 	if hp < _heard_hp - 0.5:
 		if hp <= 0.0:
 			Sfx.play("death")

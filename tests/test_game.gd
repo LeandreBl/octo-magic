@@ -294,6 +294,17 @@ func _test_tentacle() -> void:
 	check(far < Tentacle.LENGTH * 1.5, "tentacle steps after the body: %s" % far)
 	check(t.chain[0].distance_to(center) < Tentacle.ROOT + 1.0, "tentacle base on the body")
 	t.free()
+	# Against a wall and an enemy: no point goes through either.
+	var walls := Rect2(0, 0, 400, 400)
+	var enemy := [Vector2(40, 200), 12.0]
+	for d in 8:
+		var w := Tentacle.new(d * TAU / 8, d % 2)
+		for i in 300:  # rubs along the left wall, then stands by the enemy
+			w.follow(Vector2(Tentacle.ROOT + 1.0, 100.0 + minf(i, 100)), PI / 2, 1.0 / 60.0, i / 60.0, walls, [enemy])
+		for p in w.chain.slice(1):
+			check(walls.grow(-Tentacle.THICK + 0.01).has_point(p), "tentacle inside the walls: %s" % p)
+			check(p.distance_to(enemy[0]) >= enemy[1] + Tentacle.THICK - 0.01, "tentacle out of the enemy: %s" % p)
+		w.free()
 
 
 func _test_sfx() -> void:

@@ -1,7 +1,9 @@
 extends Line2D
 ## One ground tentacle of the octopus mage, under its body sprite (game/player.gd):
 ## a Verlet chain pinned at the body whose tip is planted on the ground, and
-## steps to a new spot ahead when the body has gone too far from it. Visual
+## steps to a new spot ahead when the body has gone too far from it. It is a
+## body of its own: its points bump into the arena's walls and are shoved out
+## of the enemies around (circles), the tip never planted inside either. Visual
 ## only: the body is the hitbox, and each peer simulates its own from the
 ## synced position. Shape by the code, texture by PixelLab (tools/make_octopus.py).
 
@@ -15,6 +17,8 @@ const STEP_TIME := 0.1  # s: a step's glide
 const GAIT := 0.15  # s: the two tentacle groups take turns this long each
 const DAMP := 0.85
 const SWAY := 0.2  # px/frame²: the sideways wiggle that keeps it alive
+const THICK := 3.0  # px: a point's radius against walls and enemies
+const BOUNCE := 0.4  # of a point's speed into a wall sent back out
 
 var dir := 0.0  # rad from the heading
 var group := 0  # 0 or 1: groups step in turn, like legs
@@ -37,8 +41,10 @@ func _init(direction := 0.0, step_group := 0) -> void:
 	show_behind_parent = true
 
 
-## One physics step, the body at `center` heading `heading` (rad), `t` the clock (s).
-func follow(center: Vector2, heading: float, delta: float, t: float) -> void:
+## One physics step, the body at `center` heading `heading` (rad), `t` the clock (s),
+## inside the walls `walls`, among `obstacles`: [position, radius] circles.
+func follow(center: Vector2, heading: float, delta: float, t: float,
+		walls := Rect2(-1e9, -1e9, 2e9, 2e9), obstacles: Array = []) -> void:
 	var a := heading + dir
 	var base := center + Vector2.from_angle(a) * ROOT
 	var rest := base + Vector2.from_angle(a + 0.2 * sin(t * 1.3 + dir * 3.0)) * LENGTH * REACH
@@ -57,7 +63,7 @@ func follow(center: Vector2, heading: float, delta: float, t: float) -> void:
 		if far > LENGTH * STEP and turn or far > LENGTH * 0.7:  # too far: it steps anyway
 			_from = foot
 			var lead := (center - _center) / maxf(delta, 0.001) * (GAIT + STEP_TIME)  # lands where the body is going
-			_to = rest + lead.limit_length(LENGTH * 0.5)
+			_to = _free(rest + lead.limit_length(LENGTH * 0.5), walls, obstacles)
 			_step_t = STEP_TIME
 	_center = center
 	var seg := LENGTH / (POINTS - 1)
@@ -77,8 +83,27 @@ func follow(center: Vector2, heading: float, delta: float, t: float) -> void:
 			else:
 				chain[i] += fix / 2.0
 				chain[i + 1] -= fix / 2.0
+		for i in range(1, POINTS):
+			chain[i] = _free(chain[i], walls, obstacles)
+	for i in range(1, POINTS):  # a bounce off the walls: the speed into one flips, damped
+		var inner := walls.grow(-THICK)
+		if chain[i].x <= inner.position.x or chain[i].x >= inner.end.x:
+			_old[i].x = chain[i].x + (chain[i].x - _old[i].x) * BOUNCE
+		if chain[i].y <= inner.position.y or chain[i].y >= inner.end.y:
+			_old[i].y = chain[i].y + (chain[i].y - _old[i].y) * BOUNCE
+	foot = _free(foot, walls, obstacles)
 	chain[0] = base
 	var local := get_global_transform().affine_inverse() * chain if is_inside_tree() else chain.duplicate()
 	for i in POINTS:
 		local[i] = local[i].round()  # whole pixels: the texture stays crisp
 	points = local
+
+
+## `p` pushed out of the obstacles' circles, then inside the walls.
+static func _free(p: Vector2, walls: Rect2, obstacles: Array) -> Vector2:
+	for o in obstacles:
+		var d: Vector2 = p - o[0]
+		var r: float = o[1] + THICK
+		if d.length_squared() < r * r:
+			p = o[0] + (d if d != Vector2.ZERO else Vector2.RIGHT).normalized() * r
+	return p.clamp(walls.position + Vector2(THICK, THICK), walls.end - Vector2(THICK, THICK))
