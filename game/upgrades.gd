@@ -10,6 +10,7 @@ const SLOTS := ["primary"]  # the spell equipped from the profile
 const RUN_SLOTS := ["primary", "secondary"]  # secondary: an active augment (Profile.AUGMENTS)
 const SLOT_NAMES := {"primary": "Spell", "secondary": "Secondary spell"}  # English, translated where shown
 const LIST := {
+	"toughness": {"name": "Toughness", "desc": "+%d max HP", "step": 25, "max": 4, "kind": "hero", "stat": "hp"},
 	"thrift": {"name": "Thrift", "desc": "-%d%% mana cost", "step": -15, "max": 11, "kind": "spell", "stat": "mana_cost%", "pct": true},
 	"inspiration": {"name": "Inspiration", "desc": "+%d choice per grimoire", "step": 1, "max": 1, "kind": "hero", "stat": "choices"},
 }

@@ -1188,3 +1188,6 @@ msgstr "Inspiration"
 
 msgid "+%d choice per grimoire"
 msgstr "+%d choix par grimoire"
+
+msgid "+%d max HP"
+msgstr "+%d PV max"

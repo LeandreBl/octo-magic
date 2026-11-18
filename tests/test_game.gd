@@ -103,6 +103,8 @@ func _test_upgrades() -> void:
 	var free := Stats.total([Upgrades.bonus(Upgrades.LIST.thrift, 11)])
 	check(is_equal_approx(Stats.total([Upgrades.bonus(Upgrades.LIST.thrift, 2)]).mana_cost, 0.7) and free.mana_cost == 0.0, "thrift: -15% a level, down to free")
 	check(Stats.cost(10, 0.01) == 1 and Stats.cost(10, free.mana_cost) == 0, "free spells only at -100%")
+	check(Upgrades.describe(Upgrades.LIST.toughness) == "+25 max HP" and Upgrades.LIST.toughness.max == 4, "toughness described")
+	check(Stats.total([Upgrades.bonus(Upgrades.LIST.toughness, 4)]).hp == 200.0, "toughness: +25 max HP a level, up to IV")
 	check(Upgrades.bonus(SKILLS.tough, 3) == {"hp": 75.0} and Upgrades.bonus(SKILLS.quick, 1) == {"speed%": 0.1}, "skills are Stats bonuses")
 	var rng := RandomNumberGenerator.new()
 	var offers := Upgrades.offers({}, rng, "", 3, SKILLS)
