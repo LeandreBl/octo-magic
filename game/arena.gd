@@ -24,7 +24,7 @@ static func off_screen(mages: Array, view: Vector2) -> Vector2:
 	var best := RECT.get_center()
 	var best_gap := -INF
 	for i in 32:
-		var near: Vector2 = mages.pick_random() if mages else best
+		var near: Vector2 = centres.pick_random() if centres else best
 		var pos := (near + Vector2.from_angle(randf() * TAU) * half.length() * randf_range(1.0, 1.5)).clamp(RECT.position, RECT.end)
 		var gap := INF  # how far out of the nearest view, in view half-sizes (> 1: out)
 		for c in centres:
