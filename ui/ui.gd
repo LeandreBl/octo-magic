@@ -114,6 +114,7 @@ func _ready() -> void:
 	_prompt.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_prompt.position.y -= 30
 	root.add_child(_prompt)
+	main.run_started.connect(_fade_in)
 	get_viewport().size_changed.connect(_layout)
 	_layout()
 	_logged_in = Online.logged_in()  # a session restored at launch: its last character
@@ -202,6 +203,21 @@ func _focus_screen() -> void:
 		first[0].grab_focus()
 	elif get_viewport().gui_get_focus_owner():
 		get_viewport().gui_get_focus_owner().release_focus()
+
+
+const RUN_FADE := 1.5  # seconds the screen takes to clear from black when a run starts
+
+
+## A run starts on a black screen that slowly clears to show the map.
+func _fade_in() -> void:
+	var black := ColorRect.new()
+	black.color = Color.BLACK
+	black.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	black.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(black)  # last child of the layer: above every screen
+	var tw := black.create_tween().set_ignore_time_scale()
+	tw.tween_property(black, "modulate:a", 0.0, RUN_FADE)
+	tw.tween_callback(black.queue_free)
 
 
 ## Screen transition: a fade, and the panel pops in (a slight overshoot).
