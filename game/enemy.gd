@@ -25,6 +25,7 @@ const SPELL_ANIM := {"summon": ["summon", 0.7], "ring": ["summon", 0.7],
 	"laser": ["attack", 0.6], "teleport": ["vanish", 0.5]}
 const LASER_WARN := 0.7  # s: the laser's line shows before it burns
 const BITE_WARN := 0.5  # s: vanished, about to bite where the mage stood
+const BOSS_CATCH_UP := 1.2  # out of cast range, a boss walks this much faster than its mage
 
 var kind := "skeleton"
 var data := {}  # its Run.ENEMIES entry, scaled to the wave
@@ -154,7 +155,7 @@ func _physics_process(delta: float) -> void:
 			_later.erase(l)
 			l[1].call()
 	var to := target.global_position - global_position
-	var motion := _steer(to) * speed * slow
+	var motion := _steer(to) * walk_speed(to) * slow
 	windup -= delta
 	if windup > 0.0:
 		motion = Vector2.ZERO
@@ -196,6 +197,14 @@ func _steer(to: Vector2) -> Vector2:
 			var w := Arena.way(position, position + to)
 			return w.rotated(sin(age * 5.0) * 0.8) if w.dot(to.normalized()) > 0.9 else w  # weaves only in the open
 	return Arena.way(position, position + to)
+
+
+## Its walking speed toward its mage (`to`): a boss out of cast range
+## (in_view) outruns the mage, so kiting never keeps it from casting.
+func walk_speed(to: Vector2) -> float:
+	if data.get("boss", false) and not in_view(to):
+		return maxf(speed, target.stats.speed * BOSS_CATCH_UP)
+	return speed
 
 
 ## Casts spell `sp` at its mage (`to`: from it to the mage). False when it
