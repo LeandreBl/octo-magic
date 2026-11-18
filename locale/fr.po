@@ -815,8 +815,8 @@ msgstr "Choisis un nom."
 msgid "Creating…"
 msgstr "Création…"
 
-msgid "Cost: %d mana"
-msgstr "Coût : %d mana"
+msgid "Cost: %s mana"
+msgstr "Coût : %s mana"
 
 msgid "%s: confirm"
 msgstr "%s : valider"

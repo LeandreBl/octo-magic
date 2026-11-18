@@ -139,7 +139,7 @@ func _spell_card(e: Dictionary) -> Button:
 	pic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	card.add_child(pic)
 	for line in [[Spell.label(e.spell), 22, UITheme.GOLD], [Spell.describe(e.spell), 15, UITheme.TEXT],
-			[tr("Cost: %d mana") % Spell.mana_cost(e.spell), 14, UITheme.TEXT_DIM]]:
+			[tr("Cost: %s mana") % Spell.cost_text(e.spell, Spell.mana_cost(e.spell)), 14, UITheme.TEXT_DIM]]:
 		var l := Label.new()
 		l.text = line[0]
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

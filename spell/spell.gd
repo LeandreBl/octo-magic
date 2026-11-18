@@ -201,6 +201,14 @@ static func mana_cost(s: Dictionary) -> int:
 	return clampi(roundi(power(s) * 0.4), 1, 100)
 
 
+## A cost as shown: per second for a channeled spell (beam, cone: one cast per
+## `cooldown`), else per cast. Checks and payments stay per cast (per tick).
+static func cost_text(s: Dictionary, cost: int) -> String:
+	if s.emit.body.shape in ["beam", "cone"]:
+		return "%d/s" % roundi(cost / s.cooldown)
+	return str(cost)
+
+
 static func _emit_power(e: Dictionary) -> float:
 	return e.count * _body_power(e.body)
 

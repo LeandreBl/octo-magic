@@ -290,7 +290,7 @@ func _process(_delta: float) -> void:
 		if not is_same(sp, ui[2]):
 			ui[2] = sp
 			ui[0].texture = _icon(sp)
-		ui[3].text = str(cost)
+		ui[3].text = Spell.cost_text(sp, cost)
 		ui[4].text = Spell.label(sp)  # follows a language change
 		ui[7].text = _binding(slot)
 		var left: float = p.cooldowns.get(slot, 0.0)
