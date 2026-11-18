@@ -551,9 +551,6 @@ msgstr "PASSIF"
 msgid "ACTIVE · RIGHT CLICK"
 msgstr "ACTIF · CLIC DROIT"
 
-msgid "Pick an upgrade for this run"
-msgstr "Choisis une amélioration pour cette run"
-
 msgid "1 · 2 · 3 or click to pick"
 msgstr "1 · 2 · 3 ou clic pour choisir"
 
@@ -762,12 +759,6 @@ msgstr "Croix"
 
 msgid "Circle"
 msgstr "Rond"
-
-msgid "Max level"
-msgstr "Niveau max"
-
-msgid "Level %d / %d"
-msgstr "Niveau %d / %d"
 
 msgid "+%d max health"
 msgstr "+%d de vie max"
@@ -1136,3 +1127,12 @@ msgstr "Succès, classement"
 
 msgid "Sound, controls"
 msgstr "Son, commandes"
+
+msgid "Pick a hero skill: it goes up one level"
+msgstr "Choisis une compétence du héros : elle monte d'un niveau"
+
+msgid "Pick a spell skill: it goes up one level"
+msgstr "Choisis une compétence de sort : elle monte d'un niveau"
+
+msgid "Single level"
+msgstr "Niveau unique"

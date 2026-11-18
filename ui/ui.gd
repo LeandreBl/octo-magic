@@ -750,11 +750,15 @@ func _skill_icons(box: Control, size: int) -> void:
 const LEVEL_UP_TIME_SCALE := 0.05  # solo: the world crawls while the player picks
 const LEVEL_UP_RECOVER := 1.5  # seconds (real time) back to full speed after the pick
 const LEVEL_UP_FADE := 0.5  # seconds (real time) the choice fades in, cards locked meanwhile
-const GRIMOIRES := {"hero": ["Red grimoire", Color("#ff6b5a")], "spell": ["Blue grimoire", Color("#5aa8ff")]}
+## Per grimoire: its name, hue, icon and what its cards offer.
+const GRIMOIRES := {"hero": ["Red grimoire", Color("#ff6b5a"), "drop_grimoire_hero", "Pick a hero skill: it goes up one level"],
+	"spell": ["Blue grimoire", Color("#5aa8ff"), "drop_grimoire_spell", "Pick a spell skill: it goes up one level"]}
 
 var _level_box: HBoxContainer
 var _level_title: Label
 var _level_more: Label
+var _level_icon: TextureRect  # the grimoire's
+var _level_sub: Label
 var _cards_ready := false  # the choice fully shown: a click meant for a spell can't pick a card
 var _arm_tween: Tween
 
@@ -763,13 +767,16 @@ func _levelup_screen() -> Control:
 	var c := CenterContainer.new()
 	var box := _vbox(10)
 	c.add_child(box)
+	_level_icon = UITheme.icon_rect(null, 64)
+	_level_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	box.add_child(_level_icon)
 	_level_title = UITheme.label("", "Header")
 	_level_title.add_theme_font_size_override("font_size", 56)
 	_level_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(_level_title)
-	var sub := UITheme.label("Pick an upgrade for this run", "", 20, UITheme.TEXT_DIM)
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(sub)
+	_level_sub = UITheme.label("", "", 20, UITheme.TEXT)  # over the dimmed, still bright world
+	_level_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(_level_sub)
 	var gap := Control.new()
 	gap.custom_minimum_size.y = 18
 	box.add_child(gap)
@@ -777,7 +784,7 @@ func _levelup_screen() -> Control:
 	_level_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_child(_level_box)
 	gap = Control.new()
-	gap.custom_minimum_size.y = 22
+	gap.custom_minimum_size.y = 40  # room for the cards' key badges
 	box.add_child(gap)
 	var hints := _hbox(22)
 	hints.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -795,6 +802,8 @@ func _show_level_up(offers: Array) -> void:
 	var g: Array = GRIMOIRES[Run.pending[0]]
 	_level_title.text = tr(g[0])
 	_level_title.add_theme_color_override("font_color", g[1])
+	_level_icon.texture = UITheme.icon(g[2])
+	_level_sub.text = tr(g[3])
 	_cards_ready = false
 	for i in offers.size():
 		var o: Dictionary = offers[i]
@@ -823,34 +832,53 @@ func _show_level_up(offers: Array) -> void:
 		glow.modulate.a = 0.0
 		glow.name = "Glow"
 		b.add_child(glow)
-		var m := _margin(20, 16, 20, 22)
+		var m := _margin(20, 26, 20, 30)
 		m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		m.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.add_child(m)
 		var card := _vbox(12)
 		card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		m.add_child(card)
-		var num := PanelContainer.new()
-		num.add_theme_stylebox_override("panel", UITheme.flat(UITheme.OUTLINE, UITheme.OUTLINE, 0, 0, 0))
-		num.custom_minimum_size = Vector2(30, 30)
-		num.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-		num.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var n := UITheme.label(str(i + 1), "", 18, UITheme.TEXT_DIM)
-		n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		num.add_child(n)
-		card.add_child(num)
-		card.add_child(UITheme.icon_box(UITheme.icon("up_" + o.id), 112))
 		b.self_modulate = g[1].lerp(Color.WHITE, 0.4)  # the card's frame takes the grimoire's hue
-		var maxed: bool = o.level == u.max
+		# The skill's icon in a round medallion.
+		var medal := PanelContainer.new()
+		var ms := UITheme.flat(UITheme.INK, UITheme.OUTLINE, 3, 0, 0)
+		ms.set_corner_radius_all(60)
+		medal.add_theme_stylebox_override("panel", ms)
+		medal.custom_minimum_size = Vector2(120, 120)
+		medal.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		medal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var icon := UITheme.icon_rect(UITheme.icon("up_" + o.id), 76)
+		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		medal.add_child(icon)
+		card.add_child(medal)
 		for line in [[Upgrades.title(u, o.level), 28, g[1].lerp(Color.WHITE, 0.3), true],
-				[Upgrades.describe(u), 19, UITheme.TEXT, false],
-				[tr("Max level") if maxed else tr("Level %d / %d") % [o.level, u.max], 14, UITheme.GOLD if maxed else UITheme.TEXT_DIM, false]]:
+				[Upgrades.describe(u), 19, UITheme.TEXT, false]]:
 			var l := UITheme.label(line[0], "", line[1], line[2])
 			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			l.autowrap_mode = TextServer.AUTOWRAP_WORD
 			if line[3]:
 				l.add_theme_font_override("font", UITheme.BODY_BOLD)
 			card.add_child(l)
+		card.add_child(_spacer())
+		card.add_child(_level_pips(u.max, o.level, g[1]))
+		# The key that picks it, on the card's bottom edge.
+		var num := PanelContainer.new()
+		num.add_theme_stylebox_override("panel", UITheme.flat(UITheme.BUTTON, UITheme.OUTLINE, 3, 0, 3))
+		num.custom_minimum_size = Vector2(40, 40)
+		num.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		num.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+		num.offset_left = -20
+		num.offset_right = 20
+		num.offset_top = -20
+		num.offset_bottom = 20
+		var n := UITheme.label(str(i + 1), "", 18)
+		n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		n.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		n.add_theme_font_override("font", UITheme.BODY_BOLD)
+		num.add_child(n)
+		b.add_child(num)
 		_level_box.add_child(b)
 	screens.levelup.set_meta("focus", _level_box.get_child(0))
 	show_screen("levelup")
@@ -860,6 +888,26 @@ func _show_level_up(offers: Array) -> void:
 	_arm_tween = create_tween().set_ignore_time_scale()
 	_arm_tween.tween_interval(LEVEL_UP_FADE)
 	_arm_tween.tween_callback(_arm_cards)
+
+
+## A skill's levels as pips: the ones it has in gold, the one this card gives
+## in the grimoire's hue, the rest empty; a one-level skill says so instead.
+func _level_pips(max_level: int, level: int, hue: Color) -> Control:
+	if max_level == 1:
+		var one := UITheme.label("Single level", "Caption")
+		one.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		return one
+	var row := _hbox(5)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for k in max_level:
+		var pip := Panel.new()
+		var color := UITheme.GOLD if k < level - 1 else hue if k == level - 1 else UITheme.INK
+		pip.add_theme_stylebox_override("panel", UITheme.flat(color, UITheme.OUTLINE, 2, 0, 0))
+		pip.custom_minimum_size = Vector2(14, 14)
+		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(pip)
+	return row
 
 
 ## The choice is fully opaque: the cards take clicks and light their gold halo.
