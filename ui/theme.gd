@@ -60,6 +60,8 @@ const GLYPHS := {
 	"copy": ["####..", "#.....", "#.####", "#.#..#", "..#..#", "..####"],
 	"user": [".###.", ".###.", ".###.", ".....", "#####", "#####"],
 	"quit": ["####...", "#......", "#...#..", "#.#####", "#...#..", "#......", "####..."],
+	"trophy": ["#######", "#.###.#", "#.###.#", ".#####.", "..###..", "...#...", "..###.."],
+	"gear": ["..#.#..", ".#####.", "##...##", ".#...#.", "##...##", ".#####.", "..#.#.."],
 }
 
 
@@ -243,6 +245,34 @@ static func icon_rect(tex: Texture2D, px: int) -> TextureRect:
 	r.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return r
+
+
+## The profile's header, shared by the characters and account screens: its
+## title, then a tab per screen, `current` on (pressing it does nothing), the
+## other one calling `other`. Returns {"head", "title", "tabs"}.
+static func profile_head(current: String, other: Callable) -> Dictionary:
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 24)
+	var title := label("Profile", "Header")
+	head.add_child(title)
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 4)
+	tabs.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(tabs)
+	for t in ["Characters", "Account"]:
+		var b := Button.new()
+		b.text = t
+		b.theme_type_variation = "Tab"
+		b.toggle_mode = true
+		b.button_pressed = t == current
+		if t == current:
+			b.toggled.connect(func(_on): b.set_pressed_no_signal(true))
+		else:
+			b.pressed.connect(func():
+				b.set_pressed_no_signal(false)
+				other.call())
+		tabs.add_child(b)
+	return {"head": head, "title": title, "tabs": tabs}
 
 
 ## An icon in a sunken square box, `px` wide.

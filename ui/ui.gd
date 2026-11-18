@@ -475,20 +475,21 @@ func _title() -> Control:
 	pulse.tween_property(_title_glow, "modulate:a", 0.35, 1.2)
 	pulse.tween_property(_title_glow, "modulate:a", 1.0, 1.2)
 	left.add_child(forge)
+	# Three sections between runs, as tiles; the characters and account are
+	# behind the mage's name (top right), Quit is an icon there.
+	var sec_gap := Control.new()
+	sec_gap.custom_minimum_size.y = 6
+	left.add_child(sec_gap)
+	left.add_child(UITheme.label("Between runs", "Caption"))
 	var grid := GridContainer.new()
-	grid.columns = 2
+	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
 	left.add_child(grid)
-	# Three sections between runs; the characters and account are behind the
-	# mage's name (top right), Quit is an icon there.
-	grid.columns = 3
-	var items := [["Shop", open.bind("shop")], ["Records", open.bind("records")], ["Options", open.bind("options")]]
-	for it in items:
-		var b := _button(it[0], it[1])
-		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		grid.add_child(b)
+	for it in [["Shop", "Equipment, augments", UITheme.icon("gold"), open.bind("shop")],
+			["Records", "Achievements, leaderboard", UITheme.glyph("trophy", UITheme.GOLD), open.bind("records")],
+			["Options", "Sound, controls", UITheme.glyph("gear", UITheme.GOLD), open.bind("options")]]:
+		grid.add_child(_tile(it[0], it[1], it[2], it[3]))
 	left.add_child(_spacer())
 
 	# Top right: the purse and the account.
@@ -519,6 +520,27 @@ func _title() -> Control:
 		quit.tooltip_text = "Quit"
 		corner.add_child(quit)
 	return bg
+
+
+## A title menu section: a tall button with an icon, its name and what is in it.
+func _tile(name: String, sub: String, tex: Texture2D, action: Callable) -> Button:
+	var b := _button("", action)
+	b.custom_minimum_size = Vector2(0, 112)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var m := _margin(14, 12, 10, 12)
+	m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	m.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(m)
+	var col := _vbox(4)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	m.add_child(col)
+	var box := UITheme.icon_box(tex, 44, UITheme.RIM)
+	box.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	col.add_child(box)
+	col.add_child(_spacer())
+	col.add_child(UITheme.label(name, "", 20))
+	col.add_child(UITheme.label(sub, "", 14, UITheme.TEXT_DIM))
+	return b
 
 
 ## The way to the spell forge, the heart of the game: a big parchment-red button.

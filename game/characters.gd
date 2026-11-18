@@ -26,20 +26,7 @@ func _ready() -> void:
 	box.add_theme_constant_override("separation", 12)
 	add_child(box)
 	# The profile: characters, and the account one tab away.
-	var head := HBoxContainer.new()
-	box.add_child(head)
-	var title := Label.new()
-	title.theme_type_variation = "Header"
-	title.text = "Characters"
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	head.add_child(title)
-	var account := Button.new()
-	account.text = "Account"
-	account.theme_type_variation = "Tab"
-	account.icon = UITheme.glyph("user", UITheme.TEXT_DIM)
-	account.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	account.pressed.connect(account_requested.emit)
-	head.add_child(account)
+	box.add_child(UITheme.profile_head("Characters", account_requested.emit).head)
 	info = Label.new()
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD
 	box.add_child(info)

@@ -1124,3 +1124,15 @@ msgstr "Défi"
 
 msgid "%s: %s"
 msgstr "%s : %s"
+
+msgid "Between runs"
+msgstr "Entre deux runs"
+
+msgid "Equipment, augments"
+msgstr "Équipement, augments"
+
+msgid "Achievements, leaderboard"
+msgstr "Succès, classement"
+
+msgid "Sound, controls"
+msgstr "Son, commandes"
