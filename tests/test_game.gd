@@ -130,6 +130,8 @@ func _test_upgrades() -> void:
 	check(flow.max == 9 and is_equal_approx(Stats.total([Upgrades.bonus(flow, 2)]).mana_regen, Stats.BASE.mana_regen * 1.7), "Flow: +35 % mana regeneration per level, 9 levels")
 	var antidote: Dictionary = Upgrades.LIST.antidote
 	check(antidote.max == 9 and is_equal_approx(Stats.total([Upgrades.bonus(antidote, 3)]).poison, 0.7), "Antidote: +10 % poison resistance per level, 9 levels")
+	var magnetism: Dictionary = Upgrades.LIST.magnetism
+	check(magnetism.max == 5 and is_equal_approx(Stats.total([Upgrades.bonus(magnetism, 2)]).pickup, Stats.BASE.pickup * 1.6), "Magnetism: +30 % pickup radius per level, 5 levels")
 
 
 func _test_run() -> void:

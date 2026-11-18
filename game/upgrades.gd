@@ -19,6 +19,7 @@ const LIST := {
 	"channeling": {"name": "Channeling", "desc": "+%d%% mana regen standing still", "step": 300, "max": 1, "kind": "spell", "stat": "still_regen%", "pct": true},
 	"antidote": {"name": "Antidote", "desc": "+%d%% poison resistance", "step": -10, "max": 9, "kind": "hero", "stat": "poison%", "pct": true},
 	"fleetness": {"name": "Fleetness", "desc": "+%d%% move speed", "step": 10, "max": 8, "kind": "hero", "stat": "speed%", "pct": true},
+	"magnetism": {"name": "Magnetism", "desc": "+%d%% pickup radius", "step": 30, "max": 5, "kind": "hero", "stat": "pickup%", "pct": true},
 }
 const KINDS := ["hero", "spell"]
 const ROMAN := [[10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]]
