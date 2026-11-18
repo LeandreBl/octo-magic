@@ -6,6 +6,7 @@ const RunState := preload("res://game/run.gd")
 const ProfileState := preload("res://game/profile.gd")
 const Enemy := preload("res://game/enemy.gd")
 const Player := preload("res://game/player.gd")
+const Tentacle := preload("res://game/tentacle.gd")
 const SPELL_TYPES := ["bolt", "spread", "ring", "nova", "fuse", "puddle", "charge", "blink", "heal", "summon"]
 
 var failures := 0
@@ -24,6 +25,7 @@ func _initialize() -> void:
 	_test_profile()
 	_test_french()
 	_test_sfx()
+	_test_tentacle()
 	await _test_play()
 	print("game tests: %s" % ("OK" if failures == 0 else "%d failure(s)" % failures))
 	quit(1 if failures else 0)
@@ -261,6 +263,25 @@ func Profile_max(id: String) -> int:
 
 
 ## Every base spell and enemy kind runs in a real scene.
+## A tentacle keeps its length and stays at the body while it walks: its tip
+## steps after it.
+func _test_tentacle() -> void:
+	var t := Tentacle.new(0.0, 0)
+	var center := Vector2.ZERO
+	var far := 0.0
+	for i in 600:  # 10 s at 60 fps, 120 px/s to the right
+		center.x += 2.0
+		t.follow(center, 0.0, 1.0 / 60.0, i / 60.0)
+		var length := 0.0
+		for k in t.chain.size() - 1:
+			length += t.chain[k].distance_to(t.chain[k + 1])
+		check(absf(length - Tentacle.LENGTH) < Tentacle.LENGTH * 0.2, "tentacle keeps its length: %s" % length)
+		far = maxf(far, t.foot.distance_to(center))
+	check(far < Tentacle.LENGTH * 1.5, "tentacle steps after the body: %s" % far)
+	check(t.chain[0].distance_to(center) < Tentacle.ROOT + 1.0, "tentacle base on the body")
+	t.free()
+
+
 func _test_sfx() -> void:
 	for n in Sfx.RECIPES:
 		var s := Sfx.synth(Sfx.RECIPES[n])

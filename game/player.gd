@@ -15,9 +15,12 @@ const STICK_RANGE := 80.0
 const SHIELD_HP := 40.0
 const SHIELD_WAIT := 8.0
 ## The octopus seen from above (PixelLab, tools/make_octopus.py): strips of
-## square frames, head to the top, turned toward where it goes.
-const SPRITES := {"walk": preload("res://assets/octo/walk.png"), "idle": preload("res://assets/octo/idle.png"),
+## square frames, head to the top, turned toward where it goes. Its ground
+## tentacles are not in them: TENTACLES of game/tentacle.gd under the body.
+const SPRITES := {"idle": preload("res://assets/octo/idle.png"),
 	"cast": preload("res://assets/octo/cast.png"), "channel": preload("res://assets/octo/channel.png")}
+const Tentacle := preload("res://game/tentacle.gd")
+const TENTACLES := 8
 const CAST_TIME := 0.4  # s: the cast animation, played once per cast
 
 var run: Object  # spells and mana costs: a Loadout in game, a Run in tests
@@ -64,6 +67,8 @@ func setup(s: Dictionary) -> void:
 
 func _ready() -> void:
 	add_to_group("players")
+	for i in TENTACLES:
+		add_child(Tentacle.new((i + 0.5) * TAU / TENTACLES, i % 2))
 	if peer_id == multiplayer.get_unique_id():  # this peer's mage stays mid-screen, the map scrolls
 		var cam := Camera2D.new()
 		add_child(cam)
@@ -175,6 +180,10 @@ func _physics_process(delta: float) -> void:
 	_channel_t -= delta
 	var heading := aim if _cast_t > 0.0 or _channel_t > 0.0 or not _moving else step  # casting: faces its aim
 	_angle = lerp_angle(_angle, heading.angle(), minf(1.0, 12.0 * delta))
+	var t := Time.get_ticks_msec() / 1000.0
+	for c in get_children():
+		if c is Tentacle:
+			c.follow(global_position, _angle, delta, t)
 	if hp < _heard_hp - 0.5:
 		if hp <= 0.0:
 			Sfx.play("death")
@@ -262,11 +271,11 @@ func _animate_cast(s: Dictionary) -> void:
 func _draw() -> void:
 	modulate.a = 1.0 if hp > 0.0 else 0.3  # down until the next run
 	draw_circle(Vector2.ZERO, radius * 1.6, Color(look.robe, 0.45))  # robe colour under it: who is who in coop
-	var anim := "channel" if _channel_t > 0.0 else "cast" if _cast_t > 0.0 else "walk" if _moving else "idle"
+	var anim := "channel" if _channel_t > 0.0 else "cast" if _cast_t > 0.0 else "idle"
 	var tex: Texture2D = SPRITES[anim]
 	var size := float(tex.get_height())
 	var frames := tex.get_width() / tex.get_height()
-	var f := int(Time.get_ticks_msec() / 1000.0 * (12.0 if anim in ["walk", "channel"] else 8.0)) % frames
+	var f := int(Time.get_ticks_msec() / 1000.0 * (12.0 if anim == "channel" else 8.0)) % frames
 	if anim == "cast":
 		f = mini(int((1.0 - _cast_t / CAST_TIME) * frames), frames - 1)
 	draw_set_transform(Vector2.ZERO, _angle + PI / 2.0)  # the sprite's head is up
