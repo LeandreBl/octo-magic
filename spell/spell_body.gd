@@ -185,15 +185,18 @@ func _in_reach(e: Node2D) -> bool:
 		and absf(angle_difference(dir.angle(), to.angle())) <= deg_to_rad(body.angle) / 2.0
 
 
-## The arc grips its last target while it stays in reach, else the nearest one.
+## The arc grips its last target while it stays in reach, else the one
+## closest to the aim angle.
 func _beam_target() -> Node2D:
 	var last: Variant = caster.get_meta("beam_target") if is_instance_valid(caster) and caster.has_meta("beam_target") else null
 	if is_instance_valid(last) and _in_reach(last):
 		return last
 	var best: Node2D = null
+	var best_a := INF
 	for e in get_tree().get_nodes_in_group("enemies"):
-		if _in_reach(e) and (not best or global_position.distance_squared_to(e.global_position)
-				< global_position.distance_squared_to(best.global_position)):
+		var a := absf(angle_difference(dir.angle(), (e.global_position - global_position).angle()))
+		if _in_reach(e) and a < best_a:
+			best_a = a
 			best = e
 	if is_instance_valid(caster):
 		caster.set_meta("beam_target", best)
@@ -280,19 +283,26 @@ func _draw() -> void:
 		draw_circle(-dir * body.size * 1.2, body.size * 0.6, Color(color, 0.4))
 
 
-## A jagged electric arc to the gripped enemy, or into the void at full reach.
-## Redrawn every frame, so it crackles.
+## An electric arc leaving along the aim and bending in a circle arc onto the
+## gripped enemy, or straight into the void at full reach (off-screen). Its
+## shimmer is a smooth function of time, so successive casts line up.
 func _draw_arc() -> void:
 	var end: Vector2 = target.global_position - global_position if is_instance_valid(target) else dir * body.speed
+	# Quadratic Bezier whose control point sits where the aim meets the end
+	# tangent of a circle arc: tangent to the aim at the staff.
+	var cos_a := maxf(0.3, cos(angle_difference(dir.angle(), end.angle())))
+	var ctrl := dir * end.length() / (2.0 * cos_a)
 	var side := end.orthogonal().normalized()
-	var n := maxi(2, int(end.length() / 16.0))
-	var pts := PackedVector2Array([Vector2.ZERO])
-	for i in range(1, n):
-		pts.append(end * i / n + side * randf_range(-9.0, 9.0))
-	pts.append(end)
-	draw_polyline(pts, Color(color, 0.3), 7.0)
-	draw_polyline(pts, color, 3.0)
-	draw_polyline(pts, Color.WHITE, 1.0)
+	var t := Time.get_ticks_msec() / 1000.0
+	var n := maxi(8, int(end.length() / 12.0))
+	var pts := PackedVector2Array()
+	for i in n + 1:
+		var u := float(i) / n
+		var p := ctrl * 2.0 * u * (1.0 - u) + end * u * u
+		pts.append(p + side * sin(u * PI) * 3.0 * sin(u * 23.0 - t * 30.0))
+	draw_polyline(pts, Color(color, 0.3), 7.0, true)
+	draw_polyline(pts, color, 3.0, true)
+	draw_polyline(pts, Color.WHITE, 1.0, true)
 
 
 func _draw_cone() -> void:

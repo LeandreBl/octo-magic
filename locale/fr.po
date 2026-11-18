@@ -532,8 +532,8 @@ msgstr "Boule de feu"
 msgid "A heavy fireball that explodes on impact. High damage, high mana cost."
 msgstr "Une lourde boule de feu qui explose à l'impact. Gros dégâts, gros coût en mana."
 
-msgid "Held, an electric arc latches onto the nearest aimed enemy and strikes it constantly, for mana."
-msgstr "Maintenu, un arc électrique s'agrippe à l'ennemi visé le plus proche et le frappe à chaque instant, contre du mana."
+msgid "Held, an electric arc curves onto the enemy closest to the aim, far off-screen, and strikes it constantly, for mana."
+msgstr "Maintenu, un arc électrique s'incurve vers l'ennemi le plus proche de la visée, loin hors de l'écran, et le frappe à chaque instant, contre du mana."
 
 msgid "Magic missile"
 msgstr "Missile magique"

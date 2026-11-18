@@ -162,12 +162,14 @@ func _check_channel() -> void:
 		world.add_child(e)
 		return e
 	var near_behind: Node2D = at.call(Vector2(60, 100))  # nearest, but behind the aim
-	var aimed: Node2D = at.call(Vector2(300, 120))
-	var far: Node2D = at.call(Vector2(380, 100))
+	var off_aim: Node2D = at.call(Vector2(200, 145))  # nearer, but off the aim
+	var aimed: Node2D = at.call(Vector2(300, 100))
+	var far: Node2D = at.call(Vector2(380, 110))
 	SpellBody.cast(spells.lightning.emit, Vector2(100, 100), Vector2.RIGHT, null, spells.lightning, world)
 	for i in 3:
 		await physics_frame
-	check(aimed.hp < 1000.0 and near_behind.hp == 1000.0 and far.hp == 1000.0, "beam grips the nearest enemy in its angle")
+	check(aimed.hp < 1000.0 and near_behind.hp == 1000.0 and off_aim.hp == 1000.0 and far.hp == 1000.0,
+		"beam grips the enemy closest to the aim angle")
 	var hp: float = aimed.hp
 	for i in 3:
 		await physics_frame
@@ -175,7 +177,7 @@ func _check_channel() -> void:
 	SpellBody.cast(spells.frost_jet.emit, Vector2(230, 100), Vector2.RIGHT, null, spells.frost_jet, world)
 	for i in 3:
 		await physics_frame
-	check(aimed.hp < hp and near_behind.hp == 1000.0 and far.hp == 1000.0, "cone hits in reach and angle only")
+	check(aimed.hp < hp and near_behind.hp == 1000.0 and off_aim.hp == 1000.0 and far.hp == 1000.0, "cone hits in reach and angle only")
 	check(Spell.mana_cost(spells.fireball) > 3 * Spell.mana_cost(spells.magic_missile), "fireball costs far more than a missile")
 	world.free()
 
