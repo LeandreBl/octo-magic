@@ -4,7 +4,7 @@
   "slot": "primary",
   "unlock": "",
   "name": "Fireball",
-  "description": "A heavy fireball that sets its target on fire. High damage, high mana cost.",
+  "description": "A fireball.",
   "element": "fire",
   "color": "#ff6a1f",
   "cooldown": 0.6,
@@ -54,7 +54,7 @@
   "slot": "primary",
   "unlock": "",
   "name": "Fulmen",
-  "description": "Held, an electric arc curves onto the nearest enemy ahead, the closest to the aim, far off-screen, and strikes it constantly, for mana.",
+  "description": "An electric arc.",
   "element": "lightning",
   "color": "#9fd8ff",
   "cooldown": 0.15,
@@ -90,7 +90,7 @@
   "slot": "primary",
   "unlock": "",
   "name": "Magic missile",
-  "description": "A projectile that aims by itself. Low damage, low mana.",
+  "description": "A homing magic missile.",
   "element": "arcane",
   "color": "#c77dff",
   "cooldown": 0.3,
@@ -145,7 +145,7 @@
   "slot": "primary",
   "unlock": "",
   "name": "Flatus Gelidus",
-  "description": "Held, a very short-range cone of frost hurts and slows every enemy it touches.",
+  "description": "A cone of frost.",
   "element": "ice",
   "color": "#8fe3ff",
   "cooldown": 0.15,
@@ -167,13 +167,6 @@
      {
       "type": "damage",
       "amount": 3,
-      "radius": 0
-     },
-     {
-      "type": "status",
-      "status": "slow",
-      "power": 2,
-      "duration": 0.5,
       "radius": 0
      }
     ],

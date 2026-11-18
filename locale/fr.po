@@ -529,20 +529,20 @@ msgstr "Jouer 10 runs"
 msgid "Fireball"
 msgstr "Boule de feu"
 
-msgid "A heavy fireball that sets its target on fire. High damage, high mana cost."
-msgstr "Une lourde boule de feu qui embrase sa cible. Gros dégâts, gros coût en mana."
+msgid "A fireball."
+msgstr "Une boule de feu."
 
-msgid "Held, an electric arc curves onto the nearest enemy ahead, the closest to the aim, far off-screen, and strikes it constantly, for mana."
-msgstr "Maintenu, un arc électrique s'incurve vers l'ennemi le plus proche devant soi, au plus près de la visée, loin hors de l'écran, et le frappe à chaque instant, contre du mana."
+msgid "An electric arc."
+msgstr "Un arc électrique."
 
 msgid "Magic missile"
 msgstr "Missile magique"
 
-msgid "A projectile that aims by itself. Low damage, low mana."
-msgstr "Un projectile qui vise tout seul. Peu de dégâts, peu de mana."
+msgid "A homing magic missile."
+msgstr "Un missile magique autoguidé."
 
-msgid "Held, a very short-range cone of frost hurts and slows every enemy it touches."
-msgstr "Maintenu, un cône de givre à très courte portée blesse et ralentit tous les ennemis qu'il touche."
+msgid "A cone of frost."
+msgstr "Un cône de givre."
 
 msgid "Frost shard"
 msgstr "Éclat de givre"
