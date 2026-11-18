@@ -18,6 +18,7 @@ const POLL_SECONDS := 3.0
 const SPAWN_EVERY := 0.5  # s between two monsters of a wave: it trickles in
 const LEVEL_BLAST_RADIUS := 220.0  # px around the mage leveling up
 const LEVEL_BLAST_FORCE := 900.0  # knock speed: about 270 px of slide (enemy knock decays 1500/s)
+const LEVEL_BLAST_TIME := 0.6  # s of game time for the halo's front to reach LEVEL_BLAST_RADIUS
 const BOSS_COINS := 30  # gold pieces a boss scatters
 const GRIMOIRE_CHANCE := 0.01  # a kill drops a grimoire (red or blue); a boss always does
 const QUAD_CHANCE := 0.03  # an Archfiend's imp drops Quad Damage
@@ -181,7 +182,9 @@ func _offer_loadout(text: String) -> void:
 		p.loadout_json = JSON.stringify(Player.clean_loadout(JSON.parse_string(text)))
 
 
-## A mage levels up: the host pulls every drop in and pushes every enemy near it away, in a circle.
+## A mage levels up: the host pulls every drop in, and a halo of light spreads
+## from the mage to LEVEL_BLAST_RADIUS, pushing each enemy away (and turning
+## back each enemy shot) as its front reaches it.
 @rpc("any_peer", "call_local", "reliable")
 func _level_blast() -> void:
 	var from := multiplayer.get_remote_sender_id()
@@ -189,19 +192,33 @@ func _level_blast() -> void:
 	if not multiplayer.is_server() or not p:
 		return
 	_pull_drops()
+	var at: Vector2 = p.position
+	var hit := {}
+	_level_wave.rpc(at)
+	create_tween().tween_method(func(r: float): _halo_front(at, r, hit), 0.0, LEVEL_BLAST_RADIUS, LEVEL_BLAST_TIME)
+
+
+## The halo's front at `r` px from `at`: pushes the enemies it reaches (once, `hit`) and turns back the shots inside.
+func _halo_front(at: Vector2, r: float, hit: Dictionary) -> void:
 	for e in get_tree().get_nodes_in_group("enemies"):
-		var to: Vector2 = e.position - p.position
-		if to.length() < LEVEL_BLAST_RADIUS:
+		var to: Vector2 = e.position - at
+		if not hit.has(e) and to.length() <= r:
+			hit[e] = true
 			e.push((to.normalized() if to else Vector2.RIGHT) * LEVEL_BLAST_FORCE)
-	_level_wave.rpc(p.position)
+	for s in get_tree().get_nodes_in_group("shots"):
+		var away: Vector2 = s.position - at
+		if away.length() <= r and s.velocity.dot(away) < 0.0:
+			s.velocity = away.normalized() * maxf(s.velocity.length(), LEVEL_BLAST_FORCE * 0.5)
 
 
-## The level-up blast seen on every peer: the PixelLab shockwave (fx/shockwave.png)
-## spreading out to LEVEL_BLAST_RADIUS. Game time: in solo it crawls with the
+## The level-up halo seen on every peer: the PixelLab burst of light
+## (fx/level_halo.png, the shockwave until it is drawn) spreading out to
+## LEVEL_BLAST_RADIUS with the push front. Game time: in solo it crawls with the
 ## world under the level-up cards and spreads as time comes back.
 @rpc("authority", "call_local", "reliable")
 func _level_wave(at: Vector2) -> void:
-	var tex := Enemy.art("fx/shockwave")
+	var halo := Enemy.art("fx/level_halo")
+	var tex := halo if halo else Enemy.art("fx/shockwave")
 	if not tex:
 		return
 	var n := tex.get_width() / tex.get_height()
@@ -210,10 +227,11 @@ func _level_wave(at: Vector2) -> void:
 	s.hframes = n
 	s.position = at
 	s.z_index = SpellBody.ABOVE_DECOR
-	s.scale = Vector2.ONE * LEVEL_BLAST_RADIUS / (tex.get_height() * 0.375)  # the last ring spans 3/4 of a frame
+	# the halo's light reaches the frame's edge, the shockwave's last ring 3/4 of it
+	s.scale = Vector2.ONE * LEVEL_BLAST_RADIUS / (tex.get_height() * (0.5 if halo else 0.375))
 	add_child(s)
 	var tw := s.create_tween()
-	tw.tween_property(s, "frame", n - 1, n / Enemy.FPS)
+	tw.tween_property(s, "frame", n - 1, LEVEL_BLAST_TIME)
 	tw.tween_property(s, "modulate:a", 0.0, 0.25)
 	tw.tween_callback(s.queue_free)
 

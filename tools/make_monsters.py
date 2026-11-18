@@ -131,6 +131,9 @@ FX = {
     "spark": "a crackling white lightning ball projectile with electric arcs flying right, looping",
     "shockwave": "a ground slam shockwave, a ring of dust and cracked stone bursting outward, seen from above",
     "poison": "a bubbling toxic green poison puddle on the ground, seen from above, looping",
+    # the mage's level-up (game/main.gd _level_wave): pushes everything away as it spreads
+    "level_halo": "a radiant halo of bright golden holy light bursting outward from a white hot center, a glowing ring of"
+                  " light expanding to the edges of the frame, light rays and sparkles, seen from above, one-shot",
     "summon": "a dark purple summoning portal circle with runes opening on the ground, seen from above",
     # the boss monsters' attacks
     "bone_missile": "a glowing white bone missile projectile with a pale ghostly trail, flying right, looping",
