@@ -75,9 +75,11 @@ func _enter_tree() -> void:
 	_music.add_to_group("sfx")
 	_music.finished.connect(func(): music(TRACKS.filter(func(t): return t != _track).pick_random()))
 	add_child(_music)
-	# Every button of the UI, whoever builds it.
+	# Every button of the UI, whoever builds it, once: a button moved to
+	# another parent (remove_child, add_child) enters the tree again.
 	get_tree().node_added.connect(func(n):
-		if n is BaseButton:
+		if n is BaseButton and not n.has_meta("sfx"):
+			n.set_meta("sfx", true)
 			n.pressed.connect(play.bind("click"))
 			n.mouse_entered.connect(func(): if not n.disabled: play("hover")))
 
