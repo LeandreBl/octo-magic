@@ -7,7 +7,10 @@ Run: python3 tools/make_icons.py [id ...]
 
 import json
 import re
+import subprocess
 import sys
+import tempfile
+import urllib.error
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -102,8 +105,40 @@ def jobs() -> dict[str, str]:
 
 
 def icon(desc: str) -> bytes:
-    """ICON x ICON PNG, the drawing centered (server/sheet.py)."""
-    return sheet.normalize_icon(art.icon(desc, sheet.ICON))
+    """ICON x ICON PNG, the drawing centered (server/sheet.py); through
+    ChatGPT (codex_icon) once PixelLab is out of credits."""
+    try:
+        return sheet.normalize_icon(art.icon(desc, sheet.ICON))
+    except urllib.error.HTTPError as e:
+        if e.code != 402:
+            raise
+        return codex_icon(desc)
+
+
+def codex_icon(desc: str) -> bytes:
+    """The Codex CLI's image generation (the ChatGPT plan: `codex login`), in
+    the look of two existing icons, then boxed down to 32x32 with a black
+    outline (ImageMagick `convert`)."""
+    gen = Path.home() / ".codex/generated_images"
+    before = set(gen.rglob("*.png"))
+    refs = ",".join(str(OUT / f) for f in ("up_flow.png", "up_ward.png"))
+    prompt = ("Use your image generation tool, do not draw with code and do not write any file. Generate ONE"
+              " pixel-art game icon in the style of the attached reference icons (chunky pixels, black outline,"
+              f" transparent background, centered, bold readable shape, few details). {desc}")
+    subprocess.run(["codex", "exec", "--skip-git-repo-check", "-s", "read-only", "-i", refs, "-"],
+                   input=prompt, text=True, check=True, capture_output=True, timeout=600)
+    new = sorted(set(gen.rglob("*.png")) - before, key=lambda p: p.stat().st_mtime)
+    if not new:
+        raise RuntimeError("codex generated no image")
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "icon.png"
+        subprocess.run(["convert", str(new[-1]), "-trim", "+repage", "-filter", "Box", "-resize", "30x30",
+                        "-channel", "A", "-threshold", "50%", "+channel", "-background", "none",
+                        "-gravity", "center", "-extent", "32x32",
+                        "(", "+clone", "-alpha", "extract", "-morphology", "Dilate", "Diamond:1",
+                        "-background", "black", "-alpha", "shape", ")", "+swap", "-compose", "over", "-composite",
+                        "-channel", "A", "-threshold", "50%", "+channel", f"PNG32:{out}"], check=True)
+        return out.read_bytes()
 
 
 def main() -> None:
