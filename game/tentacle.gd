@@ -1,11 +1,17 @@
 extends Line2D
-## One ground tentacle of the octopus mage, under its body sprite (game/player.gd):
-## a Verlet chain pinned at the body whose tip is planted on the ground, and
-## steps to a new spot ahead when the body has gone too far from it. It is a
-## body of its own: its points bump into the arena's walls and are shoved out
-## of the enemies around (circles), the tip never planted inside either. Visual
-## only: the body is the hitbox, and each peer simulates its own from the
-## synced position. Shape by the code, texture by PixelLab (tools/make_octopus.py).
+## One ground tentacle of the octopus mage, under its body sprite (game/player.gd).
+## A muscular arm, not a rope: a Verlet chain pinned at the body that keeps its
+## length and resists bending, each joint pulled toward a target curve (the tip
+## curls more than the base). Slow, it crawls: the tip holds the ground like a
+## sucker, and when the body has gone too far it lets go, curls up as it lifts,
+## and unrolls onto a new spot ahead (the bend runs from the base to the tip).
+## At running speed it lets go of the ground: swept back, it streams behind the
+## body in a wave running to the tip, as a swimming octopus. Still, the arms
+## writhe slowly and now and then one shifts. It is a body of its own: its
+## points bump into the arena's walls and are shoved out of the enemies around
+## (circles), the tip never planted inside either. Visual only: the body is the
+## hitbox, and each peer simulates its own from the synced position. Shape by
+## the code, texture by PixelLab (tools/make_octopus.py).
 
 const TEX := preload("res://assets/octo/tentacle.png")
 const POINTS := 6
@@ -13,10 +19,19 @@ const LENGTH := 29.0  # px, base to tip: the texture's width, drawn 1:1 to stay 
 const ROOT := 8.0  # px from the body centre to the base
 const REACH := 0.85  # how far from its base the tip rests, in LENGTH: the slack curls the chain
 const STEP := 0.45  # the tip steps when that far (in LENGTH) from its rest spot
-const STEP_TIME := 0.1  # s: a step's glide
-const GAIT := 0.15  # s: the two tentacle groups take turns this long each
-const DAMP := 0.85
-const SWAY := 0.2  # px/frame²: the sideways wiggle that keeps it alive
+const STEP_TIME := 0.16  # s: a step, lift to landing
+const FIDGET_TIME := 0.5  # s: a slow shift while standing
+const GAIT := 0.18  # s: the two tentacle groups take turns this long each
+const LIFT := 0.25  # how much a stepping tip draws back toward its base mid-step
+const DAMP := 0.85  # of a point's speed kept per frame: the water's drag
+const CURL := 0.25  # rad per joint at the tip: the resting hook
+const SWING_BEND := 0.5  # rad: the bend that runs down a stepping arm
+const WAVE := 0.3  # rad per joint: the swimming undulation
+const BEND_STIFF := 0.3  # how hard a joint is pulled to its target bend, per pass
+const ROOT_STIFF := 0.5  # how hard the first segment leaves the body along the arm's direction
+const SWIM_FROM := 60.0  # px/s: below it crawls; at SWIM_TO and above, it swims
+const SWIM_TO := 150.0
+const SWEEP := 0.6  # how far toward the rear a swimming arm leaves the body
 const THICK := 3.0  # px: a point's radius against walls and enemies
 const BOUNCE := 0.4  # of a point's speed into a wall sent back out
 
@@ -28,12 +43,17 @@ var _old := PackedVector2Array()
 var _from := Vector2.ZERO
 var _to := Vector2.ZERO
 var _step_t := 0.0  # s left of the step
+var _step_len := STEP_TIME  # s: the current step's duration
+var _fidget := randf_range(1.0, 4.0)  # s until it shifts while standing
 var _center := Vector2.ZERO  # the body's last position
+var _speed := 0.0  # px/s: the body's, smoothed
+var _side := 1.0  # which way it curls: outward, mirrored left and right
 
 
 func _init(direction := 0.0, step_group := 0) -> void:
 	dir = direction
 	group = step_group
+	_side = 1.0 if sin(direction) >= 0.0 else -1.0
 	texture = TEX
 	texture_mode = Line2D.LINE_TEXTURE_STRETCH
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -57,27 +77,57 @@ func follow(center: Vector2, heading: float, delta: float, t: float,
 		for i in POINTS:
 			chain.append(base.lerp(rest, float(i) / (POINTS - 1)))
 		_old = chain.duplicate()
-	if _step_t > 0.0:
+	var vel := (center - _center) / maxf(delta, 0.001)
+	_speed = lerpf(_speed, vel.length(), 1.0 - exp(-8.0 * delta))
+	_center = center
+	var swim := smoothstep(SWIM_FROM, SWIM_TO, _speed)
+	var hold := 1.0  # how hard the tip is held at the foot
+	var s := -1.0  # the step's progress, 0 to 1, or -1: planted
+	if swim > 0.5:  # swimming: off the ground, the tip lands where it is when it slows down
+		_step_t = 0.0
+		foot = chain[POINTS - 1]
+		hold = 0.0
+	elif _step_t > 0.0:
 		_step_t -= delta
-		foot = _from.lerp(_to, ease(1.0 - maxf(_step_t, 0.0) / STEP_TIME, -2.0))
+		s = 1.0 - maxf(_step_t, 0.0) / _step_len
+		var lift := sin(PI * s)
+		foot = _from.lerp(_to, ease(s, -2.0)).lerp(base, LIFT * lift)  # drawn back up, then laid down
+		hold = 0.3  # lifted: the muscle shapes it more than the path
 	else:
 		var far := foot.distance_to(rest)
 		var turn := int(t / GAIT) % 2 == group
-		if far > LENGTH * STEP and turn or far > LENGTH * 0.7:  # too far: it steps anyway
+		_fidget -= delta
+		var shift := _fidget <= 0.0 and _speed < 5.0
+		if far > LENGTH * STEP and turn or far > LENGTH * 0.7 or shift and turn:  # too far: it steps anyway
 			_from = foot
-			var lead := (center - _center) / maxf(delta, 0.001) * (GAIT + STEP_TIME)  # lands where the body is going
-			_to = _free(rest + lead.limit_length(LENGTH * 0.5), walls, obstacles, map)
-			_step_t = STEP_TIME
-	_center = center
-	var seg := LENGTH / (POINTS - 1)
-	var side := Vector2.from_angle(a + PI / 2.0)
+			var lead := vel * (GAIT + STEP_TIME)  # lands where the body is going
+			var spot := rest + lead.limit_length(LENGTH * 0.5)
+			if shift:
+				spot = rest + Vector2.from_angle(randf() * TAU) * LENGTH * 0.15
+			_to = _free(spot, walls, obstacles, map)
+			_step_len = FIDGET_TIME if shift else STEP_TIME
+			_step_t = _step_len
+			_fidget = randf_range(1.5, 5.0)
+	hold *= 1.0 - swim
+	var root := lerp_angle(a, heading + PI, SWEEP * swim)
+	var writhe := 1.0 + 0.6 * sin(t * 0.7 + dir * 7.0) * sin(t * 0.31 + dir * 3.0)  # slow, its own
+	var bend := PackedFloat32Array()  # target turn at each joint, from the previous segment's direction
+	bend.resize(POINTS)
+	for i in range(1, POINTS - 1):
+		var u := float(i) / (POINTS - 2)  # 0 at the base, 1 at the last joint
+		var crawl := CURL * writhe * u
+		if s >= 0.0:  # the bend of a step runs down the arm
+			crawl += SWING_BEND * sin(PI * s) * exp(-pow((u - s) * 2.5, 2.0))
+		var wave := WAVE * sin(t * 7.0 - i * 1.0 + dir * 2.0) * (0.4 + 0.6 * u)
+		bend[i] = _side * lerpf(crawl, wave, swim)
 	for i in range(1, POINTS):
 		var v := (chain[i] - _old[i]) * DAMP
 		_old[i] = chain[i]
-		chain[i] += v + side * SWAY * sin(t * 3.0 + i * 0.9 + dir * 5.0) * float(i) / POINTS
+		chain[i] += v
+	var seg := LENGTH / (POINTS - 1)
 	for k in 6:
 		chain[0] = base
-		chain[POINTS - 1] = chain[POINTS - 1].lerp(foot, 0.5)
+		chain[1] = chain[1].lerp(base + Vector2.from_angle(root) * seg, ROOT_STIFF)
 		for i in POINTS - 1:
 			var d := chain[i + 1] - chain[i]
 			var fix := d * (1.0 - seg / maxf(d.length(), 0.001))
@@ -86,6 +136,12 @@ func follow(center: Vector2, heading: float, delta: float, t: float,
 			else:
 				chain[i] += fix / 2.0
 				chain[i + 1] -= fix / 2.0
+		for i in range(1, POINTS - 1):  # muscle: each joint turned toward its target bend
+			var was := (chain[i] - chain[i - 1]).angle()
+			var now := chain[i + 1] - chain[i]
+			var to := lerp_angle(now.angle(), was + bend[i], BEND_STIFF)
+			chain[i + 1] = chain[i] + Vector2.from_angle(to) * now.length()
+		chain[POINTS - 1] = chain[POINTS - 1].lerp(foot, 0.6 * hold)  # the sucker holds, after the muscle
 		for i in range(1, POINTS):
 			chain[i] = _free(chain[i], walls, obstacles, map and k == 5)  # the map's zones on the last pass: slide is costly
 	for i in range(1, POINTS):  # a bounce off the walls: the speed into one flips, damped

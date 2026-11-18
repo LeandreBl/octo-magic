@@ -337,6 +337,16 @@ func _test_tentacle() -> void:
 	check(far < Tentacle.LENGTH * 1.5, "tentacle steps after the body: %s" % far)
 	check(t.chain[0].distance_to(center) < Tentacle.ROOT + 1.0, "tentacle base on the body")
 	t.free()
+	# At running speed the arms let go of the ground and stream behind the body.
+	var behind := 0
+	for d in 8:
+		var w := Tentacle.new(d * TAU / 8, d % 2)
+		for i in 120:  # 2 s at 210 px/s to the right
+			w.follow(Vector2(i * 3.5, 0.0), 0.0, 1.0 / 60.0, i / 60.0)
+		if w.chain[Tentacle.POINTS - 1].x < 119 * 3.5:
+			behind += 1
+		w.free()
+	check(behind == 8, "swimming tentacles trail behind: %d of 8" % behind)
 	# Against a wall and an enemy: no point goes through either.
 	var walls := Rect2(0, 0, 400, 400)
 	var enemy := [Vector2(40, 200), 12.0]
