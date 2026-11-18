@@ -206,7 +206,8 @@ func _test_waves() -> void:
 	for i in 200:
 		var pos: Vector2 = Arena.off_screen(mages, Vector2(1280, 720))
 		check(pos == pos.clamp(Arena.RECT.position, Arena.RECT.end), "spawn inside the arena")
-		check(mages.all(func(m): return absf(pos.x - m.x) > 640 or absf(pos.y - m.y) > 360), "spawn out of view (%s)" % pos)
+		var views := [Vector2(640, 360), Vector2(2400, 1600), Vector2(3000, 1600)]  # cameras stop at the edges
+		check(views.all(func(c): return absf(pos.x - c.x) > 640 or absf(pos.y - c.y) > 360), "spawn out of view (%s)" % pos)
 	check(RunState.enemy_stats("skeleton", 10).hp > RunState.enemy_stats("skeleton", 1).hp, "enemies get tougher")
 	var looks := {}
 	for i in 60:

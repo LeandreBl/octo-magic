@@ -74,7 +74,11 @@ func _ready() -> void:
 	for i in TENTACLES:
 		add_child(Tentacle.new((i + 0.5) * TAU / TENTACLES, i % 2))
 	if peer_id == multiplayer.get_unique_id():  # this peer's mage stays mid-screen, the map scrolls
-		var cam := Camera2D.new()
+		var cam := Camera2D.new()  # stops at the arena's edges: near one, the mage leaves mid-screen
+		cam.limit_left = int(Arena.RECT.position.x)
+		cam.limit_top = int(Arena.RECT.position.y)
+		cam.limit_right = int(Arena.RECT.end.x)
+		cam.limit_bottom = int(Arena.RECT.end.y)
 		add_child(cam)
 		cam.make_current()
 
