@@ -22,6 +22,8 @@ var sticks: Control
 var _dim: ColorRect  # darkens the world behind menus
 var _logged_in := false  # at the last Online.changed
 var _prompt: Label  # gamepad button prompts, while a gamepad is in use
+var _forge_from := "title"  # the screen the forge returns to (not back_to: options... keep theirs)
+var _forge_corner: Button  # the way to the forge from every screen between runs
 var _on_fullscreen: JavaScriptObject  # kept alive: the browser calls it on fullscreenchange
 
 
@@ -84,7 +86,7 @@ func _ready() -> void:
 	screens.shop = add_screen(shop)
 	var forge := preload("res://ui/forge.gd").new()
 	forge.main = main
-	forge.closed.connect(back)
+	forge.closed.connect(func(): show_screen(_forge_from))
 	screens.forge = add_screen(forge)
 	screens.achievements = add_screen(_list_screen("Achievements", _achievements_text))
 	screens.leaderboard = add_screen(_list_screen("Leaderboard", _scores_text))
@@ -94,6 +96,13 @@ func _ready() -> void:
 	main.run_started.connect(show_screen.bind(""))  # also on peers when the host starts
 	Run.leveled_up.connect(_show_level_up)
 	Profile.changed.connect(_refresh_title)
+	_forge_corner = _forge_button()
+	_forge_corner.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	_forge_corner.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_forge_corner.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_forge_corner.offset_right = -32
+	_forge_corner.offset_bottom = -28
+	root.add_child(_forge_corner)
 	_prompt = UITheme.label("", "Caption", 18)
 	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_prompt.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
@@ -157,6 +166,9 @@ func show_screen(name: String) -> void:
 		screens[k].visible = k == name
 	sticks.visible = name == ""
 	_dim.visible = name not in ["", "title", "shop", "forge", "end"]
+	# Between runs, the forge is one click away (title and end of run have their own button).
+	_forge_corner.visible = not Run.active and Online.logged_in() and not Online.character.is_empty() \
+		and name not in ["", "pause", "levelup", "forge", "title", "end", "account"]
 	_dim.color.a = 0.82 if Run.active else 1.0  # out of a run, only the idle mage would show: hide it
 	get_tree().paused = not Run.active or (name != "" and main.solo())
 	if name == "title":
@@ -220,6 +232,11 @@ func open(name: String) -> void:
 	show_screen(name)
 
 
+func open_forge() -> void:
+	_forge_from = current
+	show_screen("forge")
+
+
 func back() -> void:
 	show_screen(back_to)
 
@@ -249,6 +266,7 @@ func _unhandled_input(e: InputEvent) -> void:
 		"pause": resume()
 		"title", "end", "levelup": pass
 		"characters": show_screen("title")
+		"forge": show_screen(_forge_from)
 		_: back()
 
 
@@ -432,7 +450,7 @@ func _title() -> Control:
 
 ## The way to the spell forge, the heart of the game: a big parchment-red button.
 func _forge_button() -> Button:
-	var b := _button("Spell forge", open.bind("forge"))
+	var b := _button("Spell forge", open_forge)
 	b.custom_minimum_size.y = 64
 	b.add_theme_font_override("font", UITheme.PARCHMENT)
 	b.add_theme_font_size_override("font_size", 30)
