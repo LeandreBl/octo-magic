@@ -17,7 +17,10 @@ const CROWD := 120  # no summons past this many enemies
 const FPS := 12.0
 const Self := preload("res://game/enemy.gd")  # its static art for the inner classes
 ## The move a spell plays (assets/monsters/<kind>/<anim>.png, if any).
-const SPELL_ANIM := {"charge": "windup", "summon": "summon", "bolt": "attack"}
+## The move each spell type plays (assets/monsters/<look>/<anim>.png, skipped
+## when not drawn), and for how long; "attack" also plays on a touch.
+const SPELL_ANIM := {"charge": ["windup", 0.6], "summon": ["summon", 0.7], "ring": ["summon", 0.7], "nova": ["slam", 0.8],
+	"bolt": ["attack", 0.5], "spread": ["attack", 0.5], "puddle": ["attack", 0.5]}
 
 var kind := "skeleton"
 var data := {}  # its Run.ENEMIES entry, scaled to the wave
@@ -169,13 +172,15 @@ func _physics_process(delta: float) -> void:
 		hit_cooldown = 0.6
 		target.hurt(touch_damage)
 		_afflict(target)
+		if _act_time <= 0.0:
+			_play.rpc("attack", 0.4)
 	var spells: Array = data.get("spells", [])
 	for i in spells.size():
 		timers[i] -= delta * slow
 		if timers[i] <= 0.0 and windup <= 0.0 and dash == Vector2.ZERO and cast(spells[i], to):
 			timers[i] = spells[i].every
 			if SPELL_ANIM.has(spells[i].type):
-				_play.rpc(SPELL_ANIM[spells[i].type], {"charge": 0.6, "bolt": 0.5}.get(spells[i].type, 0.7))
+				_play.rpc(SPELL_ANIM[spells[i].type][0], SPELL_ANIM[spells[i].type][1])
 
 
 ## Its "effect" (Run.ENEMIES) on mage `p`, from its touch or its shots.

@@ -43,31 +43,37 @@ WALK = "walking forward toward the bottom of the image, seen from directly above
 IDLE = "standing still seen from directly above, breathing gently, seamless loop"
 BOW = {"walk": IDLE, "attack": "draws its bow and shoots an arrow toward the bottom of the image"}
 CAST = {"walk": IDLE, "attack": "thrusts its hands forward and casts a spell toward the bottom of the image"}
+# melee ones: their strike when they touch the mage
+CLAW = {"attack": "lunges and slashes with its clawed hands toward the bottom of the image"}
+SWORD = {"attack": "swings its sword in a wide slash toward the bottom of the image"}
 SHIELD = "surround it with a big round translucent glowing magic shield bubble" + KEEP
 DARK = "dark heroic fantasy game undead graveyard monster, full body, menacing, "
 MAGE = "a skeleton mage in a tattered dark robe"
 # look (kind or kind_variant) -> (size, {"look": (what, its head)} or {"from": (look, change)}, {anim: action});
 # "walk" defaults to WALK.
 MONSTERS = {
-    "skeleton": (48, {"look": ("a plain undead skeleton, empty handed", "bare white skull")}, {}),
+    "skeleton": (48, {"look": ("a plain undead skeleton, empty handed", "bare white skull")}, CLAW),
     "archer": (48, {"look": ("a skeleton archer with a brown scarf, a wooden bow held in front of it", "bare white skull")}, BOW),
     "marksman": (48, {"from": ("archer", "make it a marksman: a longbow and a brown hood over the skull" + KEEP)}, BOW),
     "imp": (48, {"look": ("a small red imp with clawed hands, a pointy tail behind it", "red head with two tiny horns")},
-            {"walk": "scampering fast toward the bottom of the image, seen from directly above, seamless loop"}),
+            {"walk": "scampering fast toward the bottom of the image, seen from directly above, seamless loop"} | CLAW),
     "zombie": (48, {"look": ("a grey skinned shambling zombie in torn rags, arms reaching forward", "bald grey head")},
-               {"walk": "shambling slowly toward the bottom of the image, seen from directly above, seamless loop"}),
+               {"walk": "shambling slowly toward the bottom of the image, seen from directly above, seamless loop",
+                "attack": "lunges forward and grabs with both arms toward the bottom of the image"}),
     "rotting_zombie": (48, {"from": ("zombie", "make it rotting, oozing green, with a green aura of buzzing flies around it" + KEEP)},
-                       {"walk": "shambling slowly toward the bottom of the image, flies buzzing around, seen from directly above, seamless loop"}),
-    "skeletal_warrior": (48, {"look": ("an undead skeleton warrior with iron gauntlets and a rusty sword, no helmet", "bare white skull")}, {}),
-    "skeletal_warrior_helmet": (48, {"from": ("skeletal_warrior", "put a round iron helmet on its skull" + KEEP)}, {}),
+                       {"walk": "shambling slowly toward the bottom of the image, flies buzzing around, seen from directly above, seamless loop",
+                        "attack": "lunges forward and grabs with both arms toward the bottom of the image, flies buzzing around"}),
+    "skeletal_warrior": (48, {"look": ("an undead skeleton warrior with iron gauntlets and a rusty sword, no helmet", "bare white skull")}, SWORD),
+    "skeletal_warrior_helmet": (48, {"from": ("skeletal_warrior", "put a round iron helmet on its skull" + KEEP)}, SWORD),
     "skeletal_knight": (48, {"look": ("a skeleton knight with an iron chestplate and iron pauldrons, bare bony hands, a sword",
-                                      "round iron helmet")}, {}),
-    "skeletal_knight_gauntlets": (48, {"from": ("skeletal_knight", "give it iron gauntlets on its hands" + KEEP)}, {}),
+                                      "round iron helmet")}, SWORD),
+    "skeletal_knight_gauntlets": (48, {"from": ("skeletal_knight", "give it iron gauntlets on its hands" + KEEP)}, SWORD),
     "wraith": (48, {"look": ("a pure white ghostly wraith with a tattered cloak and no legs, glowing icy wisps", "white tattered hood")},
-               {"walk": "floating toward the bottom of the image, cloak fluttering, seen from directly above, seamless loop"}),
+               {"walk": "floating toward the bottom of the image, cloak fluttering, seen from directly above, seamless loop",
+                "attack": "lashes out with its icy ghostly claws toward the bottom of the image, freezing wisps bursting"}),
     "putrid_archer": (48, {"from": ("archer", "put a brown hood on its skull, dripping green poison" + KEEP)}, BOW),
     "burning_archer": (48, {"from": ("archer", "engulf it in orange flames" + KEEP)}, BOW),
-    "burning_skeleton": (48, {"from": ("skeleton", "engulf it in orange flames" + KEEP)}, {}),
+    "burning_skeleton": (48, {"from": ("skeleton", "engulf it in orange flames" + KEEP)}, CLAW),
     "fire_mage": (48, {"look": (MAGE + ", its two hands on fire", "dark pointed hood")}, CAST),
     "fire_mage_shield": (48, {"from": ("fire_mage", SHIELD)}, CAST),
     "poison_mage": (48, {"from": ("fire_mage", "replace the fire in its hands with glowing green balls" + KEEP)}, CAST),
@@ -84,11 +90,13 @@ MONSTERS = {
     "death_knight": (96, {"front": "a huge undead death knight in black spiked plate armor and spiked helmet,"
                                    " a frost glowing greatsword, huge imposing boss"}, {
         "windup": "raises its greatsword and roars, bracing to charge toward the viewer",
+        "slam": "slams its greatsword into the ground, an icy shockwave bursting around it",
         "death": "staggers and drops to its knees, blinding icy blue light bursting through cracks in its armor, about to explode"}),
     "abomination": (96, {"front": "a giant bloated undead flesh abomination stitched from corpses, green ooze dripping,"
                                   " small stitched head sunk between huge shoulders, huge imposing boss"}, {
         "walk": "lumbering heavily toward the viewer, seamless loop",
         "summon": "its belly bursts open and small red imps crawl out",
+        "attack": "rears back and spews a wide spray of green acid toward the viewer",
         "death": "swells up grotesquely, bloating bigger and bigger, glowing green light bursting through its seams, about to burst"}),
 }
 # Effects of the attacks (game/enemy.gd Shot and Zone, Run.ENEMIES "shot"), name -> brief.

@@ -215,6 +215,16 @@ func _test_boss_death() -> void:
 	for k in RunState.BOSSES:
 		check(Enemy.art(k + "/death") != null, "%s has a death animation" % k)
 	check(BossDeath.length("fx/boss_explosion") > 0.5, "the big explosion plays")
+	# every look plays a move for each of its spells, the melee ones a strike
+	for k in RunState.ENEMIES:
+		var e: Dictionary = RunState.ENEMIES[k]
+		var anims: Array = e.get("spells", []).filter(func(sp): return Enemy.SPELL_ANIM.has(sp.type)).map(func(sp): return Enemy.SPELL_ANIM[sp.type][0])
+		if not e.has("spells"):
+			anims.append("attack")
+		var looks := [k] + ([k + "_" + e.variant[0]] if e.has("variant") else [])
+		for look in looks:
+			for a in anims:
+				check(Enemy.art(look + "/" + a) != null, "%s has its %s animation" % [look, a])
 	var fx := BossDeath.new()
 	root.add_child(fx)
 	check(fx._blasts.size() == BossDeath.BLASTS + BossDeath.RING, "blasts planned")
