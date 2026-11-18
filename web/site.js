@@ -224,7 +224,11 @@ export async function deleteAccount(password) {
 
 // The header shows who is logged in.
 const who = document.querySelector("[data-who]");
-if (who) who.textContent = session()?.email ?? TEXT.login;
+if (who) {
+  const name = session()?.email ?? TEXT.login;
+  who.querySelector("span").textContent = name;
+  who.setAttribute("aria-label", name);
+}
 
 // The FR/EN switch in the header leads to this page in the other language
 // and remembers the choice. Without a choice, the browser's language picks

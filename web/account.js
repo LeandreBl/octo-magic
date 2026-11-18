@@ -151,6 +151,13 @@ function mode(m) {
   $("tabs").querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === m)));
   login.querySelector(".msg").textContent = "";
 }
+// The eye next to a password field shows or hides what was typed.
+document.querySelectorAll("[data-reveal]").forEach((b) => (b.onclick = () => {
+  const input = b.previousElementSibling;
+  const shown = input.type === "password";
+  input.type = shown ? "text" : "password";
+  b.setAttribute("aria-pressed", String(shown));
+}));
 document.querySelectorAll("#out [data-mode]").forEach((b) => (b.onclick = () => mode(b.dataset.mode)));
 
 login.onsubmit = action(login, async (button) => {

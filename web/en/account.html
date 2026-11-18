@@ -36,7 +36,7 @@
     <section class="auth-form panel">
       <div class="tabs" role="tablist" aria-label="Log in or sign up" id="tabs">
         <button type="button" role="tab" data-mode="signin" aria-selected="true">Log in</button>
-        <button type="button" role="tab" data-mode="signup" aria-selected="false">Create an account</button>
+        <button type="button" role="tab" data-mode="signup" aria-selected="false">Sign up</button>
       </div>
       <div id="reset-head" hidden>
         <button type="button" class="linkbtn" data-mode="signin">← Back to log in</button>
@@ -57,7 +57,7 @@
             <label for="login-password">Password</label>
             <button type="button" class="linkbtn" data-mode="reset" id="forgot">Forgot?</button>
           </div>
-          <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+          <div class="reveal"><input id="login-password" name="password" type="password" autocomplete="current-password" required><button type="button" class="reveal-btn" data-reveal aria-label="Show password" aria-pressed="false"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M2 11s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="11" cy="11" r="2.8" fill="currentColor"/></svg></button></div>
           <span class="hint" id="pw-hint" hidden>6 characters minimum.</span>
         </div>
         <button class="btn-gold btn-block btn-lg" name="signin" id="submit">Enter the dungeon</button>
