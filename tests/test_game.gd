@@ -67,7 +67,7 @@ func _test_french() -> void:
 	for m in RegEx.create_from_string("\"[A-Z_]+\": \"([^\"]+)\"").search_all(FileAccess.get_file_as_string("res://game/online.gd")):
 		texts.append(m.get_string(1))  # Online.ERRORS (the autoload needs Profile)
 	texts += Settings.REBINDABLE.values().filter(func(t): return t != "Pause")
-	var same := ["Scribe", "Robur", "Parsimonia", "Inspiratio", "Celeritas", "Tutela Ignis", "Fluxus", "Receptaculum", "Meditatio", "Antidotum", "Pernicitas", "Magnes", "Potentia", "Catena", "Procella", "Aether", "Ventus Algidus", "Rigor", "Stupor", "Plura Tela", "Conus Glaciei", "Favillae", "Immolatio", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Pila Ignea", "Telum Magicum", "Fragmen Glaciei", "Arcus Fulguris", "Spiculum Veneni", "Tela Arcana", "Poison", "Zone", "Projectiles", "Abomination"]
+	var same := ["Scribe", "Robur", "Parsimonia", "Inspiratio", "Celeritas", "Tutela Ignis", "Fluxus", "Receptaculum", "Meditatio", "Antidotum", "Pernicitas", "Magnes", "Potentia", "Catena", "Procella", "Aether", "Ventus Algidus", "Rigor", "Stupor", "Plura Tela", "Conus Glaciei", "Favillae", "Immolatio", "Vis Teli", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Pila Ignea", "Telum Magicum", "Fragmen Glaciei", "Arcus Fulguris", "Spiculum Veneni", "Tela Arcana", "Poison", "Zone", "Projectiles", "Abomination"]
 	for t in texts:
 		check(t in same or TranslationServer.translate(t) != t, "French for: " + t)
 	check(Spell.describe({"description": "x", "description_fr": "y"}) == "y", "forged spell described in French")
@@ -139,6 +139,8 @@ func _test_upgrades() -> void:
 	var mms := {"emit": {"count": 1, "spread": 0}}
 	check(mm.emit("primary", mms).count == 3 and mm.emit("primary", mms).spread > 0 and mm.emit("secondary", mms).count == 1 and mms.emit.count == 1, "Plura Tela adds missiles to the primary cast only, never to the spell data")
 	mm.free()
+	var vis: Dictionary = Upgrades.LIST.potent_missiles
+	check(vis.max == 5 and vis.spell == "magic_missile" and is_equal_approx(Stats.total([Upgrades.bonus(vis, 5)]).potency, 2.0), "Vis Teli: +20 % Telum Magicum damage a level, up to V")
 	var sub := {"chaining": catena}
 	check(Upgrades.offers({}, rng, "spell", 3, sub).is_empty() and Upgrades.offers({}, rng, "spell", 3, sub, "fireball").is_empty()
 		and Upgrades.offers({}, rng, "spell", 3, sub, "lightning").size() == 1, "a sub-skill only for its base spell (Fulmen), never a forged one")

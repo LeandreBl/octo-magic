@@ -24,6 +24,7 @@ const LIST := {
 	"magnetism": {"name": "Magnes", "desc": "+%d%% pickup radius", "step": 30, "max": 5, "kind": "hero", "stat": "pickup%", "pct": true},
 	"damage": {"name": "Potentia", "desc": "+%d%% damage", "step": 25, "max": 9, "kind": "spell", "stat": "damage%", "pct": true},
 	"harden": {"name": "Rigor", "desc": "Flatus Gelidus freezes its targets %d%% of the time", "step": 3, "max": 5, "kind": "spell", "stat": "harden", "pct": true, "spell": "frost_jet"},
+	"potent_missiles": {"name": "Vis Teli", "desc": "+%d%% Telum Magicum damage", "step": 20, "max": 5, "kind": "spell", "stat": "potency%", "pct": true, "spell": "magic_missile"},
 	"more_missiles": {"name": "Plura Tela", "desc": "Telum Magicum fires +%d missile", "step": 1, "max": 5, "kind": "spell", "stat": "missiles", "spell": "magic_missile"},
 	"stun": {"name": "Stupor", "desc": "Fulmen stuns its targets %d%% of the time", "step": 3, "max": 5, "kind": "spell", "stat": "stun", "pct": true, "spell": "lightning"},
 	"chaining": {"name": "Catena", "desc": "Fulmen's arc jumps on to +%d enemy", "step": 1, "max": 5, "kind": "spell", "stat": "chain", "spell": "lightning"},

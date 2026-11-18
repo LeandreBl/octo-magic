@@ -1077,6 +1077,9 @@ msgstr "+%d%% régén. de mana à l'arrêt"
 msgid "Flatus Gelidus freezes its targets %d%% of the time"
 msgstr "Flatus Gelidus gèle ses cibles %d %% du temps"
 
+msgid "+%d%% Telum Magicum damage"
+msgstr "+%d %% de dégâts de Telum Magicum"
+
 msgid "Telum Magicum fires +%d missile"
 msgstr "Telum Magicum tire +%d missile"
 

@@ -366,8 +366,13 @@ func cast(slot: String) -> bool:
 	var cost: int = run.mana_cost(slot)
 	var ratio := clampf(ceilf(maxf(mana, 0.0) / cost * RATIO_STEPS) / RATIO_STEPS, 1.0 / RATIO_STEPS, 1.0)
 	var s := _spell(slot, ratio)
+	# Vis Teli (Upgrades "potent_missiles"): the primary cast hits harder; an
+	# engine stat, not spell data: no forged spell has it, nor pays mana for it.
+	var mult: float = stats.get("potency", 1.0) if slot == "primary" else 1.0
 	if randf() < stats.crit:
-		s = Spell.scale_damage(s, Stats.CRIT_MULT)
+		mult *= Stats.CRIT_MULT
+	if mult != 1.0:
+		s = Spell.scale_damage(s, mult)
 	mana = maxf(0.0, mana - cost)
 	cooldowns[slot] = s.cooldown * stats.cooldown / stats.cast_rate
 	_animate_cast(s)

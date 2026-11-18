@@ -66,6 +66,7 @@ UPGRADES = {
     "antidote": "a small round glass vial of bright golden antidote liquid with a cork, a crossed-out green poison drop rune on it",
     "ether_charge": "a glowing blue-white ether crystal crackling with a small lightning charge, a mana drop rune inside",
     "harden": "a solid pale blue ice cube with sharp frosty edges and white frost cracks, cold blue glow",
+    "potent_missiles": "a single large glowing violet magic arrowhead crackling with intense purple energy, a bold upward arrow rune beside it",
     "more_missiles": "a single glowing violet magic orb splitting into a wide fan of five small violet sparks, a plus rune above it",
     "stun": "a small round yellow star burst with dizzy swirling stars and tiny lightning sparks circling it, stunned symbol",
     "chaining": "a crackling blue-white lightning arc linking three small glowing orbs in a zigzag chain",
