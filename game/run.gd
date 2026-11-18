@@ -69,7 +69,7 @@ func start(equipped: Dictionary, bonus_list := [], augments := []) -> void:
 ## with the character): restore() takes it back, the next wave starts afresh.
 func to_dict() -> Dictionary:
 	return {"wave": wave, "level": level, "xp": xp, "kills": kills, "bosses": bosses, "gold": gold,
-		"scrolls": scrolls, "spells": spells, "mana_mult": mana_mult, "ups": ups, "picked": picked,
+		"scrolls": scrolls, "spells": spells, "levels": levels,
 		"pending": pending, "bonuses": bonuses, "passives": passives, "choices": choices}
 
 
@@ -86,17 +86,23 @@ func restore(d: Dictionary) -> bool:
 	for slot in s:
 		if slot in ["primary", "secondary"] and s[slot] is Dictionary:
 			spells[slot] = Spell.sanitize(s[slot])
-			mana_mult[slot] = clampf(float(_dict(d.get("mana_mult")).get(slot, 1.0)), Upgrades.MANA_FLOOR, 1.0)
-			ups[slot] = maxi(0, int(_dict(d.get("ups")).get(slot, 0)))
-	picked = _arr(d.get("picked")).map(str).filter(func(k): return Upgrades.LIST.has(k))
+	var lv := _dict(d.get("levels"))
+	for id in lv:
+		if list.has(id) and (lv[id] is float or lv[id] is int):
+			levels[id] = clampi(int(lv[id]), 1, list[id].max)
 	pending = _arr(d.get("pending")).map(str).filter(func(k): return k in Upgrades.KINDS)
 	passives = _arr(d.get("passives")).map(str)
 	bonuses = _arr(d.get("bonuses")).filter(func(b): return b is Dictionary and b.values().all(func(v): return v is float or v is int))
-	stats = Stats.total(bonuses)
+	_restat()
 	if not pending.is_empty():
 		_offer.call_deferred()
 	changed.emit()
 	return true
+
+
+## The stats from the profile's bonuses and the skills taken.
+func _restat() -> void:
+	stats = Stats.total(bonuses + levels.keys().map(func(id): return Upgrades.bonus(list[id], levels[id])))
 
 
 static func _dict(v: Variant) -> Dictionary:
@@ -137,7 +143,7 @@ func choose(i: int) -> bool:
 	if i < 0 or i >= offers.size():
 		return not offers.is_empty()
 	levels[offers[i].id] = offers[i].level
-	stats = Stats.total(bonuses + levels.keys().map(func(id): return Upgrades.bonus(list[id], levels[id])))
+	_restat()
 	pending.pop_front()
 	offers = []
 	_offer()

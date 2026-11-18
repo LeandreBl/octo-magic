@@ -118,7 +118,7 @@ func start_run() -> void:
 ## character) goes on at the wave it was left on.
 func resume_run() -> void:
 	var saved: Dictionary = Profile.run
-	if solo() and str(saved.get("map")) in Arena.MAPS:
+	if solo() and str(saved.get("map")) in Sfx.TRACKS:
 		_run_started(saved.map, saved)
 		_next_wave()
 	else:
