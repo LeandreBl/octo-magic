@@ -113,39 +113,118 @@ static func spawn_point(seen: Array) -> Vector2:
 	return all[0] if all else RECT.get_center()
 
 
+const CELL := 24.0  # the walkable grid's step
 static var _ground: Array = []
 static var _ground_of: Array = []  # the polygons it was walked on
+static var _links := {}  # walkable cell -> its free neighbours (Vector2i)
+static var _fields := {}  # target cell -> {cell: steps to it}, see way
 
 
 ## The ground reachable from the start, one point every CELL: a monster put
 ## anywhere else (out of bounds, a closed pen) would be stuck there. Walked
 ## once per map (a flood fill, a step free only when its middle is too).
 static func walkable() -> Array:
-	const CELL := 24.0
 	const R := 16.0
 	if _ground_of == polygons:
 		return _ground
 	_ground_of = polygons
+	_fields = {}
 	var size := Vector2i((RECT.size / CELL).ceil())
+	var center := func(c: Vector2i): return (Vector2(c) + Vector2(0.5, 0.5)) * CELL
+	var memo := {}
 	var free := func(v: Vector2): return RECT.has_point(v) and slide(v, Vector2.ZERO, R) == v
-	var seen := {}
+	var free_cell := func(c: Vector2i):
+		if not memo.has(c):
+			memo[c] = c.x >= 0 and c.y >= 0 and c.x < size.x and c.y < size.y and free.call(center.call(c))
+		return memo[c]
 	var todo := [Vector2i((START / CELL).floor())]
-	seen[todo[0]] = true
+	_links = {todo[0]: []}
 	_ground = []
 	while todo:
 		var c: Vector2i = todo.pop_back()
-		var v := (Vector2(c) + Vector2(0.5, 0.5)) * CELL
-		if free.call(v):
-			_ground.append(v)
+		if free_cell.call(c):
+			_ground.append(center.call(c))
 		for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
 			var n: Vector2i = c + d
-			if n.x < 0 or n.y < 0 or n.x >= size.x or n.y >= size.y or seen.has(n):
+			if n in _links.get(c, []) or not free_cell.call(n) or not free.call((center.call(c) + center.call(n)) / 2.0):
 				continue
-			var w := (Vector2(n) + Vector2(0.5, 0.5)) * CELL
-			if free.call(w) and free.call((v + w) / 2.0):
-				seen[n] = true
+			if not _links.has(n):
+				_links[n] = []
 				todo.append(n)
+			_links[c].append(n)
+			_links[n].append(c)
 	return _ground
+
+
+## Which way a monster at `from` walks to reach `to` around the walls: straight
+## at it when the grid between them is open, else down a flow field (steps to
+## to's cell over the walkable grid, walked once per cell the target stands in).
+## Off the grid (out of bounds, an unreachable spot): straight.
+static func way(from: Vector2, to: Vector2) -> Vector2:
+	walkable()
+	var goal: Variant = _on_grid(to)
+	var at: Variant = _on_grid(from)
+	if goal == null or at == null or _open(from, to):
+		return (to - from).normalized()
+	if not _fields.has(goal):
+		if _fields.size() > 16:  # ponytail: drops every field at once, an LRU if mages hop cells faster than that
+			_fields = {}
+		var dist := {goal: 0}
+		var todo := [goal]
+		var i := 0
+		while i < todo.size():  # a BFS: every link is one step
+			var c: Vector2i = todo[i]
+			i += 1
+			for n in _links[c]:
+				if not dist.has(n):
+					dist[n] = dist[c] + 1
+					todo.append(n)
+		_fields[goal] = dist
+	var field: Dictionary = _fields[goal]
+	if not field.has(at):
+		return (to - from).normalized()
+	# Down the field: toward the farthest cell of its path still in the open, so it cuts diagonals.
+	var aim: Vector2i = at
+	var c: Vector2i = at
+	for k in 6:
+		var next := c
+		for n in _links[c]:
+			if field.get(n, 1 << 30) < field.get(next, 1 << 30):
+				next = n
+		if next == c:
+			break
+		c = next
+		if not _open(from, (Vector2(c) + Vector2(0.5, 0.5)) * CELL):
+			break
+		aim = c
+	if aim == at:  # its next cell is round a corner: to it
+		aim = c
+	var dir := (Vector2(aim) + Vector2(0.5, 0.5)) * CELL - from
+	return dir.normalized() if dir.length() > 1.0 else (to - from).normalized()
+
+
+## The walkable cell at pos, or the nearest one around it (a mover against a
+## wall stands where the grid is not), or null.
+static func _on_grid(pos: Vector2) -> Variant:
+	var c := Vector2i((pos / CELL).floor())
+	if _links.has(c):
+		return c
+	var best: Variant = null
+	for dx in [-1, 0, 1]:
+		for dy in [-1, 0, 1]:
+			var n := c + Vector2i(dx, dy)
+			if _links.has(n) and (best == null or pos.distance_to((Vector2(n) + Vector2(0.5, 0.5)) * CELL) < pos.distance_to((Vector2(best) + Vector2(0.5, 0.5)) * CELL)):
+				best = n
+	return best
+
+
+## Whether the straight line from a to b crosses only walkable cells.
+static func _open(a: Vector2, b: Vector2) -> bool:
+	var n := ceili(a.distance_to(b) / (CELL / 3.0))
+	for k in range(1, n):
+		if not _links.has(Vector2i((a.lerp(b, float(k) / n) / CELL).floor())):
+			return false
+	return true
 
 
 static func _boxes(polys: Array) -> Array:

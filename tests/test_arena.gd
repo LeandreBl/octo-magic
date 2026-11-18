@@ -28,8 +28,20 @@ func _initialize() -> void:
 	if open.is_empty() or open.any(func(v): return Rect2(100, 100, 400, 400).has_point(v)):
 		failures += 1
 		printerr("FAIL: the ground stops at a closed pen (%d points)" % open.size())
+	# A monster behind a long wall walks around it to its mage (straight at it, it would stay against the wall).
+	var s := Arena.START
+	Arena.polygons = [PackedVector2Array([s + Vector2(60, -300), s + Vector2(90, -300), s + Vector2(90, 300), s + Vector2(60, 300)])]
+	if _walk(s, s + Vector2(200, 0)) > 40.0:
+		failures += 1
+		printerr("FAIL: a monster walks around a wall")
 	Arena.polygons = keep
 	Arena.solids = circles
+	# On the graveyard: from every grave, a monster reaches the start.
+	for g in Arena.spawns:
+		var left := _walk(Vector2(g[0], g[1]), Arena.START)
+		if left > 40.0:
+			failures += 1
+			printerr("FAIL: a monster from the grave at %s stops %d px from the start" % [g, left])
 	if not Arena.RECT.has_point(Arena.START):
 		failures += 1
 		printerr("FAIL: the graveyard's map.json loads")
@@ -55,3 +67,13 @@ func _initialize() -> void:
 	Arena.spawns = keep_spawns
 	print("arena tests: ", "OK" if failures == 0 else "%d failed" % failures)
 	quit(1 if failures else 0)
+
+
+## How far from `to` a monster (radius 12, 80 px/s) walking from `from` ends after 60 s.
+func _walk(from: Vector2, to: Vector2) -> float:
+	var p := from
+	for i in 3600:
+		if p.distance_to(to) < 24.0:
+			break
+		p = Arena.slide(p, Arena.way(p, to) * 80.0 / 60.0, 12.0)
+	return p.distance_to(to)

@@ -190,18 +190,20 @@ func _afflict(p: Node2D) -> void:
 		p.afflict(e[0], e[1] * (touch_damage if e[0] == "poison" else 1.0), e[2])
 
 
-## The direction its AI walks, `to`: from it to its mage.
+## The direction its AI walks, `to`: from it to its mage. It goes toward the
+## mage around the walls (Arena.way), backs off and strafes straight.
 func _steer(to: Vector2) -> Vector2:
 	var d := to.length()
 	match data.get("ai", "chase"):
 		"still":
 			return Vector2.ZERO
 		"weave":
-			return to.normalized().rotated(sin(age * 5.0) * 0.8)
+			var w := Arena.way(position, position + to)
+			return w.rotated(sin(age * 5.0) * 0.8) if w.dot(to.normalized()) > 0.9 else w  # weaves only in the open
 		"kite":  # hold the range, strafe around the mage
 			var r: float = data.get("range", 260.0)
-			return to.normalized() if d > r + 30.0 else -to.normalized() if d < r - 30.0 else to.orthogonal().normalized() * side
-	return to.normalized()
+			return Arena.way(position, position + to) if d > r + 30.0 else -to.normalized() if d < r - 30.0 else to.orthogonal().normalized() * side
+	return Arena.way(position, position + to)
 
 
 ## Casts spell `sp` at its mage (`to`: from it to the mage). False when it
