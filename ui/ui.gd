@@ -333,6 +333,7 @@ var _title_gold: Label
 var _title_scrolls: Label
 var _title_glow: Panel  # a gold aura around the forge button while blank scrolls wait
 var _title_spell: Label
+var _title_name: Label
 var _title_spell_icon: TextureRect
 
 
@@ -370,6 +371,14 @@ func _title() -> Control:
 		p.size = Vector2(ring[1], ring[1])
 		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		stage.add_child(p)
+	# Above the mage: the active character's name.
+	_title_name = UITheme.label("", "Header")
+	_title_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_title_name.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # a name, not a string to translate
+	_title_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_title_name.position = Vector2(40, 64)
+	_title_name.size = Vector2(400, 60)
+	stage.add_child(_title_name)
 	var mage := UITheme.octo(288)
 	mage.position = Vector2(96, 130)
 	mage.size = Vector2(288, 288)
@@ -494,6 +503,8 @@ func _refresh_title() -> void:
 	_title_gold.text = str(Profile.gold)
 	var spell: Dictionary = Profile.equipped_spells().primary
 	_title_spell.text = Spell.label(spell)
+	var me: Array = Online.characters.filter(func(c): return c is Dictionary and str(c.get("id")) == Online.character)
+	_title_name.text = str(me[0].get("name", "")) if me else ""
 	_title_spell_icon.texture = preload("res://ui/hud.gd")._icon(spell)
 	var n: int = Profile.blank_scrolls
 	_title_scrolls.text = tr("No blank scroll") if not n else (tr("%d blank scroll") if n == 1 else tr("%d blank scrolls")) % n
