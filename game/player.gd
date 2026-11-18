@@ -30,6 +30,7 @@ const CAST_TIME := 0.4  # s: the gem's flash, once per cast
 ## strip (centroid of the bright blue pixels); remeasure when it is redrawn.
 const GEM := Vector2(17, -20.7)
 const GEM_GLOW := Color("#8fe9ff")
+const DYE := preload("res://game/dye.gdshader")
 
 var run: Object  # spells and mana costs: a Loadout in game, a Run in tests
 var peer_id := 1  # the owner's peer; 1 = host (or solo)
@@ -63,6 +64,7 @@ var _last_pos := Vector2.ZERO
 var _heard_hp: float = stats.hp  # hosts and peers hear hurts on the synced hp
 var _touch_move := {}  # finger index -> [start, current]
 var _touch_aim := {}
+var _dye := [dyed(true), dyed(false)]  # look.hat on the body sprite, on the tentacles
 
 
 ## Full HP and mana with these stats, at the start of a run.
@@ -78,10 +80,14 @@ func setup(s: Dictionary) -> void:
 func _ready() -> void:
 	add_to_group("players")
 	scale = Vector2.ONE * SIZE
+	material = _dye[0]
 	for i in TENTACLES:
 		var t := Tentacle.new((i + 0.5) * TAU / TENTACLES, i % 2)
 		t.size = SIZE
+		t.material = _dye[1]
 		add_child(t)
+	for m in _dye:
+		dye(m, look.hat)
 	if peer_id == multiplayer.get_unique_id():  # this peer's mage stays mid-screen, the map scrolls
 		var cam := Camera2D.new()  # stops at the arena's edges: near one, the mage leaves mid-screen
 		cam.zoom = Vector2.ONE * ZOOM
@@ -127,6 +133,23 @@ static func clean_loadout(raw: Variant) -> Dictionary:
 		"stats": stats}
 
 
+## The dye of game/dye.gdshader for the body sprite (`body`: its hat's ribbon
+## and its staff's grip) or a tentacle (all of it), in the color `hat`.
+static func dyed(body: bool, hat := "") -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = DYE
+	m.set_shader_parameter("body", body)
+	dye(m, hat)
+	return m
+
+
+## `m` (from dyed) now in the color `hat`; "": the art's own colors.
+static func dye(m: ShaderMaterial, hat: String) -> void:
+	m.set_shader_parameter("on", Color.html_is_valid(hat))
+	if Color.html_is_valid(hat):
+		m.set_shader_parameter("dye", Color(hat))
+
+
 static func _clamp(v: Variant, default: float, lo: float, hi: float) -> float:
 	return clampf(float(v), lo, hi) if v is float or v is int else default
 
@@ -139,6 +162,8 @@ func _apply(l: Dictionary) -> void:
 	for k in l.look:
 		if l.look[k] or k == "ring":
 			look[k] = l.look[k]
+	for m in _dye:
+		dye(m, look.hat)
 	if l.fresh:
 		setup(l.stats)
 	else:  # a hero augment: the extra health and mana come filled

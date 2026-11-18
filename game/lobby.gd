@@ -156,7 +156,7 @@ func _seat(id: int) -> Control:
 	p.add_theme_stylebox_override("panel", UITheme.flat(UITheme.INK, UITheme.GOLD if me else UITheme.OUTLINE, 3, 10, 0))
 	var row := _hbox(12)
 	p.add_child(row)
-	var mage := UITheme.octo(56, false)
+	var mage := UITheme.octo(56, false, null if me else "")  # the others' colors are not known here
 	row.add_child(mage)
 	var col := _vbox(4)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER

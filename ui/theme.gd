@@ -286,21 +286,35 @@ static func tag(text: String, gold := false) -> PanelContainer:
 
 
 ## The mage's idle animation (assets/octo/idle.png, 8 frames of 96 px), `px` wide
-## (its first frame when not `animate`).
-static func octo(px: int, animate := true) -> TextureRect:
+## (its first frame when not `animate`), dyed in the color `hat` (Player.dye; null:
+## the profile's, followed as it changes).
+static func octo(px: int, animate := true, hat: Variant = null) -> TextureRect:
 	var sheet: Texture2D = load("res://assets/octo/idle.png")
 	var atlas := AtlasTexture.new()
 	atlas.atlas = sheet
 	var frame_px := sheet.get_height()
 	atlas.region = Rect2(0, 0, frame_px, frame_px)
 	var r := icon_rect(atlas, px)
+	var dyes := [Player.dyed(true), Player.dyed(false)]
+	r.material = dyes[0]
+	var paint := func():
+		for m in dyes:
+			Player.dye(m, Profile.look.hat if hat == null else hat)
+	paint.call()
+	if hat == null:
+		Profile.changed.connect(paint)
+		r.tree_exiting.connect(func(): if Profile.changed.is_connected(paint): Profile.changed.disconnect(paint))
 	# The ground tentacles are not in the sheet (game/player.gd): the same
 	# game/tentacle.gd chains, behind the body, in art pixels scaled to the rect.
 	var legs := Node2D.new()
 	legs.show_behind_parent = true
+	legs.material = dyes[1]
+	legs.use_parent_material = false
 	r.add_child(legs)
 	for i in Player.TENTACLES:
-		legs.add_child(Player.Tentacle.new((i + 0.5) * TAU / Player.TENTACLES, i % 2))
+		var t := Player.Tentacle.new((i + 0.5) * TAU / Player.TENTACLES, i % 2)
+		t.use_parent_material = true  # the legs' tentacle dye
+		legs.add_child(t)
 	var step := func(delta: float):
 		legs.position = r.size / 2.0
 		legs.scale = Vector2.ONE * minf(r.size.x, r.size.y) / frame_px
