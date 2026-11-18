@@ -300,6 +300,16 @@ func _check_channel() -> void:
 	for i in 3:
 		await physics_frame
 	check(hops[0].hp < hops_hp[0] and hops[1].hp == hops_hp[1], "a chained arc only jumps within reach")
+	for n in world.get_children():
+		if n is SpellBody:
+			n.free()
+	hp = aimed.hp
+	hops_hp = hops.map(func(e): return e.hp)
+	var weak := Spell.weakened(spells.lightning, 0.5)
+	SpellBody.cast(weak.emit, Vector2(100, 100), Vector2.RIGHT, mage, weak, world)
+	for i in 3:
+		await physics_frame
+	check(aimed.hp < hp and hops[0].hp == hops_hp[0], "short of mana: no Catena, the arc strikes its target only")
 	# Stupor: an arc strike stuns its target with the caster's "stun" chance.
 	for n in world.get_children():
 		if n is SpellBody:

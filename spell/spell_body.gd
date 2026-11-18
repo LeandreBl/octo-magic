@@ -294,9 +294,10 @@ func _chain() -> Array:
 	return out
 
 
-## Its caster's `key` stat (game/stats.gd), 0 without one.
+## Its caster's `key` stat (game/stats.gd), 0 without one. A sub-skill stat
+## (Upgrades "spell"): 0 on a weakened cast (short of mana), no sub-skill applies.
 func _stat(key: String) -> float:
-	var st: Variant = caster.get("stats") if is_instance_valid(caster) else null
+	var st: Variant = caster.get("stats") if is_instance_valid(caster) and not spell.has("weak") else null
 	return float(st.get(key, 0.0)) if st is Dictionary else 0.0
 
 
@@ -323,7 +324,7 @@ func _harden(e: Node2D) -> void:
 ## stat, not spell data: no forged spell has it.
 func _drop_embers(delta: float) -> void:
 	var dmg := _stat("embers")
-	if dmg <= 0.0 or spell.has("weak"):
+	if dmg <= 0.0:
 		return
 	ember_timer += delta
 	if ember_timer < EMBER_EVERY:
@@ -346,7 +347,7 @@ func _drop_embers(delta: float) -> void:
 ## from a weakened cast (short of mana).
 func _immolate(e: Node2D) -> void:
 	var b := _stat("immolate")
-	if b > 0.0 and depth == 0 and not spell.has("weak") and multiplayer.is_server():
+	if b > 0.0 and depth == 0 and multiplayer.is_server():
 		e.add_status("burn", b, BURN_TIME)
 
 

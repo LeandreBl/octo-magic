@@ -374,7 +374,7 @@ func cast(slot: String) -> bool:
 	var s := _spell(slot, ratio)
 	# Vis Teli (Upgrades "potent_missiles"): the primary cast hits harder; an
 	# engine stat, not spell data: no forged spell has it, nor pays mana for it.
-	var mult: float = stats.get("potency", 1.0) if slot == "primary" else 1.0
+	var mult: float = stats.get("potency", 1.0) if slot == "primary" and ratio >= 1.0 else 1.0
 	if randf() < stats.crit:
 		mult *= Stats.CRIT_MULT
 	if mult != 1.0:
@@ -393,7 +393,7 @@ func cast(slot: String) -> bool:
 ## An engine stat, not spell data: no forged spell has it, nor pays mana for it.
 func emit(slot: String, s: Dictionary) -> Dictionary:
 	var n := int(stats.get("missiles", 0.0))
-	if slot != "primary" or n == 0:
+	if slot != "primary" or n == 0 or s.has("weak"):  # no sub-skill on a cast short of mana
 		return s.emit
 	var e: Dictionary = s.emit.duplicate()
 	e.count += n
