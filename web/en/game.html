@@ -29,7 +29,7 @@
 </header>
 <!-- The game's web export (Godot), same origin: it shares the site's login (site.js). -->
 <iframe id="game" src="/godot/index.html" title="Octo Magic" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
-<p class="rotate">Turn your phone sideways to play.</p>
+<div class="rotate" role="status"><svg class="rotate-icon" width="72" height="72" viewBox="0 0 72 72" aria-hidden="true"><rect x="22" y="8" width="28" height="50" rx="5" fill="none" stroke="currentColor" stroke-width="4"/><path d="M33 51h6" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M58 36a22 22 0 0 1-8 16" fill="none" stroke="var(--gold)" stroke-width="4" stroke-linecap="round"/><path d="M51 46l-1 6 6 1" fill="none" stroke="var(--gold)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg><p class="rotate-title">Turn your phone sideways</p><p>The dungeon is played in landscape.</p></div>
 <script type="module">
   import "/site.js";
   const game = document.getElementById("game");

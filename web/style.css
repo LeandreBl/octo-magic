@@ -447,9 +447,14 @@ body.game iframe { flex: 1; width: 100%; border: 0; background: var(--night-900)
 /* Phones play in landscape only: in portrait, ask to turn the phone. */
 body.game .rotate { display: none; }
 @media (orientation: portrait) and (pointer: coarse) {
-  body.game .rotate { display: flex; position: fixed; inset: 0; z-index: 20; margin: 0; padding: 2rem;
-    align-items: center; justify-content: center; text-align: center; font-size: 1.4rem;
-    color: var(--text); background: var(--night-900); }
+  body.game .site-header { position: relative; z-index: 21; }
+  body.game .rotate { display: flex; flex-direction: column; position: fixed; inset: 0; z-index: 20; gap: .75rem; padding: 2rem;
+    align-items: center; justify-content: center; text-align: center;
+    color: var(--text-2); background: radial-gradient(ellipse 30rem 20rem at 50% 45%, #2a1b55, var(--night-900) 70%); }
+  body.game .rotate p { margin: 0; font-size: 1.15rem; }
+  body.game .rotate .rotate-title { font: 2rem/1.1 var(--display); color: var(--gold); text-shadow: 3px 3px 0 var(--ink); }
+  body.game .rotate-icon { color: var(--text-3); animation: tilt 2.4s ease-in-out infinite; }
+  @keyframes tilt { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
 }
 
 @media (max-width: 820px) {
