@@ -258,7 +258,7 @@ const ENEMIES := {
 	# bosses, one every BOSS_EVERY waves (BOSSES)
 	"boss": {"name": "Lich King", "hp": 400.0, "speed": 50.0, "radius": 58.0, "damage": 25.0, "xp": 20, "gold": 40,
 		"boss": true, "ai": "chase", "heavy": 0.3, "color": "#7e57c2",
-		"spells": [{"type": "ring", "every": 3.0, "count": 12}, {"type": "summon", "every": 8.0, "kind": "skeleton", "count": 3}]},
+		"spells": [{"type": "ring", "every": 3.0, "count": 12}, {"type": "summon", "every": 8.0, "kind": "skeleton", "count": 3, "hp": 0.3}]},
 	# the boss monsters: each one adds an attack to the last one's
 	"bone_herald": {"name": "Bone Herald", "hp": 450.0, "speed": 55.0, "radius": 56.0, "damage": 24.0, "xp": 25, "gold": 40,
 		"boss": true, "kills": 100, "ai": "chase", "heavy": 0.3, "color": "#e0dccb", "shot": "bone_missile",

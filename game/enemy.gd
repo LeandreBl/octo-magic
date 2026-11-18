@@ -10,7 +10,7 @@ extends Node2D
 ## its attacks in assets/monsters/fx/.
 
 signal killed(enemy: Node2D)
-signal summoned(kind: String, pos: Vector2)  # summon spells, spawned by main.gd
+signal summoned(kind: String, pos: Vector2, hp: float)  # summon spells, spawned by main.gd (hp: share of a real one's)
 
 const CROWD := 120  # no summons past this many enemies
 ## Half the world seen on a 16:9 screen (1280x720 / Player.ZOOM): its spells
@@ -262,7 +262,7 @@ func cast(sp: Dictionary, to: Vector2) -> bool:
 			for i in sp.count:
 				var at := position + Vector2.from_angle(randf() * TAU) * (radius + 20.0)
 				_zone.rpc(at, 24.0, 0.0, 0.0, 0.0, Color(data.color), 0.0, "summon")
-				summoned.emit(sp.kind, at)
+				summoned.emit(sp.kind, at, sp.get("hp", 1.0))
 	return true
 
 
@@ -289,7 +289,7 @@ func _hatch(at: Vector2, n: int) -> void:
 	for i in n:
 		if get_tree().get_nodes_in_group("enemies").size() >= CROWD:
 			return
-		summoned.emit("hell_imp", at + Vector2.from_angle(randf() * TAU) * randf_range(10.0, 40.0))
+		summoned.emit("hell_imp", at + Vector2.from_angle(randf() * TAU) * randf_range(10.0, 40.0), 1.0)
 
 
 ## Whether its mage (`to`: from it to the mage) would see all of it on a

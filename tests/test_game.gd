@@ -626,7 +626,7 @@ func _test_play() -> void:
 	var summons := []
 	for kind in RunState.ENEMIES:
 		var e := Enemy.new()
-		e.summoned.connect(func(k, _pos): summons.append(k))
+		e.summoned.connect(func(k, _pos, _hp): summons.append(k))
 		e.setup(kind, RunState.enemy_stats(kind, 1))
 		e.hp = 1e6
 		e.max_hp = 1e6

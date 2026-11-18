@@ -270,11 +270,12 @@ func _wave_started(w: int) -> void:
 
 ## An enemy's summon: `kind` at `pos`, at the current wave's stats, but
 ## worth no XP (else a summoner farms levels).
-func _on_summoned(kind: String, pos: Vector2) -> void:
+func _on_summoned(kind: String, pos: Vector2, hp: float) -> void:
 	if multiplayer.is_server() and get_tree().get_nodes_in_group("enemies").size() < Enemy.CROWD:
 		spawned += 1
 		var stats := Run.enemy_stats(kind, Run.wave)
 		stats.xp = 0
+		stats.hp *= hp
 		spawner.spawn.call_deferred({"kind": "enemy", "name": "E%d" % spawned, "type": kind,
 			"stats": stats, "pos": pos.clamp(Arena.RECT.position, Arena.RECT.end)})
 

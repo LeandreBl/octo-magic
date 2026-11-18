@@ -51,7 +51,7 @@ and the spells are words you write on scrolls, forged by an AI.
   screen). They attack only from on screen; ground attacks are always
   telegraphed.
 - Effects on the mage: poison, freeze (slowed), stun, and fire damage.
-- Bosses (`Run.BOSSES`): Lich King (wave 5: shot rings, summons skeletons),
+- Bosses (`Run.BOSSES`): Lich King (wave 5: shot rings, summons skeletons at 30% hp),
   then the boss monsters, each adding an attack to the last one's: Bone Herald
   (10, missile volleys), Pyre Lord (15, + fire pools), Blight Eye (20, + green
   laser), Grave Maw (25, + vanishes and bites), Archfiend (30 and every 5th
