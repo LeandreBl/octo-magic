@@ -20,6 +20,12 @@ var magnet := 0.0
 var speed := 0.0
 
 
+## A soft shimmer: brightness drifts around white, each drop on its own phase.
+func _process(_delta: float) -> void:
+	var v := 1.0 + 0.15 * sin(Time.get_ticks_msec() * 0.004 + get_instance_id() % 628 * 0.01)
+	modulate = Color(v, v, v)
+
+
 func _physics_process(delta: float) -> void:
 	if not multiplayer.is_server():
 		return
