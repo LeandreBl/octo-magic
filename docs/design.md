@@ -13,12 +13,15 @@
 - Or → boutique entre les runs (bâtons, robes, anneaux) + bonus permanents.
 - Succès, déblocages, scores, classement (local d'abord).
 
-## Monstres (tâche #140)
-- Table de données `Run.ENEMIES` (`game/run.gd`) : stats, vague d'apparition et poids, IA, forme, sorts ; `game/enemy.gd` les joue.
-- IA de déplacement : `chase` (fonce), `weave` (zigzague), `flank` (arrive par le côté), `kite` (garde sa distance et tourne autour).
-- Sorts de monstres : `bolt`, `spread` (éventail), `ring` (360°), `nova` (onde télégraphiée), `fuse` (kamikaze), `puddle` (flaque de poison), `charge` (élan puis ruée), `blink` (téléportation), `heal` (soigne les alliés), `summon` ; `split` à la mort (slime).
+## Monstres (tâches #140, #174)
+- DA : uniquement des morts-vivants et des créatures du cimetière (squelettes, archers, mages squelettes, zombies, diablotin, spectre ; boss : liche, chevalier de la mort, abomination).
+- Table de données `Run.ENEMIES` (`game/run.gd`) : stats, vague d'apparition et poids, IA, forme, sorts, tir, effet, variante ; `game/enemy.gd` les joue.
+- IA de déplacement : `chase` (fonce), `weave` (zigzague), `kite` (garde sa distance et tourne autour), `still` (immobile : archers et mages).
+- Sorts de monstres : `bolt`, `spread` (éventail), `ring` (360°), `nova` (onde télégraphiée), `puddle` (flaque de poison), `charge` (élan puis ruée), `summon`.
+- Effets sur le mage (contact et tirs) : `poison` (dégâts par seconde), `freeze` (ralenti), `stun` (immobilisé). Le zombie putride laisse une flaque de poison à sa mort.
+- Variantes tirées à l'apparition : casque (guerrier squelette), gantelets (chevalier squelette), bouclier magique (mages, plus de PV) ; sprite propre `<type>_<variante>`.
 - Zones au sol télégraphiées (contour qui se remplit) avant de faire mal : le joueur a toujours le temps d'esquiver.
-- Vagues : mélange pondéré des types débloqués, tiré avec la vague pour graine (même plan chez tous les pairs). Trois boss en alternance toutes les 5 vagues : liche (`boss`), seigneur de guerre, mère des couvées.
+- Vagues : mélange pondéré des types débloqués, tiré avec la vague pour graine (même plan chez tous les pairs). Trois boss en alternance toutes les 5 vagues : liche (`boss`), chevalier de la mort, abomination.
 
 ## Personnage
 - Le joueur est un **mage-poulpe** (la mascotte de l'icône), plus le boss (tâche #137) : vu de dessus (~90°), sprite PixelLab du corps (sans tentacules) qui tourne vers sa direction, idle, cast (un tentacule tient le bâton et l'abat vers la visée) et channeling (bâton tendu tant qu'un rayon ou un cône tourne) (`tools/make_octopus.py`, `assets/octo/`). Ses 8 tentacules sont animés sous le corps par de la physique (tâche #172, `game/tentacle.gd`) : chaîne Verlet ancrée au corps, pointe posée au sol qui fait un pas vers l'avant quand le corps s'en éloigne (deux groupes alternés, comme des pattes), ondulation latérale à l'arrêt ; forme par le code, texture PixelLab dans le style des anciens tentacules (bout enroulé, contour noir), dessinée 1:1 sur des pixels entiers pour rester pixel art. Purement visuels : la hitbox reste le corps, chaque pair les simule localement.

@@ -228,7 +228,7 @@ func _spawn(d: Dictionary) -> Node:
 		n = Player.new()
 		n.peer_id = d.id
 		n.died.connect(_on_player_died)
-		sync.replication_config = _config({"hp": ON_CHANGE, "mana": ALWAYS, "shield": ON_CHANGE, "loadout_json": ON_CHANGE}, true)
+		sync.replication_config = _config({"hp": ON_CHANGE, "mana": ALWAYS, "shield": ON_CHANGE, "statuses": ALWAYS, "loadout_json": ON_CHANGE}, true)
 		var own := MultiplayerSynchronizer.new()  # what the owner steers
 		own.replication_config = _config({"position": ALWAYS, "aim": ALWAYS, "firing": ALWAYS}, false)
 		own.set_multiplayer_authority(d.id)

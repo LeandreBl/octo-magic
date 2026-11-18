@@ -7,7 +7,9 @@ extends Node2D
 ## SHIELD_WAIT seconds after it breaks.
 ## Every number of the mage comes from `stats` (game/stats.gd, from the loadout).
 ## Coop (see main.gd): the owner peer steers its mage (position, aim, firing
-## are synced from it); the host owns the rest (hp, mana, loadout) and casts.
+## are synced from it); the host owns the rest (hp, mana, loadout, statuses)
+## and casts. Statuses from enemies (afflict): poison hurts every second,
+## freeze slows, stun roots; the owner reads them to steer.
 
 signal died
 
@@ -40,6 +42,7 @@ var mana: float = stats.mana
 var passive := ""  # a Run.SHOP id
 var shield := 0.0  # hp left on the shield, synced for drawing
 var shield_wait := 0.0  # seconds until a broken shield is back
+var statuses := {}  # name -> [power, time_left], from the host
 var cooldowns := {}  # slot -> seconds left
 var held := {}  # slot -> bool, from a touch UI
 var aim := Vector2.RIGHT
@@ -60,6 +63,7 @@ var _touch_aim := {}
 func setup(s: Dictionary) -> void:
 	stats = s
 	hp = s.hp
+	statuses = {}
 	mana = s.mana
 	cooldowns = {}
 	shield_wait = 0.0
@@ -150,6 +154,15 @@ func hurt(amount: float) -> void:
 		died.emit()
 
 
+## Status `status` from an enemy for `duration` s (host): the strongest and
+## longest of the current one and this one.
+func afflict(status: String, power: float, duration: float) -> void:
+	if hp <= 0.0:
+		return
+	var cur: Array = statuses.get(status, [0.0, 0.0])
+	statuses[status] = [maxf(cur[0], power), maxf(cur[1], duration)]
+
+
 func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		var half := get_viewport_rect().size.x / 2.0
@@ -194,6 +207,12 @@ func _physics_process(delta: float) -> void:
 		_steer(delta)
 	if not multiplayer.is_server() or hp <= 0.0:
 		return
+	for st in statuses.keys():
+		statuses[st][1] -= delta
+		if st == "poison":
+			hurt(statuses[st][0] * delta)
+		if statuses[st][1] <= 0.0:
+			statuses.erase(st)
 	mana = minf(stats.mana, mana + stats.mana_regen * delta)
 	hp = minf(stats.hp, hp + stats.hp_regen * delta)
 	if shield_wait > 0.0:
@@ -210,6 +229,10 @@ func _steer(delta: float) -> void:
 	# Input actions (project.godot): rebindable keys, arrows, left stick (ui/settings.gd).
 	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	move = (move + _stick(_touch_move)).limit_length(1.0)
+	if statuses.has("stun"):
+		move = Vector2.ZERO
+	elif statuses.has("freeze"):
+		move *= 0.5
 	position = (position + move * stats.speed * delta).clamp(Arena.RECT.position, Arena.RECT.end)
 
 	# Gamepad (any connected one): right stick aims and fires, RT fires
@@ -279,7 +302,9 @@ func _draw() -> void:
 	if anim == "cast":
 		f = mini(int((1.0 - _cast_t / CAST_TIME) * frames), frames - 1)
 	draw_set_transform(Vector2.ZERO, _angle + PI / 2.0)  # the sprite's head is up
-	draw_texture_rect_region(tex, Rect2(Vector2(-size, -size) / 2.0, Vector2(size, size)), Rect2(f * size, 0, size, size))
+	var tint := Color("#9be7ff") if statuses.has("freeze") else Color("#fff59d") if statuses.has("stun") \
+		else Color("#b9f6ca") if statuses.has("poison") else Color.WHITE
+	draw_texture_rect_region(tex, Rect2(Vector2(-size, -size) / 2.0, Vector2(size, size)), Rect2(f * size, 0, size, size), tint)
 	draw_set_transform(Vector2.ZERO)
 	if shield > 0.0:
 		draw_arc(Vector2.ZERO, radius + 6, 0.0, TAU, 32, Color(0.5, 0.85, 1.0, 0.3 + 0.5 * shield / SHIELD_HP), 3.0)

@@ -175,64 +175,81 @@ func finish() -> Dictionary:
 
 # --- waves: what spawns, and how strong --------------------------------------
 
-## Monster kinds. Stats at wave 1; "from": first wave it shows up in, with
-## "weight" (0: only summoned, or a boss). Look: "color" (its zones), sprites in assets/monsters/<kind>/
-## "ai" moves it (game/enemy.gd): chase, weave (zigzags in), flank (comes from
-## the side), kite (holds "range", strafes). "heavy": share of knockback taken.
+## Monster kinds: the undead and creatures of the graveyard. Stats at wave 1;
+## "from": first wave it shows up in, with "weight" (0: only summoned, or a
+## boss). Look: "color" (its zones), sprites in assets/monsters/<kind>/.
+## "ai" moves it (game/enemy.gd): chase, weave (zigzags in), kite (holds
+## "range", strafes), still (never moves: archers, mages).
+## "heavy": share of knockback taken.
 ## "spells": its own casts, each every "every" seconds (see Enemy.cast);
-## "dmg" scales its "damage". "split": summoned on death.
+## "dmg" scales its "damage". "shot": the effect its shots fly as
+## (assets/monsters/fx/). "effect": [status, power, seconds] put on the mage
+## by its touch and its shots (Player.afflict; poison: power x damage per s).
+## "gunk": [radius, seconds] of poison pool left where it dies.
+## "variant": [name, chance, {stat: factor}]: some wear it (helmet, shield...),
+## drawn from assets/monsters/<kind>_<name>/.
 const ENEMIES := {
-	"melee": {"hp": 20.0, "speed": 80.0, "radius": 12.0, "damage": 10.0, "xp": 1, "gold": 1,
-		"from": 1, "weight": 6.0, "ai": "chase", "color": "#4caf50"},
-	"fast": {"hp": 10.0, "speed": 150.0, "radius": 9.0, "damage": 6.0, "xp": 1, "gold": 1,
-		"from": 2, "weight": 3.0, "ai": "weave", "color": "#ffca28"},
-	"ranged": {"hp": 16.0, "speed": 70.0, "radius": 11.0, "damage": 8.0, "xp": 2, "gold": 2,
-		"from": 3, "weight": 2.0, "ai": "kite", "color": "#26c6da",
+	"skeleton": {"hp": 18.0, "speed": 80.0, "radius": 12.0, "damage": 8.0, "xp": 1, "gold": 1,
+		"from": 1, "weight": 6.0, "ai": "chase", "color": "#e0dccb"},
+	"imp": {"hp": 9.0, "speed": 150.0, "radius": 9.0, "damage": 6.0, "xp": 1, "gold": 1,
+		"from": 2, "weight": 3.0, "ai": "weave", "color": "#e53935"},
+	"archer": {"hp": 12.0, "speed": 0.0, "radius": 11.0, "damage": 7.0, "xp": 2, "gold": 2,
+		"from": 2, "weight": 1.5, "ai": "still", "color": "#8d6e63", "shot": "arrow",
+		"spells": [{"type": "bolt", "every": 2.4}]},
+	"zombie": {"hp": 55.0, "speed": 45.0, "radius": 14.0, "damage": 18.0, "xp": 2, "gold": 2,
+		"from": 3, "weight": 1.5, "ai": "chase", "heavy": 0.6, "color": "#9e9e9e"},
+	"skeletal_warrior": {"hp": 16.0, "speed": 95.0, "radius": 12.0, "damage": 13.0, "xp": 2, "gold": 1,
+		"from": 3, "weight": 2.0, "ai": "chase", "color": "#d7ccc8",
+		"variant": ["helmet", 0.5, {"hp": 1.4}]},
+	"marksman": {"hp": 26.0, "speed": 0.0, "radius": 11.0, "damage": 9.0, "xp": 2, "gold": 2,
+		"from": 4, "weight": 1.2, "ai": "still", "color": "#6d4c41", "shot": "arrow",
 		"spells": [{"type": "bolt", "every": 2.0}]},
-	"bomber": {"hp": 12.0, "speed": 125.0, "radius": 10.0, "damage": 6.0, "xp": 1, "gold": 1,
-		"from": 3, "weight": 1.5, "ai": "chase", "color": "#ff7043",
-		"spells": [{"type": "fuse", "every": 0.1, "range": 50.0, "radius": 75.0, "dmg": 2.5}]},
-	"slime": {"hp": 30.0, "speed": 60.0, "radius": 14.0, "damage": 8.0, "xp": 1, "gold": 1,
-		"from": 4, "weight": 1.5, "ai": "chase", "color": "#7cb342", "split": ["slimelet", 2]},
-	"slimelet": {"hp": 8.0, "speed": 100.0, "radius": 8.0, "damage": 5.0, "xp": 1, "gold": 0,
-		"from": 4, "weight": 0.0, "ai": "weave", "color": "#aed581"},
-	"brute": {"hp": 60.0, "speed": 55.0, "radius": 16.0, "damage": 18.0, "xp": 3, "gold": 2,
-		"from": 4, "weight": 1.0, "ai": "chase", "heavy": 0.5, "color": "#8d6e63",
-		"spells": [{"type": "charge", "every": 4.0, "range": 280.0}]},
-	"stalker": {"hp": 18.0, "speed": 115.0, "radius": 10.0, "damage": 9.0, "xp": 2, "gold": 1,
-		"from": 5, "weight": 1.5, "ai": "flank", "color": "#ab47bc"},
-	"spitter": {"hp": 22.0, "speed": 65.0, "radius": 12.0, "damage": 8.0, "xp": 2, "gold": 2,
-		"from": 6, "weight": 1.0, "ai": "kite", "range": 300.0, "color": "#9e9d24",
-		"spells": [{"type": "puddle", "every": 5.0, "radius": 55.0, "dmg": 1.2}]},
-	"shaman": {"hp": 24.0, "speed": 70.0, "radius": 12.0, "damage": 6.0, "xp": 3, "gold": 3,
-		"from": 6, "weight": 0.7, "ai": "kite", "range": 340.0, "color": "#26a69a",
-		"spells": [{"type": "heal", "every": 4.0, "radius": 180.0, "ratio": 0.3}]},
-	"wraith": {"hp": 20.0, "speed": 90.0, "radius": 11.0, "damage": 12.0, "xp": 2, "gold": 2,
-		"from": 7, "weight": 1.0, "ai": "chase", "color": "#b0bec5",
-		"spells": [{"type": "blink", "every": 3.5}]},
-	"necromancer": {"hp": 35.0, "speed": 60.0, "radius": 13.0, "damage": 8.0, "xp": 4, "gold": 4,
-		"from": 8, "weight": 0.5, "ai": "kite", "range": 360.0, "color": "#5e35b1",
-		"spells": [{"type": "summon", "every": 6.0, "kind": "fast", "count": 2}, {"type": "bolt", "every": 3.0}]},
-	"sorcerer": {"hp": 26.0, "speed": 70.0, "radius": 12.0, "damage": 9.0, "xp": 3, "gold": 3,
-		"from": 9, "weight": 0.8, "ai": "kite", "range": 300.0, "color": "#ec407a",
-		"spells": [{"type": "spread", "every": 2.8, "count": 5, "angle": 0.9}]},
-	"golem": {"hp": 120.0, "speed": 45.0, "radius": 20.0, "damage": 22.0, "xp": 5, "gold": 4,
-		"from": 10, "weight": 0.5, "ai": "chase", "heavy": 0.4, "color": "#78909c",
-		"spells": [{"type": "nova", "every": 3.0, "radius": 110.0, "dmg": 1.5}]},
+	"skeletal_knight": {"hp": 45.0, "speed": 95.0, "radius": 13.0, "damage": 13.0, "xp": 3, "gold": 2,
+		"from": 5, "weight": 1.0, "ai": "chase", "heavy": 0.7, "color": "#90a4ae",
+		"variant": ["gauntlets", 0.5, {"damage": 1.2}]},
+	"wraith": {"hp": 14.0, "speed": 140.0, "radius": 11.0, "damage": 7.0, "xp": 2, "gold": 1,
+		"from": 5, "weight": 1.2, "ai": "chase", "color": "#f5f5f5", "effect": ["freeze", 1.0, 1.5]},
+	"poison_mage": {"hp": 14.0, "speed": 0.0, "radius": 11.0, "damage": 5.0, "xp": 3, "gold": 3,
+		"from": 5, "weight": 0.8, "ai": "still", "color": "#7cb342", "shot": "poison_orb",
+		"effect": ["poison", 0.6, 3.0], "variant": ["shield", 0.35, {"hp": 2.0}],
+		"spells": [{"type": "bolt", "every": 2.4, "dmg": 1.0}]},
+	"rotting_zombie": {"hp": 55.0, "speed": 45.0, "radius": 14.0, "damage": 16.0, "xp": 3, "gold": 2,
+		"from": 6, "weight": 1.0, "ai": "chase", "heavy": 0.6, "color": "#827717",
+		"effect": ["poison", 0.3, 3.0], "gunk": [50.0, 5.0]},
+	"burning_skeleton": {"hp": 16.0, "speed": 115.0, "radius": 12.0, "damage": 13.0, "xp": 2, "gold": 2,
+		"from": 6, "weight": 1.2, "ai": "chase", "color": "#ff7043"},
+	"frost_mage": {"hp": 14.0, "speed": 0.0, "radius": 11.0, "damage": 5.0, "xp": 3, "gold": 3,
+		"from": 6, "weight": 0.8, "ai": "still", "color": "#4fc3f7", "shot": "frost_orb",
+		"effect": ["freeze", 1.0, 2.0], "variant": ["shield", 0.35, {"hp": 2.0}],
+		"spells": [{"type": "bolt", "every": 2.4, "dmg": 1.0}]},
+	"putrid_archer": {"hp": 26.0, "speed": 0.0, "radius": 11.0, "damage": 8.0, "xp": 3, "gold": 2,
+		"from": 7, "weight": 1.0, "ai": "still", "color": "#689f38", "shot": "poison_arrow",
+		"effect": ["poison", 0.4, 3.0], "spells": [{"type": "bolt", "every": 2.0}]},
+	"fire_mage": {"hp": 14.0, "speed": 0.0, "radius": 11.0, "damage": 20.0, "xp": 3, "gold": 3,
+		"from": 7, "weight": 0.8, "ai": "still", "color": "#ff5722", "shot": "fireball",
+		"variant": ["shield", 0.35, {"hp": 2.0}], "spells": [{"type": "bolt", "every": 2.6, "dmg": 1.0}]},
+	"burning_archer": {"hp": 12.0, "speed": 0.0, "radius": 11.0, "damage": 16.0, "xp": 3, "gold": 2,
+		"from": 8, "weight": 0.8, "ai": "still", "color": "#ff9800", "shot": "fire_arrow",
+		"spells": [{"type": "bolt", "every": 2.4, "dmg": 1.0}]},
+	"lightning_mage": {"hp": 14.0, "speed": 0.0, "radius": 11.0, "damage": 11.0, "xp": 3, "gold": 3,
+		"from": 8, "weight": 0.8, "ai": "still", "color": "#e3f2fd", "shot": "spark",
+		"effect": ["stun", 1.0, 0.6], "variant": ["shield", 0.35, {"hp": 2.0}],
+		"spells": [{"type": "bolt", "every": 2.8, "dmg": 1.0}]},
 	# bosses, one every BOSS_EVERY waves in turn
 	"boss": {"hp": 400.0, "speed": 50.0, "radius": 36.0, "damage": 25.0, "xp": 20, "gold": 40,
-		"boss": true, "ai": "chase", "heavy": 0.3, "color": "#e65100",
-		"spells": [{"type": "ring", "every": 3.0, "count": 12}, {"type": "summon", "every": 8.0, "kind": "melee", "count": 3}]},
-	"warlord": {"hp": 500.0, "speed": 60.0, "radius": 34.0, "damage": 28.0, "xp": 20, "gold": 40,
-		"boss": true, "ai": "chase", "heavy": 0.3, "color": "#c62828",
+		"boss": true, "ai": "chase", "heavy": 0.3, "color": "#7e57c2",
+		"spells": [{"type": "ring", "every": 3.0, "count": 12}, {"type": "summon", "every": 8.0, "kind": "skeleton", "count": 3}]},
+	"death_knight": {"hp": 500.0, "speed": 60.0, "radius": 34.0, "damage": 28.0, "xp": 20, "gold": 40,
+		"boss": true, "ai": "chase", "heavy": 0.3, "color": "#4fc3f7", "effect": ["freeze", 1.0, 1.5],
 		"spells": [{"type": "charge", "every": 3.5, "range": 420.0}, {"type": "nova", "every": 5.0, "radius": 150.0, "dmg": 1.2}]},
-	"broodmother": {"hp": 450.0, "speed": 45.0, "radius": 38.0, "damage": 22.0, "xp": 20, "gold": 40,
-		"boss": true, "ai": "kite", "range": 280.0, "heavy": 0.3, "color": "#827717",
+	"abomination": {"hp": 450.0, "speed": 45.0, "radius": 38.0, "damage": 22.0, "xp": 20, "gold": 40,
+		"boss": true, "ai": "kite", "range": 280.0, "heavy": 0.3, "color": "#827717", "shot": "acid",
+		"effect": ["poison", 0.2, 3.0], "gunk": [90.0, 6.0],
 		"spells": [{"type": "spread", "every": 2.5, "count": 7, "angle": 1.2},
 			{"type": "puddle", "every": 4.0, "radius": 70.0, "dmg": 0.6},
-			{"type": "summon", "every": 7.0, "kind": "slimelet", "count": 3}]},
+			{"type": "summon", "every": 7.0, "kind": "imp", "count": 3}]},
 }
-const BOSSES := ["boss", "warlord", "broodmother"]
+const BOSSES := ["boss", "death_knight", "abomination"]
 
 
 static func is_boss(kind: String) -> bool:
@@ -264,4 +281,10 @@ static func enemy_stats(kind: String, w: int) -> Dictionary:
 	s.speed *= 1.0 + minf(w - 1, 20) * 0.02
 	s.damage *= 1.0 + (w - 1) * 0.05
 	s.gold = s.gold + w / BOSS_EVERY
+	var v: Array = s.get("variant", [])
+	s.look = kind
+	if v and randf() < v[1]:  # rolled on the host, sent to peers with the stats
+		s.look = kind + "_" + v[0]
+		for stat in v[2]:
+			s[stat] *= v[2][stat]
 	return s

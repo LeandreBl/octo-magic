@@ -9,15 +9,15 @@ extends Node2D
 ## attacks in assets/monsters/fx/.
 
 signal killed(enemy: Node2D)
-signal summoned(kind: String, pos: Vector2)  # summon spells and splits, spawned by main.gd
+signal summoned(kind: String, pos: Vector2)  # summon spells, spawned by main.gd
 
 const CROWD := 120  # no summons past this many enemies
 const FPS := 12.0
 const Self := preload("res://game/enemy.gd")  # its static art for the inner classes
 ## The move a spell plays (assets/monsters/<kind>/<anim>.png, if any).
-const SPELL_ANIM := {"charge": "windup", "fuse": "fuse", "heal": "heal", "summon": "summon", "blink": "blink"}
+const SPELL_ANIM := {"charge": "windup", "summon": "summon", "bolt": "attack"}
 
-var kind := "melee"
+var kind := "skeleton"
 var data := {}  # its Run.ENEMIES entry, scaled to the wave
 var target: Node2D
 var hp := 20.0
@@ -35,7 +35,7 @@ var windup := 0.0  # charge: standing still, about to dash
 var dash := Vector2.ZERO  # charge: velocity while dashing
 var dash_time := 0.0
 var age := 0.0
-var side := 1.0  # flank: which side it comes from
+var side := 1.0  # kite: which way it strafes
 var _heard_hp := 0.0  # hp at the last hit sound: hosts and peers hear hits on the synced hp
 var _last_pos := Vector2.ZERO
 var _flip := false  # facing left: from the synced position, the same on every peer
@@ -90,9 +90,9 @@ func take_damage(amount: float) -> void:
 	hp -= amount
 	if hp <= 0.0:
 		killed.emit(self)
-		var split: Array = data.get("split", [])
-		for i in (split[1] if split else 0):
-			summoned.emit(split[0], position + Vector2.from_angle(TAU * i / split[1]) * radius)
+		var gunk: Array = data.get("gunk", [])
+		if gunk:  # a poison pool where it falls
+			_zone.rpc(position, gunk[0], 0.0, 0.0, touch_damage * data.effect[1], Color(data.color), gunk[1], "poison")
 		queue_free()
 
 
@@ -163,23 +163,31 @@ func _physics_process(delta: float) -> void:
 	if to.length() < radius + target.radius and hit_cooldown <= 0.0:
 		hit_cooldown = 0.6
 		target.hurt(touch_damage)
+		_afflict(target)
 	var spells: Array = data.get("spells", [])
 	for i in spells.size():
 		timers[i] -= delta * slow
 		if timers[i] <= 0.0 and windup <= 0.0 and dash == Vector2.ZERO and cast(spells[i], to):
 			timers[i] = spells[i].every
 			if SPELL_ANIM.has(spells[i].type):
-				_play.rpc(SPELL_ANIM[spells[i].type], {"charge": 0.6, "fuse": 0.7, "blink": 0.4}.get(spells[i].type, 0.7))
+				_play.rpc(SPELL_ANIM[spells[i].type], {"charge": 0.6, "bolt": 0.5}.get(spells[i].type, 0.7))
+
+
+## Its "effect" (Run.ENEMIES) on mage `p`, from its touch or its shots.
+func _afflict(p: Node2D) -> void:
+	var e: Array = data.get("effect", [])
+	if e:
+		p.afflict(e[0], e[1] * (touch_damage if e[0] == "poison" else 1.0), e[2])
 
 
 ## The direction its AI walks, `to`: from it to its mage.
 func _steer(to: Vector2) -> Vector2:
 	var d := to.length()
 	match data.get("ai", "chase"):
+		"still":
+			return Vector2.ZERO
 		"weave":
 			return to.normalized().rotated(sin(age * 5.0) * 0.8)
-		"flank":
-			return to.normalized() if d < 140.0 else (to + to.orthogonal().normalized() * side * 160.0).normalized()
 		"kite":  # hold the range, strafe around the mage
 			var r: float = data.get("range", 260.0)
 			return to.normalized() if d > r + 30.0 else -to.normalized() if d < r - 30.0 else to.orthogonal().normalized() * side
@@ -187,7 +195,7 @@ func _steer(to: Vector2) -> Vector2:
 
 
 ## Casts spell `sp` at its mage (`to`: from it to the mage). False when it
-## does not fit now (out of reach, nobody to heal...): tried again next frame.
+## does not fit now (out of reach, too many enemies...): tried again next frame.
 func cast(sp: Dictionary, to: Vector2) -> bool:
 	var dmg: float = touch_damage * sp.get("dmg", 0.8)
 	var d := to.length()
@@ -205,12 +213,6 @@ func cast(sp: Dictionary, to: Vector2) -> bool:
 			if d > sp.radius:
 				return false
 			_zone.rpc(position, sp.radius, 0.8, dmg, 0.0, Color(data.color), 0.0, "shockwave")
-		"fuse":  # stops, glows, blows up
-			if d > sp.range + radius:
-				return false
-			_zone.rpc(position, sp.radius, 0.7, dmg, 0.0, Color("#ff7043"), 0.0, "explosion")
-			windup = INF
-			get_tree().create_timer(0.7, false, true).timeout.connect(queue_free)
 		"puddle":  # a poison pool where the mage stands
 			if d > 550.0:
 				return false
@@ -221,21 +223,6 @@ func cast(sp: Dictionary, to: Vector2) -> bool:
 			windup = 0.6
 			dash = Vector2.ONE  # dashing once the windup ends
 			_zone.rpc(position, radius + 10.0, 0.6, 0.0, 0.0, Color.WHITE, 0.0, "")
-		"blink":  # vanishes, comes back next to the mage
-			var to_pos := target.position + Vector2.from_angle(randf() * TAU) * 110.0
-			if d < 160.0:
-				return false
-			_zone.rpc(position, radius + 12.0, 0.0, 0.0, 0.0, Color(data.color), 0.0, "blink")
-			position = to_pos
-			_zone.rpc(position, radius + 12.0, 0.0, 0.0, 0.0, Color(data.color), 0.0, "blink")
-		"heal":  # mends the wounded around it, itself included
-			var hurt := get_tree().get_nodes_in_group("enemies").filter(
-				func(e): return e.hp < e.max_hp and e.position.distance_to(position) < sp.radius)
-			if hurt.is_empty():
-				return false
-			for e in hurt:
-				e.hp = minf(e.max_hp, e.hp + e.max_hp * sp.ratio)
-			_zone.rpc(position, sp.radius, 0.0, 0.0, 0.0, Color("#69f0ae"), 0.0, "heal")
 		"summon":
 			if get_tree().get_nodes_in_group("enemies").size() >= CROWD:
 				return false
@@ -247,13 +234,14 @@ func cast(sp: Dictionary, to: Vector2) -> bool:
 
 
 func _shot(dir: Vector2, v: float, dmg: float) -> void:
-	_spawn_shot.rpc(position, dir * v, dmg, "acid" if kind == "broodmother" else "bolt")
+	_spawn_shot.rpc(position, dir * v, dmg, data.get("shot", "bolt"))
 
 
 @rpc("authority", "call_local", "unreliable_ordered")
 func _spawn_shot(pos: Vector2, velocity: Vector2, dmg: float, fx: String) -> void:
 	Sfx.play("shot")
 	var s := Shot.new()
+	s.from = self
 	s.position = pos
 	s.velocity = velocity
 	s.damage = dmg
@@ -291,15 +279,15 @@ func _draw() -> void:
 	elif statuses.has("burn"): tint = Color("#ffb08a")
 	elif statuses.has("poison"): tint = Color("#d1b8ff")
 	var size := radius * 4.0  # the drawing overflows its hit circle a bit
-	var anim := _act if _act_time > 0.0 and art(kind + "/" + _act) else "walk"
-	var tex := art(kind + "/" + anim)
+	var look: String = data.get("look", kind)
+	var anim := _act if _act_time > 0.0 and art(look + "/" + _act) else "walk"
+	var tex := art(look + "/" + anim)
 	if tex:
 		var n := tex.get_width() / tex.get_height()
-		var f := int(Time.get_ticks_msec() / 1000.0 * FPS) if _moving else 0
-		if anim != "walk":  # the move plays once over its duration (blink backwards: it reappears)
+		# still ones loop their walk strip (an idle) all the time
+		var f := int(Time.get_ticks_msec() / 1000.0 * FPS) if _moving or data.get("ai") == "still" else 0
+		if anim != "walk":  # the move plays once over its duration
 			f = mini(int((1.0 - _act_time / _act_len) * n), n - 1)
-			if anim == "blink":
-				f = n - 1 - f
 		draw_frame(self, tex, f, size, _flip, tint)
 	else:  # not generated yet
 		draw_circle(Vector2.ZERO, radius, Color(data.get("color", "#4caf50")) * tint)
@@ -361,6 +349,7 @@ class Shot extends Node2D:
 	var velocity := Vector2.ZERO
 	var damage := 5.0
 	var fx := "bolt"
+	var from: Node2D  # its enemy, for its effect (may be dead by the hit)
 	var age := 0.0
 
 	func _physics_process(delta: float) -> void:
@@ -373,6 +362,8 @@ class Shot extends Node2D:
 		if hit:
 			if multiplayer.is_server():
 				hit.hurt(damage)
+				if is_instance_valid(from):
+					from._afflict(hit)
 			queue_free()
 		elif age > 6.0:
 			queue_free()

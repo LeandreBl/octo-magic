@@ -7,7 +7,7 @@ const ProfileState := preload("res://game/profile.gd")
 const Enemy := preload("res://game/enemy.gd")
 const Player := preload("res://game/player.gd")
 const Tentacle := preload("res://game/tentacle.gd")
-const SPELL_TYPES := ["bolt", "spread", "ring", "nova", "fuse", "puddle", "charge", "blink", "heal", "summon"]
+const SPELL_TYPES := ["bolt", "spread", "ring", "nova", "puddle", "charge", "summon"]
 
 var failures := 0
 
@@ -177,9 +177,9 @@ func _test_run_shop(run: Object) -> void:
 
 
 func _test_waves() -> void:
-	check(RunState.wave_plan(1).all(func(k): return k == "melee"), "wave 1 is melee only")
+	check(RunState.wave_plan(1).all(func(k): return k == "skeleton"), "wave 1 is skeletons only")
 	var w4 := RunState.wave_plan(4)
-	check("fast" in w4 and w4.all(func(k): return RunState.ENEMIES[k].from <= 4), "kinds join wave after wave")
+	check("imp" in w4 and w4.all(func(k): return RunState.ENEMIES[k].from <= 4), "kinds join wave after wave")
 	check(RunState.wave_plan(4) == w4, "the same plan on every peer")
 	var w12 := {}
 	for k in RunState.wave_plan(12):
@@ -194,18 +194,25 @@ func _test_waves() -> void:
 	for k in RunState.ENEMIES:
 		for sp in RunState.ENEMIES[k].get("spells", []):
 			check(sp.type in SPELL_TYPES, "%s casts a known spell" % k)
-		var split: Array = RunState.ENEMIES[k].get("split", [])
 		var summons: Array = RunState.ENEMIES[k].get("spells", []).filter(func(sp): return sp.type == "summon")
-		for other in summons.map(func(sp): return sp.kind) + ([split[0]] if split else []):
+		for other in summons.map(func(sp): return sp.kind):
 			check(RunState.ENEMIES.has(other), "%s summons a known kind" % k)
+		var e: Array = RunState.ENEMIES[k].get("effect", [])
+		check(not e or e[0] in ["poison", "freeze", "stun"], "%s puts a known status" % k)
+		check(not RunState.ENEMIES[k].has("gunk") or e and e[0] == "poison", "%s gunk is poison" % k)
 	check(RunState.wave_plan(9).size() > RunState.wave_plan(4).size(), "waves grow")
-	check(RunState.enemy_stats("melee", 10).hp > RunState.enemy_stats("melee", 1).hp, "enemies get tougher")
 	# Waves spawn out of every mage's view, even in a corner or with mages apart.
 	var mages := [Vector2(100, 100), Vector2(2400, 1600), Vector2(3000, 1600)]
 	for i in 200:
 		var pos: Vector2 = Arena.off_screen(mages, Vector2(1280, 720))
 		check(pos == pos.clamp(Arena.RECT.position, Arena.RECT.end), "spawn inside the arena")
 		check(mages.all(func(m): return absf(pos.x - m.x) > 640 or absf(pos.y - m.y) > 360), "spawn out of view (%s)" % pos)
+	check(RunState.enemy_stats("skeleton", 10).hp > RunState.enemy_stats("skeleton", 1).hp, "enemies get tougher")
+	var looks := {}
+	for i in 60:
+		var st := RunState.enemy_stats("fire_mage", 1)
+		looks[st.look] = st.hp
+	check(looks.get("fire_mage_shield", 0.0) > looks.get("fire_mage", INF), "some mages wear a shield, tougher")
 
 
 func _test_profile() -> void:
@@ -299,10 +306,6 @@ func _test_sfx() -> void:
 	Sfx.play("hit")  # no autoload in tests: a no-op, not a crash
 
 
-static func bomber_blast() -> float:
-	return RunState.ENEMIES.bomber.damage * RunState.ENEMIES.bomber.spells[0].dmg
-
-
 func _test_play() -> void:
 	var world := Node2D.new()
 	root.add_child(world)
@@ -335,13 +338,13 @@ func _test_play() -> void:
 	for e in get_nodes_in_group("enemies"):  # every spell, where it fits
 		for sp in e.data.get("spells", []):
 			e.hp = e.max_hp * 0.5
-			if sp.type != "fuse" and e.cast(sp, Vector2(200.0 if sp.type == "blink" else 40.0, 0.0)):
+			if e.cast(sp, Vector2(40.0, 0.0)):
 				cast[sp.type] = true
 			e.hp = e.max_hp
 		e.windup = 0.0
 		e.dash = Vector2.ZERO
-	check(cast.size() == SPELL_TYPES.size() - 1, "every enemy spell casts: %s" % str(cast.keys()))
-	check("fast" in summons and "melee" in summons, "summons asked from main")
+	check(cast.size() == SPELL_TYPES.size(), "every enemy spell casts: %s" % str(cast.keys()))
+	check("imp" in summons and "skeleton" in summons, "summons asked from main")
 	var zones := root.find_children("*", "Node2D", true, false).filter(func(n): return n is Enemy.Zone)
 	check(zones.size() > 5, "spells leave zones")
 	await physics_frame
@@ -360,15 +363,29 @@ func _test_play() -> void:
 	for e in get_nodes_in_group("enemies"):
 		hp_after += e.hp
 	check(hp_after < hp_before, "base spells damage enemies")
-	var bomber := Enemy.new()  # walks up, lights its fuse, blows up on the mage
-	bomber.setup("bomber", RunState.enemy_stats("bomber", 1))
-	bomber.position = player.position + Vector2(80, 0)
-	world.add_child(bomber)
+	for e in get_nodes_in_group("enemies"):
+		e.queue_free()
+	var zombie := Enemy.new()  # walks up, poisons the mage, leaves gunk when it dies
+	zombie.setup("rotting_zombie", RunState.enemy_stats("rotting_zombie", 1))
+	zombie.position = player.position + Vector2(20, 0)
+	world.add_child(zombie)
 	player.hp = player.stats.hp
 	player.shield = 0.0
-	for i in 90:
+	for i in 30:
 		await physics_frame
-	check(not is_instance_valid(bomber) and player.hp <= player.stats.hp - bomber_blast(), "bomber blows up")
+	check(player.statuses.has("poison"), "rotting zombie poisons the mage")
+	var hp := player.hp
+	player.statuses.poison[1] = 5.0
+	player._physics_process(1.0)
+	check(player.hp < hp, "poison hurts over time")
+	player.afflict("stun", 1.0, 1.0)
+	var at := player.position
+	player._steer(0.5)
+	check(player.position == at, "a stunned mage does not move")
+	player.statuses = {}
+	zombie.take_damage(1e9)
+	check(root.find_children("*", "Node2D", true, false).any(func(n): return n is Enemy.Zone and n.fx == "poison" and n.dps > 0.0),
+		"rotting zombie leaves gunk")
 	check(player.hp < player.stats.hp, "enemies hurt the player")
 	_test_gamepad(player)
 	world.free()

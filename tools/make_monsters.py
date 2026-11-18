@@ -1,6 +1,7 @@
 """Generate the monster sprites with PixelLab (server/art.py): per kind of
-Run.ENEMIES (game/run.gd) a side view facing right, its walk cycle and its
-special moves; plus the effects of their attacks.
+Run.ENEMIES (game/run.gd), and per variant (<kind>_<variant>), a side view
+facing right, its walk cycle (an idle for the still ones) and its special
+moves; plus the effects of their attacks.
 
 Writes assets/monsters/<kind>/<anim>.png, strips of square frames (the
 frame size is the strip height), and assets/monsters/fx/<name>.png (same
@@ -20,51 +21,64 @@ import art  # noqa: E402
 import sheet  # noqa: E402
 
 OUT = ROOT / "assets/monsters"
-STYLE = "dark heroic fantasy game monster, full body, side view facing right, menacing"
+STYLE = "dark heroic fantasy game undead graveyard monster, full body, side view facing right, menacing"
 BOSS = "huge imposing boss monster, highly detailed, ornate, " + STYLE
 WALK = "walking forward, looping walk cycle"
-# kind -> (canvas size, look, {anim: action}); "walk" defaults to WALK.
+IDLE = "standing still, breathing, looping idle"
+BOW = {"walk": IDLE, "attack": "draws its bow and shoots an arrow to the right"}
+CAST = {"walk": IDLE, "attack": "thrusts its hands forward and casts a spell to the right"}
+MAGE = "a skeleton mage in a tattered dark robe"
+# look (kind or kind_variant) -> (canvas size, look, {anim: action}); "walk" defaults to WALK.
 MONSTERS = {
-    "melee": (48, "a green goblin grunt with a rusty club", {}),
-    "fast": (40, "a small lean yellow imp with bat wings and claws", {"walk": "flapping its wings, darting forward"}),
-    "ranged": (48, "a small goblin caster in a cyan hood holding a glowing cyan wand", {}),
-    "bomber": (48, "a round orange goblin sapper hugging a big black bomb with a fuse", {
-        "fuse": "the bomb fuse burns with bright sparks, the goblin shakes and swells, about to explode"}),
-    "slime": (48, "a dome-shaped blob of translucent green slime jelly, not humanoid, no arms, no legs, two eyes", {"walk": "bouncing forward, squashing and stretching"}),
-    "slimelet": (32, "a tiny dome-shaped blob of translucent light green slime jelly, not humanoid, no arms, no legs, two eyes", {"walk": "bouncing forward, squashing and stretching"}),
-    "brute": (64, "a hulking brown ogre brute with huge fists and a leather harness", {
-        "windup": "lowers its head and paws the ground, snorting, about to charge"}),
-    "stalker": (48, "a sleek purple shadow panther with glowing eyes", {"walk": "prowling forward, stalking"}),
-    "spitter": (48, "an olive green toad with a swollen poison throat sac", {"walk": "hopping forward"}),
-    "shaman": (48, "a teal skinned goblin shaman with a bone staff and a feather headdress", {
-        "heal": "raises its staff high, green healing light glows around it"}),
-    "wraith": (48, "a pale grey-blue hooded wraith with a tattered cloak and no legs", {
-        "walk": "floating forward, cloak fluttering", "blink": "dissolves into grey smoke and vanishes"}),
-    "necromancer": (48, "a skeleton necromancer in deep purple robes holding a skull staff", {
-        "summon": "raises its skull staff, dark purple magic swirls, summoning"}),
-    "sorcerer": (48, "a horned demon sorcerer in pink robes with glowing pink hands", {}),
-    "golem": (64, "a massive grey stone golem with glowing blue runes", {"walk": "stomping forward heavily"}),
+    "skeleton": (48, "a plain skeleton, bare bones", {}),
+    "archer": (48, "a skeleton archer with a bow and a brown scarf", BOW),
+    "marksman": (48, "a skeleton marksman with a longbow and a brown hood", BOW),
+    "imp": (40, "a small red imp with tiny horns, claws and a pointy tail", {"walk": "scampering forward fast"}),
+    "zombie": (48, "a grey skinned shambling zombie in torn rags", {"walk": "shambling forward slowly"}),
+    "rotting_zombie": (48, "a grey skinned rotting zombie oozing green, surrounded by a green aura of buzzing flies",
+                       {"walk": "shambling forward slowly, flies buzzing around"}),
+    "skeletal_warrior": (48, "an undead skeleton warrior, bare white skull and bony ribs, iron gauntlets, a rusty sword, no helmet", {}),
+    "skeletal_warrior_helmet": (48, "an undead skeleton warrior, white skull face under an iron helmet, bony ribs, iron gauntlets, a rusty sword", {}),
+    "skeletal_knight": (48, "a skeleton knight with an iron helmet and an iron chestplate, bare bony hands, a sword", {}),
+    "skeletal_knight_gauntlets": (48, "an undead skeleton knight, white skull face under an iron helmet, an iron chestplate, iron gauntlets, bony legs, a sword", {}),
+    "wraith": (48, "a pure white ghostly wraith with a tattered cloak and no legs, glowing icy eyes",
+               {"walk": "floating forward, cloak fluttering"}),
+    "putrid_archer": (48, "a skeleton archer in a brown hood dripping green poison, with a bow", BOW),
+    "burning_archer": (48, "a skeleton archer engulfed in orange flames, with a bow", BOW),
+    "burning_skeleton": (48, "a skeleton engulfed in orange flames", {}),
+    "fire_mage": (48, MAGE + ", its hands on fire", CAST),
+    "fire_mage_shield": (48, MAGE + ", its hands on fire, inside a translucent glowing magic shield bubble", CAST),
+    "poison_mage": (48, MAGE + ", glowing green balls in its hands", CAST),
+    "poison_mage_shield": (48, MAGE + ", glowing green balls in its hands, inside a translucent glowing magic shield bubble", CAST),
+    "frost_mage": (48, MAGE + ", glowing blue balls in its hands", CAST),
+    "frost_mage_shield": (48, MAGE + ", glowing blue balls in its hands, inside a translucent glowing magic shield bubble", CAST),
+    "lightning_mage": (48, MAGE + ", crackling white balls of lightning in its hands", CAST),
+    "lightning_mage_shield": (48, MAGE + ", crackling white balls of lightning in its hands, surrounded by a big round translucent white magic shield bubble", CAST),
     "boss": (96, "a towering lich king, a skeleton in ornate violet robes with a crown and a glowing staff", {
         "walk": "floating forward, robes flowing",
         "summon": "raises its glowing staff high, violet necrotic magic swirls around it, summoning"}),
-    "warlord": (96, "a huge orc warlord in red spiked plate armor wielding a giant axe", {
-        "windup": "raises its giant axe and roars, bracing to charge"}),
-    "broodmother": (96, "a giant bloated olive green spider broodmother with a glowing egg sac", {
-        "walk": "crawling forward on its eight legs",
-        "summon": "rears up, its egg sac pulses and spawns small slimes"}),
+    "death_knight": (96, "a huge undead death knight, a skeleton in black spiked plate armor with a frost glowing greatsword", {
+        "windup": "raises its greatsword and roars, bracing to charge"}),
+    "abomination": (96, "a giant bloated undead flesh abomination stitched from corpses, green ooze dripping", {
+        "walk": "lumbering forward heavily",
+        "summon": "its belly bursts open and small red imps crawl out"}),
 }
-# Effects of the attacks (game/enemy.gd Shot and Zone), name -> brief.
+# Effects of the attacks (game/enemy.gd Shot and Zone, Run.ENEMIES "shot"), name -> brief.
 FX = {
     "bolt": "a small glowing crimson magic orb projectile with a short dark trail, flying right, looping",
     "acid": "a small blob of green acid spit projectile with dripping trail, flying right, looping",
-    "explosion": "a fiery explosion burst, orange and yellow flames and black smoke, seen from above",
+    "arrow": "a big long wooden arrow projectile with a bone arrowhead and grey feathers, horizontal, filling the frame, flying right, looping",
+    "poison_arrow": "a big long wooden arrow projectile with a green glowing poison arrowhead dripping toxic green drops, horizontal, filling the frame, flying right, looping",
+    "fire_arrow": "a flaming arrow trailing fire flying right, looping",
+    "fireball": "a fireball projectile with a trail of flames flying right, looping",
+    "poison_orb": "a glowing toxic green orb projectile with a bubbling trail flying right, looping",
+    "frost_orb": "a glowing icy blue orb projectile with frost shards trail flying right, looping",
+    "spark": "a crackling white lightning ball projectile with electric arcs flying right, looping",
     "shockwave": "a ground slam shockwave, a ring of dust and cracked stone bursting outward, seen from above",
     "poison": "a bubbling toxic green poison puddle on the ground, seen from above, looping",
-    "heal": "a burst of green healing light and rising sparkles in a circle, seen from above",
-    "blink": "a puff of grey ghostly smoke swirling and fading",
     "summon": "a dark purple summoning portal circle with runes opening on the ground, seen from above",
 }
-LOOPING = {"bolt", "acid", "poison"}
+LOOPING = {"bolt", "acid", "poison", "arrow", "poison_arrow", "fire_arrow", "fireball", "poison_orb", "frost_orb", "spark"}
 
 
 def _strip(frames: list[bytes]) -> bytes:
