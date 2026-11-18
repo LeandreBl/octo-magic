@@ -186,7 +186,7 @@ func _on_killed(e: Node2D) -> void:
 		_drop("mana", 1, e.position + Vector2(randf_range(-10, 10), -10))
 	if randf() < 0.01:  # rarer than the rest
 		_drop("life", 1, e.position + Vector2(randf_range(-10, 10), 10))
-	if Run.is_boss(e.kind) or randf() < 0.01:
+	if randf() < (0.05 if Run.is_boss(e.kind) else 0.0025):  # rare: ~1 boss in 20
 		_drop("scroll", 1, e.position + Vector2(0, 14))
 	if Run.is_boss(e.kind):
 		_pull_drops.call_deferred()  # after its own drops' deferred spawns
