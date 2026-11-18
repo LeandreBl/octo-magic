@@ -38,7 +38,7 @@ var net: Node  # game/net.gd
 var spawned := 0  # names of spawned enemies and drops
 var to_spawn := []  # the current wave's kinds not out yet (host)
 var _spawn_in := 0.0  # s until the next one comes out
-var map_name := "crypt"  # this run's map (its music), for players dropping in
+var map_name := "crypt"  # the run's first music track (Sfx.TRACKS), for players dropping in
 ## Scrolls being written, in parallel: {id, words (scrolls used), slot (of the
 ## improved spell, the forged one goes there), spell (the improved one), text
 ## (the words written), started, progress (0..1, from the server while pending)}.
@@ -110,7 +110,7 @@ func _pull_drops() -> void:
 
 func start_run() -> void:
 	if multiplayer.is_server():
-		_run_started.rpc(Arena.MAPS.pick_random())
+		_run_started.rpc(Sfx.TRACKS.pick_random())
 		_next_wave()
 
 

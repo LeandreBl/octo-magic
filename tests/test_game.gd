@@ -485,6 +485,9 @@ func _test_sfx() -> void:
 		check(s.size() > 0 and peak > 0.05 and peak <= 1.0, "sound %s is audible and does not clip (peak %.2f)" % [n, peak])
 	check(Sfx.stream("hit").data.size() == Sfx.synth(Sfx.RECIPES.hit).size() * 2, "16-bit sound data")
 	Sfx.play("hit")  # no autoload in tests: a no-op, not a crash
+	var credits := FileAccess.get_file_as_string("res://assets/music/CREDITS.md")
+	for t in Sfx.TRACKS:
+		check(ResourceLoader.exists("res://assets/music/%s.ogg" % t) and (t + ".ogg") in credits, "music track and its credits: " + t)
 
 
 func _test_play() -> void:

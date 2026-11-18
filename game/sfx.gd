@@ -2,7 +2,7 @@ class_name Sfx
 extends Node
 ## Game sounds other than the spells (see SpellSound): short retro sounds
 ## synthesized at startup from the RECIPES below (no files), on the SFX or UI
-## bus; and the music of each map (assets/music/<map>.ogg) on the Music bus.
+## bus; and the music (assets/music/<track>.ogg, CREDITS.md) on the Music bus.
 ## Autoload (SfxPlayer): the static calls do nothing without it (tests).
 ## Coop: every peer plays the sounds of the events it gets (RPCs, synced hp).
 
@@ -39,6 +39,9 @@ const ECHO_DELAY := 0.11  # s between repeats of the tail
 const ECHO_FEEDBACK := 0.4
 const GAP := 0.04  # s: the same sound twice closer than this plays once (boss rings, swarms)
 const MUSIC_DB := -6.0
+## assets/music: a run starts on one (the host's pick), then shuffles through the others.
+const TRACKS := ["crypt", "cave", "ruins", "ancient_evil", "catacombs", "apocalypse", "witch_lair",
+	"whispers", "dark_shrine", "menace", "zombies_march", "ghost_land", "ninth_circle", "dark_forest"]
 ## Sounds placed in the world (Sfx.play's `at`, spells) fade to silence this
 ## far (px) from the local mage, who hears them (AudioListener2D on it).
 const HEARING := 900.0
@@ -50,6 +53,7 @@ static var _node: Sfx
 var _players := {}  # name -> AudioStreamPlayer
 var _last := {}  # name -> msec of the last play
 var _music: AudioStreamPlayer
+var _track := ""  # the one playing
 
 
 func _enter_tree() -> void:
@@ -71,6 +75,7 @@ func _enter_tree() -> void:
 	_music.bus = "Music"
 	_music.volume_db = MUSIC_DB
 	_music.add_to_group("sfx")
+	_music.finished.connect(func(): music(TRACKS.filter(func(t): return t != _track).pick_random()))
 	add_child(_music)
 	# Every button of the UI, whoever builds it.
 	get_tree().node_added.connect(func(n):
@@ -122,20 +127,22 @@ static func play(sound: String, at: Variant = null) -> void:
 	p.play()
 
 
-## The music of `map`, looped; "" (or a map without music) stops it.
-static func music(map: String) -> void:
+## Plays `track` to its end, then another of TRACKS at random; "" (or a
+## track that is not there) stops the music.
+static func music(track: String) -> void:
 	if not _node:
 		return
-	var path := "res://assets/music/%s.ogg" % map
+	var path := "res://assets/music/%s.ogg" % track
 	var m := _node._music
-	if map == "" or not ResourceLoader.exists(path):
+	if track == "" or not ResourceLoader.exists(path):
+		_node._track = ""
 		m.stop()
 		return
-	var s: AudioStreamOggVorbis = load(path)
-	s.loop = true
-	if m.stream != s or not m.playing:
-		m.stream = s
-		m.play()
+	if track == _node._track and m.playing:
+		return
+	_node._track = track
+	m.stream = load(path)
+	m.play()
 
 
 ## Holds the music where it is (pause menu), or lets it go on.

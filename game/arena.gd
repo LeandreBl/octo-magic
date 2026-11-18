@@ -8,7 +8,6 @@ extends Node2D
 ## fences, out of bounds) and circles (tombs, trunks, statues, lanterns).
 ## Movers slide around them. The monsters come out of its open graves (spawns).
 
-const MAPS := ["crypt", "cave", "ruins"]  # one per run: its music for now
 const ART := "res://assets/maps/graveyard/"
 const SCALE := 1.5  # the pictures' pixels on the octopus' scale: a path about twice its width
 const RECT := Rect2(0, 0, 1536 * SCALE, 1024 * SCALE)  # ground.png's size, scaled
