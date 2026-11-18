@@ -149,6 +149,12 @@ func _bar(parent: Control, color: Color, height: int) -> ProgressBar:
 	fill.set_expand_margin_all(-RIM)  # inside the frame
 	fill.expand_margin_left = -RIM - 1
 	fill.expand_margin_right = -RIM - 1
+	# Its minimum size: ProgressBar draws value * (size - min) + min, so a
+	# low value never shrinks the inset rect below zero (drawn off the frame).
+	fill.set_content_margin(SIDE_TOP, RIM)
+	fill.set_content_margin(SIDE_BOTTOM, RIM)
+	fill.set_content_margin(SIDE_LEFT, RIM + 1)
+	fill.set_content_margin(SIDE_RIGHT, RIM + 1)
 	bar.add_theme_stylebox_override("fill", fill)
 	bar.add_theme_stylebox_override("background", StyleBoxEmpty.new())  # see-through when empty
 	var frame := Panel.new()  # the frame, hollow
