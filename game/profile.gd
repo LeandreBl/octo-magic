@@ -63,6 +63,15 @@ const AUGMENTS := {
 	"hardcore": {"name": "Hardcore", "desc": "Deal and take double damage", "price": 10000, "kind": "passive", "bonus": {"damage%": 1.0, "armor": -1.0}},
 }
 
+## The shop's Augments tab shows one of these categories at a time (too many
+## for one grid); every augment is in one.
+const AUGMENT_CATS := {"Active": ["ring_of_fire"],
+	"Survival": ["shield", "life_up", "quick_feet", "poison_ward", "potions", "blaze_of_glory"],
+	"Magic": ["mana_up", "battle_mage", "fast_caster"],
+	"Harvest": ["telekinesis", "scavenger", "gold_rush", "weird_eye", "lucky_drops"],
+	"Grimoires": ["creativity", "head_start", "great_start"],
+	"Challenge": ["hardcore"]}
+
 ## Permanent bonuses: level n costs price * GROWTH^n (or its own "growth").
 ## "slots": one more augment slot per level.
 const GROWTH := 1.5

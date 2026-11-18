@@ -5,6 +5,7 @@ extends PanelContainer
 ## Without characters it opens on the creation form.
 
 signal closed
+signal account_requested  # the profile's other tab
 
 const UITheme := preload("res://ui/theme.gd")
 const HUD := preload("res://ui/hud.gd")  # its spell icon (or projectile preview)
@@ -24,10 +25,21 @@ func _ready() -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
 	add_child(box)
+	# The profile: characters, and the account one tab away.
+	var head := HBoxContainer.new()
+	box.add_child(head)
 	var title := Label.new()
 	title.theme_type_variation = "Header"
 	title.text = "Characters"
-	box.add_child(title)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(title)
+	var account := Button.new()
+	account.text = "Account"
+	account.theme_type_variation = "Tab"
+	account.icon = UITheme.glyph("user", UITheme.TEXT_DIM)
+	account.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	account.pressed.connect(account_requested.emit)
+	head.add_child(account)
 	info = Label.new()
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD
 	box.add_child(info)

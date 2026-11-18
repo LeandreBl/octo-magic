@@ -73,12 +73,16 @@ func _ready() -> void:
 	lobby_screen.set_meta("focus", lobby.get_meta("focus"))  # set in its _ready
 	var account := preload("res://game/account.gd").new()
 	account.closed.connect(back)
+	account.characters_requested.connect(show_screen.bind("characters"))
 	var account_screen := CenterContainer.new()
 	account_screen.add_child(account)
 	screens.account = add_screen(account_screen)
 	account_screen.set_meta("focus", account.get_meta("focus"))
 	var chars := preload("res://game/characters.gd").new()
 	chars.closed.connect(show_screen.bind("title"))
+	chars.account_requested.connect(func():
+		back_to = "title"  # the account's Back: the profile was opened from the title
+		show_screen("account"))
 	var chars_screen := CenterContainer.new()
 	chars_screen.add_child(chars)
 	screens.characters = add_screen(chars_screen)
@@ -91,8 +95,7 @@ func _ready() -> void:
 	forge.main = main
 	forge.closed.connect(func(): show_screen(_forge_from))
 	screens.forge = add_screen(forge)
-	screens.achievements = add_screen(_list_screen("Achievements", _achievements_text))
-	screens.leaderboard = add_screen(_list_screen("Leaderboard", _scores_text))
+	screens.records = add_screen(_records_screen())
 	screens.levelup = add_screen(_levelup_screen())
 
 	main.run_ended.connect(_on_run_ended)
@@ -349,6 +352,7 @@ func _margin(left: int, top: int, right: int, bottom: int) -> MarginContainer:
 
 var _title_gold: Label
 var _title_play: Button  # "Play", or "Continue" a saved run (Profile.run)
+var _title_profile: Button  # the character's name: its characters and account (the profile)
 var _title_scrolls: Label
 var _title_glow: Panel  # a gold aura around the forge button while blank scrolls wait
 var _title_spell: Label
@@ -440,7 +444,15 @@ func _title() -> Control:
 	play.icon = UITheme.glyph("play", UITheme.ON_GOLD)
 	play.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	play.add_theme_constant_override("h_separation", 0)
-	left.add_child(play)
+	play.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Coop beside Play: the other way to start a run.
+	var play_row := _hbox(12)
+	play_row.add_child(play)
+	var coop := _button("Coop", open.bind("multiplayer"))
+	coop.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	coop.custom_minimum_size = Vector2(132, 76)
+	play_row.add_child(coop)
+	left.add_child(play_row)
 	bg.set_meta("focus", play)
 	var forge := _forge_button()
 	_title_scrolls = UITheme.label("", "", 18, UITheme.GOLD)  # the blank scrolls, right in the button
@@ -468,13 +480,13 @@ func _title() -> Control:
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
 	left.add_child(grid)
-	var items := [["Multiplayer", open.bind("multiplayer")], ["Characters", open.bind("characters")], ["Shop", open.bind("shop")],
-		["Achievements", open.bind("achievements")], ["Leaderboard", open.bind("leaderboard")],
-		["Options", open.bind("options")]]
-	if not OS.has_feature("web"):
-		items.append(["Quit", get_tree().quit])
+	# Three sections between runs; the characters and account are behind the
+	# mage's name (top right), Quit is an icon there.
+	grid.columns = 3
+	var items := [["Shop", open.bind("shop")], ["Records", open.bind("records")], ["Options", open.bind("options")]]
 	for it in items:
 		var b := _button(it[0], it[1])
+		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		grid.add_child(b)
 	left.add_child(_spacer())
@@ -494,9 +506,18 @@ func _title() -> Control:
 	_title_gold = UITheme.label("", "", 22, UITheme.GOLD)
 	p_row.add_child(_title_gold)
 	corner.add_child(purse)
-	var account := _button("Account", open.bind("account"))
-	account.icon = UITheme.glyph("user", UITheme.TEXT_DIM)
-	corner.add_child(account)
+	_title_profile = _button("", open.bind("characters"))
+	_title_profile.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # the character's name
+	_title_profile.icon = UITheme.glyph("user", UITheme.TEXT_DIM)
+	_title_profile.tooltip_text = "Profile"
+	corner.add_child(_title_profile)
+	if not OS.has_feature("web"):
+		var quit := _button("", get_tree().quit)
+		quit.icon = UITheme.glyph("quit", UITheme.TEXT_DIM)
+		quit.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		quit.custom_minimum_size = Vector2(56, 0)
+		quit.tooltip_text = "Quit"
+		corner.add_child(quit)
 	return bg
 
 
@@ -527,13 +548,14 @@ func _refresh_title() -> void:
 	var spell: Dictionary = Profile.equipped_spells().primary
 	_title_spell.text = Spell.label(spell)
 	_title_name.text = Online.character_name()
+	_title_profile.text = Online.character_name()
 	_title_spell_icon.texture = preload("res://ui/hud.gd")._icon(spell)
 	var n: int = Profile.blank_scrolls
 	_title_scrolls.text = tr("No blank scroll") if not n else (tr("%d blank scroll") if n == 1 else tr("%d blank scrolls")) % n
 	_title_glow.visible = n > 0
 
 
-# --- lists (achievements, leaderboard) ---------------------------------------
+# --- records (achievements, leaderboard, stats) ---------------------------------------
 
 ## A centered panel: header, then an extra control, then [label, callable] buttons.
 func _menu(title: String, buttons: Array, extra: Control = null) -> Control:
@@ -558,15 +580,54 @@ func _menu(title: String, buttons: Array, extra: Control = null) -> Control:
 	return center
 
 
-## A screen showing `text_fn.call()` in a sunken box, refreshed each time it is shown.
-func _list_screen(title: String, text_fn: Callable) -> Control:
+const RECORDS := ["Achievements", "Leaderboard", "Stats"]
+
+var _records_tab := "Achievements"
+var _records_text: Label
+
+
+## Records: achievements, leaderboard and the profile's stats, in tabs, the
+## shown one in a sunken box refreshed each time it is shown.
+func _records_screen() -> Control:
+	var box := _vbox(12)
+	var tabs := _hbox(8)
+	tabs.alignment = BoxContainer.ALIGNMENT_CENTER
+	box.add_child(tabs)
+	var group := ButtonGroup.new()
+	for t in RECORDS:
+		var b := Button.new()
+		b.text = t
+		b.theme_type_variation = "Tab"
+		b.toggle_mode = true
+		b.button_group = group
+		b.button_pressed = t == _records_tab
+		b.pressed.connect(func():
+			_records_tab = t
+			_refresh_records())
+		tabs.add_child(b)
 	var well := PanelContainer.new()
 	well.theme_type_variation = "Well"
-	var l := UITheme.label("", "", 18)
-	well.add_child(l)
-	var c := _menu(title, [["Back", back]], well)
-	c.visibility_changed.connect(func(): l.text = text_fn.call())
+	well.custom_minimum_size = Vector2(720, 380)  # the tallest tab (achievements): no jump between tabs
+	_records_text = UITheme.label("", "", 18)
+	well.add_child(_records_text)
+	box.add_child(well)
+	var c := _menu("Records", [["Back", back]], box)
+	c.set_meta("focus", tabs.get_child(0))
+	c.visibility_changed.connect(_refresh_records)
 	return c
+
+
+func _refresh_records() -> void:
+	var text: Callable = {"Achievements": _achievements_text, "Leaderboard": _scores_text, "Stats": _stats_text}[_records_tab]
+	_records_text.text = text.call()
+
+
+func _stats_text() -> String:
+	var lines := []
+	for k in [["kills", "Enemies defeated"], ["bosses", "Bosses defeated"], ["best_wave", "Best wave"],
+			["best_level", "Best level"], ["gold_total", "Gold earned"], ["scrolls", "Scrolls found"], ["runs", "Runs played"]]:
+		lines.append(tr("%s: %s") % [tr(k[1]), str(Profile.stats.get(k[0], 0))])
+	return "\n".join(lines)
 
 
 func _achievements_text() -> String:

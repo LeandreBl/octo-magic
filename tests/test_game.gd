@@ -225,6 +225,13 @@ func _test_run() -> void:
 ## Augments: bought once in the shop and kept, the slotted ones start every run.
 func _test_augments(run: Object, p: Object) -> void:
 	p.path = "user://test_augments.json"
+	var in_cats := []
+	for ids in ProfileState.AUGMENT_CATS.values():
+		in_cats += ids
+	in_cats.sort()
+	var all: Array = ProfileState.AUGMENTS.keys()
+	all.sort()
+	check(in_cats == all, "every augment in one shop category")
 	p.gold = 0
 	check(not p.buy_augment("ring_of_fire") and p.augments.is_empty(), "too poor for the ring")
 	p.gold = 3000

@@ -1082,3 +1082,45 @@ msgstr "+%d PV max"
 
 msgid "+%d%% mana regen standing still"
 msgstr "+%d%% régén. de mana à l'arrêt"
+
+msgid "Records"
+msgstr "Palmarès"
+
+msgid "Stats"
+msgstr "Statistiques"
+
+msgid "Best wave"
+msgstr "Meilleure vague"
+
+msgid "Best level"
+msgstr "Meilleur niveau"
+
+msgid "Gold earned"
+msgstr "Or gagné"
+
+msgid "Runs played"
+msgstr "Runs jouées"
+
+msgid "Profile"
+msgstr "Profil"
+
+msgid "Active"
+msgstr "Actif"
+
+msgid "Survival"
+msgstr "Survie"
+
+msgid "Magic"
+msgstr "Magie"
+
+msgid "Harvest"
+msgstr "Récolte"
+
+msgid "Grimoires"
+msgstr "Grimoires"
+
+msgid "Challenge"
+msgstr "Défi"
+
+msgid "%s: %s"
+msgstr "%s : %s"

@@ -83,7 +83,8 @@ and the spells are words you write on scrolls, forged by an AI.
   Quick feet, Creativity, Poison ward, Telekinesis, Battle mage, Scavenger,
   Blaze of glory, Fast caster, Potions, Gold rush, Head start, Great start,
   Weird eye, Lucky drops, Hardcore); the mage's look.
-- 13 achievements, some unlocking spells; stats and leaderboard.
+- Records (menu → Palmarès): 13 achievements, some unlocking spells; leaderboard;
+  stats.
 
 ### Online
 - Account (email/password or Google, Firebase), several characters per
@@ -138,10 +139,10 @@ and the spells are words you write on scrolls, forged by an AI.
   API docs on `/api/docs`. Local dev: `cd backend && npm i && npm run start:dev`
   (with the variables of `example.env` and a `DATABASE_URL`); migrations in
   `backend/prisma/migrations`, applied at container start-up.
-- Coop (menu → Multijoueur, logged in): the server only introduces the
+- Coop (menu → Coop, logged in): the server only introduces the
   players. The native game needs the WebRTC extension: `./webrtc.sh`
   (downloads `addons/webrtc_native`, not in git).
-- Account in the game: menu → Compte. Google needs, in the Firebase/Google
+- Account in the game: menu → the character's name (top right) → Compte. Google needs, in the Firebase/Google
   Cloud console: the Google provider on, authorized domain
   `octo-magic.notdotio.com`, and on its OAuth web client the redirect URIs
   `https://octo-magic.notdotio.com/account` (site and web game) and

@@ -13,6 +13,7 @@ var main: Node
 var _gold: Label
 var _blank: Label
 var _tab := "Equipment"
+var _cat := "Survival"  # the Augments tab's category
 var _scroll: ScrollContainer
 var _content: Container
 var _worn: HBoxContainer
@@ -164,8 +165,25 @@ func _rebuild() -> void:
 			var hint := UITheme.label("Bought once, kept for every run. Each run starts with the slotted ones: one active at most.", "Caption")
 			hint.autowrap_mode = TextServer.AUTOWRAP_WORD
 			_content.add_child(hint)
+			var cats := HFlowContainer.new()
+			cats.add_theme_constant_override("h_separation", 8)
+			cats.add_theme_constant_override("v_separation", 8)
+			_content.add_child(cats)
+			var group := ButtonGroup.new()
+			for cat in Profile.AUGMENT_CATS:
+				var b := Button.new()
+				b.text = "%s · %d" % [tr(cat), Profile.AUGMENT_CATS[cat].size()]
+				b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # already translated
+				b.theme_type_variation = "Tab"
+				b.toggle_mode = true
+				b.button_group = group
+				b.button_pressed = cat == _cat
+				b.pressed.connect(func():
+					_cat = cat
+					_rebuild.call_deferred())  # not mid-signal: the rebuild frees this button
+				cats.add_child(b)
 			var grid := _grid()
-			for id in Profile.AUGMENTS:
+			for id in Profile.AUGMENT_CATS[_cat]:
 				_augment_card(grid, id)
 		"Look":
 			_content.add_child(UITheme.label("Hat", "Subheader"))

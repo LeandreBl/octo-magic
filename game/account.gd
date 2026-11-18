@@ -3,6 +3,7 @@ extends PanelContainer
 ## log out. Logged out, it replaces the title menu: no play without an account.
 
 signal closed
+signal characters_requested  # the profile's other tab
 
 const UITheme := preload("res://ui/theme.gd")
 
@@ -10,6 +11,7 @@ var info: Label
 var mail: LineEdit
 var password: LineEdit
 var buttons := {}
+var characters: Button  # the profile's other tab
 
 
 func _ready() -> void:
@@ -17,10 +19,20 @@ func _ready() -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
 	add_child(box)
+	# The profile: the account, and the characters one tab away (once there is one).
+	var head := HBoxContainer.new()
+	box.add_child(head)
 	var title := Label.new()
 	title.theme_type_variation = "Header"
 	title.text = "Account"
-	box.add_child(title)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(title)
+	characters = Button.new()
+	characters.text = "Characters"
+	characters.theme_type_variation = "Tab"
+	characters.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	characters.pressed.connect(characters_requested.emit)
+	head.add_child(characters)
 	info = Label.new()
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD
 	box.add_child(info)
@@ -61,6 +73,7 @@ func _refresh() -> void:
 	var on := Online.logged_in()
 	for k in buttons:
 		buttons[k].visible = on == (k in ["Log out", "Back"])
+	characters.visible = on and not Online.character.is_empty()
 	mail.visible = not on
 	password.visible = not on
 	info.text = (tr("Logged in: %s") % Online.email if on else tr("Log in or create an account to play.")) \
