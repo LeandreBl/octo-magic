@@ -243,6 +243,34 @@ func create_character(char_name: String, spell: String, look := {}) -> String:
 	return ""
 
 
+## Renames character `id`. Returns an error message, or "".
+func rename_character(id: String, char_name: String) -> String:
+	var r := await api("/api/characters/%s" % id.uri_encode(), HTTPClient.METHOD_PATCH, {"name": char_name})
+	if not r.ok:
+		var e: Variant = r.json.get("error") if r.json is Dictionary else null
+		return str(e) if e else "server unreachable"
+	for c in characters:
+		if c is Dictionary and str(c.get("id")) == id:
+			c.name = char_name
+	return ""
+
+
+## Deletes character `id` and its profile. The active one: none is left
+## active (Online.changed), the player picks another or creates one.
+## Returns an error message, or "".
+func delete_character(id: String) -> String:
+	var r := await api("/api/characters/%s" % id.uri_encode(), HTTPClient.METHOD_DELETE)
+	if not r.ok and r.code != 404:
+		var e: Variant = r.json.get("error") if r.json is Dictionary else null
+		return str(e) if e else "server unreachable"
+	characters = characters.filter(func(c): return not (c is Dictionary and str(c.get("id")) == id))
+	if id == character:
+		character = ""
+		_save_session()
+		changed.emit()
+	return ""
+
+
 ## The active character's profile replaces the local one, with its spell
 ## bundles (no saved active character: the first one; no character: none,
 ## game/characters.gd creates one).

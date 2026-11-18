@@ -87,7 +87,8 @@ and the spells are words you write on scrolls, forged by an AI.
 
 ### Online
 - Account (email/password or Google, Firebase), several characters per
-  account, each with its profile, spells and saved run, synced to the server.
+  account (renamed or deleted on the characters screen), each with its
+  profile, spells and saved run, synced to the server.
 - Coop up to 8 players, WebRTC peer to peer (`game/net.gd`, `game/lobby.gd`):
   the host runs the game, each player keeps its own run; kills and drops are
   shared; players can join mid-run.

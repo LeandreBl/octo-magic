@@ -742,6 +742,21 @@ msgstr "Choisis un nom."
 msgid "Creating…"
 msgstr "Création…"
 
+msgid "Rename"
+msgstr "Renommer"
+
+msgid "Delete"
+msgstr "Supprimer"
+
+msgid "Confirm delete"
+msgstr "Confirmer la suppression"
+
+msgid "Saving…"
+msgstr "Enregistrement…"
+
+msgid "Deleting…"
+msgstr "Suppression…"
+
 msgid "Cost: %s mana"
 msgstr "Coût : %s mana"
 

@@ -25,6 +25,11 @@ export class PlayerService {
     return this.prisma.character.create({ data: { uid, name, spell, profile }, select: CHARACTER });
   }
 
+  async renameCharacter(uid: string, id: string, name: string): Promise<void> {
+    const { count } = await this.prisma.character.updateMany({ where: { uid, id }, data: { name } });
+    if (!count) throw new NotFoundException("no such character");
+  }
+
   async deleteCharacter(uid: string, id: string): Promise<void> {
     const { count } = await this.prisma.character.deleteMany({ where: { uid, id } });
     if (!count) throw new NotFoundException("no such character");

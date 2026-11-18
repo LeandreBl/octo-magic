@@ -6,6 +6,7 @@ import {
   Get,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Put,
   StreamableFile,
@@ -33,6 +34,14 @@ function spellId(id: unknown): string {
   return id;
 }
 
+function characterName(name: unknown): string {
+  const trimmed = typeof name === "string" ? name.trim() : "";
+  if (!trimmed || trimmed.length > 24) {
+    throw new BadRequestException("name must be 1 to 24 characters");
+  }
+  return trimmed;
+}
+
 function jsonObject(v: unknown, what: string): Prisma.JsonObject {
   if (!v || typeof v !== "object" || Array.isArray(v)) {
     throw new BadRequestException(`${what} must be an object`);
@@ -58,13 +67,17 @@ export class PlayerController {
   @ApiBody({ schema: { type: "object" } })
   async createCharacter(@CurrentUser() user: AuthUser, @Body() body: unknown) {
     const { name, spell, profile = {} } = jsonObject(body, "body");
-    const trimmed = typeof name === "string" ? name.trim() : "";
-    if (!trimmed || trimmed.length > 24) {
-      throw new BadRequestException("name must be 1 to 24 characters");
-    }
-    const c = await this.players.createCharacter(user.uid, trimmed, spellId(spell), jsonObject(profile, "profile"));
+    const c = await this.players.createCharacter(user.uid, characterName(name), spellId(spell), jsonObject(profile, "profile"));
     if (!c) throw new BadRequestException("too many characters");
     return c;
+  }
+
+  @Patch("characters/:id")
+  @ApiOperation({ summary: "Rename a character: {name}" })
+  @ApiBody({ schema: { type: "object" } })
+  async renameCharacter(@CurrentUser() user: AuthUser, @Param("id") id: string, @Body() body: unknown) {
+    await this.players.renameCharacter(user.uid, id, characterName(jsonObject(body, "body").name));
+    return { ok: true };
   }
 
   @Delete("characters/:id")

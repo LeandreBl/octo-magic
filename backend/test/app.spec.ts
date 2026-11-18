@@ -43,8 +43,8 @@ const prisma = {
       characters.push(c);
       return pick(c);
     },
-    updateMany: async (q: Where & { data: { profile: unknown } }) => {
-      mine(q).forEach((c) => (c.profile = q.data.profile));
+    updateMany: async (q: Where & { data: Partial<Row> }) => {
+      mine(q).forEach((c) => Object.assign(c, q.data));
       return { count: mine(q).length };
     },
     deleteMany: async (q: Where) => drop(q),
@@ -117,6 +117,16 @@ test("characters, their profiles and spells are kept per player", async () => {
   assert.equal((await profile("ann", zed.id, { method: "PUT", body: "{" })).status, 400);
   const big = await profile("ann", zed.id, { method: "PUT", body: `{"x": "${"a".repeat(600_000)}"}` });
   assert.equal(big.status, 413);
+
+  const rename = (uid: string, id: string, body: string) => api(`/api/characters/${id}`, uid, { method: "PATCH", body });
+  assert.equal((await rename("ann", zed.id, '{"name": " Zoe "}')).status, 200);
+  assert.equal((await rename("bob", zed.id, '{"name": "Bob"}')).status, 404);
+  for (const body of ['{"name": ""}', `{"name": "${"a".repeat(25)}"}`, "[1]"]) {
+    assert.equal((await rename("ann", zed.id, body)).status, 400, body);
+  }
+  const renamed = await (await api("/api/characters", "ann")).json();
+  assert.deepEqual(renamed.map((c: { name: string }) => c.name), ["Zoe", "Kim"]);
+  assert.deepEqual(await (await profile("ann", zed.id)).json(), { gold: 42 });
 
   assert.equal((await api(`/api/characters/${kim.id}`, "ann", { method: "DELETE" })).status, 200);
   assert.equal((await profile("ann", kim.id)).status, 404);

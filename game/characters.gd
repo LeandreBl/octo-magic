@@ -1,8 +1,8 @@
 extends PanelContainer
 ## Characters screen (ui/ui.gd), after login: pick one of the account's
-## characters (game/online.gd), or create one: name, hat color and starting
-## spell, one of the first four of game/spells.json. Without characters it
-## opens on the creation form.
+## characters (game/online.gd), rename or delete one, or create one: name,
+## hat color and starting spell, one of the first four of game/spells.json.
+## Without characters it opens on the creation form.
 
 signal closed
 
@@ -84,12 +84,28 @@ func _refresh() -> void:
 		c.queue_free()
 	for c in Online.characters:
 		var spell := _spell(str(c.get("spell")))
+		var id := str(c.get("id"))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		list.add_child(row)
 		var b := Button.new()
 		b.text = "%s  ·  %s" % [c.get("name"), Spell.label(spell.spell) if spell else "?"]
-		if str(c.get("id")) == Online.character:
+		b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # a name
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		if id == Online.character:
 			b.theme_type_variation = "Primary"  # gold: the active one (no ✔, missing from the web font)
-		b.pressed.connect(_select.bind(str(c.get("id"))))
-		list.add_child(b)
+		b.pressed.connect(_select.bind(id))
+		row.add_child(b)
+		var rename := Button.new()
+		rename.text = "Rename"
+		rename.pressed.connect(_rename.bind(row, str(c.get("name")), id))
+		row.add_child(rename)
+		var delete := Button.new()
+		delete.text = "Delete"
+		delete.theme_type_variation = "Danger"
+		delete.pressed.connect(_delete.bind(delete, id))
+		delete.focus_exited.connect(func(): delete.text = "Delete")  # the confirmation is dropped
+		row.add_child(delete)
 	info.text = tr(Online.status) if Online.status else ""
 	_set_form(Online.characters.is_empty())
 
@@ -100,7 +116,7 @@ func _set_form(on: bool) -> void:
 	buttons["New character"].visible = not on
 	buttons["Create"].visible = on
 	buttons["Back"].visible = not Online.character.is_empty()
-	(name_edit if on else list.get_child(0) if list.get_child_count() else buttons["New character"]).grab_focus.call_deferred()
+	(name_edit if on else list.get_child(0).get_child(0) if list.get_child_count() else buttons["New character"]).grab_focus.call_deferred()
 
 
 func _show_form() -> void:
@@ -111,6 +127,44 @@ func _show_form() -> void:
 func _select(id: String) -> void:
 	info.text = tr("Loading…")
 	await Online.select(id)  # Online.changed: ui/ui.gd goes to the title
+
+
+## The row's name button becomes a field: Enter renames, leaving it cancels.
+func _rename(row: HBoxContainer, old: String, id: String) -> void:
+	var edit := LineEdit.new()
+	edit.text = old
+	edit.max_length = 24
+	edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.get_child(0).hide()
+	row.add_child(edit)
+	row.move_child(edit, 0)
+	edit.focus_exited.connect(_refresh, CONNECT_DEFERRED)  # not while _refresh frees the row
+	edit.text_submitted.connect(func(text: String):
+		var n := text.strip_edges()
+		if n.is_empty() or n == old:
+			_refresh()
+			return
+		edit.focus_exited.disconnect(_refresh)
+		edit.editable = false
+		info.text = tr("Saving…")
+		var err := await Online.rename_character(id, n)
+		_refresh()
+		if err:
+			info.text = tr("Failed: %s") % tr(err))
+	edit.grab_focus()
+	edit.select_all()
+
+
+## A first press asks to confirm, the second deletes.
+func _delete(button: Button, id: String) -> void:
+	if button.text == "Delete":
+		button.text = "Confirm delete"
+		return
+	info.text = tr("Deleting…")
+	var err := await Online.delete_character(id)
+	_refresh()
+	if err:
+		info.text = tr("Failed: %s") % tr(err)
 
 
 func _create() -> void:
