@@ -32,6 +32,7 @@ func _ready() -> void:
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD
 	box.add_child(info)
 	list = VBoxContainer.new()
+	list.add_theme_constant_override("separation", 12)  # room for the focus ring
 	box.add_child(list)
 
 	form = VBoxContainer.new()
@@ -84,8 +85,9 @@ func _refresh() -> void:
 	for c in Online.characters:
 		var spell := _spell(str(c.get("spell")))
 		var b := Button.new()
-		b.text = "%s  ·  %s%s" % [c.get("name"), Spell.label(spell.spell) if spell else "?",
-			"  ✔" if str(c.get("id")) == Online.character else ""]
+		b.text = "%s  ·  %s" % [c.get("name"), Spell.label(spell.spell) if spell else "?"]
+		if str(c.get("id")) == Online.character:
+			b.theme_type_variation = "Primary"  # gold: the active one (no ✔, missing from the web font)
 		b.pressed.connect(_select.bind(str(c.get("id"))))
 		list.add_child(b)
 	info.text = tr(Online.status) if Online.status else ""
