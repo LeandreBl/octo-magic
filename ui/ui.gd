@@ -119,10 +119,22 @@ func _home() -> String:
 	return "account" if not Online.logged_in() else "characters" if Online.character.is_empty() else "title"
 
 
+## The UI size option, capped on menus to what their layout fits in: their
+## minimum size, the whole design size (1280x720) for those laid out freely.
+## The HUD's top bar (stats, wave, gold side by side) needs about 1000 wide.
 func _layout() -> void:
 	var s: float = Settings.get_value("display", "ui_scale", 1.0)
+	var view := get_viewport().get_visible_rect().size
+	if current in screens:
+		var need: Vector2 = screens[current].get_combined_minimum_size()
+		if current == "":
+			need = Vector2(1000, 540)
+		elif need == Vector2.ZERO:
+			need = Vector2(ProjectSettings.get_setting("display/window/size/viewport_width"),
+				ProjectSettings.get_setting("display/window/size/viewport_height"))
+		s = minf(s, minf(view.x / need.x, view.y / need.y))
 	root.scale = Vector2(s, s)
-	root.size = get_viewport().get_visible_rect().size / s
+	root.size = view / s
 
 
 func add_screen(c: Control) -> Control:
@@ -146,6 +158,7 @@ func show_screen(name: String) -> void:
 		_refresh_title()
 	elif name == "pause":
 		_refresh_pause()
+	_layout()
 	_appear(screens[name])
 	_focus_screen()
 	_update_prompt()

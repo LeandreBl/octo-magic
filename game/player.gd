@@ -83,6 +83,15 @@ func _ready() -> void:
 		cam.limit_bottom = int(Arena.RECT.end.y)
 		add_child(cam)
 		cam.make_current()
+		_fit_camera(cam)
+		get_viewport().size_changed.connect(_fit_camera.bind(cam))
+
+
+## ZOOM, or closer when the window is so elongated (a tall phone in portrait,
+## a very wide screen) that the arena would not fill it.
+func _fit_camera(cam: Camera2D) -> void:
+	var fit := get_viewport_rect().size / Arena.RECT.size
+	cam.zoom = Vector2.ONE * maxf(ZOOM, maxf(fit.x, fit.y))
 
 
 ## A player's loadout as it sends it (untrusted) -> a clean one: spells
