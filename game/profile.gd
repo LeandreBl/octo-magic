@@ -300,6 +300,11 @@ func available_spells(slot: String) -> Array:
 	return (base_spells + forged).filter(func(e): return e.slot == slot and is_unlocked(e))
 
 
+## Every spell the player has, any slot: unlocked base spells, then forged.
+func owned_spells() -> Array:
+	return (base_spells + forged).filter(is_unlocked)
+
+
 func _entry(id: String, slot: String) -> Dictionary:
 	for e in available_spells(slot):
 		if e.id == id:

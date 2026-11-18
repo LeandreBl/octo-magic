@@ -36,6 +36,7 @@ var map_name := "crypt"  # this run's map (its music), for players dropping in
 var forge_http: HTTPRequest
 var forge_job := ""  # scrolls being written on the forge
 var forge_words := 0  # scrolls used by that job
+var forge_slot := "primary"  # slot of the spell being improved, the forged one goes there
 var forge_note := ""  # forge news, shown in the HUD and the forge (ui/forge.gd)
 var forge_status := ""  # result of the last write attempt, for the forge
 var last_run := {}  # Run.finish() + "reached" achievements + "unlocked" spells
@@ -371,8 +372,9 @@ func can_write() -> bool:
 	return Profile.blank_scrolls > 0 and forge_job.is_empty()
 
 
-## `words`: one word per scroll, separated by spaces or commas.
-func write_scroll(words: String) -> void:
+## `words`: one word per scroll, separated by spaces or commas; `entry`: the
+## owned spell to improve (Profile.owned_spells()), the result takes its slot.
+func write_scroll(words: String, entry: Dictionary) -> void:
 	var word := words.strip_edges()
 	if word.is_empty() or not can_write() \
 			or forge_http.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
@@ -382,7 +384,8 @@ func write_scroll(words: String) -> void:
 		forge_status = tr("Log in (main menu → Account) to write the scrolls.")
 		return
 	forge_status = tr("Writing the scrolls…")
-	var body := JSON.stringify({"spell": Profile.equipped_spells().primary, "words": word,
+	forge_slot = entry.slot
+	var body := JSON.stringify({"spell": entry.spell, "words": word,
 		"scrolls": Profile.blank_scrolls, "lang": TranslationServer.get_locale()})
 	if forge_http.request(Online.server + "/api/forge", auth + PackedStringArray(["Content-Type: application/json"]),
 			HTTPClient.METHOD_POST, body) != OK:
@@ -427,7 +430,7 @@ func _on_forge_reply(result: int, code: int, headers: PackedStringArray, data: P
 	get_tree().create_timer(POLL_SECONDS, true).timeout.connect(_poll)
 
 
-## The forged spell is kept and equipped as the main spell: the run in
+## The forged spell is kept and equipped in the improved spell's slot: the run in
 ## progress keeps its spells, the next one starts with it.
 ## cancelled: words the forge found meaningless; their scrolls come back.
 func _on_bundle(data: PackedByteArray, cancelled: int) -> void:
@@ -445,7 +448,7 @@ func _on_bundle(data: PackedByteArray, cancelled: int) -> void:
 		forged.emit(false)
 		return
 	Profile.blank_scrolls += cancelled
-	Online.push_spell(Profile.add_forged(s, path), path)
+	Online.push_spell(Profile.add_forged(s, path, forge_slot), path)
 	forge_note = tr("Scroll written: %s will be your main spell in the next run.") % s.name
 	if cancelled > 0:
 		forge_note += " " + tr("%d word(s) cancelled (meaningless, not in a dead language or cheating), scroll(s) given back.") % cancelled

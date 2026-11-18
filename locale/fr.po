@@ -160,8 +160,14 @@ msgstr "Parchemin"
 msgid "one word per scroll, in a dead language, e.g. ignis, πῦρ, umbra"
 msgstr "un mot par parchemin, en langue morte, ex : ignis, πῦρ, umbra"
 
-msgid "Main spell: %s\n%s"
-msgstr "Sort principal : %s\n%s"
+msgid "Previous spell"
+msgstr "Sort précédent"
+
+msgid "Next spell"
+msgstr "Sort suivant"
+
+msgid "%s · spell %d of %d"
+msgstr "%s · sort %d sur %d"
 
 msgid "No blank scroll: bosses drop them."
 msgstr "Aucun parchemin vierge : les boss en laissent tomber."
@@ -997,3 +1003,21 @@ msgstr "Forger le sort"
 
 msgid "The forge is engraving the spell… %d%%"
 msgstr "La forge grave le sort… %d %%"
+
+msgid "Fire"
+msgstr "Feu"
+
+msgid "Ice"
+msgstr "Glace"
+
+msgid "Lightning"
+msgstr "Foudre"
+
+msgid "Poison"
+msgstr "Poison"
+
+msgid "Arcane"
+msgstr "Arcane"
+
+msgid "Physical"
+msgstr "Physique"

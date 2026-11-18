@@ -7,6 +7,7 @@ extends Control
 signal closed
 
 const UITheme := preload("res://ui/theme.gd")
+const HUD := preload("res://ui/hud.gd")  # its spell icon
 const MAX_SHOWN := 8  # blank scrolls drawn
 const CELL := 46.0  # a rune's square on the parchment
 ## The forge gives no progress: runes follow an expected curve, slowing down
@@ -26,7 +27,13 @@ var main: Node
 var _parchment: PanelContainer
 var _page: VBoxContainer  # what is written, dimmed under the runes (not the status)
 var _runes: Control
-var _spell: Label
+var _spell: Label  # the chosen spell's description
+var _pick := ""  # id of the owned spell to improve; empty: the equipped main spell
+var _shown := ""  # id of the spell drawn in the picker
+var _icon: TextureRect
+var _name: Label
+var _element: Label
+var _arrows: Array[Button] = []
 var _blanks: HBoxContainer
 var _count: Label
 var _edit: LineEdit
@@ -96,6 +103,36 @@ func _ready() -> void:
 	heading.add_theme_font_override("font", UITheme.PARCHMENT)
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_page.add_child(heading)
+
+	# The spell to improve, picked among the owned ones with the arrows.
+	var picker := HBoxContainer.new()
+	picker.alignment = BoxContainer.ALIGNMENT_CENTER
+	picker.add_theme_constant_override("separation", 14)
+	_page.add_child(picker)
+	_icon = UITheme.icon_rect(null, 56)
+	var who := _vbox(0)
+	who.custom_minimum_size.x = 320
+	_name = _ink(Label.new(), 24, UITheme.PARCH_RED)
+	_name.add_theme_font_override("font", UITheme.PARCHMENT)
+	_element = _ink(Label.new(), 15, UITheme.PARCH_BROWN)
+	for l in [_name, _element]:
+		l.clip_text = true
+		who.add_child(l)
+	for side in [["back", -1, "Previous spell"], ["next", 1, "Next spell"]]:
+		var arrow := Button.new()
+		arrow.icon = UITheme.glyph(side[0], UITheme.PARCH_BROWN)
+		arrow.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		arrow.custom_minimum_size = Vector2(48, 48)
+		arrow.tooltip_text = side[2]
+		for st in ["normal", "hover", "pressed", "disabled", "focus"]:
+			arrow.add_theme_stylebox_override(st, UITheme.flat(UITheme.PARCH_LIGHT,
+				UITheme.PARCH_RED if st == "hover" else UITheme.PARCH_BROWN, 3, 2, 0))
+		arrow.pressed.connect(func(): _pick = step(Profile.owned_spells(), _chosen().id, side[1]))
+		_arrows.append(arrow)
+	picker.add_child(_arrows[0])
+	picker.add_child(_icon)
+	picker.add_child(who)
+	picker.add_child(_arrows[1])
 	_spell = _ink(Label.new(), 19, UITheme.PARCH_INK)
 	_spell.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_spell.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -217,7 +254,23 @@ func _lay_down() -> void:
 
 
 func _on_write() -> void:
-	main.write_scroll(_edit.text)
+	main.write_scroll(_edit.text, _chosen())
+
+
+## The owned spell to improve: the picked one, else the equipped main spell.
+func _chosen() -> Dictionary:
+	var owned := Profile.owned_spells()
+	for id in [_pick, Profile.spells.get("primary", "")]:
+		for e in owned:
+			if e.id == id:
+				return e
+	return owned[0]
+
+
+## The id `by` spells after `id` in `owned`, wrapping around.
+static func step(owned: Array, id: String, by: int) -> String:
+	var i := owned.map(func(e): return e.id).find(id)
+	return owned[posmod(i + by, owned.size())].id
 
 
 ## The job ended: forged, the runes fill the parchment, flare up and fade away
@@ -227,6 +280,7 @@ func _on_forged(ok: bool) -> void:
 	var tw := create_tween()
 	if ok:
 		_edit.text = ""
+		_pick = ""  # the forged spell, equipped in the improved one's slot
 		tw.tween_property(self, "_progress", 1.0, 0.6)
 		tw.tween_callback(Sfx.play.bind("scroll"))
 		tw.tween_property(self, "_glow", 1.0, 0.3)
@@ -260,9 +314,17 @@ func _process(delta: float) -> void:
 	for c in _page.get_children():  # the forge's progress stays readable
 		if c != _status:
 			c.modulate.a = lerpf(1.0, 0.3, _fade)
-	var s: Dictionary = Profile.equipped_spells().primary
-	_spell.text = tr("Main spell: %s\n%s") % [Spell.label(s), Spell.describe(s)]
+	var e := _chosen()
+	if e.id != _shown:  # the icon is built once per pick
+		_shown = e.id
+		_icon.texture = HUD._icon(e.spell)
+		_name.text = Spell.label(e.spell)
+		_element.text = tr("%s · spell %d of %d") % [tr(str(e.spell.get("element", "")).capitalize()),
+			Profile.owned_spells().find(e) + 1, Profile.owned_spells().size()]
+		_spell.text = Spell.describe(e.spell)
 	var can: bool = main.can_write()
+	for a in _arrows:
+		a.disabled = _busy or Profile.owned_spells().size() < 2
 	_edit.editable = can
 	_write.disabled = not can
 	var words := Array(_edit.text.replace(",", " ").split(" ", false))

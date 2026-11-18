@@ -290,6 +290,11 @@ func _test_profile() -> void:
 	check(p.available_spells("primary").size() == 7, "achievements unlock spells")
 	check(p.equip_spell("primary", "spark") and not p.equip_spell("primary", "arcane_missiles"), "equip unlocked only")
 	check(p.add_forged(Spell.base(), "user://missing.spell") == "forged_1", "forged spell kept")
+	var owned := p.owned_spells()
+	check(owned.size() == 8 and owned[-1].id == "forged_1", "forge picks among unlocked base and forged spells")
+	var Forge: GDScript = load("res://ui/forge.gd")
+	check(Forge.step(owned, "forged_1", 1) == owned[0].id and Forge.step(owned, owned[0].id, -1) == "forged_1",
+		"forge spell picker wraps around")
 	p.set_look("hat", "#123456")
 	p.set_look("hat", "not a color")
 	# Save -> load round trip.
