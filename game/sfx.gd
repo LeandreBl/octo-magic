@@ -19,6 +19,8 @@ const RECIPES := {
 	"crate": {"wave": "noise", "f": [0], "len": 0.25, "sparkle": 40.0, "echo": 1, "db": -12.0},
 	"boss": {"wave": "saw", "f": [55, 85, 50], "len": 1.6, "noise": 0.3, "sparkle": 6.0, "echo": 2, "db": -6.0},
 	"boss_die": {"wave": "bell", "f": [300, 40], "len": 1.4, "noise": 0.35, "sparkle": 25.0, "echo": 3, "db": -4.0},
+	"blast": {"wave": "saw", "f": [110, 35], "len": 0.45, "noise": 0.75, "echo": 1, "db": -10.0},
+	"boom": {"wave": "saw", "f": [70, 45, 18], "len": 1.8, "noise": 0.8, "echo": 3, "db": -2.0},
 	"hurt": {"wave": "saw", "f": [240, 110], "len": 0.2, "noise": 0.3, "db": -10.0},
 	"death": {"wave": "bell", "f": [440, 55], "len": 1.0, "noise": 0.15, "echo": 3, "db": -6.0},
 	"xp": {"wave": "bell", "f": [1500, 1900], "len": 0.07, "echo": 1, "db": -22.0},

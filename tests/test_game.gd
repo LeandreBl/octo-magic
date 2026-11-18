@@ -27,6 +27,7 @@ func _initialize() -> void:
 	_test_sfx()
 	_test_tentacle()
 	await _test_play()
+	_test_boss_death()  # in the tree, once it runs
 	print("game tests: %s" % ("OK" if failures == 0 else "%d failure(s)" % failures))
 	quit(1 if failures else 0)
 
@@ -204,6 +205,21 @@ func _test_augments(run: Object, p: Object) -> void:
 	run.start({}, [])
 	check(run.passive == "" and run.spells.is_empty(), "no augment slotted, none in the run")
 	DirAccess.remove_absolute(p.path)
+
+
+## Bosses die in a show of their own: art for each, blasts, then gone.
+func _test_boss_death() -> void:
+	for k in RunState.BOSSES:
+		check(Enemy.art(k + "/death") != null, "%s has a death animation" % k)
+	check(BossDeath.length("fx/boss_explosion") > 0.5, "the big explosion plays")
+	var fx := BossDeath.new()
+	root.add_child(fx)
+	check(fx._blasts.size() == BossDeath.BLASTS + BossDeath.RING, "blasts planned")
+	fx._process(BossDeath.AGONY + 0.1)
+	check(fx._flash.color.a > 0.5, "the big blast flashes the screen")
+	fx._process(10.0)
+	check(fx.is_queued_for_deletion(), "gone once it blew up")
+	fx.free()
 
 
 func _test_waves() -> void:

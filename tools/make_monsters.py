@@ -56,12 +56,15 @@ MONSTERS = {
     "lightning_mage_shield": (48, MAGE + ", crackling white balls of lightning in its hands, surrounded by a big round translucent white magic shield bubble", CAST),
     "boss": (96, "a towering lich king, a skeleton in ornate violet robes with a crown and a glowing staff", {
         "walk": "floating forward, robes flowing",
-        "summon": "raises its glowing staff high, violet necrotic magic swirls around it, summoning"}),
+        "summon": "raises its glowing staff high, violet necrotic magic swirls around it, summoning",
+        "death": "staggers in agony, cracks of blinding violet light burst out of its body, about to explode"}),
     "death_knight": (96, "a huge undead death knight, a skeleton in black spiked plate armor with a frost glowing greatsword", {
-        "windup": "raises its greatsword and roars, bracing to charge"}),
+        "windup": "raises its greatsword and roars, bracing to charge",
+        "death": "staggers and drops to its knees, blinding icy blue light bursting through cracks in its armor, about to explode"}),
     "abomination": (96, "a giant bloated undead flesh abomination stitched from corpses, green ooze dripping", {
         "walk": "lumbering forward heavily",
-        "summon": "its belly bursts open and small red imps crawl out"}),
+        "summon": "its belly bursts open and small red imps crawl out",
+        "death": "swells up grotesquely, bloating bigger and bigger, glowing green light bursting through its seams, about to burst"}),
 }
 # Effects of the attacks (game/enemy.gd Shot and Zone, Run.ENEMIES "shot"), name -> brief.
 FX = {
@@ -77,6 +80,10 @@ FX = {
     "shockwave": "a ground slam shockwave, a ring of dust and cracked stone bursting outward, seen from above",
     "poison": "a bubbling toxic green poison puddle on the ground, seen from above, looping",
     "summon": "a dark purple summoning portal circle with runes opening on the ground, seen from above",
+    # a boss's death (game/boss_death.gd): blasts popping on its body, then the big one
+    "boss_blast": "a fiery explosion burst, an orange and yellow fireball with a bright white core puffing into black smoke, one-shot",
+    "boss_explosion": "a huge spectacular explosion, a massive fireball blast with a bright white core, a shockwave ring,"
+                      " flying burning debris and sparks, billowing dark smoke, seen from above, one-shot",
 }
 LOOPING = {"bolt", "acid", "poison", "arrow", "poison_arrow", "fire_arrow", "fireball", "poison_orb", "frost_orb", "spark"}
 
