@@ -1,5 +1,6 @@
 extends Line2D
-## One ground tentacle of the octopus mage, under its body sprite (game/player.gd).
+## One ground tentacle of the octopus mage (game/player.gd): the front ones are drawn
+## over its body sprite, the others under it.
 ## A muscular arm, not a rope: a Verlet chain pinned at the body that keeps its
 ## length and resists bending, each joint pulled toward a target curve (the tip
 ## curls more than the base). Slow, it crawls: the tip holds the ground like a
@@ -19,11 +20,11 @@ const LENGTH := 29.0  # px, base to tip: the texture's width, drawn 1:1 to stay 
 const ROOT := 8.0  # px from the body centre to the base
 const REACH := 0.85  # how far from its base the tip rests, in LENGTH: the slack curls the chain
 const STEP := 0.45  # the tip steps when that far (in LENGTH) from its rest spot
-const STEP_TIME := 0.16  # s: a step, lift to landing
-const FIDGET_TIME := 0.5  # s: a slow shift while standing
-const GAIT := 0.18  # s: the two tentacle groups take turns this long each
+const STEP_TIME := 0.3  # s: a step, lift to landing
+const FIDGET_TIME := 0.9  # s: a slow shift while standing
+const GAIT := 0.3  # s: the two tentacle groups take turns this long each
 const LIFT := 0.25  # how much a stepping tip draws back toward its base mid-step
-const DAMP := 0.85  # of a point's speed kept per frame: the water's drag
+const DAMP := 0.7  # of a point's speed kept per frame: the water's drag
 const CURL := 0.25  # rad per joint at the tip: the resting hook
 const SWING_BEND := 0.5  # rad: the bend that runs down a stepping arm
 const WAVE := 0.3  # rad per joint: the swimming undulation
@@ -34,6 +35,10 @@ const SWIM_TO := 150.0
 const SWEEP := 0.6  # how far toward the rear a swimming arm leaves the body
 const THICK := 3.0  # px: a point's radius against walls and enemies
 const BOUNCE := 0.4  # of a point's speed into a wall sent back out
+## The arm's targets (heading, bends, grip) eased toward the body's, per second: a
+## first-order lag so a sudden turn or a gait change is a sweep, not a whip.
+const TURN := 6.0
+const EASE := 8.0
 
 var dir := 0.0  # rad from the heading
 var size := 1.0  # ROOT and LENGTH in the body's scale (game/player.gd SIZE)
@@ -49,6 +54,9 @@ var _fidget := randf_range(1.0, 4.0)  # s until it shifts while standing
 var _center := Vector2.ZERO  # the body's last position
 var _speed := 0.0  # px/s: the body's, smoothed
 var _side := 1.0  # which way it curls: outward, mirrored left and right
+var _heading := 0.0  # rad: the body's heading, eased (TURN)
+var _bend := PackedFloat32Array()  # the joints' target bends, eased (EASE)
+var _hold := 1.0  # the tip's grip, eased (EASE)
 
 
 func _init(direction := 0.0, step_group := 0) -> void:
@@ -59,7 +67,7 @@ func _init(direction := 0.0, step_group := 0) -> void:
 	texture_mode = Line2D.LINE_TEXTURE_STRETCH
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	width = TEX.get_height()
-	show_behind_parent = true
+	show_behind_parent = cos(direction) < 0.0  # the front ones pass over the body
 
 
 ## One physics step, the body at `center` heading `heading` (rad), `t` the clock (s),
@@ -71,9 +79,14 @@ func follow(center: Vector2, heading: float, delta: float, t: float,
 	var root_r := ROOT * size
 	var reach := root_r + length * 1.5 + THICK
 	map = map and Arena.boxes.any(func(b: Rect2): return b.grow(reach).has_point(center))  # none near: skip it
+	if chain.is_empty():
+		_heading = heading
+	_heading = lerp_angle(_heading, heading, 1.0 - exp(-TURN * delta))
+	heading = _heading
+	var ease_k := 1.0 - exp(-EASE * delta)
 	var a := heading + dir
 	var base := center + Vector2.from_angle(a) * root_r
-	var rest := base + Vector2.from_angle(a + 0.2 * sin(t * 1.3 + dir * 3.0)) * length * REACH
+	var rest := base + Vector2.from_angle(a + 0.2 * sin(t * 0.6 + dir * 3.0)) * length * REACH
 	if chain.is_empty():
 		_center = center
 		foot = rest
@@ -111,18 +124,22 @@ func follow(center: Vector2, heading: float, delta: float, t: float,
 			_step_len = FIDGET_TIME if shift else STEP_TIME
 			_step_t = _step_len
 			_fidget = randf_range(1.5, 5.0)
-	hold *= 1.0 - swim
+	_hold = lerpf(_hold, hold * (1.0 - swim), ease_k)
+	hold = _hold
 	var root := lerp_angle(a, heading + PI, SWEEP * swim)
-	var writhe := 1.0 + 0.6 * sin(t * 0.7 + dir * 7.0) * sin(t * 0.31 + dir * 3.0)  # slow, its own
+	var writhe := 1.0 + 0.6 * sin(t * 0.35 + dir * 7.0) * sin(t * 0.15 + dir * 3.0)  # slow, its own
 	var bend := PackedFloat32Array()  # target turn at each joint, from the previous segment's direction
 	bend.resize(POINTS)
+	if _bend.is_empty():
+		_bend.resize(POINTS)
 	for i in range(1, POINTS - 1):
 		var u := float(i) / (POINTS - 2)  # 0 at the base, 1 at the last joint
 		var crawl := CURL * writhe * u
 		if s >= 0.0:  # the bend of a step runs down the arm
 			crawl += SWING_BEND * sin(PI * s) * exp(-pow((u - s) * 2.5, 2.0))
-		var wave := WAVE * sin(t * 7.0 - i * 1.0 + dir * 2.0) * (0.4 + 0.6 * u)
-		bend[i] = _side * lerpf(crawl, wave, swim)
+		var wave := WAVE * sin(t * 3.5 - i * 1.0 + dir * 2.0) * (0.4 + 0.6 * u)
+		_bend[i] = lerpf(_bend[i], _side * lerpf(crawl, wave, swim), ease_k)
+		bend[i] = _bend[i]
 	for i in range(1, POINTS):
 		var v := (chain[i] - _old[i]) * DAMP
 		_old[i] = chain[i]
