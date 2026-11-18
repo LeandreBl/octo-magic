@@ -177,6 +177,10 @@ func _on_killed(e: Node2D) -> void:
 	_drop("xp", e.xp, e.position)
 	if Run.is_boss(e.kind) or randf() < 0.5:
 		_drop("gold", e.gold, e.position + Vector2(randf_range(-8, 8), randf_range(-8, 8)))
+	if randf() < 0.04:
+		_drop("mana", 1, e.position + Vector2(randf_range(-10, 10), -10))
+	if randf() < 0.01:  # rarer than the rest
+		_drop("life", 1, e.position + Vector2(randf_range(-10, 10), 10))
 	if Run.is_boss(e.kind) or randf() < 0.01:
 		_drop("scroll", 1, e.position + Vector2(0, 14))
 

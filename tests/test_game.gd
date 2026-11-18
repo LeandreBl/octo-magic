@@ -182,6 +182,15 @@ func _test_augments(run: Object, p: Object) -> void:
 	l.passive = ""
 	me.loadout_json = JSON.stringify(l)
 	check(me.shield == 0.0, "no shield without the passive")
+	var orb := preload("res://game/pickup.gd").new()
+	me.mana = 0.0
+	orb.kind = "mana"
+	orb.give(me)
+	check(me.mana == me.stats.mana * orb.REFILL, "mana orb refills")
+	orb.kind = "life"
+	orb.give(me)
+	check(me.hp == me.stats.hp, "life orb heals, capped")
+	orb.free()
 	me.free()
 	run.start({}, [])
 	check(run.passive == "" and run.spells.is_empty(), "no augment slotted, none in the run")
