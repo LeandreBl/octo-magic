@@ -1,6 +1,6 @@
 extends Line2D
-## One ground tentacle of the octopus mage (game/player.gd): the front ones are drawn
-## over its body sprite, the others under it.
+## One ground tentacle of the octopus mage (game/player.gd), drawn under its body
+## sprite: seen from above, the hat is on top.
 ## A muscular arm, not a rope: a Verlet chain pinned at the body that keeps its
 ## length and resists bending, each joint pulled toward a target curve (the tip
 ## curls more than the base). Slow, it crawls: the tip holds the ground like a
@@ -67,7 +67,7 @@ func _init(direction := 0.0, step_group := 0) -> void:
 	texture_mode = Line2D.LINE_TEXTURE_STRETCH
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	width = TEX.get_height()
-	show_behind_parent = cos(direction) < 0.0  # the front ones pass over the body
+	show_behind_parent = true  # under the body: never over the hat
 
 
 ## One physics step, the body at `center` heading `heading` (rad), `t` the clock (s),
