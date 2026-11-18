@@ -13,6 +13,7 @@ const TEXTURES := {  # PixelLab, tools/make_icons.py
 const SIZES := {"gold": 24.0, "mana": 20.0, "life": 22.0, "scroll": 24.0}  # px on the floor
 const REFILL := 0.25  # a mana or life orb gives back this share of the max
 const HOPS := [[0.32, 26.0], [0.18, 7.0]]  # gold pops out of the enemy: (duration s, height px) per hop
+const OUTLINE := preload("res://game/outline.gdshader")  # gold, to spot drops on the floor
 const SHINE := {"size": 24, "frames": 7, "fps": 12, "loop": false}  # assets/icons/drop_gold_shine.png
 
 var kind := "gold"
@@ -21,6 +22,12 @@ var target: Node2D
 var magnet := 0.0
 var speed := 0.0
 var age := 0.0  # drawn only: the synced position stays on the floor
+
+
+func _ready() -> void:
+	material = ShaderMaterial.new()
+	material.shader = OUTLINE
+	material.set_shader_parameter("width", 3.0)
 
 
 func _process(delta: float) -> void:
@@ -87,4 +94,8 @@ func _draw() -> void:
 	var hop := _hop()
 	if hop.x > 0.0:  # squashed as it touches the floor
 		draw_set_transform(Vector2(0, -hop.x + hop.y * sz * 0.1), 0.0, Vector2(1.0 + hop.y * 0.2, 1.0 - hop.y * 0.2))
-	draw_texture_rect(TEXTURES[kind], Rect2(-sz / 2.0, -sz / 2.0, sz, sz), false)
+	var tex: Texture2D = TEXTURES[kind]
+	var w: float = material.get_shader_parameter("width")  # texels
+	var m := sz * w / tex.get_width()  # the same margin in px
+	draw_texture_rect_region(tex, Rect2(-sz / 2.0 - m, -sz / 2.0 - m, sz + 2.0 * m, sz + 2.0 * m),
+		Rect2(-w, -w, tex.get_width() + 2.0 * w, tex.get_height() + 2.0 * w), Color.WHITE, false, false)
