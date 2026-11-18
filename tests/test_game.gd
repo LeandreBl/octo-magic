@@ -67,7 +67,7 @@ func _test_french() -> void:
 	for m in RegEx.create_from_string("\"[A-Z_]+\": \"([^\"]+)\"").search_all(FileAccess.get_file_as_string("res://game/online.gd")):
 		texts.append(m.get_string(1))  # Online.ERRORS (the autoload needs Profile)
 	texts += Settings.REBINDABLE.values().filter(func(t): return t != "Pause")
-	var same := ["Scribe", "Robur", "Parsimonia", "Inspiratio", "Celeritas", "Tutela Ignis", "Fluxus", "Receptaculum", "Meditatio", "Antidotum", "Pernicitas", "Magnes", "Potentia", "Catena", "Procella", "Aether", "Ventus Algidus", "Rigor", "Stupor", "Plura Tela", "Conus Glaciei", "Favillae", "Immolatio", "Vis Teli", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Pila Ignea", "Telum Magicum", "Fragmen Glaciei", "Arcus Fulguris", "Spiculum Veneni", "Tela Arcana", "Poison", "Zone", "Projectiles", "Abomination"]
+	var same := ["Scribe", "Robur", "Parsimonia", "Inspiratio", "Celeritas", "Tutela Ignis", "Fluxus", "Receptaculum", "Meditatio", "Antidotum", "Pernicitas", "Magnes", "Potentia", "Catena", "Procella", "Aether", "Ventus Algidus", "Rigor", "Stupor", "Plura Tela", "Conus Glaciei", "Displosio", "Favillae", "Immolatio", "Vis Teli", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Pila Ignea", "Telum Magicum", "Fragmen Glaciei", "Arcus Fulguris", "Spiculum Veneni", "Tela Arcana", "Poison", "Zone", "Projectiles", "Abomination"]
 	for t in texts:
 		check(t in same or TranslationServer.translate(t) != t, "French for: " + t)
 	check(Spell.describe({"description": "x", "description_fr": "y"}) == "y", "forged spell described in French")
@@ -158,6 +158,10 @@ func _test_upgrades() -> void:
 		"Favillae: embers +2 damage a tick a level, up to V, only for Pila Ignea, never spell data")
 	var immo: Dictionary = Upgrades.LIST.immolation
 	check(immo.max == 5 and immo.spell == "fireball" and Stats.total([Upgrades.bonus(immo, 5)]).immolate == 25.0, "Immolatio: Pila Ignea burns 5 more a second a level, up to V")
+	var displosio: Dictionary = Upgrades.LIST.explode
+	check(displosio.max == 5 and Upgrades.title(displosio, 5) == "Displosio V" and Stats.total([Upgrades.bonus(displosio, 5)]).explode == 125.0
+		and Upgrades.offers({}, rng, "spell", 3, {"explode": displosio}, "lightning").is_empty()
+		and Upgrades.offers({}, rng, "spell", 3, {"explode": displosio}, "fireball").size() == 1, "Displosio: +25 px of blast a level, up to V, only for Pila Ignea")
 	check(Upgrades.offers({"tough": 2}, rng, "hero", 4, SKILLS).any(func(o): return o == {"id": "tough", "level": 3}), "the next level offered")
 	check(Upgrades.offers({"tough": 4, "quick": 1, "vigor": 4, "magnet": 5}, rng, "hero", 3, SKILLS).is_empty(), "maxed skills not offered")
 	var haste: Dictionary = Upgrades.LIST.haste

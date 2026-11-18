@@ -69,6 +69,7 @@ UPGRADES = {
     "potent_missiles": "a single large glowing violet magic arrowhead crackling with intense purple energy, a bold upward arrow rune beside it",
     "more_missiles": "a single glowing violet magic orb splitting into a wide fan of five small violet sparks, a plus rune above it",
     "stun": "a small round yellow star burst with dizzy swirling stars and tiny lightning sparks circling it, stunned symbol",
+    "explode": "a blazing orange fireball bursting into a round fiery explosion with flying embers and a shock ring",
     "chaining": "a crackling blue-white lightning arc linking three small glowing orbs in a zigzag chain",
     "hurricane": "a swirling pale cyan whirlwind of icy wind gusts and snowflakes, spiraling outward",
     "chill_wind": "a small frozen hourglass covered in frost and icicles, its pale blue sand slowed to a trickle, snowflakes around it",

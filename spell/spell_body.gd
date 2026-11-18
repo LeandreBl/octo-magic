@@ -35,6 +35,7 @@ const FREEZE_TIME := 0.6  # s: how long a Rigor freeze holds an enemy
 const STUN_TIME := 0.6  # s: how long a Stupor stun holds an enemy
 const CHAIN_REACH := 140.0  # px: how far a chained arc jumps from one enemy to the next
 const EMBER_EVERY := 0.12  # s: a cast bolt drops one ember this often (Embers)
+const BLAST := preload("res://assets/monsters/fx/boss_explosion.png")  # Displosio (_explode)
 const ABOVE_DECOR := 11  # over the map's trees, roofs and statues (Arena.above, z 10)
 const GROUND := -1  # zones and sub-casts (a hit's effects): under the mages, enemies and obstacles, over the floor
 
@@ -357,6 +358,34 @@ func _stun(e: Node2D) -> void:
 		e.add_status("stun", 1.0, STUN_TIME)
 
 
+## The Displosio skill (Upgrades "explode"): Pila Ignea's hit also deals its
+## damage to the other enemies within the caster's "explode" px, with the
+## PixelLab blast (fx/boss_explosion.png) that wide. Run on every peer for the
+## blast, damage host-side. An engine stat, not spell data: no forged spell has it.
+func _explode(hit: Node2D) -> void:
+	var r := _stat("explode")
+	if r <= 0.0 or depth > 0:  # offered only with Pila Ignea (Run.base): its bolts
+		return
+	var n := BLAST.get_width() / BLAST.get_height()
+	var fx := Sprite2D.new()
+	fx.texture = BLAST
+	fx.hframes = n
+	fx.position = position
+	fx.z_index = z_index
+	fx.scale = Vector2.ONE * r * 2.0 / BLAST.get_height()
+	get_parent().add_child(fx)
+	var tw := fx.create_tween()
+	tw.tween_property(fx, "frame", n - 1, n / 12.0)  # Enemy.FPS
+	tw.tween_callback(fx.queue_free)
+	if not multiplayer.is_server():
+		return
+	for f in body.on_hit:
+		if f.type == "damage":
+			for e in _targets(r, global_position, null):
+				if e != hit:
+					e.take_damage(f.amount * _quad())
+
+
 func _check_hits() -> void:
 	for e in get_tree().get_nodes_in_group("enemies"):
 		if hit_ids.has(e.get_instance_id()):
@@ -366,6 +395,7 @@ func _check_hits() -> void:
 		hit_ids[e.get_instance_id()] = true
 		apply_effects(body.on_hit, global_position, e)
 		_immolate(e)
+		_explode(e)
 		if pierce_left > 0:
 			pierce_left -= 1
 		elif bounce_left > 0:

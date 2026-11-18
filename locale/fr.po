@@ -1107,6 +1107,9 @@ msgstr "Pila Ignea laisse des braises ardentes : +%d dégâts par tic"
 msgid "Pila Ignea sets its targets on fire (+%d burn per second)"
 msgstr "Pila Ignea enflamme ses cibles (+%d de brûlure par seconde)"
 
+msgid "Pila Ignea explodes on hit, %d px around"
+msgstr "Pila Ignea explose à l'impact, sur %d px autour"
+
 msgid "Records"
 msgstr "Palmarès"
 

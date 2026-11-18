@@ -35,7 +35,8 @@ and the spells are words you write on scrolls, forged by an AI.
   (Pila Ignea leaves a trail of burning embers, +2 damage a tick a level, up to V), Immolatio (Pila Ignea sets its
   targets on fire, +5 burn a second a level, up to V), Stupor
   (Fulmen stuns its targets for 0.6 s, +3 % chance a strike a level, up to V), Vis Teli
-  (+20 % Telum Magicum damage a level, up to V).
+  (+20 % Telum Magicum damage a level, up to V), Displosio (Pila
+  Ignea explodes on hit, its damage +25 px around a level, up to V).
 - Permadeath: the run ends when every mage is down; gold and scrolls are kept.
   A solo run is saved at the start of each wave (pause → Save and quit), in
   the cloud with the character: Play continues it on any device.

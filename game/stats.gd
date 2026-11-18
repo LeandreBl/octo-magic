@@ -36,6 +36,7 @@ const BASE := {
 	"embers": 0.0,  # damage a tick of the burning embers a cast bolt leaves (SpellBody, Favillae)
 	"immolate": 0.0,  # burn damage per second a cast bolt sets its targets on fire with (SpellBody, Immolatio)
 	"potency": 1.0,  # multiplier on the primary cast's damage (Player.cast, Vis Teli)
+	"explode": 0.0,  # px: Pila Ignea's hit blast radius, its damage to the enemies around (SpellBody, Displosio)
 }
 const BOUNDS := {
 	"hp": [1.0, 1000.0], "hp_regen": [0.0, 50.0], "mana": [10.0, 1000.0],
@@ -43,7 +44,7 @@ const BOUNDS := {
 	"speed": [80.0, 660.0], "pickup": [30.0, 600.0], "armor": [-1.0, 0.75],
 	"crit": [0.0, 1.0], "damage": [0.1, 20.0], "gold": [0.0, 6.0], "xp": [0.0, 6.0],
 	"poison": [0.0, 1.0], "fire": [0.0, 1.0], "orbs": [0.0, 4.0], "luck": [0.0, 4.0],
-	"choices": [3.0, 4.0], "still_regen": [1.0, 4.0], "chain": [0.0, 5.0], "gust": [0.0, 300.0], "ether": [0.2, 1.0], "chill": [0.0, 0.5], "harden": [0.0, 0.15], "missiles": [0.0, 5.0], "cone": [1.0, 3.0], "embers": [0.0, 10.0], "immolate": [0.0, 25.0], "stun": [0.0, 0.15], "potency": [1.0, 3.0],
+	"choices": [3.0, 4.0], "still_regen": [1.0, 4.0], "chain": [0.0, 5.0], "gust": [0.0, 300.0], "ether": [0.2, 1.0], "chill": [0.0, 0.5], "harden": [0.0, 0.15], "missiles": [0.0, 5.0], "cone": [1.0, 3.0], "embers": [0.0, 10.0], "immolate": [0.0, 25.0], "stun": [0.0, 0.15], "potency": [1.0, 3.0], "explode": [0.0, 200.0],
 }
 const CRIT_MULT := 2.0
 

@@ -438,6 +438,22 @@ func _check_channel() -> void:
 	for n in world.get_children():
 		if n is SpellBody:
 			n.free()
+	# Displosio II: a fireball hit also burns the enemies 50 px around, not farther.
+	var blast: Array = [at.call(Vector2(600, 600)), at.call(Vector2(640, 600)), at.call(Vector2(720, 600))]
+	var blast_hp: Array = blast.map(func(e): return e.hp)
+	SpellBody.cast(spells.fireball.emit, Vector2(560, 600), Vector2.RIGHT, mage, spells.fireball, world)
+	for i in 30:
+		await physics_frame
+	check(blast[0].hp < blast_hp[0] and blast[1].hp == blast_hp[1], "no Displosio: the fireball hits one enemy")
+	blast_hp = blast.map(func(e): return e.hp)
+	mage.stats = Stats.total([Upgrades.bonus(Upgrades.LIST.explode, 2)])
+	SpellBody.cast(spells.fireball.emit, Vector2(560, 600), Vector2.RIGHT, mage, spells.fireball, world)
+	for i in 30:
+		await physics_frame
+	check(blast[0].hp < blast_hp[0] and blast[1].hp < blast_hp[1] and blast[2].hp == blast_hp[2],
+		"Displosio II: the fireball's hit blasts the enemies around, within reach")
+	for e in blast:
+		e.free()
 	mage.stats = Stats.total([])
 	mage.aim = Vector2.RIGHT
 	mage.firing = {"primary": true}

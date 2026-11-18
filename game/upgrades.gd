@@ -34,6 +34,7 @@ const LIST := {
 	"cone_of_ice": {"name": "Conus Glaciei", "desc": "+%d%% Flatus Gelidus cone size", "step": 15, "max": 5, "kind": "spell", "stat": "cone%", "pct": true, "spell": "frost_jet"},
 	"embers": {"name": "Favillae", "desc": "Pila Ignea leaves burning embers: +%d damage a tick", "step": 2, "max": 5, "kind": "spell", "stat": "embers", "spell": "fireball"},
 	"immolation": {"name": "Immolatio", "desc": "Pila Ignea sets its targets on fire (+%d burn per second)", "step": 5, "max": 5, "kind": "spell", "stat": "immolate", "spell": "fireball"},
+	"explode": {"name": "Displosio", "desc": "Pila Ignea explodes on hit, %d px around", "step": 25, "max": 5, "kind": "spell", "stat": "explode", "spell": "fireball"},
 }
 const KINDS := ["hero", "spell"]
 const ROMAN := [[10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]]
