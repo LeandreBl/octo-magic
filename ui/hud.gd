@@ -3,7 +3,8 @@ extends Control
 ## (top center), gold, score and a pause button for touch (top right), spell
 ## slots with key, mana cost and cooldown (bottom center: touch a slot to cast
 ## it; key or gamepad button below), the passive (shield left, time until
-## it is back).
+## it is back), and the bosses' health under the wave (theirs only: the other
+## enemies show none).
 
 signal paused
 
@@ -16,6 +17,7 @@ var _xp: ProgressBar
 var _level: Label
 var _wave: Label
 var _pips: Array[ColorRect] = []  # waves left before the boss
+var _boss: VBoxContainer  # the bosses' names and health bar, hidden without one
 var _gold: Label
 var _score: Label
 var _passive: Control
@@ -63,8 +65,13 @@ func _ready() -> void:
 	_mana = _bar(bars, UITheme.MANA, 24)
 	_xp = _bar(bars, UITheme.XP, 10)
 
-	# Top center: the wave, and pips counting down to the next boss.
-	var wave := _plate(margin, Control.SIZE_SHRINK_CENTER, Control.SIZE_SHRINK_BEGIN)
+	# Top center: the wave, and pips counting down to the next boss; under
+	# it, the bosses' health while one is up.
+	var top := _box(VBoxContainer.new(), 8)
+	top.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	top.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	margin.add_child(top)
+	var wave := _plate(top, Control.SIZE_SHRINK_CENTER, Control.SIZE_SHRINK_BEGIN)
 	var w_col := _box(VBoxContainer.new(), 4)
 	wave.add_child(w_col)
 	_wave = UITheme.label("", "", 32, UITheme.GOLD)
@@ -90,6 +97,13 @@ func _ready() -> void:
 		pips.add_child(frame)
 		_pips.append(pip)
 	pips.add_child(UITheme.label("boss", "", 13, UITheme.TEXT_DIM))
+	_boss = _box(VBoxContainer.new(), 2)
+	top.add_child(_boss)
+	var b_name := UITheme.label("", "", 20, UITheme.TEXT)
+	b_name.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
+	b_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boss.add_child(b_name)
+	_bar(_boss, UITheme.HP, 16).custom_minimum_size.x = 640
 
 	# Top right: purse, score, pause.
 	var right := _box(HBoxContainer.new(), 12)
@@ -254,6 +268,11 @@ func _process(_delta: float) -> void:
 	for i in _pips.size():
 		var boss := i == _pips.size() - 1
 		_pips[i].color = (UITheme.HP if boss else UITheme.GOLD) if i < done or boss else UITheme.RIM
+	var bosses := get_tree().get_nodes_in_group("enemies").filter(func(e): return e.data.get("boss", false) and e.hp > 0.0)
+	_boss.visible = not bosses.is_empty()
+	if _boss.visible:  # several at once: one bar for all of them
+		_boss.get_child(0).text = " · ".join(bosses.map(func(e): return tr(e.data.name)))
+		_set_bar(_boss.get_child(1), bosses.reduce(func(a, e): return a + e.hp, 0.0), bosses.reduce(func(a, e): return a + e.max_hp, 0.0), "")
 	_gold.text = str(Run.gold)
 	_score.text = "Score %d" % Run.score()
 	_passive.visible = p.passive != ""

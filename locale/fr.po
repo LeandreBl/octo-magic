@@ -1063,3 +1063,9 @@ msgstr "Perforation"
 
 msgid "Bounces"
 msgstr "Rebonds"
+
+msgid "Lich King"
+msgstr "Roi-liche"
+
+msgid "Death Knight"
+msgstr "Chevalier de la mort"

@@ -47,6 +47,7 @@ func _test_french() -> void:
 				for m in literal.search_all(FileAccess.get_file_as_string(dir + f)):
 					texts.append(m.get_string(1).c_unescape())
 	texts += Upgrades.SLOT_NAMES.values()
+	texts += Run.BOSSES.map(func(k): return Run.ENEMIES[k].name)
 	texts += Upgrades.RARITIES.values().map(func(r): return r.name)
 	for d in [Upgrades.LIST, ProfileState.AUGMENTS, ProfileState.ITEMS, ProfileState.BONUSES, ProfileState.ACHIEVEMENTS]:
 		for v in d.values():
@@ -60,7 +61,7 @@ func _test_french() -> void:
 	for m in RegEx.create_from_string("\"[A-Z_]+\": \"([^\"]+)\"").search_all(FileAccess.get_file_as_string("res://game/online.gd")):
 		texts.append(m.get_string(1))  # Online.ERRORS (the autoload needs Profile)
 	texts += Settings.REBINDABLE.values().filter(func(t): return t != "Pause")
-	var same := ["Multiplication", "Scribe", "Rare", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Poison", "Zone", "Projectiles"]
+	var same := ["Multiplication", "Scribe", "Rare", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Poison", "Zone", "Projectiles", "Abomination"]
 	for t in texts:
 		check(t in same or TranslationServer.translate(t) != t, "French for: " + t)
 	check(Spell.describe({"description": "x", "description_fr": "y"}) == "y", "forged spell described in French")

@@ -320,7 +320,6 @@ func _draw() -> void:
 		draw_set_transform(Vector2.ZERO)
 	else:  # not generated yet
 		draw_circle(Vector2.ZERO, radius, Color(data.get("color", "#4caf50")) * tint)
-	draw_rect(Rect2(-radius, -size * 0.45 - 6, 2 * radius * maxf(hp, 0.0) / max_hp, 3), Color.RED)
 
 
 ## A fallen enemy (main.gd _killed): plays <look>/death.png once where it
