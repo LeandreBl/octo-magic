@@ -115,6 +115,8 @@ func _test_upgrades() -> void:
 	check(Upgrades.offers({"tough": 4, "quick": 1, "vigor": 4, "magnet": 5}, rng, "hero", 3, SKILLS).is_empty(), "maxed skills not offered")
 	var haste: Dictionary = Upgrades.LIST.haste
 	check(haste.max == 9 and is_equal_approx(Stats.total([Upgrades.bonus(haste, 3)]).cast_rate, 1.3), "Haste: +10 % cast rate per level, 9 levels")
+	var flow: Dictionary = Upgrades.LIST.flow
+	check(flow.max == 9 and is_equal_approx(Stats.total([Upgrades.bonus(flow, 2)]).mana_regen, Stats.BASE.mana_regen * 1.7), "Flow: +35 % mana regeneration per level, 9 levels")
 
 
 func _test_run() -> void:

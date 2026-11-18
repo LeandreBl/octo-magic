@@ -14,6 +14,7 @@ const LIST := {
 	"thrift": {"name": "Thrift", "desc": "-%d%% mana cost", "step": -15, "max": 11, "kind": "spell", "stat": "mana_cost%", "pct": true},
 	"inspiration": {"name": "Inspiration", "desc": "+%d choice per grimoire", "step": 1, "max": 1, "kind": "hero", "stat": "choices"},
 	"haste": {"name": "Haste", "desc": "+%d%% cast rate", "step": 10, "max": 9, "kind": "hero", "stat": "cast_rate%", "pct": true},
+	"flow": {"name": "Flow", "desc": "+%d%% mana regeneration", "step": 35, "max": 9, "kind": "hero", "stat": "mana_regen%", "pct": true},
 }
 const KINDS := ["hero", "spell"]
 const ROMAN := [[10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]]

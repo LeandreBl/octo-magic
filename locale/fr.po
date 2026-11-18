@@ -851,6 +851,9 @@ msgstr "Flux"
 msgid "+%d mana per second"
 msgstr "+%d mana par seconde"
 
+msgid "+%d%% mana regeneration"
+msgstr "+%d %% de régénération de mana"
+
 msgid "Fleetness"
 msgstr "Agilité"
 
