@@ -26,6 +26,7 @@ var struck := false  # beam / cone: strike once, when cast
 var target: Node2D  # beam: the enemy the arc grips
 
 const ABOVE_DECOR := 11  # over the map's trees, roofs and statues (Arena.above, z 10)
+const UNDER_DECOR := 0  # zones, mines, sub-casts: hidden behind the obstacles
 
 
 ## Emit an "emit" dict from pos toward dir. Bursts are spread over time.
@@ -102,7 +103,8 @@ static func nearest_enemy(world: Node, pos: Vector2, exclude: Dictionary) -> Nod
 
 
 func _ready() -> void:
-	z_index = ABOVE_DECOR
+	# Only the cast projectile flies over the decor; zones and derivatives go behind it.
+	z_index = ABOVE_DECOR if depth == 0 and body.shape != "zone" else UNDER_DECOR
 	speed = body.speed
 	pierce_left = body.pierce
 	bounce_left = body.bounce
@@ -259,7 +261,7 @@ func _expire() -> void:
 		fx.tex = burst
 		fx.s = body.burst_sheet.merged({"loop": false}, true)
 		fx.position = position
-		fx.z_index = ABOVE_DECOR
+		fx.z_index = z_index
 		get_parent().add_child(fx)
 	queue_free()
 
