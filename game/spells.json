@@ -178,7 +178,7 @@
     "sheet": {
      "file": "frost_jet.png",
      "size": 64,
-     "frames": 12,
+     "frames": 4,
      "fps": 12,
      "loop": true
     },
