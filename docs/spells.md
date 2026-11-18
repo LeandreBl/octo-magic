@@ -76,7 +76,9 @@ all the same way:
 - the drawing centered in each frame: the engine anchors sheets on the body's
   position; bolt sheets face right and are rotated to the body's direction;
 - 12 frames per second, at least 2 different frames;
-- drawn at the art scale (one art pixel = 3 screen pixels), never resized.
+- drawn at the art scale (one art pixel = 3 screen pixels), never resized,
+  except a zone's looping sheet: stretched over the zone (`size * 2` wide),
+  so what burns is what is drawn.
 
 The forge enforces it (`server/sheet.py` normalizes what PixelLab draws and
 rejects still drawings); `python3 server/check_bundle.py file.spell` checks a

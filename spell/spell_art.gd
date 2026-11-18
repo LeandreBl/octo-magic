@@ -104,12 +104,14 @@ static func animation(spell: Dictionary, body: Dictionary) -> Array:
 	return [_cache[key], {"size": size, "frames": body.sprite.size(), "fps": GRID_FPS, "loop": true}]
 
 
-## Draw frame `t` seconds into a strip, centered, at art scale.
+## Draw frame `t` seconds into a strip, centered, at art scale, or `width`
+## pixels wide when given (a zone's art covers exactly the zone it hurts).
 ## Looping sheets wrap; one-shot sheets hold their last frame.
-static func draw_sheet(canvas: CanvasItem, tex: Texture2D, s: Dictionary, t: float, angle: float) -> void:
+static func draw_sheet(canvas: CanvasItem, tex: Texture2D, s: Dictionary, t: float, angle: float,
+		width := 0.0) -> void:
 	var i := int(t * s.fps)
 	var n := int(s.frames)  # float when the spell came through JSON (coop peers)
 	i = i % n if s.loop else mini(i, n - 1)
-	canvas.draw_set_transform(Vector2.ZERO, angle, Vector2.ONE * PIXEL)
+	canvas.draw_set_transform(Vector2.ZERO, angle, Vector2.ONE * (width / s.size if width > 0 else PIXEL))
 	canvas.draw_texture_rect_region(tex, Rect2(-s.size / 2.0, -s.size / 2.0, s.size, s.size),
 		Rect2(i * s.size, 0, s.size, s.size))

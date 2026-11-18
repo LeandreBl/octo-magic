@@ -305,7 +305,9 @@ func _draw() -> void:
 	elif body.shape == "cone":
 		_draw_cone()
 	elif anim:  # bolts face their direction (sheets are drawn facing right)
-		SpellArt.draw_sheet(self, anim[0], anim[1], age, dir.angle() if body.shape == "bolt" else 0.0)
+		var zone: bool = body.shape == "zone"
+		SpellArt.draw_sheet(self, anim[0], anim[1], age, 0.0 if zone else dir.angle(),
+			body.size * 2.0 if zone else 0.0)
 	elif body.shape == "zone":
 		draw_circle(Vector2.ZERO, body.size, Color(color, 0.25))
 		draw_arc(Vector2.ZERO, body.size, 0, TAU, 32, color, 2.0)

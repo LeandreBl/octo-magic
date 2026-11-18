@@ -331,17 +331,18 @@ func equipped_spells() -> Dictionary:
 ## A spell written by the forge (bundle saved at `file`): kept, and equipped
 ## in `slot` for the next run.
 func add_forged(spell: Dictionary, file: String, slot := "primary") -> String:
-	var id := "forged_%d" % (forged.size() + 1)
+	var id := file.get_file().get_basename()  # unique: see next_bundle_path
 	forged.append({"id": id, "slot": slot, "file": file, "spell": spell})
 	spells[slot] = id
 	_saved()
 	return id
 
 
-## Where the next forged bundle is saved.
+## Where the next forged bundle is saved. Its name is the spell's id, unique
+## across the account's characters (the server keeps bundles per account).
 func next_bundle_path() -> String:
 	DirAccess.make_dir_recursive_absolute("user://spells")
-	return "user://spells/forged_%d.spell" % (forged.size() + 1)
+	return "user://spells/forged_%d.spell" % int(Time.get_unix_time_from_system() * 1000)
 
 
 # --- end of run --------------------------------------------------------------
