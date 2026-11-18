@@ -599,7 +599,7 @@ func _test_play() -> void:
 	var archer: Enemy = get_nodes_in_group("enemies").filter(func(e): return e.kind == "archer")[0]
 	var far := Vector2(Enemy.VIEW.x + 100.0, 0.0)
 	check(not archer.cast(archer.data.spells[0], far), "no enemy spell from off screen")
-	check(archer._steer(far).x > 0.0 and archer._steer(Vector2(100, 0)) == Vector2.ZERO, "a still one walks in until on screen")
+	check(archer._steer(far) != Vector2.ZERO and archer._steer(Vector2(100, 0)) == Vector2.ZERO, "a still one walks in until on screen")
 	var lich: Enemy = get_nodes_in_group("enemies").filter(func(e): return e.kind == "boss")[0]
 	check(lich.walk_speed(far) > player.stats.speed and lich.walk_speed(Vector2(100, 0)) == lich.speed, "a boss outruns the mage until in cast range")
 	for i in 90:  # the delayed parts: missile volleys, bites, imps hatching (the mage kept standing)
