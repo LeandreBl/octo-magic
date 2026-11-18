@@ -1,13 +1,13 @@
 /* Octo Magic — "Grimoire Arcade" design system (v2).
  * The site's night sky and gold, with the game's pixel-arcade look (ui/theme.gd):
  * thick ink outlines, hard drop shadows, brick plates, slate buttons.
- * Type: Uncial Antiqua for titles, Almendra for prose, Pixelify Sans for UI and numbers.
+ * Type: Uncial Antiqua for titles, Almendra for prose, Fredoka (the game's UI font) for UI and numbers.
  * Gold is the only action color: one gold button per screen, the one that makes you play. */
 
 @font-face { font-family: Almendra; src: url(/assets/fonts/Almendra-Regular.ttf); font-display: swap; }
 @font-face { font-family: Almendra; font-weight: bold; src: url(/assets/fonts/Almendra-Bold.ttf); font-display: swap; }
 @font-face { font-family: Uncial; src: url(/assets/fonts/UncialAntiqua-Regular.ttf); font-display: swap; }
-@font-face { font-family: Pixelify; font-weight: 400 700; src: url(/assets/fonts/PixelifySans.ttf); font-display: swap; }
+@font-face { font-family: Fredoka; font-weight: 300 700; src: url(/assets/fonts/Fredoka.ttf); font-display: swap; }
 
 :root {
   --night-950: #0c0919; /* fields, footer, bars */
@@ -43,7 +43,7 @@
 
   --display: Uncial, "Uncial Antiqua", serif;
   --body: Almendra, Georgia, serif;
-  --ui: Pixelify, "Pixelify Sans", system-ui, sans-serif;
+  --ui: Fredoka, system-ui, sans-serif;
 
   --r-control: 10px;
   --r-panel: 14px;

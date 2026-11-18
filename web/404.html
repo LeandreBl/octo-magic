@@ -5,21 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Octo Magic — Page introuvable</title>
+<meta name="theme-color" content="#120d24">
 <link rel="icon" href="/assets/icon.png">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<header>
-  <a class="brand" href="/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
-  <nav><a href="/game">Jouer</a><a href="/account" data-who>Connexion</a><a class="lang" href="/en/" hreflang="en" lang="en" title="English" data-lang="en">EN</a></nav>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
+    <nav><a class="hide-sm" href="/account" data-who>Connexion</a><a class="lang" href="/en/" hreflang="en" lang="en" title="English" data-lang="en">EN</a><a class="btn btn-gold btn-sm" href="/game">Jouer</a></nav>
+  </div>
 </header>
-<main>
-  <section class="cta">
-    <h1>404</h1>
-    <p>Ce parchemin s'est perdu dans le donjon : la page demandée n'existe pas.</p>
-    <a class="button big" href="/">Retour à l'accueil</a>
+<main class="wrap landing-main">
+  <section class="cta panel">
+    <img class="pixel" src="/assets/icons/scroll.png" alt="">
+    <h1 style="margin: 0; font-size: clamp(4rem, 14vw, 7rem); line-height: 1; text-shadow: 5px 5px 0 var(--ink)">404</h1>
+    <h2>Ce parchemin s'est perdu dans le donjon.</h2>
+    <p>La page demandée n'existe pas, ou un boss l'a dévorée.</p>
+    <div class="actions">
+      <a class="btn btn-gold btn-lg" href="/">Retour à l'accueil</a>
+      <a class="btn btn-lg" href="/game">Jouer</a>
+    </div>
   </section>
 </main>
+<footer class="site-footer">
+  <div class="wrap">
+    <a class="brand" href="/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
+    <a href="/account">Mon compte</a><a href="/privacy">Confidentialité</a><a href="/terms">Conditions d'utilisation</a>
+  </div>
+</footer>
 <script type="module" src="/site.js"></script>
 </body>
 </html>

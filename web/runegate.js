@@ -75,7 +75,7 @@ const TEXT = {
 const CSS = `
 @font-face { font-family: Uncial; src: url(/assets/fonts/UncialAntiqua-Regular.ttf); font-display: swap; }
 @font-face { font-family: Almendra; src: url(/assets/fonts/Almendra-Regular.ttf); font-display: swap; }
-@font-face { font-family: Pixelify; font-weight: 400 700; src: url(/assets/fonts/PixelifySans.ttf); font-display: swap; }
+@font-face { font-family: Fredoka; font-weight: 300 700; src: url(/assets/fonts/Fredoka.ttf); font-display: swap; }
 .rg {
   position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: clamp(.8rem, 3vmin, 1.6rem); padding: 1.5rem; box-sizing: border-box; color: #fff1e0; text-align: center;
@@ -140,15 +140,15 @@ const CSS = `
 .rg.failed .rg-rune.lit { stroke: #ff8a80; filter: none; }
 .rg-title { margin: 0; font: clamp(1.8rem, 5vmin, 2.6rem)/1 Uncial, serif; color: #ffc94a; text-shadow: 4px 4px 0 #0b0c10; }
 .rg-msg { margin: 0; min-height: 1.5em; font-size: clamp(1rem, 2.6vmin, 1.2rem); color: #e6dcf7; }
-.rg-count { display: flex; align-items: center; gap: .9rem; font: 500 .9rem Pixelify, system-ui, sans-serif; color: #b3a8d6; letter-spacing: .04em; }
+.rg-count { display: flex; align-items: center; gap: .9rem; font: 500 .9rem Fredoka, system-ui, sans-serif; color: #b3a8d6; letter-spacing: .04em; }
 .rg-pips { display: flex; gap: 5px; }
 .rg-pips i { width: 12px; height: 12px; border: 2px solid #0b0c10; border-radius: 3px; background: #2a2050; transition: background .2s, box-shadow .2s; }
 .rg-pips i.on { background: #ffc94a; box-shadow: 0 0 8px #ffc94a88; }
 .rg.failed .rg-pips i.on { background: #b3261e; box-shadow: none; }
-.rg-error { margin: 0; max-width: 34rem; font: .95rem Pixelify, system-ui, sans-serif; color: #ff8a80; }
+.rg-error { margin: 0; max-width: 34rem; font: .95rem Fredoka, system-ui, sans-serif; color: #ff8a80; }
 .rg button {
   min-height: 48px; padding: 0 1.4rem; border: 3px solid #0b0c10; border-radius: 10px; background: #ffc94a; color: #1a1206;
-  font: 600 1.05rem Pixelify, system-ui, sans-serif; cursor: pointer; box-shadow: 0 5px 0 #0b0c10;
+  font: 600 1.05rem Fredoka, system-ui, sans-serif; cursor: pointer; box-shadow: 0 5px 0 #0b0c10;
 }
 .rg button:hover { background: #ffd76e; }
 .rg button:focus-visible { outline: 3px solid #ffc94a; outline-offset: 4px; }
