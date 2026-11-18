@@ -29,13 +29,14 @@
 </header>
 <!-- The game's web export (Godot), same origin: it shares the site's login (site.js). -->
 <iframe id="game" src="/godot/index.html" title="Octo Magic" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
+<p class="rotate">Turn your phone sideways to play.</p>
 <script type="module">
   import "/site.js";
   const game = document.getElementById("game");
   game.addEventListener("load", () => game.focus());
   document.getElementById("fullscreen").onclick = (e) => {
     e.preventDefault();
-    game.requestFullscreen();
+    game.requestFullscreen().then(() => screen.orientation?.lock?.("landscape")).catch(() => {});
   };
 </script>
 </body>

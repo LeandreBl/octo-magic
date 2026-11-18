@@ -423,6 +423,13 @@ body.game { height: 100vh; overflow: hidden; }
 body.game .site-header { position: static; }
 body.game h1 { position: absolute; left: -9999px; }
 body.game iframe { flex: 1; width: 100%; border: 0; background: var(--night-900); }
+/* Phones play in landscape only: in portrait, ask to turn the phone. */
+body.game .rotate { display: none; }
+@media (orientation: portrait) and (pointer: coarse) {
+  body.game .rotate { display: flex; position: fixed; inset: 0; z-index: 20; margin: 0; padding: 2rem;
+    align-items: center; justify-content: center; text-align: center; font-size: 1.4rem;
+    color: var(--text); background: var(--night-900); }
+}
 
 @media (max-width: 820px) {
   .site-header nav a.hide-sm { display: none; }
