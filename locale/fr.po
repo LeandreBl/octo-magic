@@ -326,29 +326,17 @@ msgstr "Puissance"
 msgid "+%d%% damage"
 msgstr "+%d %% de dégâts"
 
-msgid "Haste"
-msgstr "Cadence"
-
 msgid "+%d%% cast rate"
 msgstr "+%d %% de cadence de lancer"
 
-msgid "Antidote"
-msgstr "Antidote"
-
 msgid "+%d%% poison resistance"
 msgstr "+%d %% de résistance au poison"
-
-msgid "Fireproof"
-msgstr "Ignifuge"
 
 msgid "+%d%% fire resistance"
 msgstr "+%d %% de résistance au feu"
 
 msgid "-%d%% cooldown"
 msgstr "-%d %% de temps de recharge"
-
-msgid "Thrift"
-msgstr "Économie"
 
 msgid "-%d%% mana cost"
 msgstr "-%d %% de coût en mana"
@@ -781,26 +769,14 @@ msgstr "Niveau max"
 msgid "Level %d / %d"
 msgstr "Niveau %d / %d"
 
-msgid "Toughness"
-msgstr "Robustesse"
-
 msgid "+%d max health"
 msgstr "+%d de vie max"
-
-msgid "Reservoir"
-msgstr "Réservoir"
 
 msgid "+%d max mana"
 msgstr "+%d de mana max"
 
-msgid "Flow"
-msgstr "Flux"
-
 msgid "+%d%% mana regeneration"
 msgstr "+%d %% de régénération de mana"
-
-msgid "Fleetness"
-msgstr "Agilité"
 
 msgid "+%d%% move speed"
 msgstr "+%d %% de vitesse de déplacement"
@@ -858,9 +834,6 @@ msgstr "Attraction"
 
 msgid "+15% pickup radius"
 msgstr "+15 % de rayon de ramassage"
-
-msgid "Magnetism"
-msgstr "Magnétisme"
 
 msgid "+%d%% pickup radius"
 msgstr "+%d %% de rayon de ramassage"
@@ -1101,17 +1074,11 @@ msgstr "Extrême"
 msgid "Deal and take double damage"
 msgstr "Inflige et subit le double de dégâts"
 
-msgid "Inspiration"
-msgstr "Inspiration"
-
 msgid "+%d choice per grimoire"
 msgstr "+%d choix par grimoire"
 
 msgid "+%d max HP"
 msgstr "+%d PV max"
-
-msgid "Channeling"
-msgstr "Canalisation"
 
 msgid "+%d%% mana regen standing still"
 msgstr "+%d%% régén. de mana à l'arrêt"

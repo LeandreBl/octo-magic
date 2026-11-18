@@ -19,10 +19,10 @@ and the spells are words you write on scrolls, forged by an AI.
   at the end of a wave.
 - Grimoires: a choice of 3 skills (red: hero, blue: spell); each pick raises a
   skill one level (I, II, III...) up to its max. Skills (`game/upgrades.gd`):
-  Toughness (HP), Reservoir (mana), Flow (mana regen), Haste (cast rate),
-  Fleetness (speed), Magnetism (pickup radius), Antidote and Fireproof
-  (poison and fire resistance), Inspiration (a 4th card), Thrift (mana cost),
-  Power (damage), Channeling (x4 mana regen standing still).
+  Robur (HP), Receptaculum (mana), Fluxus (mana regen), Celeritas (cast rate),
+  Pernicitas (speed), Magnes (pickup radius), Antidotum and Tutela Ignis
+  (poison and fire resistance), Inspiratio (a 4th card), Parsimonia (mana cost),
+  Potentia (damage), Meditatio (x4 mana regen standing still).
 - Permadeath: the run ends when every mage is down; gold and scrolls are kept.
   A solo run is saved at the start of each wave (pause → Save and quit), in
   the cloud with the character: Play continues it on any device.

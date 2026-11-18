@@ -77,7 +77,7 @@ var look := {"hat": "#3a2a99", "robe": "#6a4cff", "staff": "#8d6e63", "ring": ""
 
 var _angle := 0.0  # where the sprite heads: its move, else its aim (turned smoothly)
 var _moving := false
-var _still := 0.0  # s since the mage last moved: past STILL_TIME it channels (Channeling skill)
+var _still := 0.0  # s since the mage last moved: past STILL_TIME it channels (Meditatio skill)
 var _cast_t := 0.0  # s left of the cast animation
 var _channel_t := 0.0  # s left of the channel animation: renewed by each tick of a beam or cone
 var _last_pos := Vector2.ZERO
@@ -412,7 +412,7 @@ func gem() -> Vector2:
 	return global_position + SIZE * GEM.rotated(_angle + PI / 2.0)
 
 
-## Standing still with the Channeling skill: mana regen times stats.still_regen.
+## Standing still with the Meditatio skill: mana regen times stats.still_regen.
 ## A short wait so a frame without a synced position is not a stop.
 func channeling() -> bool:
 	return stats.still_regen > 1.0 and _still > STILL_TIME

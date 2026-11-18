@@ -67,7 +67,7 @@ func _test_french() -> void:
 	for m in RegEx.create_from_string("\"[A-Z_]+\": \"([^\"]+)\"").search_all(FileAccess.get_file_as_string("res://game/online.gd")):
 		texts.append(m.get_string(1))  # Online.ERRORS (the autoload needs Profile)
 	texts += Settings.REBINDABLE.values().filter(func(t): return t != "Pause")
-	var same := ["Scribe", "Inspiration", "Antidote", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Pila Ignea", "Telum Magicum", "Fragmen Glaciei", "Arcus Fulguris", "Spiculum Veneni", "Tela Arcana", "Poison", "Zone", "Projectiles", "Abomination"]
+	var same := ["Scribe", "Robur", "Parsimonia", "Inspiratio", "Celeritas", "Tutela Ignis", "Fluxus", "Receptaculum", "Meditatio", "Antidotum", "Pernicitas", "Magnes", "Potentia", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Pila Ignea", "Telum Magicum", "Fragmen Glaciei", "Arcus Fulguris", "Spiculum Veneni", "Tela Arcana", "Poison", "Zone", "Projectiles", "Abomination"]
 	for t in texts:
 		check(t in same or TranslationServer.translate(t) != t, "French for: " + t)
 	check(Spell.describe({"description": "x", "description_fr": "y"}) == "y", "forged spell described in French")
@@ -98,7 +98,7 @@ func _test_upgrades() -> void:
 	check(Spell.scale_damage(boom, 2.0).emit.body.on_expire[0].emit.body.on_hit[0].amount == 20.0, "nested damage scaled")
 	check(is_equal_approx(_damage(Spell.scale_damage(s, 1.5)), _damage(s) * 1.5), "damage scaled")
 	check(["I", "II", "III", "IV", "V", "IX", "XI"] == [1, 2, 3, 4, 5, 9, 11].map(Upgrades.roman), "levels in roman numerals")
-	check(Upgrades.title(Upgrades.LIST.haste, 3) == "Haste III" and Upgrades.title(Upgrades.LIST.channeling, 1) == "Channeling", "single-level skill has no numeral")
+	check(Upgrades.title(Upgrades.LIST.haste, 3) == "Celeritas III" and Upgrades.title(Upgrades.LIST.channeling, 1) == "Meditatio", "single-level skill has no numeral")
 	check(Upgrades.describe(Upgrades.LIST.thrift) == "-15% mana cost", "thrift described")
 	var free := Stats.total([Upgrades.bonus(Upgrades.LIST.thrift, 11)])
 	check(is_equal_approx(Stats.total([Upgrades.bonus(Upgrades.LIST.thrift, 2)]).mana_cost, 0.7) and free.mana_cost == 0.0, "thrift: -15% a level, down to free")
