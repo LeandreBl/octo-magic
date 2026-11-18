@@ -1,6 +1,6 @@
 extends Control
 ## In-run HUD: pause, the wave and the boss countdown, gold and score (top
-## left); HP, XP (the level in it) and mana gauges, each as wide as its max
+## left); HP, XP and mana gauges (no text), each as wide as its max
 ## and hollow when empty, with the bosses' health under them (top center: the
 ## other enemies show none); the spell slots, primary then secondary, with key,
 ## mana cost and cooldown (top right: touch a slot to cast it), then the
@@ -19,7 +19,6 @@ var main: Node
 var _hp: ProgressBar
 var _mana: ProgressBar
 var _xp: ProgressBar
-var _level: Label
 var _wave: Label
 var _pips: Array[ColorRect] = []  # waves left before the boss
 var _boss: VBoxContainer  # the bosses' names and health bar, hidden without one
@@ -109,9 +108,6 @@ func _ready() -> void:
 	_hp.fill_mode = ProgressBar.FILL_END_TO_BEGIN  # empties from the left
 	_xp = _bar(gauges, UITheme.XP, 28)
 	_xp.fill_mode = ProgressBar.FILL_BOTTOM_TO_TOP
-	_level = _xp.get_child(0)
-	_level.add_theme_font_override("font", UITheme.BODY_BOLD)
-	_level.add_theme_font_size_override("font_size", 18)
 	_mana = _bar(gauges, UITheme.MANA, 28)
 	_mana.fill_mode = ProgressBar.FILL_END_TO_BEGIN
 	_boss = _box(VBoxContainer.new(), 2)
@@ -183,14 +179,7 @@ func _bar(parent: Control, color: Color, height: int) -> ProgressBar:
 	fill.expand_margin_right = -RIM - 1
 	bar.add_theme_stylebox_override("fill", fill)
 	bar.add_theme_stylebox_override("background", StyleBoxEmpty.new())  # see-through when empty
-	var text := Label.new()
-	text.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	text.add_theme_font_size_override("font_size", 15)
-	text.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
-	bar.add_child(text)
-	var frame := Panel.new()  # child 1: the frame, hollow
+	var frame := Panel.new()  # the frame, hollow
 	var box := StyleBoxTexture.new()
 	box.texture = FRAME
 	box.set_texture_margin(SIDE_LEFT, 12)  # the end caps keep their shape
@@ -205,10 +194,9 @@ func _bar(parent: Control, color: Color, height: int) -> ProgressBar:
 	return bar
 
 
-func _set_bar(bar: ProgressBar, value: float, max_value: float, text: String, regen := "") -> void:
+func _set_bar(bar: ProgressBar, value: float, max_value: float) -> void:
 	bar.max_value = max_value
 	bar.value = value
-	bar.get_child(0).text = text + ("  " + regen if regen else "")
 
 
 func _slot(slot: String) -> Control:
@@ -268,12 +256,9 @@ func _process(_delta: float) -> void:
 	var p: Node2D = main.local_player()
 	if not visible or not Run.active or not p:
 		return
-	_set_bar(_hp, p.hp, p.stats.hp, "%d / %d" % [maxf(p.hp, 0.0), p.stats.hp] + ("  · " + tr("Potions %d") % p.potions if p.potions > 0 else ""),
-			"+%.1f/s" % p.stats.hp_regen if p.stats.hp_regen > 0.0 else "")
-	_set_bar(_mana, p.mana, p.stats.mana, "%d / %d" % [p.mana, p.stats.mana],
-			"+%d/s" % p.stats.mana_regen if p.stats.mana_regen > 0.0 else "")
-	_set_bar(_xp, Run.xp, Run.xp_to_next(Run.level), "")
-	_level.text = str(Run.level)
+	_set_bar(_hp, p.hp, p.stats.hp)
+	_set_bar(_mana, p.mana, p.stats.mana)
+	_set_bar(_xp, Run.xp, Run.xp_to_next(Run.level))
 	_size_gauges(p.stats.hp, p.stats.mana)
 	_wave.text = tr("Wave %d") % Run.wave
 	var done := Run.BOSS_EVERY if Run.wave > 0 and Run.wave % Run.BOSS_EVERY == 0 else Run.wave % Run.BOSS_EVERY
@@ -284,7 +269,7 @@ func _process(_delta: float) -> void:
 	_boss.visible = not bosses.is_empty()
 	if _boss.visible:  # several at once: one bar for all of them
 		_boss.get_child(0).text = " · ".join(bosses.map(func(e): return tr(e.data.name)))
-		_set_bar(_boss.get_child(1), bosses.reduce(func(a, e): return a + e.hp, 0.0), bosses.reduce(func(a, e): return a + e.max_hp, 0.0), "")
+		_set_bar(_boss.get_child(1), bosses.reduce(func(a, e): return a + e.hp, 0.0), bosses.reduce(func(a, e): return a + e.max_hp, 0.0))
 	_gold.text = str(Run.gold)
 	_score.text = "Score %d" % Run.score()
 	_passive.visible = "shield" in p.passives

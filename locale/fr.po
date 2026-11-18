@@ -1147,9 +1147,6 @@ msgstr "Fioles"
 msgid "3 potions, drunk by themselves below 30% HP: +50% HP"
 msgstr "3 fioles, bues toutes seules sous 30 % des PV : +50 % des PV"
 
-msgid "Potions %d"
-msgstr "Fioles %d"
-
 msgid "Gold rush"
 msgstr "Ruée vers l'or"
 
