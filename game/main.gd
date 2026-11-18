@@ -178,7 +178,7 @@ func _on_summoned(kind: String, pos: Vector2) -> void:
 
 
 func _on_killed(e: Node2D) -> void:
-	_killed.rpc(e.kind, e.position, e.radius, e._flip)
+	_killed.rpc(e.kind, e.data.get("look", e.kind), e.position, e.radius, e._angle, e._flip)
 	_drop("xp", e.xp, e.position)
 	if Run.is_boss(e.kind) or randf() < 0.5:
 		_drop("gold", e.gold, e.position + Vector2(randf_range(-8, 8), randf_range(-8, 8)))
@@ -192,10 +192,16 @@ func _on_killed(e: Node2D) -> void:
 
 ## Kills and drops are shared: every peer counts them in its own Run.
 @rpc("authority", "call_local", "reliable")
-func _killed(kind: String, pos: Vector2, radius: float, flip: bool) -> void:
+func _killed(kind: String, look: String, pos: Vector2, radius: float, angle: float, flip: bool) -> void:
 	Run.killed(kind)
 	if not Run.is_boss(kind):
 		Sfx.play("die")
+		var c := Enemy.Corpse.new()
+		c.look = look
+		c.position = pos
+		c.radius = radius
+		c.angle = angle
+		add_child(c)
 		return
 	var fx := BossDeath.new()  # sounds its own blasts
 	fx.look = kind

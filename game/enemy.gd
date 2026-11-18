@@ -307,6 +307,38 @@ func _draw() -> void:
 	draw_rect(Rect2(-radius, -size * 0.45 - 6, 2 * radius * maxf(hp, 0.0) / max_hp, 3), Color.RED)
 
 
+## A fallen enemy (main.gd _killed): plays <look>/death.png once where it
+## fell, turned as it was, then fades out. Nothing when not generated.
+class Corpse extends Node2D:
+	const FADE := 0.4  # s
+	var look := "skeleton"
+	var radius := 12.0
+	var angle := PI / 2.0
+	var age := 0.0
+	var _tex: Texture2D
+
+	func _ready() -> void:
+		z_index = -1  # under the living
+		_tex = Self.art(look + "/death")
+		if not _tex:
+			queue_free()
+
+	func _process(delta: float) -> void:
+		age += delta
+		queue_redraw()
+		if age > _len() + FADE:
+			queue_free()
+
+	func _len() -> float:
+		return _tex.get_width() / _tex.get_height() / FPS
+
+	func _draw() -> void:
+		var n := _tex.get_width() / _tex.get_height()
+		draw_set_transform(Vector2.ZERO, angle - PI / 2.0)  # the art faces down
+		Self.draw_frame(self, _tex, mini(int(age * FPS), n - 1), radius * 2.5, false,
+			Color(1, 1, 1, clampf((_len() + FADE - age) / FADE, 0.0, 1.0)))
+
+
 ## A ground zone cast by an enemy (see _zone); hurts mages on the host only.
 class Zone extends Node2D:
 	var radius := 50.0

@@ -233,6 +233,15 @@ func _test_boss_death() -> void:
 	fx._process(10.0)
 	check(fx.is_queued_for_deletion(), "gone once it blew up")
 	fx.free()
+	# every other monster falls in a death strip, then fades out
+	for look in DirAccess.get_directories_at("res://assets/monsters"):
+		check(look == "fx" or Enemy.art(look + "/death") != null, "%s has a death animation" % look)
+	var c := Enemy.Corpse.new()
+	root.add_child(c)
+	check(not c.is_queued_for_deletion(), "a corpse plays its death")
+	c._process(10.0)
+	check(c.is_queued_for_deletion(), "a corpse fades out")
+	c.free()
 
 
 func _test_waves() -> void:

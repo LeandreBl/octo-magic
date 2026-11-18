@@ -2,7 +2,7 @@
 Run.ENEMIES (game/run.gd), and per variant (<kind>_<variant>), seen from
 straight above like the octopus mage, its front toward the bottom of the image
 (PixMiniMax strikes that way): game/enemy.gd turns it toward where it goes. Its
-walk cycle (an idle for the still ones) and its special moves; plus the
+walk cycle (an idle for the still ones), its death and its special moves; plus the
 effects of their attacks.
 
 A monster with a look is drawn in the style (and overhead framing) of the
@@ -40,17 +40,20 @@ TOP = ("{look}, seen from directly above, bird's-eye view at 90 degrees like the
        " no face visible")
 KEEP = ", keep the view from directly above and the same pose"
 WALK = "walking forward toward the bottom of the image, seen from directly above, seamless loop"
+DEATH = ("dies: collapses and falls down onto the ground, crumbling into a lifeless heap, seen from directly above,"
+         " ends lying still")
 IDLE = "standing still seen from directly above, breathing gently, seamless loop"
 BOW = {"walk": IDLE, "attack": "draws its bow and shoots an arrow toward the bottom of the image"}
 CAST = {"walk": IDLE, "attack": "thrusts its hands forward and casts a spell toward the bottom of the image"}
 # melee ones: their strike when they touch the mage
 CLAW = {"attack": "lunges and slashes with its clawed hands toward the bottom of the image"}
 SWORD = {"attack": "swings its sword in a wide slash toward the bottom of the image"}
+SHIELDED = CAST | {"death": "dies: its magic shield bubble shatters and vanishes, then it " + DEATH[6:]}
 SHIELD = "surround it with a big round translucent glowing magic shield bubble" + KEEP
 DARK = "dark heroic fantasy game undead graveyard monster, full body, menacing, "
 MAGE = "a skeleton mage in a tattered dark robe"
 # look (kind or kind_variant) -> (size, {"look": (what, its head)} or {"from": (look, change)}, {anim: action});
-# "walk" defaults to WALK.
+# "walk" defaults to WALK, "death" (game/enemy.gd Corpse) to DEATH.
 MONSTERS = {
     "skeleton": (48, {"look": ("a plain undead skeleton, empty handed", "bare white skull")}, CLAW),
     "archer": (48, {"look": ("a skeleton archer with a brown scarf, a wooden bow held in front of it", "bare white skull")}, BOW),
@@ -70,18 +73,19 @@ MONSTERS = {
     "skeletal_knight_gauntlets": (48, {"from": ("skeletal_knight", "give it iron gauntlets on its hands" + KEEP)}, SWORD),
     "wraith": (48, {"look": ("a pure white ghostly wraith with a tattered cloak and no legs, glowing icy wisps", "white tattered hood")},
                {"walk": "floating toward the bottom of the image, cloak fluttering, seen from directly above, seamless loop",
-                "attack": "lashes out with its icy ghostly claws toward the bottom of the image, freezing wisps bursting"}),
+                "attack": "lashes out with its icy ghostly claws toward the bottom of the image, freezing wisps bursting",
+                "death": "dies: shrieks, its cloak unravels and it fades away into icy wisps, seen from directly above"}),
     "putrid_archer": (48, {"from": ("archer", "put a brown hood on its skull, dripping green poison" + KEEP)}, BOW),
     "burning_archer": (48, {"from": ("archer", "engulf it in orange flames" + KEEP)}, BOW),
     "burning_skeleton": (48, {"from": ("skeleton", "engulf it in orange flames" + KEEP)}, CLAW),
     "fire_mage": (48, {"look": (MAGE + ", its two hands on fire", "dark pointed hood")}, CAST),
-    "fire_mage_shield": (48, {"from": ("fire_mage", SHIELD)}, CAST),
+    "fire_mage_shield": (48, {"from": ("fire_mage", SHIELD)}, SHIELDED),
     "poison_mage": (48, {"from": ("fire_mage", "replace the fire in its hands with glowing green balls" + KEEP)}, CAST),
-    "poison_mage_shield": (48, {"from": ("poison_mage", SHIELD)}, CAST),
+    "poison_mage_shield": (48, {"from": ("poison_mage", SHIELD)}, SHIELDED),
     "frost_mage": (48, {"from": ("fire_mage", "replace the fire in its hands with glowing icy blue balls" + KEEP)}, CAST),
-    "frost_mage_shield": (48, {"from": ("frost_mage", SHIELD)}, CAST),
+    "frost_mage_shield": (48, {"from": ("frost_mage", SHIELD)}, SHIELDED),
     "lightning_mage": (48, {"from": ("fire_mage", "replace the fire in its hands with crackling white balls of lightning" + KEEP)}, CAST),
-    "lightning_mage_shield": (48, {"from": ("lightning_mage", SHIELD)}, CAST),
+    "lightning_mage_shield": (48, {"from": ("lightning_mage", SHIELD)}, SHIELDED),
     "boss": (96, {"front": "a towering lich king, a skeleton in ornate violet robes with a golden crown, holding a glowing staff,"
                            " huge imposing boss"}, {
         "walk": "floating toward the viewer, robes flowing, seamless loop",
@@ -166,7 +170,7 @@ def monster(kind: str) -> None:
             for i, png in enumerate(choices):
                 (CHOICES / kind / f"{i}.png").write_bytes(png)
             base.write_bytes(choices[0])
-    for anim, action in ({"walk": WALK} | anims).items():
+    for anim, action in ({"walk": WALK, "death": DEATH} | anims).items():
         path = d / f"{anim}.png"
         if not path.exists():
             path.write_bytes(_strip(art.animate(base.read_bytes(), action, 8)))
@@ -192,7 +196,7 @@ def main() -> None:
     only = set(sys.argv[1:])
     todo = [(monster, k) for k in MONSTERS if not only or k in only]
     todo += [(fx, n) for n in FX if (not only or n in only) and not (OUT / "fx" / f"{n}.png").exists()]
-    with ThreadPoolExecutor(12) as pool:
+    with ThreadPoolExecutor(10) as pool:  # PixelLab Tier 2: 11 concurrent jobs at most
         for job, arg in todo:
             pool.submit(_safe, job, arg)
 
