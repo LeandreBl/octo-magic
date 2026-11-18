@@ -1,5 +1,119 @@
 # octo-magic
-Create, combine and cast spells to conquer a dungeon.
+Create, combine and cast spells to conquer a graveyard. A top-down twin-stick
+roguelite: you are an octopus mage, waves of undead come out of the tombs,
+and the spells are words you write on scrolls, forged by an AI.
+
+## What the game does
+
+### A run
+- One map: a hand-painted graveyard (`game/arena.gd`, zones in
+  `assets/maps/graveyard/map.json`, edited with `tools/map_editor.py`). Trees and
+  roofs are drawn above the mage and fade around it when it walks under them;
+  mages and monsters slide around walls, tombs and trees.
+- Endless waves of growing size and strength. Monsters come out of open tombs,
+  never inside a player's view; a boss every 5 waves.
+- XP from kills: each level gives full health and mana back and blasts the
+  monsters around the mage away.
+- Drops: gold, mana and life orbs, blank scrolls, red and blue grimoires, and
+  Quad Damage (x4 damage for 10 s). Everything on the floor flies to the mage
+  at the end of a wave.
+- Grimoires: a choice of 3 skills (red: hero, blue: spell); each pick raises a
+  skill one level (I, II, III...) up to its max. Skills (`game/upgrades.gd`):
+  Toughness (HP), Reservoir (mana), Flow (mana regen), Haste (cast rate),
+  Fleetness (speed), Magnetism (pickup radius), Antidote and Fireproof
+  (poison and fire resistance), Inspiration (a 4th card), Thrift (mana cost),
+  Power (damage), Channeling (x4 mana regen standing still).
+- Permadeath: the run ends when every mage is down; gold and scrolls are kept.
+  A solo run is saved at the start of each wave (pause → Save and quit), in
+  the cloud with the character: Play continues it on any device.
+- Score from kills, waves and bosses; local leaderboard (best 10).
+
+### Monsters (`Run.ENEMIES`, `game/enemy.gd`)
+- Undead only: skeletons, imps, archers and marksmen, zombies, skeletal
+  warriors (helmet) and knights (gauntlets), wraiths, poison, frost, fire and
+  lightning mages (some shielded), rotting zombies (leave poison pools),
+  burning skeletons and archers, putrid archers.
+- AIs: chase, weave (zigzags), still (archers and mages hold still once on
+  screen). They attack only from on screen; ground attacks are always
+  telegraphed.
+- Effects on the mage: poison, freeze (slowed), stun, and fire damage.
+- Bosses (`Run.BOSSES`): Lich King (wave 5: shot rings, summons skeletons),
+  then the boss monsters, each adding an attack to the last one's: Bone Herald
+  (10, missile volleys), Pyre Lord (15, + fire pools), Blight Eye (20, + green
+  laser), Grave Maw (25, + vanishes and bites), Archfiend (30 and every 5th
+  wave after, + fire pools hatching hell imps, more each time). A boss dies in
+  a staggering explosion (`game/boss_death.gd`) and scatters gold.
+
+### The mage
+- An octopus seen from above (PixelLab sprites), with 8 physics tentacles that
+  crawl, swim behind it at full speed and bump into walls and monsters
+  (`game/tentacle.gd`, visual only).
+- Stats as data (`game/stats.gd`): HP, HP and mana regen, mana, mana cost,
+  cooldown, cast rate, speed, pickup radius, armor, crit (x2 per cast),
+  damage, gold, XP, poison and fire resistance, orbs, luck, grimoire choices.
+  Every source (equipment, bonuses, perks, skills) is a bonus on them.
+- One spell (left click), plus an active augment as secondary spell (right
+  click / Space / RB). A spell costing more than the max mana still casts,
+  weakened.
+
+### Spells (`spell/`, format in `docs/spells.md`)
+- A spell is data: bodies (bolt, zone, beam, cone), patterns, motions (homing,
+  wave, accelerate, boomerang, orbit), effects (damage, burn, poison, slow,
+  freeze, stun, knockback, heal, sub-casts up to 3 deep). The engine clamps
+  everything and prices it in mana: the AI describes, the engine balances.
+- Sounds synthesized from the spell data (`spell/spell_sound.gd`), pixel art
+  from its grids or its PixelLab sheets.
+- 8 base spells (`game/spells.json`): 4 to start a character with, 4 unlocked
+  by achievements.
+
+### The forge (between runs, logged in)
+- One word per blank scroll, in a dead language (Latin, Ancient Greek, Old
+  Norse, Sanskrit...); several scrolls at once. A meaningless or living-language
+  word is cancelled and its scroll given back.
+- The server's forge (Claude, `server/forge.py`) rewrites the spell with the
+  words and PixelLab draws its projectile, impact and icon; the result is a
+  `.spell` bundle tied to the account. Several forges can run in parallel
+  while you play; the new spell is equipped at the next run.
+
+### Between runs
+- Shop (`ui/shop.gd`): staffs, robes and rings; permanent bonuses (Vitality,
+  Power, Focus, Swiftness, Frugality, Endurance, Keen eye, Attraction, Greed,
+  Wisdom, and Feeling perky: +1 augment slot, twice); augments, bought once,
+  3 slots per run: Ring of fire (active), Shield, and perks (Life up, Mana up,
+  Quick feet, Creativity, Poison ward, Telekinesis, Battle mage, Scavenger,
+  Blaze of glory, Fast caster, Potions, Gold rush, Head start, Great start,
+  Weird eye, Lucky drops, Hardcore); the mage's look.
+- 13 achievements, some unlocking spells; stats and leaderboard.
+
+### Online
+- Account (email/password or Google, Firebase), several characters per
+  account, each with its profile, spells and saved run, synced to the server.
+- Coop up to 8 players, WebRTC peer to peer (`game/net.gd`, `game/lobby.gd`):
+  the host runs the game, each player keeps its own run; kills and drops are
+  shared; players can join mid-run.
+- Website (`web/`): landing page, account with stats and deletion, the web
+  game, terms and privacy, in French and English.
+
+### Everywhere
+- Keyboard and mouse, gamepad, or touch (left half moves, right half aims).
+- Options: language (English, French), UI size, fullscreen, volumes, key
+  rebinding.
+- 14 music tracks (`assets/music/CREDITS.md`), retro sound effects synthesized
+  at startup (`game/sfx.gd`).
+
+## Code map
+- `game/`: the game scene `main.gd` (waves, drops, coop wiring) and autoloads
+  `Run` (`run.gd`: the current run, monster and boss data, waves), `Profile`
+  (`profile.gd`: everything kept between runs, shop data, achievements, saved
+  in `user://profile.json`), `Online` (`online.gd`: account and server),
+  `Sfx`. Data-only classes: `Stats`, `Upgrades` (grimoire skills).
+- `spell/`: the spell engine (`Spell`: sanitize, price, damage scaling;
+  `SpellBody`, `SpellArt`, `SpellSound`).
+- `ui/`: every screen (entry `ui/ui.gd`), HUD, shop, forge, options
+  (`user://settings.cfg`), theme.
+- `server/`: the spell forge (Python). `backend/`: the NestJS server. `web/`:
+  the website. `tools/`: PixelLab art generators and the map editor.
+- Design decisions: `docs/design.md`.
 
 ## Run
 
@@ -15,43 +129,23 @@ Create, combine and cast spells to conquer a dungeon.
   VPS, behind Traefik: https://octo-magic.notdotio.com (website and game),
   https://octo-magic.api.notdotio.com (API), TURN on
   octo-magic.turn.notdotio.com (see the end of `example.env`).
-  Website: `web/`, static pages without a build (landing `/`, account
-  with stats and deletion `/account`, the game embedded on `/game`,
-  `/terms`, `/privacy`); same Firebase login as the game, shared with the
-  web game through localStorage (`web/site.js`). `./web.sh` exports the
-  game into `web/godot` for local dev.
-  Server: `backend/`, NestJS in TypeScript (Firebase login guard,
-  profiles and spells in Postgres through Prisma, forge proxy, coop lobby
-  on `/play`, serves `web/`); API docs on `/api/docs`. Local dev: `cd backend && npm i &&
-  npm run start:dev` (with the variables of `example.env` and a
-  `DATABASE_URL`); migrations in `backend/prisma/migrations`, applied at
-  container start-up.
-- Coop (menu → Multijoueur, logged in): WebRTC peer to peer, the server only
-  introduces the players (`game/net.gd`). The native game needs the WebRTC
-  extension: `./webrtc.sh` (downloads `addons/webrtc_native`, not in git).
-- Account in the game: menu → Compte (email/password or Google, Firebase).
-  Google needs, in the Firebase/Google Cloud console: the Google provider on,
-  authorized domain `octo-magic.notdotio.com`, and on its OAuth web client the
-  redirect URIs `https://octo-magic.notdotio.com/account` (site and web game)
-  and `http://localhost:47815/` (native game). Logged in,
-  the profile and forged spells follow the account and the forge works. The
-  native game talks to https://octo-magic.api.notdotio.com
-  (`OCTO_SERVER=http://localhost:8080` for a local server); see
-  `game/online.gd`.
-- Tests: `GODOT=/path/to/godot tests/run.sh`
-
-Controls: move WASD / arrows / left stick / left half of the screen; aim
-with the mouse / right stick / right half. Spell: left click (or aim
-stick); there is only one. Pause: Escape / Start. Keys can be rebound in Options.
-
-Game state: autoloads `Profile` (`game/profile.gd`: gold, shop, bonuses, augments,
-look, achievements, scores, spells; saved in `user://profile.json`) and
-`Run` (`game/run.gd`: XP, level-ups, upgrades, waves). A solo run is saved
-at the start of every wave in `Profile.run` (so in the cloud with the
-character): pause → Save and quit, then Play continues it, on any device. Base spells:
-`game/spells.json`; level-up upgrades: `game/upgrades.gd`.
-
-Screens (menus, HUD, level-up, shop, spell forge, options, theme) are in `ui/`, entry
-`ui/ui.gd`; options are saved in `user://settings.cfg`.
-
-Design: `docs/design.md`. Spell format: `docs/spells.md`.
+  Website: static pages without a build, same Firebase login as the game,
+  shared with the web game through localStorage (`web/site.js`). `./web.sh`
+  exports the game into `web/godot` for local dev.
+  Server: NestJS in TypeScript (Firebase login guard, profiles and spells in
+  Postgres through Prisma, forge proxy, coop lobby on `/play`, serves `web/`);
+  API docs on `/api/docs`. Local dev: `cd backend && npm i && npm run start:dev`
+  (with the variables of `example.env` and a `DATABASE_URL`); migrations in
+  `backend/prisma/migrations`, applied at container start-up.
+- Coop (menu → Multijoueur, logged in): the server only introduces the
+  players. The native game needs the WebRTC extension: `./webrtc.sh`
+  (downloads `addons/webrtc_native`, not in git).
+- Account in the game: menu → Compte. Google needs, in the Firebase/Google
+  Cloud console: the Google provider on, authorized domain
+  `octo-magic.notdotio.com`, and on its OAuth web client the redirect URIs
+  `https://octo-magic.notdotio.com/account` (site and web game) and
+  `http://localhost:47815/` (native game). The native game talks to
+  https://octo-magic.api.notdotio.com (`OCTO_SERVER=http://localhost:8080` for
+  a local server); see `game/online.gd`.
+- Tests: `GODOT=/path/to/godot tests/run.sh`. Screenshots by hand:
+  `tests/shot.gd`, `tests/shot_forge.gd`.
