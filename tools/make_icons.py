@@ -21,9 +21,9 @@ STYLE = ("fantasy game inventory icon, a single object or symbol, no character, 
 # English art briefs (an object or symbol), as the forge's icon_brief.
 SPELLS = {
     "fireball": "a big blazing ball of fire with a short flaming tail, orange and yellow",
-    "lightning": "a crackling jagged blue-white electric arc between two sparks",
+    "lightning": "a single bright blue-white jagged lightning bolt striking diagonally, crackling electric glow",
     "magic_missile": "a glowing violet magic arrowhead curving toward a small target rune",
-    "frost_jet": "a cone-shaped blast of icy mist and snowflakes spraying outward, pale cyan",
+    "frost_jet": "a wide spray of freezing icy wind and snowflakes blowing out sideways from a glowing frost rune, pale cyan, not food",
     "frost_shard": "a sharp pale blue ice crystal shard, frosty glints",
     "spark": "a bright yellow electric spark burst with small crackling lightning arcs",
     "venom_dart": "a green poisoned dart dripping venom",
