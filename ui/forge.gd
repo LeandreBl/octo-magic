@@ -4,7 +4,8 @@ extends Control
 ## where a word of the spell is written; the words are sent to the forge
 ## (game/main.gd). Several spells can be forged at once: each job is a small
 ## circle at the top, its glyphs lighting up one after the other, all lit when
-## the spell is forged. On the right, the spell to
+## the spell is forged; clicked, it comes to the foreground in the big circle,
+## its words and glyphs there, the writing hidden. On the right, the spell to
 ## improve is chalked on the table, its name carved in the wood.
 
 signal closed
@@ -49,6 +50,9 @@ var _write: Button
 var _status: Label
 var _counter: Label
 var _jobs: HBoxContainer  # a small circle per forge job (_job_chip)
+var _focus := ""  # id of the job in the foreground of the big circle; empty: writing
+var _writing: Array[Control] = []  # hidden while a job is in the foreground
+var _new: Button  # back to writing
 var _glow := 0.0  # the big circle flares up when a spell is forged
 var _drawn := 1.0  # the chalk being drawn on the table when shown, 0..1
 var _time := 0.0
@@ -143,6 +147,15 @@ func _ready() -> void:
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_page.add_child(_status)
+	_writing = [_edit, rule, _write]
+	_new = _chalk_button(Vector2(300, 56))
+	_new.text = "New scroll"
+	_new.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_new.add_theme_font_size_override("font_size", 26)
+	_new.pressed.connect(func(): _focus = "")
+	_new.hide()
+	_page.add_child(_new)
+	_page.move_child(_new, _write.get_index() + 1)
 
 	# The spell to improve, picked among the owned ones with the arrows: its
 	# icon, its name carved in the wood, its description and stats in chalk.
@@ -307,6 +320,11 @@ func _job_chip(job: Dictionary) -> Control:
 	chip.tooltip_text = Spell.label(job.spell)
 	chip.set_meta("job", job.id)
 	chip.set_meta("glow", 0.0)  # its glyphs flare up once the spell is forged
+	chip.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	chip.gui_input.connect(func(ev):
+		if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT \
+				and chip.get_meta("job") != "":
+			_focus = job.id)
 	chip.draw.connect(_draw_job.bind(chip, job, HUD._icon(job.spell)))
 	return chip
 
@@ -364,17 +382,30 @@ func _process(delta: float) -> void:
 			v.text = r[1]
 			row.add_child(v)
 			_rows.add_child(row)
+	var job := _focused()
+	_focus = job.get("id", "")  # ended: back to writing
+	for c in _writing:
+		c.visible = job.is_empty()
+	_new.visible = not job.is_empty()
 	var can: bool = main.can_write()
 	for a in _arrows:
 		a.disabled = Profile.owned_spells().size() < 2
 	_edit.editable = can
 	_write.disabled = not can
-	_words = Array(_edit.text.replace(",", " ").split(" ", false))
+	_words = Array(str(job.get("text", "") if job else _edit.text).replace(",", " ").split(" ", false))
 	_blanks = Profile.blank_scrolls
 	_counter.text = str(_blanks)
 	var state := tr("No blank scroll: bosses drop them.") if _blanks == 0 \
 		else tr("The forge turns them into a new spell, equipped at your next run.")
 	_status.text = main.forge_status + "\n" + state if main.forge_status else state
+
+
+## The job in the foreground, {} if none.
+func _focused() -> Dictionary:
+	for job in main.forge_jobs:
+		if job.id == _focus:
+			return job
+	return {}
 
 
 ## The study and its table, covering the screen; the candles' light flickers.
@@ -404,14 +435,18 @@ func _draw_circle() -> void:
 	_circle.draw_set_transform_matrix(flat)
 	_circle.draw_texture_rect(CIRCLE, Rect2(-Vector2(d, d) / 2, Vector2(d, d)), false, chalk)
 
-	var n := clampi(_blanks, 1, MAX_SHOWN)
+	var job := _focused()
+	if job:  # its glyphs lit around the big circle
+		_glyphs(_circle, job, Vector2.ZERO, d * 0.47, d * 0.08, 0.0, false)
+	var seals := _words.size() if job else _blanks  # a job: a circle per word written
+	var n := clampi(seals, 1, MAX_SHOWN)
 	var ring := 0.0 if n == 1 else side * 0.24
 	var seal := minf(side * 0.27, 2.0 * ring * sin(PI / n) * 0.95) if n > 1 else side * 0.3
 	var font: Font = UITheme.PARCHMENT
 	for i in n:
 		var at := Vector2.from_angle(-PI / 2 + TAU * i / n) * ring
-		var word: String = _words[i] if i < _words.size() and i < _blanks else ""
-		var tint := chalk if word else Color(chalk, chalk.a * (0.7 if i < _blanks else 0.25))
+		var word: String = _words[i] if i < _words.size() and i < seals else ""
+		var tint := chalk if word else Color(chalk, chalk.a * (0.7 if i < seals else 0.25))
 		var s := seal * (1.0 + 0.04 * sin(_time * 4.0 + i)) if word else seal  # written: it breathes
 		_circle.draw_set_transform_matrix(flat)
 		_circle.draw_texture_rect(SEAL, Rect2(at - Vector2(s, s) / 2, Vector2(s, s)), false, tint)
@@ -435,14 +470,20 @@ func _draw_job(chip: Control, job: Dictionary, icon: Texture2D) -> void:
 	var mid := chip.size / 2
 	var done: bool = chip.get_meta("job") == ""
 	var glow: float = chip.get_meta("glow")
-	chip.draw_texture_rect(SEAL, Rect2(Vector2.ZERO, chip.size), false, CHALK.lerp(EMBER, glow))
+	var front: bool = job.id == _focus  # in the foreground: its circle lit
+	chip.draw_texture_rect(SEAL, Rect2(Vector2.ZERO, chip.size), false, CHALK.lerp(EMBER, maxf(glow, 0.6 if front else 0.0)))
 	var s := JOB * 0.4
 	chip.draw_texture_rect(icon, Rect2(mid - Vector2(s, s) / 2, Vector2(s, s)), false)
+	_glyphs(chip, job, mid, JOB * 0.36, JOB * 0.2, glow, done)
+
+
+## A job's glyphs on `c`, around `mid` at `radius`, `g` wide: lit one after the
+## other, the newest still hot; all of them once `done`.
+func _glyphs(c: CanvasItem, job: Dictionary, mid: Vector2, radius: float, g: float, glow: float, done: bool) -> void:
 	var shown: float = GLYPHS_N if done else maxf(job.get("progress", 0.0), 0.2 * coverage((Time.get_ticks_msec() - job.started) / 1000.0)) * GLYPHS_N
-	var g := JOB * 0.2
 	for i in mini(ceili(shown), GLYPHS_N):
-		var at := mid + Vector2.from_angle(-PI / 2 + TAU * i / GLYPHS_N) * JOB * 0.36
+		var at := mid + Vector2.from_angle(-PI / 2 + TAU * i / GLYPHS_N) * radius
 		var hot := clampf(1.0 - (shown - i) / 3.0, 0.0, 1.0)  # the last ones are still hot
 		var tint := CHALK.lerp(EMBER, maxf(hot, glow))
 		tint.a = clampf(shown - i, 0.0, 1.0)  # the glyph being lit fades in
-		chip.draw_texture_rect_region(GLYPHS, Rect2(at - Vector2(g, g) / 2, Vector2(g, g)), Rect2(_order[i] * 32, 0, 32, 32), tint)
+		c.draw_texture_rect_region(GLYPHS, Rect2(at - Vector2(g, g) / 2, Vector2(g, g)), Rect2(_order[i] * 32, 0, 32, 32), tint)

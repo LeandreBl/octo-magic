@@ -1004,6 +1004,9 @@ msgstr "Écris les mots du sort"
 msgid "Forge the spell"
 msgstr "Forger le sort"
 
+msgid "New scroll"
+msgstr "Nouveau parchemin"
+
 msgid "Fire"
 msgstr "Feu"
 

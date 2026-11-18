@@ -1,6 +1,7 @@
 extends SceneTree
 ## Screenshots of the spell forge: godot --script tests/shot_forge.gd -- out
-## -> out.png (words written), out_forging.png (two spells being forged).
+## -> out.png (words written), out_forging.png (two spells being forged),
+## out_front.png (the first one in the foreground).
 ## Needs a display (not --headless).
 
 
@@ -21,10 +22,14 @@ func _initialize() -> void:
 	root.get_texture().get_image().save_png(out + ".png")
 	for i in 2:  # two spells being forged, the first one for longer
 		var job := {"id": "shot%d" % i, "slot": "primary", "spell": Spell.base(),
-			"started": Time.get_ticks_msec() - 60000 / (i + 1)}
+			"started": Time.get_ticks_msec() - 60000 / (i + 1), "text": "ignis umbra"}
 		main.forge_jobs.append(job)
 		forge._on_started(job)
 	for i in 2:
 		await process_frame
 	root.get_texture().get_image().save_png(out + "_forging.png")
+	forge._focus = "shot0"
+	for i in 2:
+		await process_frame
+	root.get_texture().get_image().save_png(out + "_front.png")
 	quit()

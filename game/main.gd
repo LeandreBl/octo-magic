@@ -38,8 +38,8 @@ var to_spawn := []  # the current wave's kinds not out yet (host)
 var _spawn_in := 0.0  # s until the next one comes out
 var map_name := "crypt"  # this run's map (its music), for players dropping in
 ## Scrolls being written, in parallel: {id, words (scrolls used), slot (of the
-## improved spell, the forged one goes there), spell (the improved one), started,
-## progress (0..1, from the server while pending)}.
+## improved spell, the forged one goes there), spell (the improved one), text
+## (the words written), started, progress (0..1, from the server while pending)}.
 var forge_jobs: Array[Dictionary] = []
 var _forge_posting := false  # words sent, not taken yet: their scrolls are not counted off
 var forge_note := ""  # forge news, shown in the HUD and the forge (ui/forge.gd)
@@ -432,7 +432,7 @@ func write_scroll(words: String, entry: Dictionary) -> void:
 		forge_status = tr("Log in (main menu → Account) to write the scrolls.")
 		return
 	forge_status = tr("Writing the scrolls…")
-	var job := {"slot": entry.slot, "spell": entry.spell, "words": 0}
+	var job := {"slot": entry.slot, "spell": entry.spell, "words": 0, "text": word}
 	var body := JSON.stringify({"spell": entry.spell, "words": word,
 		"scrolls": Profile.blank_scrolls, "lang": TranslationServer.get_locale()})
 	if not _forge_request("/api/forge", auth + PackedStringArray(["Content-Type: application/json"]),
