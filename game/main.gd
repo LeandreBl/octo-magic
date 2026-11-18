@@ -191,12 +191,15 @@ func _wave_started(w: int) -> void:
 	Sfx.play("boss" if Run.wave_plan(w).any(Run.is_boss) else "wave")
 
 
-## An enemy's summon or split: `kind` at `pos`, at the current wave's stats.
+## An enemy's summon: `kind` at `pos`, at the current wave's stats, but
+## worth no XP (else a summoner farms levels).
 func _on_summoned(kind: String, pos: Vector2) -> void:
 	if multiplayer.is_server() and get_tree().get_nodes_in_group("enemies").size() < Enemy.CROWD:
 		spawned += 1
+		var stats := Run.enemy_stats(kind, Run.wave)
+		stats.xp = 0
 		spawner.spawn.call_deferred({"kind": "enemy", "name": "E%d" % spawned, "type": kind,
-			"stats": Run.enemy_stats(kind, Run.wave), "pos": pos.clamp(Arena.RECT.position, Arena.RECT.end)})
+			"stats": stats, "pos": pos.clamp(Arena.RECT.position, Arena.RECT.end)})
 
 
 func _on_killed(e: Node2D) -> void:
