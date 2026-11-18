@@ -27,6 +27,7 @@ const BASE := {
 	"still_regen": 1.0,  # multiplier on mana_regen while the mage stands still (channels)
 	"chain": 0.0,  # enemies a beam's arc jumps on to after its target (SpellBody, Catena)
 	"gust": 0.0,  # knockback force a cone pushes the enemies it strikes away with (SpellBody, Procella)
+	"ether": 1.0,  # multiplier on the primary spell's mana cost, on top of mana_cost (Aether)
 }
 const BOUNDS := {
 	"hp": [1.0, 1000.0], "hp_regen": [0.0, 50.0], "mana": [10.0, 1000.0],
@@ -34,7 +35,7 @@ const BOUNDS := {
 	"speed": [80.0, 660.0], "pickup": [30.0, 600.0], "armor": [-1.0, 0.75],
 	"crit": [0.0, 1.0], "damage": [0.1, 20.0], "gold": [0.0, 6.0], "xp": [0.0, 6.0],
 	"poison": [0.0, 1.0], "fire": [0.0, 1.0], "orbs": [0.0, 4.0], "luck": [0.0, 4.0],
-	"choices": [3.0, 4.0], "still_regen": [1.0, 4.0], "chain": [0.0, 5.0], "gust": [0.0, 300.0],
+	"choices": [3.0, 4.0], "still_regen": [1.0, 4.0], "chain": [0.0, 5.0], "gust": [0.0, 300.0], "ether": [0.2, 1.0],
 }
 const CRIT_MULT := 2.0
 
@@ -42,6 +43,12 @@ const CRIT_MULT := 2.0
 ## A spell's mana cost under the "mana_cost" multiplier: at least 1, 0 only at 0 (free spells).
 static func cost(base: int, mult: float) -> int:
 	return maxi(roundi(base * mult), 1 if mult > 0.0 else 0)
+
+
+## The mana cost multiplier of run slot `slot` under `stats`: the Aether
+## sub-skill ("ether") only lightens the primary spell.
+static func cost_mult(stats: Dictionary, slot: String) -> float:
+	return stats.mana_cost * (stats.ether if slot == "primary" else 1.0)
 
 
 static func total(bonuses: Array) -> Dictionary:

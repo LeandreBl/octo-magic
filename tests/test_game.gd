@@ -67,7 +67,7 @@ func _test_french() -> void:
 	for m in RegEx.create_from_string("\"[A-Z_]+\": \"([^\"]+)\"").search_all(FileAccess.get_file_as_string("res://game/online.gd")):
 		texts.append(m.get_string(1))  # Online.ERRORS (the autoload needs Profile)
 	texts += Settings.REBINDABLE.values().filter(func(t): return t != "Pause")
-	var same := ["Scribe", "Robur", "Parsimonia", "Inspiratio", "Celeritas", "Tutela Ignis", "Fluxus", "Receptaculum", "Meditatio", "Antidotum", "Pernicitas", "Magnes", "Potentia", "Catena", "Procella", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Pila Ignea", "Telum Magicum", "Fragmen Glaciei", "Arcus Fulguris", "Spiculum Veneni", "Tela Arcana", "Poison", "Zone", "Projectiles", "Abomination"]
+	var same := ["Scribe", "Robur", "Parsimonia", "Inspiratio", "Celeritas", "Tutela Ignis", "Fluxus", "Receptaculum", "Meditatio", "Antidotum", "Pernicitas", "Magnes", "Potentia", "Catena", "Procella", "Aether", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Pila Ignea", "Telum Magicum", "Fragmen Glaciei", "Arcus Fulguris", "Spiculum Veneni", "Tela Arcana", "Poison", "Zone", "Projectiles", "Abomination"]
 	for t in texts:
 		check(t in same or TranslationServer.translate(t) != t, "French for: " + t)
 	check(Spell.describe({"description": "x", "description_fr": "y"}) == "y", "forged spell described in French")
@@ -124,6 +124,10 @@ func _test_upgrades() -> void:
 	check(Upgrades.offers({}, rng, "spell", 3, SKILLS).size() == 2, "a kind offers its own skills")
 	var catena: Dictionary = Upgrades.LIST.chaining
 	check(catena.max == 5 and Upgrades.title(catena, 5) == "Catena V" and Stats.total([Upgrades.bonus(catena, 5)]).chain == 5.0, "Catena: +1 chained enemy a level, up to V")
+	var aether: Dictionary = Upgrades.LIST.ether_charge
+	check(aether.max == 5 and aether.spell == "lightning" and is_equal_approx(Stats.total([Upgrades.bonus(aether, 5)]).ether, 0.4), "Aether: -12 % Fulmen mana cost a level, up to V")
+	var st := Stats.total([Upgrades.bonus(aether, 5)])
+	check(Stats.cost(50, Stats.cost_mult(st, "primary")) == 20 and Stats.cost(50, Stats.cost_mult(st, "secondary")) == 50, "Aether lightens the primary spell only")
 	var sub := {"chaining": catena}
 	check(Upgrades.offers({}, rng, "spell", 3, sub).is_empty() and Upgrades.offers({}, rng, "spell", 3, sub, "fireball").is_empty()
 		and Upgrades.offers({}, rng, "spell", 3, sub, "lightning").size() == 1, "a sub-skill only for its base spell (Fulmen), never a forged one")

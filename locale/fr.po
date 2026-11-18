@@ -1080,6 +1080,9 @@ msgstr "L'arc de Fulmen rebondit sur +%d ennemi"
 msgid "Flatus Gelidus pushes enemies back (+%d force)"
 msgstr "Flatus Gelidus repousse les ennemis (+%d de force)"
 
+msgid "-%d%% Fulmen mana cost"
+msgstr "-%d%% de coût en mana de Fulmen"
+
 msgid "Records"
 msgstr "Palmarès"
 

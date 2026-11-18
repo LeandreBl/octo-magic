@@ -154,7 +154,7 @@ func choose(i: int) -> bool:
 
 
 func mana_cost(slot: String) -> int:
-	return Stats.cost(Spell.mana_cost(spells[slot]), stats.mana_cost)
+	return Stats.cost(Spell.mana_cost(spells[slot]), Stats.cost_mult(stats, slot))
 
 
 func collect(kind: String, value: int) -> void:

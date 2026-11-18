@@ -26,7 +26,8 @@ and the spells are words you write on scrolls, forged by an AI.
   Sub-skills augment one base spell and are offered only when it is the run's
   spell; engine stats, never spell data, so no scroll can forge them: Catena
   (Fulmen's arc jumps on to +1 enemy a level, up to V), Procella (Flatus
-  Gelidus pushes the enemies it strikes back, harder each level, up to V).
+  Gelidus pushes the enemies it strikes back, harder each level, up to V), Aether
+  (-12 % Fulmen mana cost a level, up to V).
 - Permadeath: the run ends when every mage is down; gold and scrolls are kept.
   A solo run is saved at the start of each wave (pause → Save and quit), in
   the cloud with the character: Play continues it on any device.

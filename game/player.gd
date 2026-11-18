@@ -145,7 +145,7 @@ static func clean_loadout(raw: Variant) -> Dictionary:
 		var s: Variant = l.get("spells", {}).get(slot) if l.get("spells") is Dictionary else null
 		if s is Dictionary:
 			spells[slot] = Spell.sanitize(s)
-			costs[slot] = Stats.cost(Spell.mana_cost(spells[slot]), stats.mana_cost)
+			costs[slot] = Stats.cost(Spell.mana_cost(spells[slot]), Stats.cost_mult(stats, slot))
 	var look_in: Dictionary = l.get("look") if l.get("look") is Dictionary else {}
 	var out_look := {}
 	for k in ["hat", "robe", "staff", "ring"]:
