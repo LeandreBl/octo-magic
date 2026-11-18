@@ -15,6 +15,7 @@ const LIST := {
 	"inspiration": {"name": "Inspiration", "desc": "+%d choice per grimoire", "step": 1, "max": 1, "kind": "hero", "stat": "choices"},
 	"haste": {"name": "Haste", "desc": "+%d%% cast rate", "step": 10, "max": 9, "kind": "hero", "stat": "cast_rate%", "pct": true},
 	"flow": {"name": "Flow", "desc": "+%d%% mana regeneration", "step": 35, "max": 9, "kind": "hero", "stat": "mana_regen%", "pct": true},
+	"reservoir": {"name": "Reservoir", "desc": "+%d max mana", "step": 50, "max": 4, "kind": "hero", "stat": "mana"},
 }
 const KINDS := ["hero", "spell"]
 const ROMAN := [[10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]]

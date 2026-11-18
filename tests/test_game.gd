@@ -105,6 +105,7 @@ func _test_upgrades() -> void:
 	check(Stats.cost(10, 0.01) == 1 and Stats.cost(10, free.mana_cost) == 0, "free spells only at -100%")
 	check(Upgrades.describe(Upgrades.LIST.toughness) == "+25 max HP" and Upgrades.LIST.toughness.max == 4, "toughness described")
 	check(Stats.total([Upgrades.bonus(Upgrades.LIST.toughness, 4)]).hp == 200.0, "toughness: +25 max HP a level, up to IV")
+	check(Upgrades.describe(Upgrades.LIST.reservoir) == "+50 max mana" and Stats.total([Upgrades.bonus(Upgrades.LIST.reservoir, 4)]).mana == 300.0, "reservoir: +50 max mana a level, up to IV")
 	check(Upgrades.bonus(SKILLS.tough, 3) == {"hp": 75.0} and Upgrades.bonus(SKILLS.quick, 1) == {"speed%": 0.1}, "skills are Stats bonuses")
 	var rng := RandomNumberGenerator.new()
 	var offers := Upgrades.offers({}, rng, "", 3, SKILLS)
