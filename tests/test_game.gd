@@ -102,7 +102,7 @@ func _test_upgrades() -> void:
 	check(Upgrades.describe(Upgrades.LIST.thrift) == "-15% mana cost", "thrift described")
 	var free := Stats.total([Upgrades.bonus(Upgrades.LIST.thrift, 11)])
 	check(is_equal_approx(Stats.total([Upgrades.bonus(Upgrades.LIST.thrift, 2)]).mana_cost, 0.7) and free.mana_cost == 0.0, "thrift: -15% a level, down to free")
-	check(Stats.cost(10, 0.01) == 1 and Stats.cost(10, free.mana_cost) == 0, "free spells only at -100%")
+	check(Stats.cost(10, 0.01) == 1 and Stats.cost(0.5, 0.01) == 0.5 and Stats.cost(10, free.mana_cost) == 0, "free spells only at -100%")
 	check(Upgrades.describe(Upgrades.LIST.toughness) == "+25 max HP" and Upgrades.LIST.toughness.max == 4, "toughness described")
 	check(Stats.total([Upgrades.bonus(Upgrades.LIST.toughness, 4)]).hp == 200.0, "toughness: +25 max HP a level, up to IV")
 	check(Upgrades.describe(Upgrades.LIST.reservoir) == "+50 max mana" and Stats.total([Upgrades.bonus(Upgrades.LIST.reservoir, 4)]).mana == 300.0, "reservoir: +50 max mana a level, up to IV")
@@ -668,7 +668,7 @@ func _test_play() -> void:
 		for i in 20:
 			await physics_frame
 	var id0: String = spells.keys()[0]
-	var cost: int = run.mana_cost(id0)
+	var cost: float = run.mana_cost(id0)
 	player.mana = cost * 0.5  # short of mana: all of it for half the damage
 	player.cooldowns = {}
 	check(player.cast(id0) and player.mana == 0.0, "a spell short of mana casts on what is left")

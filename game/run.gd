@@ -153,7 +153,7 @@ func choose(i: int) -> bool:
 	return not offers.is_empty()
 
 
-func mana_cost(slot: String) -> int:
+func mana_cost(slot: String) -> float:
 	return Stats.cost(Spell.mana_cost(spells[slot]), Stats.cost_mult(stats, slot))
 
 

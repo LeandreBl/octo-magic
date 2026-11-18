@@ -49,9 +49,10 @@ const BOUNDS := {
 const CRIT_MULT := 2.0
 
 
-## A spell's mana cost under the "mana_cost" multiplier: at least 1, 0 only at 0 (free spells).
-static func cost(base: int, mult: float) -> int:
-	return maxi(roundi(base * mult), 1 if mult > 0.0 else 0)
+## A spell's mana cost under the "mana_cost" multiplier: at least 1 (or its
+## base, a channel's tick under 1), 0 only at 0 (free spells).
+static func cost(base: float, mult: float) -> float:
+	return maxf(base * mult, minf(base, 1.0)) if mult > 0.0 else 0.0
 
 
 ## The mana cost multiplier of run slot `slot` under `stats`: the Aether

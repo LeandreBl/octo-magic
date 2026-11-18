@@ -207,7 +207,7 @@ class Loadout:
 	var spells := {}
 	var costs := {}
 
-	func mana_cost(slot: String) -> int:
+	func mana_cost(slot: String) -> float:
 		return costs[slot]
 
 
@@ -363,7 +363,7 @@ func cast(slot: String) -> bool:
 	# Short of mana it still casts, weakened, on what is left: that share of the
 	# cost deals that share of the damage. Stepped by 5 % (at least 5 %) so a
 	# channel's ticks keep one weakened body (SpellBody._channeled).
-	var cost: int = run.mana_cost(slot)
+	var cost: float = run.mana_cost(slot)
 	var ratio := clampf(ceilf(maxf(mana, 0.0) / cost * RATIO_STEPS) / RATIO_STEPS, 1.0 / RATIO_STEPS, 1.0)
 	var s := _spell(slot, ratio)
 	# Vis Teli (Upgrades "potent_missiles"): the primary cast hits harder; an

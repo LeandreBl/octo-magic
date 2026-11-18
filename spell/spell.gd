@@ -202,22 +202,28 @@ static func power(s: Dictionary) -> float:
 	return _emit_power(s.emit)
 
 
-## A channeled spell (beam, cone) pays CHANNEL_TAX times more per tick: held
-## down, it must drain faster than the base mana regen, not loop forever.
-const CHANNEL_TAX := 2.0
+## A cast costs CAST_BASE plus CAST_RATE per power (Pila Ignea 30, Telum
+## Magicum 15). A channeled spell (beam, cone) costs CHANNEL_RATE per power a
+## second (Fulmen, Flatus Gelidus 10/s), paid per tick: held down, it still
+## drains faster than the base mana regen.
+const CAST_BASE := 12.0
+const CAST_RATE := 0.65
+const CHANNEL_RATE := 10.0 / 6.0
 
 
-static func mana_cost(s: Dictionary) -> int:
-	var tax := CHANNEL_TAX if s.emit.body.shape in ["beam", "cone"] else 1.0
-	return maxi(roundi(power(s) * 0.4 * tax), 1)
+## Mana per cast: a whole number for a cast, a fraction per tick for a channel.
+static func mana_cost(s: Dictionary) -> float:
+	if s.emit.body.shape in ["beam", "cone"]:
+		return power(s) * CHANNEL_RATE * s.cooldown
+	return roundf(CAST_BASE + power(s) * CAST_RATE)
 
 
 ## A cost as shown: per second for a channeled spell (beam, cone: one cast per
 ## `cooldown`), else per cast. Checks and payments stay per cast (per tick).
-static func cost_text(s: Dictionary, cost: int) -> String:
+static func cost_text(s: Dictionary, cost: float) -> String:
 	if s.emit.body.shape in ["beam", "cone"]:
 		return "%d/s" % roundi(cost / s.cooldown)
-	return str(cost)
+	return "%d" % roundi(cost)
 
 
 static func _emit_power(e: Dictionary) -> float:

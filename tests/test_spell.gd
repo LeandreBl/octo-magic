@@ -483,7 +483,9 @@ func _check_channel() -> void:
 		and arcs[1].dir.is_equal_approx(Vector2.RIGHT.rotated(deg_to_rad(20))),
 		"a count 2 beam keeps two arcs, each at its own spread angle")
 	mage.free()
-	check(Spell.mana_cost(spells.fireball) > 3 * Spell.mana_cost(spells.magic_missile), "fireball costs far more than a missile")
+	check(Spell.mana_cost(spells.fireball) == 30 and Spell.mana_cost(spells.magic_missile) == 15, "a fireball costs 30 mana, a missile 15")
+	for id in ["lightning", "frost_jet"]:
+		check(Spell.cost_text(spells[id], Spell.mana_cost(spells[id])) == "10/s", "%s drains 10 mana a second" % id)
 	check(Spell.cost_text(spells.lightning, 2) == "%d/s" % roundi(2 / spells.lightning.cooldown), "a channeled cost is shown per second")
 	check(Spell.cost_text(spells.fireball, 7) == "7", "a cast cost is shown per cast")
 	world.free()
