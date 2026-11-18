@@ -344,6 +344,10 @@ func _load_session() -> Variant:
 func _http(url: String, method := HTTPClient.METHOD_GET, body: Variant = null, headers := PackedStringArray()) -> Dictionary:
 	var req := HTTPRequest.new()
 	req.timeout = 20.0
+	# On web the browser's fetch already inflates gzip bodies but keeps the
+	# Content-Encoding header: Godot would inflate them again and fail (the
+	# Google token refresh, so every logged-in request).
+	req.accept_gzip = not OS.has_feature("web")
 	add_child(req)
 	var err: int
 	if body is PackedByteArray:
