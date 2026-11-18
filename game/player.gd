@@ -82,6 +82,7 @@ var _still := 0.0  # s since the mage last moved: past STILL_TIME it channels (M
 var _cast_t := 0.0  # s left of the cast animation
 var _channel_t := 0.0  # s left of the channel animation: renewed by each tick of a beam or cone
 var _last_pos := Vector2.ZERO
+var velocity := Vector2.ZERO  # px/s, from its synced position (smoothed)
 var _heard_hp: float = stats.hp  # hosts and peers hear hurts on the synced hp
 var _touch_move := {}  # finger index -> [start, current]
 var _touch_aim := {}
@@ -281,6 +282,8 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 	var step := position - _last_pos  # from the synced position: the same on every peer
 	_last_pos = position
+	if delta > 0.0:  # smoothed over the synced jitter: what predicting enemies lead
+		velocity = velocity.lerp(step / delta, minf(1.0, 8.0 * delta))
 	_moving = step.length() > 0.5
 	_still = 0.0 if _moving else _still + delta
 	_cast_t -= delta

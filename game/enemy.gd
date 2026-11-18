@@ -26,6 +26,8 @@ const SPELL_ANIM := {"summon": ["summon", 0.7], "ring": ["summon", 0.7],
 const LASER_WARN := 0.7  # s: the laser's line shows before it burns
 const BITE_WARN := 0.5  # s: vanished, about to bite where the mage stood
 const BOSS_CATCH_UP := 1.2  # out of cast range, a boss walks this much faster than its mage
+const PREDICT_SHARE := 0.2  # of the enemies lead their mage: walk to cut it off, shoot where it will be
+const PREDICT_MAX := 1.5  # s: the farthest ahead they guess
 
 var kind := "skeleton"
 var data := {}  # its Run.ENEMIES entry, scaled to the wave
@@ -51,6 +53,7 @@ var _moving := false
 var _act := ""  # a special move playing (SPELL_ANIM), for _act_time seconds
 var _act_time := 0.0
 var _act_len := 1.0
+var predicts := false  # leads its mage (PREDICT_SHARE of them, see lead)
 
 static var _textures := {}
 
@@ -81,6 +84,7 @@ func setup(k: String, s: Dictionary) -> void:
 	xp = s.xp
 	gold = s.gold
 	_heard_hp = hp
+	predicts = randf() < PREDICT_SHARE
 	timers = s.get("spells", []).map(func(sp): return sp.every * randf_range(0.5, 1.0))
 
 
@@ -188,15 +192,29 @@ func _afflict(p: Node2D) -> void:
 ## mage around the walls (Arena.way).
 func _steer(to: Vector2) -> Vector2:
 	var ai: String = data.get("ai", "chase")
+	var w := Arena.way(position, position + to, radius)
+	if predicts and w.dot(to.normalized()) > 0.9:  # in the open: cuts it off (around walls it follows the path)
+		w = lead(to, speed).normalized()
 	if ai != "chase" and not in_view(to):  # too far to cast: walks in
-		return Arena.way(position, position + to, radius)
+		return w
 	match ai:
 		"still":
 			return Vector2.ZERO
 		"weave":
-			var w := Arena.way(position, position + to, radius)
 			return w.rotated(sin(age * 5.0) * 0.8) if w.dot(to.normalized()) > 0.9 else w  # weaves only in the open
-	return Arena.way(position, position + to, radius)
+	return w
+
+
+## From it to where its mage (`to`: from it to the mage) will be when
+## something at `v` px/s from it gets there (its mage's velocity kept, at most
+## PREDICT_MAX ahead); `to` itself when it does not predict.
+func lead(to: Vector2, v: float) -> Vector2:
+	if not predicts or not is_instance_valid(target) or v <= 0.0:
+		return to
+	var at := to
+	for i in 3:  # a few fixed-point steps of the interception time
+		at = to + target.velocity * minf(at.length() / v, PREDICT_MAX)
+	return at
 
 
 ## Its walking speed toward its mage (`to`): a boss out of cast range
@@ -216,7 +234,7 @@ func cast(sp: Dictionary, to: Vector2) -> bool:
 	var d := to.length()
 	match sp.type:
 		"bolt":
-			_shot(to.normalized(), 260.0, dmg)
+			_shot(lead(to, 260.0).normalized(), 260.0, dmg)
 		"ring":  # shots all around
 			var a := randf() * TAU
 			for i in sp.count:
@@ -250,7 +268,7 @@ func cast(sp: Dictionary, to: Vector2) -> bool:
 
 ## A volley of `count` missiles side by side at its mage.
 func _volley(count: int, dmg: float) -> void:
-	var dir := (target.position - position).normalized()
+	var dir := lead(target.position - position, 300.0).normalized()
 	for i in count:
 		_shot(dir.rotated((i - (count - 1) / 2.0) * 0.2), 300.0, dmg)
 
