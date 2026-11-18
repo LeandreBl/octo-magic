@@ -52,7 +52,8 @@ CHANNEL = ("the tentacle keeps gripping the staff and holds it leaning forward t
            " moving it, the crystal at its tip pulses and crackles with a continuous stream of blue magic sparks,, the"
            " body breathes gently, seamless loop")
 CHANNEL_FROM = 4
-# One tentacle lying horizontally, base on the left: game/tentacle.gd stretches
+# One tentacle lying horizontally, base on the left (its round bulb then cropped by
+# hand, assets/octo/tentacle.png): game/tentacle.gd stretches
 # it along its chain.
 TENTACLE = ("one single straight purple octopus tentacle lying horizontally, seen from directly above, thick round"
             " base on the left tapering smoothly to a thin pointed tip on the right, small pink suction cups along its"
