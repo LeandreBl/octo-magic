@@ -96,7 +96,7 @@
    "burst_delay": 0,
    "body": {
     "shape": "bolt",
-    "speed": 450,
+    "speed": 225,
     "size": 5,
     "lifetime": 1.2,
     "pierce": 0,
@@ -104,7 +104,7 @@
     "motion": [
      {
       "type": "homing",
-      "strength": 3
+      "strength": 4
      }
     ],
     "on_hit": [
