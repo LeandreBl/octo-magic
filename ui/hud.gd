@@ -88,7 +88,7 @@ func _ready() -> void:
 	right.size_flags_horizontal = Control.SIZE_SHRINK_END
 	right.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	margin.add_child(right)
-	for slot in Upgrades.RUN_SLOTS:
+	for slot in Spell.RUN_SLOTS:
 		right.add_child(_slot(slot))
 	_passive = _box(VBoxContainer.new(), 6)
 	_passive.size_flags_horizontal = Control.SIZE_SHRINK_CENTER

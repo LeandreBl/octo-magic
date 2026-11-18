@@ -1,8 +1,10 @@
 class_name Spell
 ## A spell is plain data (a Dictionary, saved as JSON). Anything that builds
-## spells (the AI, level-ups, the player) only edits that data; this file
+## spells (the AI forge, the player) only edits that data; this file
 ## sanitizes it, prices it and runs it. See docs/spells.md for the format.
 
+const SLOTS := ["primary"]  # the spell equipped from the profile
+const RUN_SLOTS := ["primary", "secondary"]  # secondary: an active augment (Profile.AUGMENTS)
 const MAX_DEPTH := 3  # nested "cast" effects
 const MAX_LIST := 6  # effects / motions per list
 
@@ -243,3 +245,38 @@ static func _effects_power(list: Array) -> float:
 			"heal": p += f.amount
 			"cast": p += _emit_power(f.emit)
 	return p
+
+
+## Damage and damage-over-time of every body of the spell times `mult`.
+static func scale_damage(spell: Dictionary, mult: float) -> Dictionary:
+	var s := spell.duplicate(true)
+	_each_effect(s.emit, func(f):
+		if f.type == "damage": f.amount *= mult
+		elif f.type == "status" and f.status in ["burn", "poison"]: f.power *= mult)
+	return sanitize(s)
+
+
+## A spell cast short of mana: `ratio` (mana left / cost) of its damage, its
+## hits only deal damage (no status, push, sub-cast), drawn see-through
+## (SpellBody reads "weak").
+static func weakened(spell: Dictionary, ratio: float) -> Dictionary:
+	var s := scale_damage(spell, ratio)
+	_each_body(s.emit, func(b): b.on_hit = b.on_hit.filter(func(f): return f.type == "damage"))
+	s.weak = true
+	return s
+
+
+static func _each_body(emit: Dictionary, fn: Callable) -> void:
+	fn.call(emit.body)
+	for key in ["on_expire", "on_tick"]:
+		for f in emit.body[key]:
+			if f.type == "cast":
+				_each_body(f.emit, fn)
+
+
+static func _each_effect(emit: Dictionary, fn: Callable) -> void:
+	for key in ["on_hit", "on_expire", "on_tick"]:
+		for f in emit.body[key]:
+			fn.call(f)
+			if f.type == "cast":
+				_each_effect(f.emit, fn)

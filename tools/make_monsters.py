@@ -91,19 +91,6 @@ MONSTERS = {
         "walk": "floating toward the bottom of the image, robes flowing, seen from directly above, seamless loop",
         "summon": "raises its glowing staff, violet necrotic magic swirls around it, summoning, seen from directly above",
         "death": "staggers in agony, cracks of blinding violet light burst out of its body, about to explode, seen from directly above"}),
-    "death_knight": (96, {"look": (DARK + "a huge undead death knight in black spiked plate armor, a frost glowing greatsword,"
-                                          " huge imposing boss", "black spiked helmet")}, {
-        "windup": "raises its greatsword and roars, bracing to charge toward the bottom of the image, seen from directly above",
-        "slam": "slams its greatsword into the ground, an icy shockwave bursting around it, seen from directly above",
-        "death": "staggers and drops to its knees, blinding icy blue light bursting through cracks in its armor, about to explode,"
-                 " seen from directly above"}),
-    "abomination": (96, {"look": (DARK + "a giant bloated undead flesh abomination stitched from corpses, green ooze dripping,"
-                                         " huge shoulders, huge imposing boss", "small stitched head sunk between its shoulders")}, {
-        "walk": "lumbering heavily toward the bottom of the image, seen from directly above, seamless loop",
-        "summon": "its belly bursts open and small red imps crawl out, seen from directly above",
-        "attack": "rears back and spews a wide spray of green acid toward the bottom of the image, seen from directly above",
-        "death": "swells up grotesquely, bloating bigger and bigger, glowing green light bursting through its seams, about to burst,"
-                 " seen from directly above"}),
     # the boss monsters (waves 10, 15, 20, 25, then 30 and every 5th): each one adds an attack to the last one's
     "bone_herald": (96, {"look": (DARK + "a towering skeletal herald in black bone armor, a ribcage launcher of glowing bone"
                                          " missiles on its back, huge imposing boss", "horned skull")}, {
@@ -135,7 +122,6 @@ MONSTERS = {
 # Effects of the attacks (game/enemy.gd Shot and Zone, Run.ENEMIES "shot"), name -> brief.
 FX = {
     "bolt": "a small glowing crimson magic orb projectile with a short dark trail, flying right, looping",
-    "acid": "a small blob of green acid spit projectile with dripping trail, flying right, looping",
     "arrow": "a big long wooden arrow projectile with a bone arrowhead and grey feathers, horizontal, filling the frame, flying right, looping",
     "poison_arrow": "a big long wooden arrow projectile with a green glowing poison arrowhead dripping toxic green drops, horizontal, filling the frame, flying right, looping",
     "fire_arrow": "a flaming arrow trailing fire flying right, looping",
@@ -156,7 +142,7 @@ FX = {
     "boss_explosion": "a huge spectacular explosion, a massive fireball blast with a bright white core, a shockwave ring,"
                       " flying burning debris and sparks, billowing dark smoke, seen from above, one-shot",
 }
-LOOPING = {"bone_missile", "fire_pool", "green_laser", "bolt", "acid", "poison", "arrow", "poison_arrow", "fire_arrow", "fireball", "poison_orb", "frost_orb", "spark"}
+LOOPING = {"bone_missile", "fire_pool", "green_laser", "bolt", "poison", "arrow", "poison_arrow", "fire_arrow", "fireball", "poison_orb", "frost_orb", "spark"}
 
 
 def _strip(frames: list[bytes]) -> bytes:

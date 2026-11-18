@@ -1,6 +1,6 @@
 class_name SpellSound
 ## Spell sounds, synthesized from the spell data: no files, no API, so every
-## spell (forged, levelled up, hand made) gets its own sounds. Same data ->
+## spell (forged or hand made) gets its own sounds. Same data ->
 ## same sound (the noise is seeded by the data).
 ## - a one-shot sound when an emit is cast (sub-casts too: higher, quieter);
 ## - a looping sound on continuous bodies (zones, orbits, ticking bodies,

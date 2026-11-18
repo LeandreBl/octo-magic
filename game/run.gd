@@ -26,7 +26,6 @@ var rng := RandomNumberGenerator.new()
 var bonuses := []  # the profile's Stats bonuses
 var stats := Stats.total([])  # Stats.total(bonuses and the skills')
 var passives := []  # the slotted Profile.AUGMENTS passive ids
-var choices := 3  # cards a grimoire offers by the perks (Creativity); stats.choices by the skills
 
 
 ## `equipped`: slot -> spell; `bonus_list`: Profile.bonus_list(); `augments`:
@@ -48,15 +47,13 @@ func start(equipped: Dictionary, bonus_list := [], augments := []) -> void:
 	pending = []
 	spells = {}
 	passives = []
-	choices = 3
 	for slot in equipped:
-		spells[slot] = Upgrades.scale_damage(equipped[slot], stats.damage)
+		spells[slot] = Spell.scale_damage(equipped[slot], stats.damage)
 	for a in augments:
 		if a.kind == "active":
-			spells.secondary = Upgrades.scale_damage(Spell.sanitize(a.spell), stats.damage)
+			spells.secondary = Spell.scale_damage(Spell.sanitize(a.spell), stats.damage)
 		else:
 			passives.append(a.id)
-			choices = maxi(choices, a.get("choices", 0))
 			for i in a.get("grimoires", 0):
 				pending.append_array(Upgrades.KINDS)
 	rng.randomize()
@@ -70,7 +67,7 @@ func start(equipped: Dictionary, bonus_list := [], augments := []) -> void:
 func to_dict() -> Dictionary:
 	return {"wave": wave, "level": level, "xp": xp, "kills": kills, "bosses": bosses, "gold": gold,
 		"scrolls": scrolls, "spells": spells, "levels": levels,
-		"pending": pending, "bonuses": bonuses, "passives": passives, "choices": choices}
+		"pending": pending, "bonuses": bonuses, "passives": passives}
 
 
 ## Back to a to_dict() snapshot (a JSON copy: numbers come back as floats).
@@ -80,11 +77,11 @@ func restore(d: Dictionary) -> bool:
 	if not s is Dictionary or not s.get("primary") is Dictionary:
 		return false
 	start({})
-	for k in ["wave", "level", "xp", "kills", "bosses", "gold", "scrolls", "choices"]:
+	for k in ["wave", "level", "xp", "kills", "bosses", "gold", "scrolls"]:
 		set(k, maxi(0, int(d.get(k, get(k)))))
 	level = maxi(level, 1)
 	for slot in s:
-		if slot in ["primary", "secondary"] and s[slot] is Dictionary:
+		if slot in Spell.RUN_SLOTS and s[slot] is Dictionary:
 			spells[slot] = Spell.sanitize(s[slot])
 	var lv := _dict(d.get("levels"))
 	for id in lv:
@@ -130,7 +127,7 @@ func add_xp(amount: int) -> void:
 
 ## Opens the next grimoire: its kind's offers; one with every skill maxed is lost.
 func _offer() -> void:
-	var n := maxi(choices, int(stats.choices))  # Creativity and Inspiration do not stack
+	var n := int(stats.choices)  # Creativity and Inspiration do not stack (Stats.BOUNDS)
 	# A dead pick at the cap: Inspiration counted as taken.
 	var lv := levels if n < Stats.BOUNDS.choices[1] else levels.merged({"inspiration": 1})
 	while offers.is_empty() and not pending.is_empty():
@@ -196,8 +193,7 @@ func finish() -> Dictionary:
 ## Monster kinds: the undead and creatures of the graveyard. Stats at wave 1;
 ## "from": first wave it shows up in, with "weight" (0: only summoned, or a
 ## boss). Look: "color" (its zones), sprites in assets/monsters/<kind>/.
-## "ai" moves it (game/enemy.gd): chase, weave (zigzags in), kite (holds
-## "range", strafes), still (archers, mages: hold still once on screen,
+## "ai" moves it (game/enemy.gd): chase, weave (zigzags in), still (archers, mages: hold still once on screen,
 ## see Enemy.VIEW, walk in when the mage is off it).
 ## "heavy": share of knockback taken.
 ## "spells": its own casts, each every "every" seconds (see Enemy.cast);
@@ -261,15 +257,6 @@ const ENEMIES := {
 	"boss": {"name": "Lich King", "hp": 400.0, "speed": 50.0, "radius": 58.0, "damage": 25.0, "xp": 20, "gold": 40,
 		"boss": true, "ai": "chase", "heavy": 0.3, "color": "#7e57c2",
 		"spells": [{"type": "ring", "every": 3.0, "count": 12}, {"type": "summon", "every": 8.0, "kind": "skeleton", "count": 3}]},
-	"death_knight": {"name": "Death Knight", "hp": 500.0, "speed": 60.0, "radius": 54.0, "damage": 28.0, "xp": 20, "gold": 40,
-		"boss": true, "ai": "chase", "heavy": 0.3, "color": "#4fc3f7", "effect": ["freeze", 1.0, 1.5],
-		"spells": [{"type": "charge", "every": 3.5, "range": 420.0}, {"type": "nova", "every": 5.0, "radius": 150.0, "dmg": 1.2}]},
-	"abomination": {"name": "Abomination", "hp": 450.0, "speed": 45.0, "radius": 61.0, "damage": 22.0, "xp": 20, "gold": 40,
-		"boss": true, "ai": "kite", "range": 280.0, "heavy": 0.3, "color": "#827717", "shot": "acid",
-		"effect": ["poison", 0.2, 3.0], "gunk": [90.0, 6.0],
-		"spells": [{"type": "spread", "every": 2.5, "count": 7, "angle": 1.2},
-			{"type": "puddle", "every": 4.0, "radius": 70.0, "dmg": 0.6},
-			{"type": "summon", "every": 7.0, "kind": "imp", "count": 3}]},
 	# the boss monsters: each one adds an attack to the last one's
 	"bone_herald": {"name": "Bone Herald", "hp": 450.0, "speed": 55.0, "radius": 56.0, "damage": 24.0, "xp": 25, "gold": 40,
 		"boss": true, "kills": 100, "ai": "chase", "heavy": 0.3, "color": "#e0dccb", "shot": "bone_missile",

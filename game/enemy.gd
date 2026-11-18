@@ -18,11 +18,10 @@ const CROWD := 120  # no summons past this many enemies
 const VIEW := Vector2(480.0, 270.0)
 const FPS := 12.0
 const Self := preload("res://game/enemy.gd")  # its static art for the inner classes
-## The move a spell plays (assets/monsters/<kind>/<anim>.png, if any).
 ## The move each spell type plays (assets/monsters/<look>/<anim>.png, skipped
 ## when not drawn), and for how long; "attack" also plays on a touch.
-const SPELL_ANIM := {"charge": ["windup", 0.6], "summon": ["summon", 0.7], "ring": ["summon", 0.7], "nova": ["slam", 0.8],
-	"bolt": ["attack", 0.5], "spread": ["attack", 0.5], "puddle": ["attack", 0.5], "burst": ["attack", 0.5],
+const SPELL_ANIM := {"summon": ["summon", 0.7], "ring": ["summon", 0.7],
+	"bolt": ["attack", 0.5], "puddle": ["attack", 0.5], "burst": ["attack", 0.5],
 	"laser": ["attack", 0.6], "teleport": ["vanish", 0.5]}
 const LASER_WARN := 0.7  # s: the laser's line shows before it burns
 const BITE_WARN := 0.5  # s: vanished, about to bite where the mage stood
@@ -41,11 +40,8 @@ var statuses := {}  # name -> [power, time_left]
 var knock := Vector2.ZERO
 var hit_cooldown := 0.0
 var timers := []  # seconds until each of data.spells
-var windup := 0.0  # charge: standing still, about to dash
-var dash := Vector2.ZERO  # charge: velocity while dashing
-var dash_time := 0.0
+var windup := 0.0  # laser, teleport: standing still until it ends
 var age := 0.0
-var side := 1.0  # kite: which way it strafes
 var _later := []  # [s left, Callable]: the delayed parts of its spells (host)
 var _heard_hp := 0.0  # hp at the last hit sound: hosts and peers hear hits on the synced hp
 var _last_pos := Vector2.ZERO
@@ -84,7 +80,6 @@ func setup(k: String, s: Dictionary) -> void:
 	xp = s.xp
 	gold = s.gold
 	_heard_hp = hp
-	side = [-1.0, 1.0].pick_random()
 	timers = s.get("spells", []).map(func(sp): return sp.every * randf_range(0.5, 1.0))
 
 
@@ -161,16 +156,8 @@ func _physics_process(delta: float) -> void:
 	var to := target.global_position - global_position
 	var motion := _steer(to) * speed * slow
 	windup -= delta
-	dash_time -= delta
 	if windup > 0.0:
 		motion = Vector2.ZERO
-	elif dash != Vector2.ZERO:
-		if windup > -delta:  # the windup just ended: dash at the mage
-			dash = to.normalized() * speed * 5.0
-			dash_time = 0.45
-		motion = dash * slow
-		if dash_time <= 0.0:
-			dash = Vector2.ZERO
 	position = Arena.slide(position, (motion + knock) * delta + Arena.apart(self, get_tree().get_nodes_in_group("enemies")), radius)
 	knock = knock.move_toward(Vector2.ZERO, 1500.0 * delta)
 	hit_cooldown -= delta
@@ -183,7 +170,7 @@ func _physics_process(delta: float) -> void:
 	var spells: Array = data.get("spells", [])
 	for i in spells.size():
 		timers[i] -= delta * slow
-		if timers[i] <= 0.0 and windup <= 0.0 and dash == Vector2.ZERO and cast(spells[i], to):
+		if timers[i] <= 0.0 and windup <= 0.0 and cast(spells[i], to):
 			timers[i] = spells[i].every
 			if SPELL_ANIM.has(spells[i].type):
 				_play.rpc(SPELL_ANIM[spells[i].type][0], SPELL_ANIM[spells[i].type][1])
@@ -197,9 +184,8 @@ func _afflict(p: Node2D) -> void:
 
 
 ## The direction its AI walks, `to`: from it to its mage. It goes toward the
-## mage around the walls (Arena.way), backs off and strafes straight.
+## mage around the walls (Arena.way).
 func _steer(to: Vector2) -> Vector2:
-	var d := to.length()
 	var ai: String = data.get("ai", "chase")
 	if ai != "chase" and not in_view(to):  # too far to cast: walks in
 		return Arena.way(position, position + to)
@@ -209,9 +195,6 @@ func _steer(to: Vector2) -> Vector2:
 		"weave":
 			var w := Arena.way(position, position + to)
 			return w.rotated(sin(age * 5.0) * 0.8) if w.dot(to.normalized()) > 0.9 else w  # weaves only in the open
-		"kite":  # hold the range, strafe around the mage
-			var r: float = minf(data.get("range", 260.0), VIEW.y - radius - 30.0)  # strafes on screen
-			return Arena.way(position, position + to) if d > r + 30.0 else -to.normalized() if d < r - 30.0 else to.orthogonal().normalized() * side
 	return Arena.way(position, position + to)
 
 
@@ -225,17 +208,10 @@ func cast(sp: Dictionary, to: Vector2) -> bool:
 	match sp.type:
 		"bolt":
 			_shot(to.normalized(), 260.0, dmg)
-		"spread":  # a fan of shots
-			for i in sp.count:
-				_shot(to.normalized().rotated(sp.angle * (float(i) / (sp.count - 1) - 0.5)), 240.0, dmg)
 		"ring":  # shots all around
 			var a := randf() * TAU
 			for i in sp.count:
 				_shot(Vector2.from_angle(a + TAU * i / sp.count), 180.0, dmg)
-		"nova":  # a slam around it, after a warning
-			if d > sp.radius:
-				return false
-			_zone.rpc(position, sp.radius, 0.8, dmg, 0.0, Color(data.color), 0.0, "shockwave")
 		"puddle":  # a poison pool where the mage stands
 			if d > 550.0:
 				return false
@@ -253,12 +229,6 @@ func cast(sp: Dictionary, to: Vector2) -> bool:
 			_zone.rpc(position, radius, 0.0, 0.0, 0.0, Color(data.color), 0.0, "shadow")
 			_zone.rpc(target.position, radius, BITE_WARN, 0.0, 0.0, Color(data.color), 0.0, "")
 			_later.append([BITE_WARN, _bite.bind(target.position, touch_damage * sp.dmg)])
-		"charge":  # stops, then dashes at the mage
-			if d > sp.range:
-				return false
-			windup = 0.6
-			dash = Vector2.ONE  # dashing once the windup ends
-			_zone.rpc(position, radius + 10.0, 0.6, 0.0, 0.0, Color.WHITE, 0.0, "")
 		"summon":
 			if get_tree().get_nodes_in_group("enemies").size() >= CROWD:
 				return false

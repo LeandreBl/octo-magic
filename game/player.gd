@@ -137,7 +137,7 @@ static func clean_loadout(raw: Variant) -> Dictionary:
 	var stats := {}
 	for k in Stats.BASE:
 		stats[k] = _clamp(st.get(k), Stats.BASE[k], Stats.BOUNDS[k][0], Stats.BOUNDS[k][1])
-	for slot in Upgrades.RUN_SLOTS:
+	for slot in Spell.RUN_SLOTS:
 		var s: Variant = l.get("spells", {}).get(slot) if l.get("spells") is Dictionary else null
 		if s is Dictionary:
 			spells[slot] = Spell.sanitize(s)
@@ -308,7 +308,7 @@ func _physics_process(delta: float) -> void:
 		shield_wait -= delta
 		if shield_wait <= 0.0 and "shield" in passives:
 			shield = SHIELD_HP
-	for slot in Upgrades.RUN_SLOTS:
+	for slot in Spell.RUN_SLOTS:
 		cooldowns[slot] = cooldowns.get(slot, 0.0) - delta
 		if firing.get(slot, false) and run and run.spells.has(slot):
 			cast(slot)
@@ -358,7 +358,7 @@ func cast(slot: String) -> bool:
 	var ratio := clampf(ceilf(maxf(mana, 0.0) / cost * RATIO_STEPS) / RATIO_STEPS, 1.0 / RATIO_STEPS, 1.0)
 	var s := _spell(slot, ratio)
 	if randf() < stats.crit:
-		s = Upgrades.scale_damage(s, Stats.CRIT_MULT)
+		s = Spell.scale_damage(s, Stats.CRIT_MULT)
 	mana = maxf(0.0, mana - cost)
 	cooldowns[slot] = s.cooldown * stats.cooldown / stats.cast_rate
 	_animate_cast(s)
@@ -367,7 +367,7 @@ func cast(slot: String) -> bool:
 	return true
 
 
-## The spell of `slot`, weakened (Upgrades.weakened) when ratio < 1 (cast
+## The spell of `slot`, weakened (Spell.weakened) when ratio < 1 (cast
 ## short of mana). Kept
 ## while the slot's spell and ratio hold: a channel's ticks renew one body.
 func _spell(slot: String, ratio: float) -> Dictionary:
@@ -376,7 +376,7 @@ func _spell(slot: String, ratio: float) -> Dictionary:
 		return s
 	var w: Array = _weak.get(slot, [])
 	if w.is_empty() or not is_same(w[0], s) or w[1] != ratio:
-		w = [s, ratio, Upgrades.weakened(s, ratio)]
+		w = [s, ratio, Spell.weakened(s, ratio)]
 		_weak[slot] = w
 	return w[2]
 

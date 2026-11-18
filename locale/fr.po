@@ -25,9 +25,6 @@ msgstr "Succès"
 msgid "Leaderboard"
 msgstr "Classement"
 
-msgid "Level up!"
-msgstr "Niveau supérieur !"
-
 msgid "Create your spells, combine them, survive the waves."
 msgstr "Crée tes sorts, combine-les, survis aux vagues."
 
@@ -55,9 +52,6 @@ msgstr "%2d.  %6d pts   vague %d, niveau %d, %d ennemis   %s"
 msgid "No score yet: start a run!"
 msgstr "Aucun score : lance une run !"
 
-msgid "%s: %s"
-msgstr "%s : %s"
-
 msgid "End of run"
 msgstr "Fin de la run"
 
@@ -66,15 +60,6 @@ msgstr "Rejouer"
 
 msgid "Main menu"
 msgstr "Menu principal"
-
-msgid "Wave reached: %d\nLevel: %d\nEnemies defeated: %d\nScore: %d\n\nGold earned: %d\nScrolls: %d"
-msgstr "Vague atteinte : %d\nNiveau : %d\nEnnemis vaincus : %d\nScore : %d\n\nOr gagné : %d\nParchemins : %d"
-
-msgid "Achievement: %s!"
-msgstr "Succès : %s !"
-
-msgid "Spell unlocked: %s."
-msgstr "Sort débloqué : %s."
 
 msgid "Mouse: aim · left click: cast the spell · right click or Space: secondary spell\nGamepad: left stick move, right stick aim and cast, RT cast, RB secondary spell, Start pause\nMenus with a gamepad: d-pad or left stick, A confirm, B back\nBrowser: press a gamepad button so it is detected\nTouch: left half move, right half aim and cast, touch a slot to cast it"
 msgstr "Souris : viser · clic gauche : lancer le sort · clic droit ou Espace : sort secondaire\nManette : stick gauche bouger, stick droit viser et lancer, RT lancer, RB sort secondaire, Start pause\nMenus à la manette : croix directionnelle ou stick gauche, A valider, B retour\nNavigateur : appuie sur un bouton de la manette pour qu'elle soit détectée\nTactile : moitié gauche bouger, moitié droite viser et lancer, toucher un emplacement pour le lancer"
@@ -115,20 +100,9 @@ msgstr "Gauche"
 msgid "Right"
 msgstr "Droite"
 
-msgid "Level %d  ·  XP %d / %d"
-msgstr "Niveau %d  ·  XP %d / %d"
-
 msgid "Wave %d"
 msgstr "Vague %d"
 
-msgid "%d gold  ·  score %d"
-msgstr "%d or  ·  score %d"
-
-msgid "Scrolls found: %d%s"
-msgstr "Parchemins trouvés : %d%s"
-
-msgid "%d gold  ·  %d blank scroll(s)"
-msgstr "%d or  ·  %d parchemin(s) vierge(s)"
 
 msgid "Equipment"
 msgstr "Équipement"
@@ -171,9 +145,6 @@ msgstr "%s · équipé par %s"
 
 msgid "No blank scroll: bosses drop them."
 msgstr "Aucun parchemin vierge : les boss en laissent tomber."
-
-msgid "You have %d blank scroll(s). Write one word in a dead language (Latin, Ancient Greek…) per scroll (separated by spaces or commas) to transform your main spell."
-msgstr "Tu as %d parchemin(s) vierge(s). Écris un mot en langue morte (latin, grec ancien…) par parchemin (séparés par des espaces ou des virgules) pour transformer ton sort principal."
 
 msgid "email"
 msgstr "e-mail"
@@ -250,9 +221,6 @@ msgstr "Profil non synchronisé (serveur injoignable)."
 msgid "Profile synced."
 msgstr "Profil synchronisé."
 
-msgid "Multiplayer (coop)"
-msgstr "Multijoueur (coop)"
-
 msgid "Create a room"
 msgstr "Créer un salon"
 
@@ -274,14 +242,8 @@ msgstr "Connexion au salon…"
 msgid "Connecting to the host…"
 msgstr "Connexion à l'hôte…"
 
-msgid "Room code: %s  (give it to the other players)"
-msgstr "Code du salon : %s  (à donner aux autres joueurs)"
-
 msgid "Connected. The host starts the game."
 msgstr "Connecté. L'hôte lance la partie."
-
-msgid "Players:"
-msgstr "Joueurs :"
 
 msgid "Player %d"
 msgstr "Joueur %d"
@@ -382,29 +344,11 @@ msgstr "+%d %% de résistance au feu"
 msgid "-%d%% cooldown"
 msgstr "-%d %% de temps de recharge"
 
-msgid "Velocity"
-msgstr "Vélocité"
-
-msgid "+%d%% projectile speed"
-msgstr "+%d %% de vitesse des projectiles"
-
 msgid "Thrift"
 msgstr "Économie"
 
 msgid "-%d%% mana cost"
 msgstr "-%d %% de coût en mana"
-
-msgid "Amplitude"
-msgstr "Ampleur"
-
-msgid "+%d%% size and area"
-msgstr "+%d %% de taille et de zone"
-
-msgid "Piercing"
-msgstr "Perforation"
-
-msgid "+%d enemies pierced"
-msgstr "+%d ennemi(s) transpercé(s)"
 
 msgid "Oak staff"
 msgstr "Bâton de chêne"
@@ -565,8 +509,6 @@ msgstr "Un dard à tête chercheuse qui empoisonne."
 msgid "Three missiles that hunt down enemies."
 msgstr "Trois missiles qui traquent les ennemis."
 
-msgid "Secondary spell"
-msgstr "Sort secondaire"
 
 msgid "Ring of fire"
 msgstr "Anneau de feu"
@@ -579,15 +521,6 @@ msgstr "Bouclier"
 
 msgid "Absorbs 40 damage, back 8 s after it breaks"
 msgstr "Absorbe 40 dégâts, revient 8 s après s'être brisé"
-
-msgid "%s: %s (%d gold)"
-msgstr "%s : %s (%d or)"
-
-msgid "%s: owned"
-msgstr "%s : acquis"
-
-msgid "HP %d / %d  ·  shield %d"
-msgstr "PV %d / %d  ·  bouclier %d"
 
 # Redesigned screens (abyssal grimoire UI)
 
@@ -672,9 +605,6 @@ msgstr "Sort débloqué :"
 msgid "In coop, only the host starts a new run."
 msgstr "En coop, seul l'hôte relance une run."
 
-msgid "LV."
-msgstr "NIV."
-
 msgid "boss"
 msgstr "boss"
 
@@ -686,9 +616,6 @@ msgstr "Parchemins trouvés"
 
 msgid "Letters, ' and - only. A meaningless word gives its scroll back."
 msgstr "Lettres, ' et - seulement. Un mot vide de sens rend son parchemin."
-
-msgid "%d blank · %d word(s)"
-msgstr "%d vierge(s) · %d mot(s)"
 
 msgid "The forge turns them into a new spell, equipped at your next run."
 msgstr "La forge en fait un nouveau sort, équipé à ta prochaine run."
@@ -716,9 +643,6 @@ msgstr "Aucun bonus"
 
 msgid "Owned · equip"
 msgstr "Possédé · équiper"
-
-msgid "%d mana"
-msgstr "%d mana"
 
 msgid "Mana"
 msgstr "Mana"
@@ -854,9 +778,6 @@ msgstr "+%d de mana max"
 msgid "Flow"
 msgstr "Flux"
 
-msgid "+%d mana per second"
-msgstr "+%d mana par seconde"
-
 msgid "+%d%% mana regeneration"
 msgstr "+%d %% de régénération de mana"
 
@@ -868,18 +789,6 @@ msgstr "+%d %% de vitesse de déplacement"
 
 msgid "Fortune"
 msgstr "Fortune"
-
-msgid "+%d%% gold"
-msgstr "+%d %% d'or"
-
-msgid "Insight"
-msgstr "Clairvoyance"
-
-msgid "+%d%% experience"
-msgstr "+%d %% d'expérience"
-
-msgid "+%d projectile(s)"
-msgstr "+%d projectile(s)"
 
 msgid "HP/s"
 msgstr "PV/s"
@@ -932,12 +841,6 @@ msgstr "Attraction"
 msgid "+15% pickup radius"
 msgstr "+15 % de rayon de ramassage"
 
-msgid "Mending"
-msgstr "Guérison"
-
-msgid "+%d health per second"
-msgstr "+%d PV par seconde"
-
 msgid "Magnetism"
 msgstr "Magnétisme"
 
@@ -946,15 +849,6 @@ msgstr "+%d %% de rayon de ramassage"
 
 msgid "Ward"
 msgstr "Égide"
-
-msgid "-%d%% damage taken"
-msgstr "-%d %% de dégâts subis"
-
-msgid "Precision"
-msgstr "Précision"
-
-msgid "+%d%% critical chance"
-msgstr "+%d %% de chance de critique"
 
 msgid "Cooldown"
 msgstr "Recharge"
@@ -991,9 +885,6 @@ msgstr "Possédé · aucun emplacement libre"
 
 msgid "Spell forge"
 msgstr "Forge des sorts"
-
-msgid "Write the words of the spell"
-msgstr "Écris les mots du sort"
 
 msgid "Forge the spell"
 msgstr "Forger le sort"
@@ -1066,9 +957,6 @@ msgstr "Rebonds"
 
 msgid "Lich King"
 msgstr "Roi-liche"
-
-msgid "Death Knight"
-msgstr "Chevalier de la mort"
 
 msgid "Bone Herald"
 msgstr "Héraut d'os"

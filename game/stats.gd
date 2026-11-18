@@ -1,6 +1,6 @@
 class_name Stats
 ## The mage's stats, as data. Every source (shop items, permanent bonuses,
-## hero augments) is a bonus dict: "stat": n adds n, "stat%": p multiplies by
+## perks, grimoire skills) is a bonus dict: "stat": n adds n, "stat%": p multiplies by
 ## (1 + p). Total = (BASE + every add) * every (1 + p), clamped to BOUNDS.
 ## Unknown stats are ignored. The host clamps them again (Player.clean_loadout).
 

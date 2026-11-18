@@ -2,7 +2,7 @@
 
 A spell is one JSON object. The game never runs code from a spell: it reads
 this data, clamps every value (`spell/spell.gd`, `Spell.sanitize`) and prices
-it (`Spell.mana_cost`). Anything can produce a spell (the AI forge, level-ups,
+it (`Spell.mana_cost`). Anything can produce a spell (the AI forge,
 hand editing); the result is always safe and balanced by cost.
 
 This file is also sent to the AI as the format reference: keep it accurate.
@@ -120,11 +120,10 @@ every enemy inside the zone).
 
 Mana cost is computed from the spell's damage potential (count, pierce,
 bounce, ticks, areas, sub-casts). A stronger spell is not refused, it costs
-more mana, with no cap. In a run, every level-up upgrade but Thrift also taxes
-the cost +10 % (`Run.UPGRADE_TAX`). Two ways to cast: channeled (beam, cone:
+more mana, with no cap. Two ways to cast: channeled (beam, cone:
 the cost is per tick) or one at a time (the cost is per cast, the cooldown
 between casts). A spell always casts: short of mana it is weakened
-(`Upgrades.weakened`), takes the mana left and deals mana left / cost of the
+(`Spell.weakened`), takes the mana left and deals mana left / cost of the
 damage (in 5 % steps, at least 5 %), drawn see-through, its hits only dealing
 damage (no status, knockback or sub-cast).
 

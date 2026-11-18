@@ -7,7 +7,7 @@ const ProfileState := preload("res://game/profile.gd")
 const Enemy := preload("res://game/enemy.gd")
 const Player := preload("res://game/player.gd")
 const Tentacle := preload("res://game/tentacle.gd")
-const SPELL_TYPES := ["bolt", "spread", "ring", "nova", "puddle", "charge", "summon", "burst", "laser", "teleport"]
+const SPELL_TYPES := ["bolt", "ring", "puddle", "summon", "burst", "laser", "teleport"]
 
 var failures := 0
 
@@ -54,12 +54,11 @@ func _test_french() -> void:
 			if f.ends_with(".gd"):
 				for m in literal.search_all(FileAccess.get_file_as_string(dir + f)):
 					texts.append(m.get_string(1).c_unescape())
-	texts += Upgrades.SLOT_NAMES.values()
 	texts += Run.ENEMIES.values().filter(func(e): return e.has("name")).map(func(e): return e.name)
 	for d in [Upgrades.LIST, ProfileState.AUGMENTS, ProfileState.ITEMS, ProfileState.BONUSES, ProfileState.ACHIEVEMENTS]:
 		for v in d.values():
 			texts.append(v.name)
-			if v.has("desc") and not v.desc.begins_with("+%d projectile") and not v.desc.begins_with("+3 mana/s"):
+			if v.has("desc") and not v.desc.begins_with("+3 mana/s"):
 				texts.append(v.desc)
 	var p := ProfileState.new()
 	for e in p.base_spells:
@@ -96,8 +95,8 @@ func _test_upgrades() -> void:
 	# Nested casts are scaled too.
 	var boom := Spell.sanitize({"emit": {"body": {"on_expire": [{"type": "cast", "emit": {"body": {
 		"on_hit": [{"type": "damage", "amount": 10}]}}}]}}})
-	check(Upgrades.scale_damage(boom, 2.0).emit.body.on_expire[0].emit.body.on_hit[0].amount == 20.0, "nested damage scaled")
-	check(is_equal_approx(_damage(Upgrades.scale_damage(s, 1.5)), _damage(s) * 1.5), "damage scaled")
+	check(Spell.scale_damage(boom, 2.0).emit.body.on_expire[0].emit.body.on_hit[0].amount == 20.0, "nested damage scaled")
+	check(is_equal_approx(_damage(Spell.scale_damage(s, 1.5)), _damage(s) * 1.5), "damage scaled")
 	check(["I", "II", "III", "IV", "V", "IX", "XI"] == [1, 2, 3, 4, 5, 9, 11].map(Upgrades.roman), "levels in roman numerals")
 	check(Upgrades.title(Upgrades.LIST.haste, 3) == "Haste III" and Upgrades.title(Upgrades.LIST.channeling, 1) == "Channeling", "single-level skill has no numeral")
 	check(Upgrades.describe(Upgrades.LIST.thrift) == "-15% mana cost", "thrift described")
@@ -304,7 +303,7 @@ func _test_inspiration(run: Object) -> void:
 	run.list = SKILLS.merged({"inspiration": Upgrades.LIST.inspiration})
 	var ids := func(): return run.offers.map(func(o): return o.id)
 	for c in [[3, {}, 3, true], [3, {"inspiration": 1}, 4, false], [4, {}, 4, false]]:
-		run.choices = c[0]
+		run.bonuses = [{"choices": c[0] - 3.0}]
 		run.levels = c[1]
 		run._restat()
 		run.pending = ["hero"]
@@ -312,7 +311,7 @@ func _test_inspiration(run: Object) -> void:
 		run._offer()
 		check(run.offers.size() == c[2] and (c[3] or not "inspiration" in ids.call()),
 			"inspiration: %d cards with perk %d, skill %s" % [c[2], c[0], c[1]])
-	run.choices = 3
+	run.bonuses = []
 	run.levels = {}
 	run.pending = []
 	run.offers = []
@@ -332,7 +331,7 @@ func _test_perks(run: Object, p: Object) -> void:
 	var s := Stats.total(p.bonus_list())
 	check(s.hp == Stats.BASE.hp + 25.0 and s.armor == -1.0 and s.damage == 2.0, "perk bonuses in the stats")
 	run.start(p.equipped_spells(), p.bonus_list(), p.slotted_augments())
-	check(run.choices == 4 and run.pending == Upgrades.KINDS, "4 choices, a red and a blue grimoire to open")
+	check(run.stats.choices == 4 and run.pending == Upgrades.KINDS, "4 choices, a red and a blue grimoire to open")
 	run.list = SKILLS
 	run._offer()
 	check(run.offers.size() == 4, "a grimoire offers 4 cards")
@@ -595,7 +594,6 @@ func _test_play() -> void:
 				cast[sp.type] = true
 			e.hp = e.max_hp
 		e.windup = 0.0
-		e.dash = Vector2.ZERO
 	check(cast.size() == SPELL_TYPES.size(), "every enemy spell casts: %s" % str(cast.keys()))
 	var archer: Enemy = get_nodes_in_group("enemies").filter(func(e): return e.kind == "archer")[0]
 	var far := Vector2(Enemy.VIEW.x + 100.0, 0.0)
@@ -604,10 +602,10 @@ func _test_play() -> void:
 	for i in 90:  # the delayed parts: missile volleys, bites, imps hatching (the mage kept standing)
 		player.hp = player.stats.hp
 		await physics_frame
-	check("imp" in summons and "skeleton" in summons and "hell_imp" in summons, "summons asked from main")
+	check("skeleton" in summons and "hell_imp" in summons, "summons asked from main")
 	check(root.find_children("*", "Node2D", true, false).any(func(n): return n is Enemy.Beam), "the laser fires")
 	var zones := root.find_children("*", "Node2D", true, false).filter(func(n): return n is Enemy.Zone)
-	check(zones.size() > 5, "spells leave zones")
+	check(zones.size() >= 4, "spells leave zones")
 	await physics_frame
 	hp_before = 0.0
 	for e in get_nodes_in_group("enemies"):
@@ -628,7 +626,7 @@ func _test_play() -> void:
 		"weakened, it deals the share of damage, kept between casts")
 	player.cooldowns = {}
 	check(player.cast(id0) and player._weak[id0][1] == 1.0 / Player.RATIO_STEPS, "without mana it still casts, at the weakest")
-	var rich := Upgrades.weakened(Spell.sanitize({"emit": {"body": {"on_hit": [{"type": "damage", "amount": 10},
+	var rich := Spell.weakened(Spell.sanitize({"emit": {"body": {"on_hit": [{"type": "damage", "amount": 10},
 		{"type": "status", "status": "slow", "power": 0.5, "duration": 1}]}}}), 0.5)
 	check(rich.emit.body.on_hit.size() == 1 and rich.emit.body.on_hit[0].amount == 5.0, "the failsafe's hits only damage")
 	player.stats.mana = Stats.BASE.mana

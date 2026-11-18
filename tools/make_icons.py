@@ -29,6 +29,7 @@ SPELLS = {
     "venom_dart": "a green poisoned dart dripping venom",
     "arcane_missiles": "three glowing violet magic arrows flying in parallel, arcane energy trails",
     "fire_nova": "a ring of fire flames bursting outward in a circle",
+    # used by the website only (web/): stat and element icons
     "frost_ring": "a circle of ice spikes and snowflakes, pale cyan",
     "toxic_cloud": "a cracked glass potion flask releasing a green toxic cloud",
     "thunder_chain": "a zigzag yellow lightning bolt chained in several links",
@@ -41,15 +42,11 @@ SPELLS = {
 }
 
 
-# Grimoire skill icons (game/upgrades.gd LIST), as up_<id>; old ones kept for the shop perks.
+# Grimoire skill icons (game/upgrades.gd LIST), as up_<id>; others used by the shop perks.
 UPGRADES = {
     "damage": "a glowing red fist-shaped rune of raw power with sparks",
     "cooldown": "a small golden hourglass with glowing blue sand",
-    "count": "three small glowing magic orbs side by side",
-    "speed": "a winged golden arrow streaking forward with speed lines",
     "mana": "a blue mana potion flask with a downward arrow rune",
-    "area": "an expanding magic circle with arrows pointing outward",
-    "pierce": "a silver spear tip piercing through a wooden shield",
     "toughness": "a red heart wrapped in a sturdy iron band",
     "reservoir": "a large round blue mana flask filled to the brim, glowing",
     "haste": "a glowing wizard staff tip shooting rapid bursts of blue sparks with speed lines",
@@ -57,7 +54,6 @@ UPGRADES = {
     "fleetness": "a winged boot with a speed trail",
     "fortune": "a four-leaf clover over a shiny gold coin",
     "insight": "a glowing open eye inside a golden star",
-    "mending": "a green healing leaf over a small glowing red heart",
     "magnetism": "a red and silver horseshoe magnet pulling small gold sparks",
     "ward": "a round silver shield with a glowing blue protective rune",
     "precision": "a red bullseye target pierced dead center by a glowing arrow",

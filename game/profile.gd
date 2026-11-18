@@ -33,8 +33,7 @@ const ITEMS := {
 
 ## Augments (perks): bought once and kept, a run starts with the ones put in
 ## the slots (slots()): "active" (the secondary spell, right click: one at
-## most) or "passive": "bonus" (Stats bonuses, in bonus_list), "choices"
-## (cards per grimoire), "grimoires" (that many red and blue ones opened at
+## most) or "passive": "bonus" (Stats bonuses, in bonus_list), "grimoires" (that many red and blue ones opened at
 ## the start, see Run.start), the rest played by game/player.gd (PASSIVES).
 const SLOTS := 3
 const RING_OF_FIRE := {"name": "Ring of fire", "element": "fire", "color": "#ff7a1f", "cooldown": 3.0,
@@ -48,7 +47,7 @@ const AUGMENTS := {
 	"life_up": {"name": "Life up", "desc": "+25 max HP", "price": 250, "kind": "passive", "bonus": {"hp": 25.0}},
 	"mana_up": {"name": "Mana up", "desc": "+50 max mana", "price": 250, "kind": "passive", "bonus": {"mana": 50.0}},
 	"quick_feet": {"name": "Quick feet", "desc": "+10% move speed", "price": 250, "kind": "passive", "bonus": {"speed%": 0.1}},
-	"creativity": {"name": "Creativity", "desc": "4 choices per grimoire instead of 3", "price": 300, "kind": "passive", "choices": 4},
+	"creativity": {"name": "Creativity", "desc": "4 choices per grimoire instead of 3", "price": 300, "kind": "passive", "bonus": {"choices": 1.0}},
 	"poison_ward": {"name": "Poison ward", "desc": "-10% poison damage taken", "price": 500, "kind": "passive", "bonus": {"poison%": -0.1}},
 	"telekinesis": {"name": "Telekinesis", "desc": "Pick up drops from 4x farther", "price": 750, "kind": "passive", "bonus": {"pickup%": 3.0}},
 	"battle_mage": {"name": "Battle mage", "desc": "-15% mana cost", "price": 1000, "kind": "passive", "bonus": {"mana_cost%": -0.15}},
@@ -122,7 +121,7 @@ var base_spells := []  # game/spells.json: {id, slot, unlock, spell}
 func _init() -> void:
 	for d in JSON.parse_string(FileAccess.get_file_as_string("res://game/spells.json")):
 		base_spells.append({"id": d.id, "slot": d.slot, "unlock": d.unlock, "spell": Spell.sanitize(d)})
-	for slot in Upgrades.SLOTS:
+	for slot in Spell.SLOTS:
 		spells[slot] = available_spells(slot)[0].id
 
 
@@ -171,7 +170,7 @@ func apply(d: Dictionary) -> void:
 			scores.append({"score": int(s.get("score", 0)), "wave": int(s.get("wave", 0)),
 				"level": int(s.get("level", 0)), "kills": int(s.get("kills", 0)), "time": int(s.get("time", 0))})
 	for f in _arr(d.get("forged")):
-		if f is Dictionary and str(f.get("slot")) in Upgrades.SLOTS:
+		if f is Dictionary and str(f.get("slot")) in Spell.SLOTS:
 			var file := str(f.get("file", ""))
 			var s := SpellArt.load_bundle(file) if file.begins_with("user://") else {}
 			forged.append({"id": str(f.get("id")), "slot": f.slot, "file": file,
@@ -183,7 +182,7 @@ func apply(d: Dictionary) -> void:
 		if can_slot(str(id)):
 			slotted.append(str(id))
 	for slot in _dict(d.get("spells")):
-		if slot in Upgrades.SLOTS and _entry(str(d.spells[slot]), slot):
+		if slot in Spell.SLOTS and _entry(str(d.spells[slot]), slot):
 			spells[slot] = str(d.spells[slot])
 	run = _dict(d.get("run"))  # checked by Run.restore
 	changed.emit()
@@ -324,7 +323,7 @@ func available_spells(slot: String) -> Array:
 
 ## The spells equipped in the slots, as entries: the only ones the forge improves.
 func equipped_entries() -> Array:
-	return Upgrades.SLOTS.map(func(slot): return _entry(spells[slot], slot)).filter(func(e): return not e.is_empty())
+	return Spell.SLOTS.map(func(slot): return _entry(spells[slot], slot)).filter(func(e): return not e.is_empty())
 
 
 func _entry(id: String, slot: String) -> Dictionary:
@@ -345,7 +344,7 @@ func equip_spell(slot: String, id: String) -> bool:
 ## slot -> spell, what the next run starts with.
 func equipped_spells() -> Dictionary:
 	var out := {}
-	for slot in Upgrades.SLOTS:
+	for slot in Spell.SLOTS:
 		out[slot] = _entry(spells[slot], slot).spell
 	return out
 
