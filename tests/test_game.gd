@@ -68,7 +68,7 @@ func _test_french() -> void:
 	for m in RegEx.create_from_string("\"[A-Z_]+\": \"([^\"]+)\"").search_all(FileAccess.get_file_as_string("res://game/online.gd")):
 		texts.append(m.get_string(1))  # Online.ERRORS (the autoload needs Profile)
 	texts += Settings.REBINDABLE.values().filter(func(t): return t != "Pause")
-	var same := ["Scribe", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Pila Ignea", "Telum Magicum", "Fragmen Glaciei", "Arcus Fulguris", "Spiculum Veneni", "Tela Arcana", "Poison", "Zone", "Projectiles", "Abomination"]
+	var same := ["Scribe", "Inspiration", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Pila Ignea", "Telum Magicum", "Fragmen Glaciei", "Arcus Fulguris", "Spiculum Veneni", "Tela Arcana", "Poison", "Zone", "Projectiles", "Abomination"]
 	for t in texts:
 		check(t in same or TranslationServer.translate(t) != t, "French for: " + t)
 	check(Spell.describe({"description": "x", "description_fr": "y"}) == "y", "forged spell described in French")
@@ -128,6 +128,7 @@ func _test_run() -> void:
 	run.add_xp(1 + RunState.xp_to_next(2))  # two level-ups at once
 	check(run.level == 3 and gained[0] == 1, "one refill for the levels gained at once")
 	check(got.is_empty() and run.offers.is_empty(), "a level-up offers no upgrade")
+	run.list = {}
 	run.collect("grimoire_hero", 1)
 	check(run.pending.is_empty() and run.offers.is_empty(), "a grimoire with no skill to offer is lost")
 	run.list = SKILLS
