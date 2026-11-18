@@ -51,7 +51,7 @@ func _process(delta: float) -> void:
 	queue_redraw()
 	for b in _blasts:
 		if was < b[0] and age >= b[0]:
-			Sfx.play("blast")
+			Sfx.play("blast", global_position)
 	if was < AGONY and age >= AGONY:
 		Sfx.play("boom")
 		Sfx.play("boss_die")

@@ -38,6 +38,9 @@ const ECHO_DELAY := 0.11  # s between repeats of the tail
 const ECHO_FEEDBACK := 0.4
 const GAP := 0.04  # s: the same sound twice closer than this plays once (boss rings, swarms)
 const MUSIC_DB := -6.0
+## Sounds placed in the world (Sfx.play's `at`, spells) fade to silence this
+## far (px) from the local mage, who hears them (AudioListener2D on it).
+const HEARING := 900.0
 const MIN_SPEED := 0.5  # the sound follows the level-up slow motion down to this (lower turns to rumble)
 
 static var speed := 1.0  # every sound's pitch_scale factor (works with the web's sample playback)
@@ -89,7 +92,9 @@ func _exit_tree() -> void:
 	_node = null
 
 
-static func play(sound: String) -> void:
+## `at`: a world position, the sound is panned and fades with the distance
+## to the local mage; null: heard as is (UI, waves, the mage's own hurt).
+static func play(sound: String, at: Variant = null) -> void:
 	if not _node:
 		return
 	var now := Time.get_ticks_msec()
@@ -97,6 +102,20 @@ static func play(sound: String) -> void:
 		return
 	_node._last[sound] = now
 	var p: AudioStreamPlayer = _node._players[sound]
+	if at is Vector2:
+		var p2 := AudioStreamPlayer2D.new()
+		p2.stream = p.stream
+		p2.volume_db = p.volume_db
+		p2.bus = p.bus
+		p2.max_distance = HEARING
+		p2.position = at  # the autoload is a plain Node: local is global
+		p2.set_meta("pitch", randf_range(0.94, 1.06))
+		p2.pitch_scale = p2.get_meta("pitch") * speed
+		p2.add_to_group("sfx")
+		p2.finished.connect(p2.queue_free)
+		_node.add_child(p2)
+		p2.play()
+		return
 	p.set_meta("pitch", randf_range(0.94, 1.06) if p.bus == "SFX" else 1.0)
 	p.pitch_scale = p.get_meta("pitch") * speed
 	p.play()

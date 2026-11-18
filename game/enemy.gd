@@ -135,7 +135,7 @@ func _physics_process(delta: float) -> void:
 		_angle = lerp_angle(_angle, heading.angle(), minf(1.0, 10.0 * delta))
 	_act_time -= delta
 	if hp < _heard_hp - 1.0:  # not every tick of burn or poison
-		Sfx.play("hit")
+		Sfx.play("hit", global_position)
 		_heard_hp = hp
 	_heard_hp = maxf(_heard_hp, hp)  # healed
 	if not multiplayer.is_server():
@@ -265,7 +265,7 @@ func _shot(dir: Vector2, v: float, dmg: float) -> void:
 
 @rpc("authority", "call_local", "unreliable_ordered")
 func _spawn_shot(pos: Vector2, velocity: Vector2, dmg: float, fx: String) -> void:
-	Sfx.play("shot")
+	Sfx.play("shot", pos)
 	var s := Shot.new()
 	s.from = self
 	s.position = pos

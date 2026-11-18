@@ -99,6 +99,9 @@ func _ready() -> void:
 		cam.limit_bottom = int(Arena.RECT.end.y)
 		add_child(cam)
 		cam.make_current()
+		var ear := AudioListener2D.new()  # world sounds are heard from the mage, not the edge-clamped camera
+		add_child(ear)
+		ear.make_current()
 		_fit_camera(cam)
 		get_viewport().size_changed.connect(_fit_camera.bind(cam))
 
@@ -257,7 +260,7 @@ func _physics_process(delta: float) -> void:
 			c.follow(global_position, _angle, delta, t, Arena.RECT, near, true)
 	if hp < _heard_hp - 0.5:
 		if hp <= 0.0:
-			Sfx.play("death")
+			Sfx.play("death", null if peer_id == multiplayer.get_unique_id() else global_position)
 		elif peer_id == multiplayer.get_unique_id():
 			Sfx.play("hurt")
 	_heard_hp = hp
