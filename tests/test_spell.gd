@@ -188,7 +188,8 @@ func _check_channel() -> void:
 	mage.aim = Vector2.DOWN
 	await physics_frame
 	var arc: SpellBody = world.get_children().filter(func(n): return n is SpellBody and n.caster == mage)[0]
-	check(arc.dir == Vector2.DOWN and arc.position.is_equal_approx(Vector2(100, 110)), "beam follows the caster's aim every frame")
+	check(arc.dir == Vector2.DOWN and arc.position.is_equal_approx(mage.gem()) and mage.gem() != mage.position,
+		"beam follows the caster's aim and gem every frame")
 	mage.free()
 	check(Spell.mana_cost(spells.fireball) > 3 * Spell.mana_cost(spells.magic_missile), "fireball costs far more than a missile")
 	world.free()

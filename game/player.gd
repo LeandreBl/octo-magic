@@ -25,6 +25,12 @@ const SPRITES := {"idle": preload("res://assets/octo/idle.png"),
 const Tentacle := preload("res://game/tentacle.gd")
 const TENTACLES := 8
 const CAST_TIME := 0.4  # s: the cast animation, played once per cast
+## Where the staff's crystal is in each animation's frames, in sprite pixels
+## from the center, head up: spells leave from it. Measured on the PixelLab
+## strips (centroid of the bright blue pixels); remeasure when they are redrawn.
+const GEM := {"idle": [Vector2(17, -20.7)], "channel": [Vector2(-12.3, -29.3)],
+	"cast": [Vector2(17, -18.6), Vector2(17, -15.6), Vector2(-14.9, -29.3), Vector2(-11.8, -27.8),
+		Vector2(-11.3, -28.5), Vector2(-7.7, -28.3), Vector2(1.1, -26.2), Vector2(7.8, -24)]}
 
 var run: Object  # spells and mana costs: a Loadout in game, a Run in tests
 var peer_id := 1  # the owner's peer; 1 = host (or solo)
@@ -287,9 +293,9 @@ func cast(slot: String) -> bool:
 		s = Upgrades.scale_damage(s, Stats.CRIT_MULT)
 	mana -= cost
 	cooldowns[slot] = s.cooldown * stats.cooldown
-	SpellBody.cast(s.emit, global_position + aim * radius, aim, self, s, get_parent())
-	_animate_cast(s)
-	_cast_fx.rpc(slot, global_position + aim * radius, aim)
+	_animate_cast(s)  # first: the spell leaves from the gem of the frame it shows
+	SpellBody.cast(s.emit, gem(), aim, self, s, get_parent())
+	_cast_fx.rpc(slot, gem(), aim)
 	return true
 
 
@@ -310,15 +316,30 @@ func _animate_cast(s: Dictionary) -> void:
 		_cast_t = CAST_TIME
 
 
-func _draw() -> void:
-	modulate.a = 1.0 if hp > 0.0 else 0.3  # down until the next run
+## The animation and frame drawn now.
+func _frame() -> Array:
 	var anim := "channel" if _channel_t > 0.0 else "cast" if _cast_t > 0.0 else "idle"
-	var tex: Texture2D = SPRITES[anim]
-	var size := float(tex.get_height())
-	var frames := tex.get_width() / tex.get_height()
+	var frames: int = SPRITES[anim].get_width() / SPRITES[anim].get_height()
 	var f := int(Time.get_ticks_msec() / 1000.0 * (12.0 if anim == "channel" else 8.0)) % frames
 	if anim == "cast":
 		f = mini(int((1.0 - _cast_t / CAST_TIME) * frames), frames - 1)
+	return [anim, f]
+
+
+## The staff's crystal, in global coordinates, as drawn now.
+func gem() -> Vector2:
+	var af := _frame()
+	var pts: Array = GEM[af[0]]
+	return global_position + pts[mini(af[1], pts.size() - 1)].rotated(_angle + PI / 2.0)
+
+
+func _draw() -> void:
+	modulate.a = 1.0 if hp > 0.0 else 0.3  # down until the next run
+	var af := _frame()
+	var anim: String = af[0]
+	var f: int = af[1]
+	var tex: Texture2D = SPRITES[anim]
+	var size := float(tex.get_height())
 	draw_set_transform(Vector2.ZERO, _angle + PI / 2.0)  # the sprite's head is up
 	var tint := Color("#9be7ff") if statuses.has("freeze") else Color("#fff59d") if statuses.has("stun") \
 		else Color("#b9f6ca") if statuses.has("poison") else Color.WHITE
