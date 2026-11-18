@@ -1,15 +1,15 @@
 extends Control
 ## The spell forge, between runs: a parchment on a candle-lit table. The words
 ## written on it (one per blank scroll) are sent to the forge (game/main.gd);
-## while the forge works, runes are engraved on the parchment line after line:
-## fully covered, the spell is forged.
+## several can be written at once: each job's runes are engraved on its own strip
+## at the top, the strip full when the spell is forged.
 
 signal closed
 
 const UITheme := preload("res://ui/theme.gd")
 const HUD := preload("res://ui/hud.gd")  # its spell icon
 const MAX_SHOWN := 8  # blank scrolls drawn
-const CELL := 46.0  # a rune's square on the parchment
+const CELL := 20.0  # a rune's square on a job's strip
 ## The forge gives no progress: runes follow an expected curve, slowing down
 ## (never full) until the spell comes back.
 const FORGE_SECONDS := 90.0
@@ -22,12 +22,11 @@ const CANDLE: Texture2D = preload("res://assets/forge/candle.png")  # 8 frames o
 const QUILL: Texture2D = preload("res://assets/forge/quill.png")
 const RUNES: Texture2D = preload("res://assets/forge/runes.png")  # glowing gold runes of 32 px
 const CANDLE_GAP := 64 * PX + 24  # between the parchment and the view: a candle
-const RUNE_INK := Color(0.42, 0.2, 0.1)  # a cooled rune: the gold darkened to ink
 
 var main: Node
 var _parchment: PanelContainer
-var _page: VBoxContainer  # what is written, dimmed under the runes (not the status)
-var _runes: Control
+var _page: VBoxContainer
+var _jobs: HBoxContainer  # a strip of runes per job (_job_chip)
 var _view: PanelContainer  # the chosen spell: icon, name, description, stats
 var _rows: VBoxContainer  # its stats, a name and a value per row
 var _spell: Label  # the chosen spell's description
@@ -43,11 +42,6 @@ var _edit: LineEdit
 var _write: Button
 var _status: Label
 var _counter: Label
-var _progress := 0.0  # share of the parchment covered with runes
-var _glow := 0.0  # the runes flare up gold once the spell is forged
-var _fade := 0.0  # runes shown, 0..1
-var _started := 0.0  # Time.get_ticks_msec() when the job started
-var _busy := false  # a forge job runs
 var _time := 0.0
 var _order := PackedInt32Array()  # which rune goes in each cell
 
@@ -74,9 +68,13 @@ func _ready() -> void:
 	back.tooltip_text = "Back"
 	back.pressed.connect(closed.emit)
 	head.add_child(back)
-	var title := UITheme.label("Spell forge", "Header")
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	head.add_child(title)
+	head.add_child(UITheme.label("Spell forge", "Header"))
+	_jobs = HBoxContainer.new()
+	_jobs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_jobs.alignment = BoxContainer.ALIGNMENT_END
+	_jobs.clip_contents = true
+	_jobs.add_theme_constant_override("separation", 10)
+	head.add_child(_jobs)
 	var plate := PanelContainer.new()
 	plate.theme_type_variation = "Plate"
 	plate.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -101,10 +99,6 @@ func _ready() -> void:
 	body.add_child(_parchment)
 	_page = _vbox(14)
 	_parchment.add_child(_page)
-	_runes = Control.new()
-	_runes.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_runes.draw.connect(_draw_runes)
-	_parchment.add_child(_runes)
 
 	var heading := _ink(Label.new(), 30, UITheme.PARCH_RED)
 	heading.autowrap_mode = TextServer.AUTOWRAP_WORD
@@ -220,7 +214,10 @@ func _ready() -> void:
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_page.add_child(_status)
 
+	main.forge_started.connect(_on_started)
 	main.forged.connect(_on_forged)
+	for job in main.forge_jobs:
+		_jobs.add_child(_job_chip(job))
 	visibility_changed.connect(_lay_down)
 
 
@@ -317,22 +314,50 @@ func stats(s: Dictionary) -> Array:
 	return rows
 
 
-## The job ended: forged, the runes fill the parchment, flare up and fade away
-## (the spell is written); failed, they fade at once.
-func _on_forged(ok: bool) -> void:
-	_busy = false
-	var tw := create_tween()
-	if ok:
-		_edit.text = ""
-		_pick = ""  # the forged spell, equipped in the improved one's slot
-		tw.tween_property(self, "_progress", 1.0, 0.6)
-		tw.tween_callback(Sfx.play.bind("scroll"))
-		tw.tween_property(self, "_glow", 1.0, 0.3)
-		tw.tween_interval(0.8)
-		tw.tween_property(self, "_fade", 0.0, 1.2)
-		tw.parallel().tween_property(self, "_glow", 0.0, 1.2)
-	else:
-		tw.tween_property(self, "_fade", 0.0, 0.6)
+## The words were taken: the line is cleared for the next spell.
+func _on_started(job: Dictionary) -> void:
+	_edit.text = ""
+	_jobs.add_child(_job_chip(job))
+
+
+## A job's plate: the improved spell's icon and name over its strip of runes.
+func _job_chip(job: Dictionary) -> Control:
+	var chip := PanelContainer.new()
+	chip.theme_type_variation = "Plate"
+	chip.set_meta("job", job.id)
+	chip.set_meta("glow", 0.0)  # the runes flare up gold once the spell is forged
+	var row := HBoxContainer.new()
+	chip.add_child(row)
+	row.add_child(UITheme.icon_rect(HUD._icon(job.spell), 32))
+	var col := _vbox(2)
+	row.add_child(col)
+	var title := UITheme.label(Spell.label(job.spell), "", 14)
+	title.clip_text = true
+	title.custom_minimum_size.x = 8 * CELL
+	col.add_child(title)
+	var strip := Control.new()
+	strip.custom_minimum_size = Vector2(8 * CELL, CELL)
+	strip.draw.connect(_draw_strip.bind(strip, chip, job))
+	chip.set_meta("strip", strip)
+	col.add_child(strip)
+	return chip
+
+
+## The job ended: forged, its strip fills, flares up and the plate fades away;
+## failed, it fades at once.
+func _on_forged(job: Dictionary, ok: bool) -> void:
+	for chip in _jobs.get_children():
+		if chip.get_meta("job") != job.id:
+			continue
+		chip.set_meta("job", "")  # ended
+		var tw := chip.create_tween()
+		if ok:
+			_pick = ""  # the forged spell, equipped in the improved one's slot
+			tw.tween_callback(Sfx.play.bind("scroll"))
+			tw.tween_method(func(g): chip.set_meta("glow", g), 0.0, 1.0, 0.4)
+			tw.tween_interval(1.2)
+		tw.tween_property(chip, "modulate:a", 0.0, 0.6)
+		tw.tween_callback(chip.queue_free)
 
 
 ## Share of the parchment covered after `seconds` of forging: fast at first,
@@ -343,21 +368,11 @@ static func coverage(seconds: float) -> float:
 
 func _process(delta: float) -> void:
 	_time += delta
-	if not _busy and not main.forge_job.is_empty():  # a job started
-		_busy = true
-		_started = Time.get_ticks_msec()
-		_progress = 0.0
-		_glow = 0.0
-		_fade = 1.0
-	if _busy:
-		_progress = coverage((Time.get_ticks_msec() - _started) / 1000.0)
 	if not is_visible_in_tree():
 		return
 	queue_redraw()
-	_runes.queue_redraw()
-	for c in _page.get_children():  # the forge's progress stays readable
-		if c != _status:
-			c.modulate.a = lerpf(1.0, 0.3, _fade)
+	for chip in _jobs.get_children():
+		chip.get_meta("strip").queue_redraw()
 	var e := _chosen()
 	if e.id != _shown:  # the icon is built once per pick
 		_shown = e.id
@@ -377,7 +392,7 @@ func _process(delta: float) -> void:
 			_rows.add_child(row)
 	var can: bool = main.can_write()
 	for a in _arrows:
-		a.disabled = _busy or Profile.owned_spells().size() < 2
+		a.disabled = Profile.owned_spells().size() < 2
 	_edit.editable = can
 	_write.disabled = not can
 	var words := Array(_edit.text.replace(",", " ").split(" ", false))
@@ -392,14 +407,9 @@ func _process(delta: float) -> void:
 		blank.scale = Vector2.ONE * (1.0 + 0.04 * sin(_time * 4.0 + i)) if word else Vector2.ONE  # inked: it breathes
 		blank.pivot_offset = blank.size / 2
 	_count.text = tr("%d blank · %d word(s)") % [n, mini(words.size(), n)] if n else ""
-	var state := ""
-	if _busy:
-		state = tr("The forge is engraving the spell… %d%%") % roundi(_progress * 100)
-	elif n == 0:
-		state = tr("No blank scroll: bosses drop them.")
-	else:
-		state = tr("The forge turns them into a new spell, equipped at your next run.")
-	_status.text = main.forge_status + "\n" + state if main.forge_status and not _busy else state
+	var state := tr("No blank scroll: bosses drop them.") if n == 0 \
+		else tr("The forge turns them into a new spell, equipped at your next run.")
+	_status.text = main.forge_status + "\n" + state if main.forge_status else state
 
 
 ## The room: a dark wall, the wooden table, a candle beside the parchment.
@@ -421,23 +431,20 @@ func _draw() -> void:
 	draw_texture_rect_region(CANDLE, Rect2(at, Vector2(side, side)), Rect2(frame * 64, 0, 64, 64))
 
 
-## Runes engraved line by line, the newest glowing as if still hot.
-func _draw_runes() -> void:
-	if _fade <= 0:
-		return
-	var cols := maxi(1, int(_runes.size.x / CELL))
-	var rows := maxi(1, int(_runes.size.y / CELL))
-	var origin := (_runes.size - Vector2(cols, rows) * CELL) / 2
-	var total := cols * rows
-	var shown := _progress * total
-	for i in mini(ceili(shown), total):
-		var cell := origin + Vector2(i % cols, i / cols) * CELL
+## A job's runes engraved one after the other, the newest glowing as if still
+## hot, the quill writing the next one; all gold once the spell is forged.
+func _draw_strip(strip: Control, chip: Control, job: Dictionary) -> void:
+	var cols := maxi(1, int(strip.size.x / CELL))
+	var done: bool = chip.get_meta("job") == ""
+	var shown: float = cols if done else coverage((Time.get_ticks_msec() - job.started) / 1000.0) * cols
+	var glow: float = chip.get_meta("glow")
+	for i in mini(ceili(shown), cols):
 		var fresh := clampf(shown - i, 0.0, 1.0)  # the rune being engraved fades in
-		var hot := clampf(1.0 - (shown - i) / 6.0, 0.0, 1.0)  # the last ones are still hot
-		var tint := RUNE_INK.lerp(Color.WHITE, maxf(hot, _glow))
-		tint.a = fresh * _fade
-		_runes.draw_texture_rect_region(RUNES, Rect2(cell, Vector2(CELL, CELL)), Rect2(_order[i % _order.size()] * 32, 0, 32, 32), tint)
-	if _busy and shown < total:  # the quill writing the next rune, its nib bottom left
-		var at := origin + Vector2(int(shown) % cols + 0.5, int(shown) / cols + 0.5) * CELL
-		at += Vector2(4 * sin(_time * 14.0), 3 * cos(_time * 9.0))
-		_runes.draw_texture_rect(QUILL, Rect2(at - Vector2(8, 88), Vector2(96, 96)), false, Color(1, 1, 1, _fade))
+		var hot := clampf(1.0 - (shown - i) / 3.0, 0.0, 1.0)  # the last ones are still hot
+		var tint := Color(1, 1, 1, 0.35).lerp(Color.WHITE, maxf(hot, glow))
+		tint.a *= fresh
+		strip.draw_texture_rect_region(RUNES, Rect2(Vector2(i * CELL, 0), Vector2(CELL, CELL)),
+			Rect2(_order[i % _order.size()] * 32, 0, 32, 32), tint)
+	if not done:  # the quill writing the next rune, its nib bottom left
+		var at := Vector2((int(shown) + 0.5) * CELL, CELL * 0.5) + Vector2(2 * sin(_time * 14.0), 1.5 * cos(_time * 9.0))
+		strip.draw_texture_rect(QUILL, Rect2(at - Vector2(3, 34), Vector2(38, 38)), false)

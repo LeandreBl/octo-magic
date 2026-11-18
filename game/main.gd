@@ -25,7 +25,8 @@ const ON_CHANGE := SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE
 signal run_started  # on every peer
 signal run_ended  # last_run holds the result
 signal net_error(message: String)  # host lost or room closed: back to solo
-signal forged(ok: bool)  # a forge job ended: the spell came back, or the scrolls did
+signal forge_started(job: Dictionary)  # the forge took the words: a job of forge_jobs
+signal forged(job: Dictionary, ok: bool)  # a forge job ended: the spell came back, or the scrolls did
 
 var spawner: MultiplayerSpawner
 var net: Node  # game/net.gd
@@ -33,10 +34,10 @@ var spawned := 0  # names of spawned enemies and drops
 var to_spawn := []  # the current wave's kinds not out yet (host)
 var _spawn_in := 0.0  # s until the next one comes out
 var map_name := "crypt"  # this run's map (its music), for players dropping in
-var forge_http: HTTPRequest
-var forge_job := ""  # scrolls being written on the forge
-var forge_words := 0  # scrolls used by that job
-var forge_slot := "primary"  # slot of the spell being improved, the forged one goes there
+## Scrolls being written, in parallel: {id, words (scrolls used), slot (of the
+## improved spell, the forged one goes there), spell (the improved one), started}.
+var forge_jobs: Array[Dictionary] = []
+var _forge_posting := false  # words sent, not taken yet: their scrolls are not counted off
 var forge_note := ""  # forge news, shown in the HUD and the forge (ui/forge.gd)
 var forge_status := ""  # result of the last write attempt, for the forge
 var last_run := {}  # Run.finish() + "reached" achievements + "unlocked" spells
@@ -60,11 +61,6 @@ func _ready() -> void:
 	net.joined.connect(_on_net_joined)
 	net.lost.connect(_go_solo)
 	add_child(net)
-	forge_http = HTTPRequest.new()
-	forge_http.timeout = 30.0
-	forge_http.process_mode = Node.PROCESS_MODE_ALWAYS
-	forge_http.request_completed.connect(_on_forge_reply)
-	add_child(forge_http)
 	_reset_world()
 	var ui := preload("res://ui/ui.gd").new()
 	ui.name = "UI"
@@ -375,88 +371,115 @@ func _go_solo() -> void:
 # --- forge: POST the words, then poll the job until the bundle is ready -------
 
 func can_write() -> bool:
-	return Profile.blank_scrolls > 0 and forge_job.is_empty()
+	return Profile.blank_scrolls > 0 and not _forge_posting
+
+
+## A forge request on its own HTTPRequest (the jobs poll at once); `done` gets
+## request_completed's arguments. False: not sent.
+func _forge_request(path: String, headers: PackedStringArray, done: Callable,
+		method := HTTPClient.METHOD_GET, body := "") -> bool:
+	var http := HTTPRequest.new()
+	http.timeout = 30.0
+	http.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(http)
+	http.request_completed.connect(func(r, c, h, d): http.queue_free(); done.call(r, c, h, d))
+	if http.request(Online.server + path, headers, method, body) != OK:
+		http.queue_free()
+		return false
+	return true
 
 
 ## `words`: one word per scroll, separated by spaces or commas; `entry`: the
 ## owned spell to improve (Profile.owned_spells()), the result takes its slot.
 func write_scroll(words: String, entry: Dictionary) -> void:
 	var word := words.strip_edges()
-	if word.is_empty() or not can_write() \
-			or forge_http.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
+	if word.is_empty() or not can_write():
 		return
+	_forge_posting = true
 	var auth := await Online.auth_headers()
 	if auth.is_empty():
+		_forge_posting = false
 		forge_status = tr("Log in (main menu → Account) to write the scrolls.")
 		return
 	forge_status = tr("Writing the scrolls…")
-	forge_slot = entry.slot
+	var job := {"slot": entry.slot, "spell": entry.spell, "words": 0}
 	var body := JSON.stringify({"spell": entry.spell, "words": word,
 		"scrolls": Profile.blank_scrolls, "lang": TranslationServer.get_locale()})
-	if forge_http.request(Online.server + "/api/forge", auth + PackedStringArray(["Content-Type: application/json"]),
-			HTTPClient.METHOD_POST, body) != OK:
+	if not _forge_request("/api/forge", auth + PackedStringArray(["Content-Type: application/json"]),
+			_on_forge_reply.bind(job), HTTPClient.METHOD_POST, body):
+		_forge_posting = false
 		forge_status = tr("The scrolls cannot be written right now. Your scrolls are kept.")
 
 
-func _poll() -> void:
+func _poll(job: Dictionary) -> void:
 	var auth := await Online.auth_headers()  # a forge job can outlive the ID token
-	if not forge_job.is_empty() and forge_http.get_http_client_status() == HTTPClient.STATUS_DISCONNECTED:
-		forge_http.request(Online.server + "/api/forge/" + forge_job, auth)
+	if not _forge_request("/api/forge/" + job.id, auth, _on_forge_reply.bind(job)):
+		get_tree().create_timer(POLL_SECONDS, true).timeout.connect(_poll.bind(job))
 
 
-func _on_forge_reply(result: int, code: int, headers: PackedStringArray, data: PackedByteArray) -> void:
+func _end_job(job: Dictionary, ok: bool) -> void:
+	forge_jobs.erase(job)
+	forged.emit(job, ok)
+
+
+func _on_forge_reply(result: int, code: int, headers: PackedStringArray, data: PackedByteArray, job: Dictionary) -> void:
 	if result == HTTPRequest.RESULT_SUCCESS and code == 200 and data.slice(0, 2).get_string_from_ascii() == "PK":
-		var applied := forge_words
+		var applied: int = job.words
 		for h in headers:
 			if h.to_lower().begins_with("x-forge-applied:"):
 				applied = h.get_slice(":", 1).strip_edges().to_int()
-		_on_bundle(data, clampi(forge_words - applied, 0, forge_words))
+		_on_bundle(data, job, clampi(job.words - applied, 0, job.words))
 		return
 	var reply: Variant = JSON.parse_string(data.get_string_from_utf8())
 	reply = reply if reply is Dictionary else {}
+	if not job.has("id"):
+		_forge_posting = false
 	if result != HTTPRequest.RESULT_SUCCESS or code != 200 or reply.has("error"):
 		var msg: String = tr(str(reply.get("error", tr("error %d") % code if result == HTTPRequest.RESULT_SUCCESS else tr("offline"))))
-		if forge_job.is_empty():  # words refused or forge unreachable: scrolls kept
+		if not job.has("id"):  # words refused or forge unreachable: scrolls kept
 			forge_status = tr("The scrolls could not be written (%s). Your scrolls are kept.") % msg
 		else:
-			forge_job = ""
-			Profile.blank_scrolls += forge_words  # the scrolls were not used up
+			Profile.blank_scrolls += job.words  # the scrolls were not used up
 			forge_note = tr("Writing the scrolls failed (%s). Your scrolls are given back.") % msg
 			forge_status = forge_note
 			Profile.save()
-			forged.emit(false)
+			_end_job(job, false)
 		return
-	if reply.has("job"):
-		forge_job = reply.job
-		forge_words = maxi(1, reply.get("words", [1]).size())
-		Profile.blank_scrolls -= forge_words
+	if not job.has("id"):
+		if not reply.has("job"):
+			return
+		job.id = reply.job
+		job.words = maxi(1, reply.get("words", [1]).size())
+		job.started = Time.get_ticks_msec()
+		forge_jobs.append(job)
+		Profile.blank_scrolls -= job.words
 		Profile.save()
-		forge_note = tr("%d scroll(s) being written…") % forge_words
+		forge_note = tr("%d scroll(s) being written…") % job.words
 		forge_status = ""
-	get_tree().create_timer(POLL_SECONDS, true).timeout.connect(_poll)
+		forge_started.emit(job)
+	get_tree().create_timer(POLL_SECONDS, true).timeout.connect(_poll.bind(job))
 
 
 ## The forged spell is kept and equipped in the improved spell's slot: the run in
 ## progress keeps its spells, the next one starts with it.
 ## cancelled: words the forge found meaningless; their scrolls come back.
-func _on_bundle(data: PackedByteArray, cancelled: int) -> void:
-	forge_job = ""
+func _on_bundle(data: PackedByteArray, job: Dictionary, cancelled: int) -> void:
 	var path := Profile.next_bundle_path()
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	f.store_buffer(data)
 	f.close()
 	var s := SpellArt.load_bundle(path)
 	if s.is_empty():
-		Profile.blank_scrolls += forge_words
+		Profile.blank_scrolls += job.words
 		Profile.save()
 		forge_note = tr("The scroll is unreadable. Your scrolls are given back.")
 		forge_status = forge_note
-		forged.emit(false)
+		_end_job(job, false)
 		return
 	Profile.blank_scrolls += cancelled
-	Online.push_spell(Profile.add_forged(s, path, forge_slot), path)
+	Online.push_spell(Profile.add_forged(s, path, job.slot), path)
 	forge_note = tr("Scroll written: %s will be your main spell in the next run.") % s.name
 	if cancelled > 0:
 		forge_note += " " + tr("%d word(s) cancelled (meaningless, not in a dead language or cheating), scroll(s) given back.") % cancelled
 	forge_status = forge_note
-	forged.emit(true)
+	_end_job(job, true)
