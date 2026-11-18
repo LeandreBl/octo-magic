@@ -370,6 +370,12 @@ msgstr "Cadence"
 msgid "+%d%% cast rate"
 msgstr "+%d %% de cadence de lancer"
 
+msgid "Antidote"
+msgstr "Antidote"
+
+msgid "+%d%% poison resistance"
+msgstr "+%d %% de résistance au poison"
+
 msgid "-%d%% cooldown"
 msgstr "-%d %% de temps de recharge"
 

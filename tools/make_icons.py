@@ -64,6 +64,7 @@ UPGRADES = {
     "thrift": "a small blue mana crystal on a cracked open coin purse, a few blue mana drops saved inside",
     "inspiration": "a fan of four glowing magic cards held open, the fourth one shining gold",
     "channeling": "a glowing blue mana rune circle on the ground with blue mana streams spiraling up into its center",
+    "antidote": "a small round glass vial of bright golden antidote liquid with a cork, a crossed-out green poison drop rune on it",
 }
 
 
