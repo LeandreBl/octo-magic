@@ -111,7 +111,13 @@ func _initialize() -> void:
 	check(SpellSound.is_continuous(Spell.sanitize({"emit": {"body": {"shape": "zone"}}}).emit.body), "zones loop")
 	check(not SpellSound.is_continuous(base.emit.body), "bolts play once")
 	check(SpellSound.is_continuous(Spell.sanitize({"emit": {"body": {"shape": "cone"}}}).emit.body), "cones breathe, not one chime per tick")
-	check(SpellSound.cast_stream("fire", base.emit.body, 0) != SpellSound.cast_stream("fire", base.emit.body, 1), "sub-casts sound different")
+	check(SpellSound.is_continuous(Spell.sanitize({"emit": {"body": {"shape": "beam"}}}).emit.body), "beams buzz, not one zap per tick")
+	for d in JSON.parse_string(FileAccess.get_file_as_string("res://game/spells.json")):
+		if d.id in ["lightning", "frost_jet"]:  # recorded loops (assets/spells/SOUNDS.md)
+			var sp := Spell.sanitize(d)
+			var rec := SpellSound._recorded(sp, sp.emit.body)
+			check(rec is AudioStreamOggVorbis and rec.loop, "%s plays its recorded loop" % d.id)
+	check(SpellSound.cast_stream("fire", base.emit.body, 0) !=SpellSound.cast_stream("fire", base.emit.body, 1), "sub-casts sound different")
 
 	await _check_homing_lifetime()
 	await _check_channel()

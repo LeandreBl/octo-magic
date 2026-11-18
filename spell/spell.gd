@@ -94,6 +94,7 @@ static func _body(d: Variant, depth: int) -> Dictionary:
 		"particle": _grid(b.get("particle"), 8),
 		"sheet": _sheet(b.get("sheet")),
 		"burst_sheet": _sheet(b.get("burst_sheet")),
+		"sound": _file(b.get("sound"), "ogg"),
 	}
 
 
@@ -120,10 +121,10 @@ static func _effects(d: Variant, depth: int) -> Array:
 	return out
 
 
-## A PNG of the spell's bundle. Plain names only: no paths.
-static func _file(v: Variant) -> String:
+## A PNG (or `ext`) of the spell's bundle. Plain names only: no paths.
+static func _file(v: Variant, ext := "png") -> String:
 	var s := str(v) if v is String else ""
-	var re := RegEx.create_from_string("^[a-z0-9_]{1,32}\\.png$")
+	var re := RegEx.create_from_string("^[a-z0-9_]{1,32}\\." + ext + "$")
 	return s if re.search(s) else ""
 
 

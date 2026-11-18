@@ -81,9 +81,11 @@
     ],
     "on_expire": [],
     "tick_interval": 0.5,
-    "on_tick": []
+    "on_tick": [],
+    "sound": "lightning.ogg"
    }
-  }
+  },
+  "bundle": "res://assets/spells"
  },
  {
   "id": "magic_missile",
@@ -179,7 +181,8 @@
      "frames": 12,
      "fps": 12,
      "loop": true
-    }
+    },
+    "sound": "frost_jet.ogg"
    }
   },
   "bundle": "res://assets/spells"

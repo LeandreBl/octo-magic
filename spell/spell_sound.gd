@@ -1,10 +1,11 @@
 class_name SpellSound
 ## Spell sounds, synthesized from the spell data: no files, no API, so every
 ## spell (forged or hand made) gets its own sounds. Same data ->
-## same sound (the noise is seeded by the data).
+## same sound (the noise is seeded by the data). A continuous body with a `sound`
+## (an Ogg of the spell's bundle, assets/spells/SOUNDS.md) loops that recording instead.
 ## - a one-shot sound when an emit is cast (sub-casts too: higher, quieter);
 ## - a looping sound on continuous bodies (zones, orbits, ticking bodies,
-##   cones: a soft breath, not a one-shot per channel tick),
+##   beams and cones: one sound while channeled, not a one-shot per tick),
 ##   instead of the one-shot, for as long as the body lives. One loop per
 ##   sound: overlapping bodies with the same loop (two burning zones) play it
 ##   once, a surviving body takes it over when the playing one dies.
@@ -20,7 +21,7 @@ static var _loops := {}  # loop stream -> live bodies wanting it, the first one 
 
 
 static func is_continuous(body: Dictionary) -> bool:
-	return body.shape in ["zone", "cone"] or not body.on_tick.is_empty() \
+	return body.shape in ["zone", "beam", "cone"] or not body.on_tick.is_empty() \
 		or body.motion.any(func(m): return m.type == "orbit")
 
 
@@ -30,7 +31,9 @@ static func is_continuous(body: Dictionary) -> bool:
 static func play(spell: Dictionary, body: Dictionary, depth: int, node: Node2D, world: Node) -> void:
 	var db := linear_to_db(spell.get("weak", 1.0))
 	if is_continuous(body):
-		var s := loop_stream(spell.element, body, depth)
+		var s := _recorded(spell, body) if depth == 0 else null
+		if not s:
+			s = loop_stream(spell.element, body, depth)
 		var bodies: Array = _loops.get_or_add(s, [])
 		while not bodies.is_empty() and not is_instance_valid(bodies[0]):
 			bodies.pop_front()  # freed outside the tree, no tree_exiting (tests)
@@ -54,7 +57,7 @@ static func play(spell: Dictionary, body: Dictionary, depth: int, node: Node2D, 
 		world.add_child(p)
 
 
-static func _attach_loop(s: AudioStreamWAV, node: Node2D, depth: int, db: float) -> void:
+static func _attach_loop(s: AudioStream, node: Node2D, depth: int, db: float) -> void:
 	var p := AudioStreamPlayer2D.new()
 	p.autoplay = true
 	p.bus = "SFX"
@@ -67,7 +70,7 @@ static func _attach_loop(s: AudioStreamWAV, node: Node2D, depth: int, db: float)
 
 
 ## The playing body leaves: the next live one (if any) plays the loop.
-static func _release(s: AudioStreamWAV, node: Node2D, depth: int, db: float) -> void:
+static func _release(s: AudioStream, node: Node2D, depth: int, db: float) -> void:
 	var bodies: Array = _loops.get(s, [])
 	var was_playing: bool = not bodies.is_empty() and bodies[0] == node
 	bodies.erase(node)
@@ -76,6 +79,18 @@ static func _release(s: AudioStreamWAV, node: Node2D, depth: int, db: float) -> 
 	if was_playing and not bodies.is_empty():
 		_attach_loop(s, bodies[0], depth, db)
 
+
+## A continuous body's recorded sound, looped; null if none (or missing: coop
+## peers lack a forged bundle, like its sheets).
+static func _recorded(spell: Dictionary, body: Dictionary) -> AudioStream:
+	var key: String = spell.get("bundle", "") + "/" + body.get("sound", "")
+	if body.get("sound", "").is_empty() or not key.begins_with("res://") or not ResourceLoader.exists(key):
+		return null
+	if not _cache.has(key):
+		var s: AudioStreamOggVorbis = load(key)
+		s.loop = true
+		_cache[key] = s
+	return _cache[key]
 
 
 static func _pitch(body: Dictionary, depth: int) -> float:
