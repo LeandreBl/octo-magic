@@ -1098,6 +1098,9 @@ msgstr "+%d%% de taille du cône de Flatus Gelidus"
 msgid "Pila Ignea leaves burning embers: +%d damage a tick"
 msgstr "Pila Ignea laisse des braises ardentes : +%d dégâts par tic"
 
+msgid "Pila Ignea sets its targets on fire (+%d burn per second)"
+msgstr "Pila Ignea enflamme ses cibles (+%d de brûlure par seconde)"
+
 msgid "Records"
 msgstr "Palmarès"
 

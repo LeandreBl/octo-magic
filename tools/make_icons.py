@@ -72,6 +72,7 @@ UPGRADES = {
     "chill_wind": "a small frozen hourglass covered in frost and icicles, its pale blue sand slowed to a trickle, snowflakes around it",
     "cone_of_ice": "a pale blue and white triangular cone of sharp ice crystals fanning out to the right, cold frosty colors only, blue cyan white, no fire, no orange",
     "embers": "a small heap of glowing orange embers and hot coals with tiny flames and rising sparks",
+    "immolation": "a burning wooden effigy totem engulfed in tall orange and red flames, embers rising",
     "fireproof": "a round red and gold shield deflecting orange flames, a glowing protective rune in its center",
 }
 

@@ -29,6 +29,7 @@ var index := 0  # beam / cone: which body of its emit (count > 1: one arc / cone
 var turn := 0.0  # beam / cone: its angle off the caster's aim (spread, radial...)
 var ember_timer := 0.0  # bolt: time since its last ember (the caster's "embers" stat)
 
+const BURN_TIME := 3.0  # s: how long an immolated enemy burns after the bolt
 const CHILL_TIME := 1.0  # s: how long a chilled enemy stays slowed after the cone
 const FREEZE_TIME := 0.6  # s: how long a Rigor freeze holds an enemy
 const CHAIN_REACH := 140.0  # px: how far a chained arc jumps from one enemy to the next
@@ -335,6 +336,16 @@ func _drop_embers(delta: float) -> void:
 	get_parent().add_child(e)
 
 
+## The Immolatio skill (Upgrades "immolation"): a cast bolt sets what it
+## strikes on fire, its caster's "immolate" stat in damage a second for
+## BURN_TIME. An engine stat, not spell data: no forged spell has it; none
+## from a weakened cast (short of mana).
+func _immolate(e: Node2D) -> void:
+	var b := _stat("immolate")
+	if b > 0.0 and depth == 0 and not spell.has("weak") and multiplayer.is_server():
+		e.add_status("burn", b, BURN_TIME)
+
+
 func _check_hits() -> void:
 	for e in get_tree().get_nodes_in_group("enemies"):
 		if hit_ids.has(e.get_instance_id()):
@@ -343,6 +354,7 @@ func _check_hits() -> void:
 			continue
 		hit_ids[e.get_instance_id()] = true
 		apply_effects(body.on_hit, global_position, e)
+		_immolate(e)
 		if pierce_left > 0:
 			pierce_left -= 1
 		elif bounce_left > 0:
