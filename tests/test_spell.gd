@@ -257,6 +257,7 @@ func _check_channel() -> void:
 	world.add_child(mage)
 	mage.set_physics_process(false)  # aim set by hand, not by the mouse
 	mage.aim = Vector2.RIGHT
+	mage.firing = {"primary": true}
 	SpellBody.cast(spells.lightning.emit, Vector2(110, 100), Vector2.RIGHT, mage, spells.lightning, world)
 	await physics_frame
 	mage.aim = Vector2.DOWN
@@ -268,6 +269,9 @@ func _check_channel() -> void:
 	await physics_frame
 	check(arc.dir == Vector2.DOWN and arc.position.is_equal_approx(mage.gem()) and mage.gem() != mage.position,
 		"beam follows the caster's aim and gem every frame")
+	mage.firing = {"primary": false}
+	await physics_frame
+	check(arc.is_queued_for_deletion() or not is_instance_valid(arc), "released beam stops at once")
 	mage.free()
 	check(Spell.mana_cost(spells.fireball) > 3 * Spell.mana_cost(spells.magic_missile), "fireball costs far more than a missile")
 	check(Spell.cost_text(spells.lightning, 2) == "%d/s" % roundi(2 / spells.lightning.cooldown), "a channeled cost is shown per second")
