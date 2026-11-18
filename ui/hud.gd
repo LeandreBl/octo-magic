@@ -3,7 +3,7 @@ extends Control
 ## (top center), gold, score and a pause button for touch (top right), spell
 ## slots with key, mana cost and cooldown (bottom center: touch a slot to cast
 ## it; key or gamepad button below), the passive (shield left, time until
-## it is back), and the scrolls found with the forge news (bottom left).
+## it is back).
 
 signal paused
 
@@ -18,9 +18,6 @@ var _wave: Label
 var _pips: Array[ColorRect] = []  # waves left before the boss
 var _gold: Label
 var _score: Label
-var _scroll_plate: Control
-var _scrolls: Label
-var _scroll_note: Label
 var _passive: Control
 var _shield: Label
 var _shield_wait: ColorRect  # covers the passive while a broken shield comes back
@@ -120,20 +117,6 @@ func _ready() -> void:
 	pause.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	pause.pressed.connect(paused.emit)
 	right.add_child(pause)
-
-	# Bottom left: scrolls found, forge news.
-	_scroll_plate = _plate(margin, Control.SIZE_SHRINK_BEGIN, Control.SIZE_SHRINK_END)
-	var s_row := _box(HBoxContainer.new(), 10)
-	_scroll_plate.add_child(s_row)
-	s_row.add_child(UITheme.icon_rect(UITheme.icon("scroll"), 36))
-	var s_col := _box(VBoxContainer.new(), 0)
-	s_row.add_child(s_col)
-	_scrolls = UITheme.label("", "", 17, UITheme.GOLD)
-	s_col.add_child(_scrolls)
-	_scroll_note = UITheme.label("", "", 14, UITheme.TEXT_DIM)
-	_scroll_note.autowrap_mode = TextServer.AUTOWRAP_WORD
-	_scroll_note.custom_minimum_size.x = 260
-	s_col.add_child(_scroll_note)
 
 	# Bottom center: spell slots, then the passive.
 	var bottom := _box(HBoxContainer.new(), 14)
@@ -273,9 +256,6 @@ func _process(_delta: float) -> void:
 		_pips[i].color = (UITheme.HP if boss else UITheme.GOLD) if i < done or boss else UITheme.RIM
 	_gold.text = str(Run.gold)
 	_score.text = "Score %d" % Run.score()
-	_scroll_plate.visible = Run.scrolls > 0 or main.forge_note != ""
-	_scrolls.text = tr("Scrolls found: %d") % Run.scrolls
-	_scroll_note.text = main.forge_note if main.forge_note else tr("To write at the end of the run")
 	_passive.visible = p.passive != ""
 	if p.passive:  # no key: it applies itself
 		_shield.text = "%s %d" % [tr(Profile.AUGMENTS[p.passive].name), p.shield]

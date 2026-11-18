@@ -557,7 +557,8 @@ func _scores_text() -> String:
 
 # --- pause -------------------------------------------------------------------
 
-var _pause_rows := {}  # "wave", "level", "kills", "gold" -> value Label
+var _pause_rows := {}  # "wave", "level", "kills", "gold", "scrolls" -> value Label
+var _pause_note: Label  # forge news
 var _pause_picks: HFlowContainer
 
 
@@ -580,10 +581,13 @@ func _pause_screen() -> Control:
 	well.theme_type_variation = "Well"
 	var sum := _vbox(10)
 	well.add_child(sum)
-	for k in [["wave", "Wave"], ["level", "Level"], ["kills", "Enemies defeated"], ["gold", "Gold"]]:
+	for k in [["wave", "Wave"], ["level", "Level"], ["kills", "Enemies defeated"], ["gold", "Gold"], ["scrolls", "Scrolls found"]]:
 		var r := _stat_row(k[1])
 		sum.add_child(r[0])
 		_pause_rows[k[0]] = r[1]
+	_pause_note = UITheme.label("", "", 14, UITheme.TEXT_DIM)
+	_pause_note.autowrap_mode = TextServer.AUTOWRAP_WORD
+	sum.add_child(_pause_note)
 	sum.add_child(UITheme.label("Upgrades taken", "Caption"))
 	_pause_picks = HFlowContainer.new()
 	_pause_picks.add_theme_constant_override("h_separation", 6)
@@ -598,6 +602,9 @@ func _refresh_pause() -> void:
 	_pause_rows.level.text = str(Run.level)
 	_pause_rows.kills.text = str(Run.kills)
 	_pause_rows.gold.text = str(Run.gold)
+	_pause_rows.scrolls.text = str(Run.scrolls)
+	_pause_note.text = main.forge_note
+	_pause_note.visible = main.forge_note != ""
 	if _pause_picks.get_child_count() != Run.picked.size():
 		for c in _pause_picks.get_children():
 			c.queue_free()

@@ -681,11 +681,8 @@ msgstr "boss"
 msgid "Score %d"
 msgstr "Score %d"
 
-msgid "Scrolls found: %d"
-msgstr "Parchemins trouvés : %d"
-
-msgid "To write at the end of the run"
-msgstr "À écrire en fin de run"
+msgid "Scrolls found"
+msgstr "Parchemins trouvés"
 
 msgid "Letters, ' and - only. A meaningless word gives its scroll back."
 msgstr "Lettres, ' et - seulement. Un mot vide de sens rend son parchemin."
