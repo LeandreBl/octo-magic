@@ -200,6 +200,12 @@ func _test_waves() -> void:
 			check(RunState.ENEMIES.has(other), "%s summons a known kind" % k)
 	check(RunState.wave_plan(9).size() > RunState.wave_plan(4).size(), "waves grow")
 	check(RunState.enemy_stats("melee", 10).hp > RunState.enemy_stats("melee", 1).hp, "enemies get tougher")
+	# Waves spawn out of every mage's view, even in a corner or with mages apart.
+	var mages := [Vector2(100, 100), Vector2(2400, 1600), Vector2(3000, 1600)]
+	for i in 200:
+		var pos: Vector2 = Arena.off_screen(mages, Vector2(1280, 720))
+		check(pos == pos.clamp(Arena.RECT.position, Arena.RECT.end), "spawn inside the arena")
+		check(mages.all(func(m): return absf(pos.x - m.x) > 640 or absf(pos.y - m.y) > 360), "spawn out of view (%s)" % pos)
 
 
 func _test_profile() -> void:

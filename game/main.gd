@@ -130,14 +130,12 @@ func _offer_loadout(text: String) -> void:
 
 func _next_wave() -> void:
 	_wave_started.rpc(Run.wave + 1)
-	var off_screen := get_viewport_rect().size.length() * 0.55
 	var alive := get_tree().get_nodes_in_group("players").filter(func(p): return p.hp > 0.0)
+	var mages: Array = alive.map(func(p): return p.position)
 	for kind in Run.wave_plan(Run.wave):
 		spawned += 1
-		var near: Vector2 = alive.pick_random().position if alive else Arena.RECT.get_center()
 		spawner.spawn({"kind": "enemy", "name": "E%d" % spawned, "type": kind,
-			"stats": Run.enemy_stats(kind, Run.wave),  # just off a mage's screen, inside the arena
-			"pos": (near + Vector2.from_angle(randf() * TAU) * off_screen).clamp(Arena.RECT.position, Arena.RECT.end)})
+			"stats": Run.enemy_stats(kind, Run.wave), "pos": Arena.off_screen(mages, get_viewport_rect().size)})
 
 
 @rpc("authority", "call_local", "reliable")
