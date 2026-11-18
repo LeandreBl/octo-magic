@@ -138,7 +138,7 @@ func _run_started(map: String) -> void:
 func send_loadout(fresh: bool, refill := false) -> void:
 	if multiplayer.multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
 		return
-	_offer_loadout.rpc_id(1, JSON.stringify({"fresh": fresh, "refill": refill, "spells": Run.spells, "mult": Run.spells.keys().reduce(func(m, k): m[k] = Run.cost_mult(k); return m, {}), "passive": Run.passive,
+	_offer_loadout.rpc_id(1, JSON.stringify({"fresh": fresh, "refill": refill, "spells": Run.spells, "mult": Run.spells.keys().reduce(func(m, k): m[k] = Run.cost_mult(k); return m, {}), "passives": Run.passives,
 		"stats": Run.stats, "look": Profile.look.merged({
 			"robe": Profile.ITEMS[Profile.equipped.robe].color,
 			"staff": Profile.ITEMS[Profile.equipped.staff].color,
@@ -205,6 +205,7 @@ func _on_summoned(kind: String, pos: Vector2) -> void:
 
 
 func _on_killed(e: Node2D) -> void:
+	var luck: float = get_tree().get_nodes_in_group("players").reduce(func(m, p): return maxf(m, p.stats.luck), 1.0)
 	_killed.rpc(e.kind, e.xp, e.data.get("look", e.kind), e.position, e.radius, e._angle)
 	var loot: bool = e.data.get("loot", false)  # the Archfiend's imps
 	if Run.is_boss(e.kind):  # a shower of coins around it, its gold split among them
@@ -219,9 +220,9 @@ func _on_killed(e: Node2D) -> void:
 		_drop("life", 1, e.position + Vector2(randf_range(-10, 10), 10))
 	if loot and randf() < QUAD_CHANCE:
 		_drop("quad", 1, e.position + Vector2(randf_range(-12, 12), 16))
-	if Run.is_boss(e.kind) or randf() < GRIMOIRE_CHANCE:
+	if Run.is_boss(e.kind) or randf() < GRIMOIRE_CHANCE * luck:
 		_drop("grimoire_" + Upgrades.KINDS.pick_random(), 1, e.position + Vector2(randf_range(-12, 12), -16))
-	if randf() < (0.05 if Run.is_boss(e.kind) else 0.0025):  # rare: ~1 boss in 20
+	if randf() < (0.05 if Run.is_boss(e.kind) else 0.0025) * luck:  # rare: ~1 boss in 20
 		_drop("scroll", 1, e.position + Vector2(0, 14))
 	if Run.is_boss(e.kind):
 		_pull_drops.call_deferred()  # after its own drops' deferred spawns

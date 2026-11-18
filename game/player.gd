@@ -3,8 +3,11 @@ extends Node2D
 ## screen moves, right half aims and fires the main spell).
 ## Main spell: left click / right stick or RT / touch aim; secondary (an active
 ## augment): right click / Space / RB. `held` lets a touch UI fire them.
-## Passive augment "shield": absorbs SHIELD_HP damage, comes back
-## SHIELD_WAIT seconds after it breaks.
+## Passive augments (PASSIVES): "shield" absorbs SHIELD_HP damage, comes back
+## SHIELD_WAIT seconds after it breaks; "potions": POTIONS heals of POTION_HEAL,
+## drunk below POTION_AT of the max HP; "blaze_of_glory": BLAZE bursts out of
+## the mage as it dies (its kills count); "weird_eye": arrows to the grimoires
+## and scrolls on the floor (drawn for the local mage).
 ## Every number of the mage comes from `stats` (game/stats.gd, from the loadout).
 ## Coop (see main.gd): the owner peer steers its mage (position, aim, firing
 ## are synced from it); the host owns the rest (hp, mana, loadout, statuses)
@@ -18,6 +21,13 @@ const SIZE := 1.2  # the mage drawn this much bigger than its art (sprite, tenta
 const STICK_RANGE := 80.0
 const SHIELD_HP := 40.0
 const SHIELD_WAIT := 8.0
+const PASSIVES := ["shield", "potions", "blaze_of_glory", "weird_eye"]
+const POTIONS := 3
+const POTION_AT := 0.3
+const POTION_HEAL := 0.5
+const BLAZE := {"name": "Blaze of glory", "element": "fire", "color": "#ff7a1f", "cooldown": 1.0,
+	"emit": {"pattern": "radial", "count": 24, "body": {"shape": "bolt", "speed": 380, "size": 10, "lifetime": 0.9,
+		"on_hit": [{"type": "damage", "amount": 80}, {"type": "status", "status": "burn", "power": 5, "duration": 2}]}}}
 const LEVEL_UP_HEAL := 100.0  # health and mana a level-up gives back (capped at the max)
 ## The octopus seen from above (PixelLab, tools/make_octopus.py): a strip of
 ## square frames, head to the top, turned toward where it goes. Its ground
@@ -47,7 +57,8 @@ var loadout_json := "":
 var stats := Stats.total([])
 var hp: float = stats.hp
 var mana: float = stats.mana
-var passive := ""  # a Profile.AUGMENTS passive id
+var passives := []  # Profile.AUGMENTS passive ids, those of PASSIVES
+var potions := 0  # left this run
 var shield := 0.0  # hp left on the shield, synced for drawing
 var shield_wait := 0.0  # seconds until a broken shield is back
 var statuses := {}  # name -> [power, time_left], from the host
@@ -135,7 +146,7 @@ static func clean_loadout(raw: Variant) -> Dictionary:
 		out_look[k] = Spell._color(look_in.get(k)) if look_in.get(k) else ""
 	return {"spells": spells, "costs": costs, "look": out_look, "fresh": l.get("fresh") == true,
 		"refill": l.get("refill") == true,
-		"passive": l.get("passive") if l.get("passive") in ["shield"] else "",
+		"passives": (l.get("passives") if l.get("passives") is Array else []).filter(func(id): return id in PASSIVES),
 		"stats": stats}
 
 
@@ -179,9 +190,10 @@ func _apply(l: Dictionary) -> void:
 	if l.refill:  # a level-up
 		hp = minf(stats.hp, hp + LEVEL_UP_HEAL)
 		mana = minf(stats.mana, mana + LEVEL_UP_HEAL)
-	if l.passive != passive:  # a new run
-		passive = l.passive
-		shield = SHIELD_HP if passive == "shield" else 0.0
+	if l.passives != passives:  # a new run
+		passives = l.passives
+		shield = SHIELD_HP if "shield" in passives else 0.0
+		potions = POTIONS if "potions" in passives else 0
 
 
 class Loadout:
@@ -207,8 +219,20 @@ func hurt(amount: float) -> void:
 		if shield <= 0.0:
 			shield_wait = SHIELD_WAIT
 	hp -= amount
+	if hp > 0.0 and hp < stats.hp * POTION_AT and potions > 0:
+		potions -= 1
+		heal(stats.hp * POTION_HEAL)
 	if hp <= 0.0:
+		if "blaze_of_glory" in passives and is_inside_tree():
+			_blaze.rpc()
 		died.emit()
+
+
+## Blaze of glory: cast by the host (its bodies hurt), drawn by the peers.
+@rpc("authority", "call_local", "reliable")
+func _blaze() -> void:
+	var s := Spell.sanitize(BLAZE)
+	SpellBody.cast(s.emit, global_position, aim, self, s, get_parent())
 
 
 ## Status `status` from an enemy for `duration` s (host): the strongest and
@@ -271,14 +295,14 @@ func _physics_process(delta: float) -> void:
 	for st in statuses.keys():
 		statuses[st][1] -= delta
 		if st == "poison":
-			hurt(statuses[st][0] * delta)
+			hurt(statuses[st][0] * delta * stats.poison)
 		if statuses[st][1] <= 0.0:
 			statuses.erase(st)
 	mana = minf(stats.mana, mana + stats.mana_regen * delta)
 	hp = minf(stats.hp, hp + stats.hp_regen * delta)
 	if shield_wait > 0.0:
 		shield_wait -= delta
-		if shield_wait <= 0.0 and passive == "shield":
+		if shield_wait <= 0.0 and "shield" in passives:
 			shield = SHIELD_HP
 	for slot in Upgrades.RUN_SLOTS:
 		cooldowns[slot] = cooldowns.get(slot, 0.0) - delta
@@ -390,3 +414,11 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO)
 	if shield > 0.0:
 		draw_arc(Vector2.ZERO, radius + 6, 0.0, TAU, 32, Color(0.5, 0.85, 1.0, 0.3 + 0.5 * shield / SHIELD_HP), 3.0)
+	if "weird_eye" in passives and peer_id == multiplayer.get_unique_id():
+		for d in get_tree().get_nodes_in_group("pickups"):
+			var to: Vector2 = (d.position - position) / SIZE
+			if (d.kind.begins_with("grimoire") or d.kind == "scroll") and to.length() > 80.0:
+				var u := to.normalized()
+				var tip := u * 34.0
+				draw_colored_polygon(PackedVector2Array([tip, tip - u * 9.0 + u.orthogonal() * 5.0,
+					tip - u * 9.0 - u.orthogonal() * 5.0]), Color("#ffd54f"))

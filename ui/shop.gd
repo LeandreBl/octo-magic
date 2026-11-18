@@ -1,6 +1,6 @@
 extends Control
 ## Shop, between runs, in tabs: equipment, permanent bonuses, augments (kept,
-## Profile.SLOTS of them taken into a run), the mage's look (the spell is the character's, chosen at its
+## Profile.slots() of them taken into a run), the mage's look (the spell is the character's, chosen at its
 ## creation, rewritten at the forge: ui/forge.gd); the mage and its total stats on the right. Reads and edits the
 ## Profile autoload.
 
@@ -156,8 +156,8 @@ func _rebuild() -> void:
 				_bonus_card(grid, id)
 		"Augments":
 			var slots := _hbox(10)
-			slots.add_child(UITheme.label(tr("Slots %d/%d") % [Profile.slotted.size(), Profile.SLOTS], "Subheader"))
-			for i in Profile.SLOTS:
+			slots.add_child(UITheme.label(tr("Slots %d/%d") % [Profile.slotted.size(), Profile.slots()], "Subheader"))
+			for i in Profile.slots():
 				var id: String = Profile.slotted[i] if i < Profile.slotted.size() else ""
 				slots.add_child(UITheme.icon_box(_augment_icon(id) if id else null, 56, UITheme.GOLD if id else UITheme.RIM))
 			_content.add_child(slots)
@@ -287,8 +287,16 @@ func _bonus_card(grid: Control, id: String) -> void:
 		_price(c[1], "", price)
 
 
+## Perks without art of their own borrow a grimoire augment's or a drop's icon.
+const AUGMENT_ICONS := {"ring_of_fire": "fire_nova", "life_up": "up_toughness", "mana_up": "up_reservoir",
+	"quick_feet": "up_fleetness", "creativity": "up_insight", "poison_ward": "up_ward", "telekinesis": "up_magnetism",
+	"battle_mage": "up_mana", "scavenger": "drop_mana", "blaze_of_glory": "fire_nova", "fast_caster": "up_cooldown",
+	"potions": "drop_life", "gold_rush": "up_fortune", "head_start": "drop_grimoire_hero", "weird_eye": "scroll",
+	"great_start": "drop_grimoire_spell", "lucky_drops": "up_precision", "hardcore": "up_damage"}
+
+
 static func _augment_icon(id: String) -> Texture2D:
-	return UITheme.glyph("shield", UITheme.MANA, 4) if Profile.AUGMENTS[id].kind == "passive" else UITheme.icon("fire_nova")
+	return UITheme.icon(AUGMENT_ICONS[id]) if AUGMENT_ICONS.has(id) else UITheme.glyph("shield", UITheme.MANA, 4)
 
 
 ## Owned: a press slots it or takes it out; else buys it.
@@ -319,8 +327,8 @@ func _refresh_mage() -> void:
 		["Critical chance", "%d %%" % roundi(s.crit * 100)]]
 	if s.hp_regen > 0.0:
 		rows.append(["HP/s", "%.1f" % s.hp_regen])
-	if s.armor > 0.0:
-		rows.append(["Damage taken", "-%d %%" % roundi(s.armor * 100)])
+	if s.armor != 0.0:
+		rows.append(["Damage taken", "%+d %%" % roundi(-s.armor * 100)])
 	for k in [["damage", "Damage"], ["speed", "Speed"], ["cooldown", "Cooldown"], ["mana_cost", "Mana cost"],
 			["pickup", "Pickup radius"], ["gold", "Gold"], ["xp", "XP"]]:
 		var d: float = s[k[0]] / Stats.BASE[k[0]] - 1.0  # vs the bare mage

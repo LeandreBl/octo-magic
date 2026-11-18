@@ -1090,3 +1090,116 @@ msgstr "Gueule de la tombe"
 
 msgid "Archfiend"
 msgstr "Archidémon"
+
+# Perks (task #295)
+
+msgid "Feeling perky"
+msgstr "En forme"
+
+msgid "+1 augment slot"
+msgstr "+1 emplacement d'augment"
+
+msgid "Life up"
+msgstr "Vie +"
+
+msgid "+25 max HP"
+msgstr "+25 PV max"
+
+msgid "Mana up"
+msgstr "Mana +"
+
+msgid "+50 max mana"
+msgstr "+50 mana max"
+
+msgid "Quick feet"
+msgstr "Pieds légers"
+
+msgid "+10% move speed"
+msgstr "+10 % de vitesse de déplacement"
+
+msgid "Creativity"
+msgstr "Créativité"
+
+msgid "4 choices per grimoire instead of 3"
+msgstr "4 choix par grimoire au lieu de 3"
+
+msgid "Poison ward"
+msgstr "Antidote"
+
+msgid "-10% poison damage taken"
+msgstr "-10 % de dégâts de poison subis"
+
+msgid "Telekinesis"
+msgstr "Télékinésie"
+
+msgid "Pick up drops from 4x farther"
+msgstr "Ramasse les objets 4x plus loin"
+
+msgid "Battle mage"
+msgstr "Mage de bataille"
+
+msgid "-15% mana cost"
+msgstr "-15 % de coût en mana"
+
+msgid "Scavenger"
+msgstr "Charognard"
+
+msgid "Mana and life orbs refill twice as much"
+msgstr "Les orbes de mana et de vie rendent deux fois plus"
+
+msgid "Blaze of glory"
+msgstr "Baroud d'honneur"
+
+msgid "When you die, you explode and take the monsters around with you"
+msgstr "À ta mort, tu exploses et emportes les monstres autour de toi"
+
+msgid "Fast caster"
+msgstr "Incantation rapide"
+
+msgid "-10% cooldown"
+msgstr "-10 % de recharge"
+
+msgid "Potions"
+msgstr "Fioles"
+
+msgid "3 potions, drunk by themselves below 30% HP: +50% HP"
+msgstr "3 fioles, bues toutes seules sous 30 % des PV : +50 % des PV"
+
+msgid "Potions %d"
+msgstr "Fioles %d"
+
+msgid "Gold rush"
+msgstr "Ruée vers l'or"
+
+msgid "+50% gold"
+msgstr "+50 % d'or"
+
+msgid "Head start"
+msgstr "Bon départ"
+
+msgid "Start with a red and a blue grimoire"
+msgstr "Commence avec un grimoire rouge et un bleu"
+
+msgid "Weird eye"
+msgstr "Œil étrange"
+
+msgid "Arrows point to the grimoires and scrolls"
+msgstr "Des flèches montrent les grimoires et les parchemins"
+
+msgid "Great start"
+msgstr "Excellent départ"
+
+msgid "Start with two red and two blue grimoires"
+msgstr "Commence avec deux grimoires rouges et deux bleus"
+
+msgid "Lucky drops"
+msgstr "Butin chanceux"
+
+msgid "Grimoires and scrolls drop twice as often"
+msgstr "Grimoires et parchemins tombent deux fois plus souvent"
+
+msgid "Hardcore"
+msgstr "Extrême"
+
+msgid "Deal and take double damage"
+msgstr "Inflige et subit le double de dégâts"

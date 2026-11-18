@@ -27,7 +27,8 @@ var pending := []  # grimoires picked up, not chosen yet: Upgrades.KINDS ("hero"
 var rng := RandomNumberGenerator.new()
 var bonuses := []  # Stats bonuses: the profile's, then the hero augments
 var stats := Stats.total([])  # Stats.total(bonuses)
-var passive := ""  # a Profile.AUGMENTS passive id, "" without one
+var passives := []  # the slotted Profile.AUGMENTS passive ids
+var choices := 3  # cards a grimoire offers
 
 
 ## `equipped`: slot -> spell; `bonus_list`: Profile.bonus_list(); `augments`:
@@ -50,7 +51,8 @@ func start(equipped: Dictionary, bonus_list := [], augments := []) -> void:
 	spells = {}
 	mana_mult = {}
 	ups = {}
-	passive = ""
+	passives = []
+	choices = 3
 	for slot in equipped:
 		spells[slot] = Upgrades.scale_damage(equipped[slot], stats.damage)
 		mana_mult[slot] = 1.0
@@ -59,9 +61,14 @@ func start(equipped: Dictionary, bonus_list := [], augments := []) -> void:
 		if a.kind == "active":
 			spells.secondary = Upgrades.scale_damage(Spell.sanitize(a.spell), stats.damage)
 			mana_mult.secondary = 1.0
-		elif passive == "":  # ponytail: one passive played (the shield is the only one), a list when there are more
-			passive = a.id
+		else:
+			passives.append(a.id)
+			choices = maxi(choices, a.get("choices", 0))
+			for i in a.get("grimoires", 0):
+				pending.append_array(Upgrades.KINDS)
 	rng.randomize()
+	if not pending.is_empty():
+		_offer.call_deferred()  # once the run's screen is up
 	changed.emit()
 
 
@@ -83,7 +90,7 @@ func add_xp(amount: int) -> void:
 ## Opens the next grimoire: its kind's offers; one with nothing left to improve is lost.
 func _offer() -> void:
 	while offers.is_empty() and not pending.is_empty():
-		offers = Upgrades.offers(spells.primary, mana_mult.primary, stats, rng, pending[0])
+		offers = Upgrades.offers(spells.primary, mana_mult.primary, stats, rng, pending[0], choices)
 		if offers.is_empty():
 			pending.pop_front()
 	if not offers.is_empty():

@@ -187,10 +187,10 @@ func _test_augments(run: Object, p: Object) -> void:
 	p.apply(saved)
 	check(p.augments.size() == 2 and p.slotted == ["shield", "ring_of_fire"], "augments saved, unknown dropped")
 	run.start(p.equipped_spells(), [], p.slotted_augments())
-	check(run.spells.secondary.emit.pattern == "radial" and run.passive == "shield", "a run starts with the slotted augments")
-	var l := Player.clean_loadout(JSON.parse_string(JSON.stringify({"spells": run.spells, "passive": run.passive})))
-	check(l.spells.has("secondary") and l.passive == "shield", "loadout keeps the augments")
-	check(Player.clean_loadout({"passive": "god_mode"}).passive == "", "unknown passive dropped")
+	check(run.spells.secondary.emit.pattern == "radial" and run.passives == ["shield"], "a run starts with the slotted augments")
+	var l := Player.clean_loadout(JSON.parse_string(JSON.stringify({"spells": run.spells, "passives": run.passives})))
+	check(l.spells.has("secondary") and l.passives == ["shield"], "loadout keeps the augments")
+	check(Player.clean_loadout({"passives": ["god_mode", "potions"]}).passives == ["potions"], "unknown passive dropped")
 	var st: Dictionary = Player.clean_loadout({"stats": {"armor": 5, "hp": "x", "god": 1}}).stats
 	check(st.armor == Stats.BOUNDS.armor[1] and st.hp == Stats.BASE.hp and st.keys() == Stats.BASE.keys(), "loadout stats clamped")
 	var me := Player.new()
@@ -199,9 +199,13 @@ func _test_augments(run: Object, p: Object) -> void:
 	check(me.hp == me.stats.hp and me.shield == Player.SHIELD_HP - 30.0, "shield absorbs")
 	me.hurt(30.0)
 	check(me.hp == me.stats.hp - 20.0 and me.shield == 0.0 and me.shield_wait == Player.SHIELD_WAIT, "shield breaks")
-	l.passive = ""
+	l.passives = ["potions"]
 	me.loadout_json = JSON.stringify(l)
-	check(me.shield == 0.0, "no shield without the passive")
+	check(me.shield == 0.0 and me.potions == Player.POTIONS, "no shield without the passive, potions with theirs")
+	me.hp = me.stats.hp
+	me.hurt(me.stats.hp * 0.8)
+	check(me.hp == me.stats.hp * 0.7 and me.potions == Player.POTIONS - 1, "a potion is drunk below 30% HP")
+	me.hp = me.stats.hp - 20.0
 	var orb := preload("res://game/pickup.gd").new()
 	me.mana = 0.0
 	orb.kind = "mana"
@@ -235,8 +239,34 @@ func _test_augments(run: Object, p: Object) -> void:
 	floor.free()
 	me.free()
 	run.start({}, [])
-	check(run.passive == "" and run.spells.is_empty(), "no augment slotted, none in the run")
+	check(run.passives.is_empty() and run.spells.is_empty(), "no augment slotted, none in the run")
+	_test_perks(run, p)
 	DirAccess.remove_absolute(p.path)
+
+
+## Perks: passive augments with Stats bonuses, run rules, extra slots.
+func _test_perks(run: Object, p: Object) -> void:
+	p.gold = 100000
+	p.slotted = []
+	p.bonuses = {}
+	for id in ["life_up", "creativity", "head_start", "hardcore"]:
+		check(p.buy_augment(id), "%s bought" % id)
+	check(p.slotted == ["life_up", "creativity", "head_start"], "three slots")
+	check(p.bonus_price("slots") == 2500 and p.buy_bonus("slots") and p.bonus_price("slots") == 20000, "a fourth slot, the fifth far dearer")
+	check(p.toggle_augment("hardcore") and p.slots() == 4, "fourth slot used")
+	var s := Stats.total(p.bonus_list())
+	check(s.hp == Stats.BASE.hp + 25.0 and s.armor == -1.0 and s.damage == 2.0, "perk bonuses in the stats")
+	run.start(p.equipped_spells(), p.bonus_list(), p.slotted_augments())
+	check(run.choices == 4 and run.pending == Upgrades.KINDS, "4 choices, a red and a blue grimoire to open")
+	run._offer()
+	check(run.offers.size() == 4, "a grimoire offers 4 cards")
+	var me := Player.new()
+	me.loadout_json = JSON.stringify(Player.clean_loadout({"stats": run.stats, "fresh": true}))
+	me.hurt(10.0)
+	check(me.hp == me.stats.hp - 20.0, "hardcore: double damage taken")
+	me.free()
+	p.slotted = []
+	p.bonuses = {}
 
 
 ## Bosses die in a show of their own: art for each, blasts, then gone.

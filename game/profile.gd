@@ -31,9 +31,11 @@ const ITEMS := {
 	"ring_sapphire": {"kind": "ring", "name": "Sapphire ring", "price": 350, "color": "#448aff", "bonus": {"mana": 30.0, "mana_regen": 5.0}},
 }
 
-## Augments: bought once and kept, a run starts with the ones put in the
-## SLOTS: "active" (the secondary spell, right click: one at most) or
-## "passive" (applied by game/player.gd).
+## Augments (perks): bought once and kept, a run starts with the ones put in
+## the slots (slots()): "active" (the secondary spell, right click: one at
+## most) or "passive": "bonus" (Stats bonuses, in bonus_list), "choices"
+## (cards per grimoire), "grimoires" (that many red and blue ones opened at
+## the start, see Run.start), the rest played by game/player.gd (PASSIVES).
 const SLOTS := 3
 const RING_OF_FIRE := {"name": "Ring of fire", "element": "fire", "color": "#ff7a1f", "cooldown": 3.0,
 	"emit": {"pattern": "radial", "count": 12, "body": {"shape": "bolt", "speed": 320, "size": 8, "lifetime": 0.9,
@@ -43,9 +45,27 @@ const AUGMENTS := {
 		"price": 1500, "kind": "active", "spell": RING_OF_FIRE},
 	"shield": {"name": "Shield", "desc": "Absorbs 40 damage, back 8 s after it breaks",
 		"price": 1000, "kind": "passive"},
+	"life_up": {"name": "Life up", "desc": "+25 max HP", "price": 250, "kind": "passive", "bonus": {"hp": 25.0}},
+	"mana_up": {"name": "Mana up", "desc": "+50 max mana", "price": 250, "kind": "passive", "bonus": {"mana": 50.0}},
+	"quick_feet": {"name": "Quick feet", "desc": "+10% move speed", "price": 250, "kind": "passive", "bonus": {"speed%": 0.1}},
+	"creativity": {"name": "Creativity", "desc": "4 choices per grimoire instead of 3", "price": 300, "kind": "passive", "choices": 4},
+	"poison_ward": {"name": "Poison ward", "desc": "-10% poison damage taken", "price": 500, "kind": "passive", "bonus": {"poison%": -0.1}},
+	"telekinesis": {"name": "Telekinesis", "desc": "Pick up drops from 4x farther", "price": 750, "kind": "passive", "bonus": {"pickup%": 3.0}},
+	"battle_mage": {"name": "Battle mage", "desc": "-15% mana cost", "price": 1000, "kind": "passive", "bonus": {"mana_cost%": -0.15}},
+	"scavenger": {"name": "Scavenger", "desc": "Mana and life orbs refill twice as much", "price": 1000, "kind": "passive", "bonus": {"orbs%": 1.0}},
+	"blaze_of_glory": {"name": "Blaze of glory", "desc": "When you die, you explode and take the monsters around with you", "price": 1000, "kind": "passive"},
+	"fast_caster": {"name": "Fast caster", "desc": "-10% cooldown", "price": 1500, "kind": "passive", "bonus": {"cooldown%": -0.1}},
+	"potions": {"name": "Potions", "desc": "3 potions, drunk by themselves below 30% HP: +50% HP", "price": 2000, "kind": "passive"},
+	"gold_rush": {"name": "Gold rush", "desc": "+50% gold", "price": 2500, "kind": "passive", "bonus": {"gold%": 0.5}},
+	"head_start": {"name": "Head start", "desc": "Start with a red and a blue grimoire", "price": 2500, "kind": "passive", "grimoires": 1},
+	"weird_eye": {"name": "Weird eye", "desc": "Arrows point to the grimoires and scrolls", "price": 5000, "kind": "passive"},
+	"great_start": {"name": "Great start", "desc": "Start with two red and two blue grimoires", "price": 5000, "kind": "passive", "grimoires": 2},
+	"lucky_drops": {"name": "Lucky drops", "desc": "Grimoires and scrolls drop twice as often", "price": 10000, "kind": "passive", "bonus": {"luck%": 1.0}},
+	"hardcore": {"name": "Hardcore", "desc": "Deal and take double damage", "price": 10000, "kind": "passive", "bonus": {"damage%": 1.0, "armor": -1.0}},
 }
 
-## Permanent bonuses: level n costs price * GROWTH^n.
+## Permanent bonuses: level n costs price * GROWTH^n (or its own "growth").
+## "slots": one more augment slot per level.
 const GROWTH := 1.5
 const BONUSES := {
 	"vitality": {"name": "Vitality", "desc": "+10 HP", "price": 50, "max": 10, "bonus": {"hp": 10.0}},
@@ -58,6 +78,7 @@ const BONUSES := {
 	"attraction": {"name": "Attraction", "desc": "+15% pickup radius", "price": 40, "max": 5, "bonus": {"pickup%": 0.15}},
 	"greed": {"name": "Greed", "desc": "+10% gold", "price": 60, "max": 5, "bonus": {"gold%": 0.1}},
 	"wisdom": {"name": "Wisdom", "desc": "+10% XP", "price": 60, "max": 5, "bonus": {"xp%": 0.1}},
+	"slots": {"name": "Feeling perky", "desc": "+1 augment slot", "price": 2500, "growth": 8.0, "max": 2, "bonus": {}},
 }
 
 ## Achievements: reached when stats[stat] >= goal. Some unlock spells
@@ -197,9 +218,10 @@ static func _arr(v: Variant) -> Array:
 
 # --- stats -------------------------------------------------------------------
 
-## Stats bonuses of the equipped items and permanent bonuses (one per level).
+## Stats bonuses of the equipped items, permanent bonuses (one per level) and
+## slotted augments.
 func bonus_list() -> Array:
-	var out := []
+	var out := slotted.map(func(id): return AUGMENTS[id].get("bonus", {}))
 	for kind in equipped:
 		out.append(ITEMS[equipped[kind]].bonus)
 	for id in bonuses:
@@ -231,7 +253,7 @@ func equip_item(id: String) -> bool:
 ## Price of the next level of bonus `id`, -1 when maxed.
 func bonus_price(id: String) -> int:
 	var lvl: int = bonuses.get(id, 0)
-	return -1 if lvl >= BONUSES[id].max else int(BONUSES[id].price * pow(GROWTH, lvl))
+	return -1 if lvl >= BONUSES[id].max else int(BONUSES[id].price * pow(BONUSES[id].get("growth", GROWTH), lvl))
 
 
 func buy_bonus(id: String) -> bool:
@@ -255,9 +277,14 @@ func buy_augment(id: String) -> bool:
 	return true
 
 
+## Augment slots: SLOTS, plus the "slots" bonus.
+func slots() -> int:
+	return SLOTS + bonuses.get("slots", 0)
+
+
 ## Owned, not slotted, a slot free, and no second active.
 func can_slot(id: String) -> bool:
-	return augments.has(id) and id not in slotted and slotted.size() < SLOTS \
+	return augments.has(id) and id not in slotted and slotted.size() < slots() \
 		and not (AUGMENTS[id].kind == "active" and slotted.any(func(s): return AUGMENTS[s].kind == "active"))
 
 

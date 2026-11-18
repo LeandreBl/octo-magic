@@ -268,7 +268,7 @@ func _process(_delta: float) -> void:
 	var p: Node2D = main.local_player()
 	if not visible or not Run.active or not p:
 		return
-	_set_bar(_hp, p.hp, p.stats.hp, tr("HP %d / %d") % [maxf(p.hp, 0.0), p.stats.hp],
+	_set_bar(_hp, p.hp, p.stats.hp, tr("HP %d / %d") % [maxf(p.hp, 0.0), p.stats.hp] + ("  · " + tr("Potions %d") % p.potions if p.potions > 0 else ""),
 			"+%.1f/s" % p.stats.hp_regen if p.stats.hp_regen > 0.0 else "")
 	_set_bar(_mana, p.mana, p.stats.mana, "Mana %d / %d" % [p.mana, p.stats.mana],
 			"+%d/s" % p.stats.mana_regen if p.stats.mana_regen > 0.0 else "")
@@ -286,9 +286,9 @@ func _process(_delta: float) -> void:
 		_set_bar(_boss.get_child(1), bosses.reduce(func(a, e): return a + e.hp, 0.0), bosses.reduce(func(a, e): return a + e.max_hp, 0.0), "")
 	_gold.text = str(Run.gold)
 	_score.text = "Score %d" % Run.score()
-	_passive.visible = p.passive != ""
-	if p.passive:  # no key: it applies itself
-		_shield.text = "%s %d" % [tr(Profile.AUGMENTS[p.passive].name), p.shield]
+	_passive.visible = "shield" in p.passives
+	if _passive.visible:  # no key: it applies itself
+		_shield.text = "%s %d" % [tr(Profile.AUGMENTS.shield.name), p.shield]
 		_shield_wait.offset_top = -_shield_wait.get_parent().size.y * clampf(p.shield_wait / p.SHIELD_WAIT, 0.0, 1.0)
 	for slot in _slots:
 		var ui: Array = _slots[slot]

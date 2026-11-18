@@ -100,9 +100,9 @@ func wants(p: Node2D) -> bool:
 ## Mana and life orbs refill the mage who takes them (the rest goes to Run).
 func give(p: Node2D) -> void:
 	if kind == "life":
-		p.heal(p.stats.hp * REFILL)
+		p.heal(p.stats.hp * REFILL * p.stats.orbs)
 	elif kind == "mana":
-		p.mana = minf(p.stats.mana, p.mana + p.stats.mana * REFILL)
+		p.mana = minf(p.stats.mana, p.mana + p.stats.mana * REFILL * p.stats.orbs)
 	elif kind == "quad":
 		p.afflict("quad", QUAD, QUAD_TIME)
 
