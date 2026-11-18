@@ -1,6 +1,6 @@
 extends Control
-## In-run HUD: pause, the wave and the boss countdown, gold and score (top
-## left); HP, XP and mana gauges (no text), each as wide as its max
+## In-run HUD: pause and score (top left; the wave and gold are in the
+## pause menu); HP, XP and mana gauges (no text), each as wide as its max
 ## and hollow when empty, with the bosses' health under them (top center: the
 ## other enemies show none); the spell slots, primary then secondary, with key,
 ## mana cost and cooldown (top right: touch a slot to cast it), then the
@@ -19,10 +19,7 @@ var main: Node
 var _hp: ProgressBar
 var _mana: ProgressBar
 var _xp: ProgressBar
-var _wave: Label
-var _pips: Array[ColorRect] = []  # waves left before the boss
 var _boss: VBoxContainer  # the bosses' names and health bar, hidden without one
-var _gold: Label
 var _score: Label
 var _passive: Control
 var _shield: Label
@@ -43,8 +40,7 @@ func _ready() -> void:
 		margin.add_theme_constant_override("margin_" + side, 16)
 	add_child(margin)
 
-	# Top left: the wave and pips counting down to the next boss, the purse
-	# and score, pause.
+	# Top left: pause, the score.
 	var left := _box(HBoxContainer.new(), 12)
 	left.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	left.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -58,42 +54,9 @@ func _ready() -> void:
 	pause.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	pause.pressed.connect(paused.emit)
 	left.add_child(pause)
-	var wave := _plate(left, Control.SIZE_SHRINK_BEGIN, Control.SIZE_SHRINK_BEGIN)
-	var w_col := _box(VBoxContainer.new(), 4)
-	wave.add_child(w_col)
-	_wave = UITheme.label("", "", 26, UITheme.GOLD)
-	_wave.add_theme_font_override("font", UITheme.BODY_BOLD)
-	_wave.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
-	_wave.add_theme_constant_override("shadow_offset_x", 3)
-	_wave.add_theme_constant_override("shadow_offset_y", 3)
-	_wave.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	w_col.add_child(_wave)
-	var pips := _box(HBoxContainer.new(), 6)
-	pips.alignment = BoxContainer.ALIGNMENT_CENTER
-	w_col.add_child(pips)
-	for i in Run.BOSS_EVERY:
-		var boss := i == Run.BOSS_EVERY - 1
-		var frame := PanelContainer.new()
-		frame.add_theme_stylebox_override("panel", UITheme.flat(UITheme.OUTLINE, UITheme.OUTLINE, 2, 2, 0))
-		frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var pip := ColorRect.new()
-		pip.custom_minimum_size = Vector2(14, 14) if boss else Vector2(10, 10)
-		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		frame.add_child(pip)
-		pips.add_child(frame)
-		_pips.append(pip)
-	pips.add_child(UITheme.label("boss", "", 13, UITheme.TEXT_DIM))
-	var purse := _plate(left, Control.SIZE_SHRINK_BEGIN, Control.SIZE_SHRINK_BEGIN)
-	var p_col := _box(VBoxContainer.new(), 0)
-	purse.add_child(p_col)
-	var g_row := _box(HBoxContainer.new(), 6)
-	p_col.add_child(g_row)
-	g_row.add_child(UITheme.icon_rect(UITheme.icon("gold"), 28))
-	_gold = UITheme.label("", "", 24, UITheme.GOLD)
-	g_row.add_child(_gold)
+	var score := _plate(left, Control.SIZE_SHRINK_BEGIN, Control.SIZE_SHRINK_BEGIN)
 	_score = UITheme.label("", "", 15, UITheme.TEXT_DIM)
-	p_col.add_child(_score)
+	score.add_child(_score)
 
 	# Top center: HP, XP (the level in it) and mana gauges, sized by their
 	# max; under them, the bosses' health while one is up.
@@ -260,17 +223,11 @@ func _process(_delta: float) -> void:
 	_set_bar(_mana, p.mana, p.stats.mana)
 	_set_bar(_xp, Run.xp, Run.xp_to_next(Run.level))
 	_size_gauges(p.stats.hp, p.stats.mana)
-	_wave.text = tr("Wave %d") % Run.wave
-	var done := Run.BOSS_EVERY if Run.wave > 0 and Run.wave % Run.BOSS_EVERY == 0 else Run.wave % Run.BOSS_EVERY
-	for i in _pips.size():
-		var boss := i == _pips.size() - 1
-		_pips[i].color = (UITheme.HP if boss else UITheme.GOLD) if i < done or boss else UITheme.RIM
 	var bosses := get_tree().get_nodes_in_group("enemies").filter(func(e): return e.data.get("boss", false) and e.hp > 0.0)
 	_boss.visible = not bosses.is_empty()
 	if _boss.visible:  # several at once: one bar for all of them
 		_boss.get_child(0).text = " · ".join(bosses.map(func(e): return tr(e.data.name)))
 		_set_bar(_boss.get_child(1), bosses.reduce(func(a, e): return a + e.hp, 0.0), bosses.reduce(func(a, e): return a + e.max_hp, 0.0))
-	_gold.text = str(Run.gold)
 	_score.text = "Score %d" % Run.score()
 	_passive.visible = "shield" in p.passives
 	if _passive.visible:  # no key: it applies itself
