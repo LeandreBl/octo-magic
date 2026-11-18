@@ -38,8 +38,8 @@ This file is also sent to the AI as the format reference: keep it accurate.
   or a channeled shape, recast every `cooldown` while the button is held (each
   cast is one tick and costs mana; give it `lifetime` = `cooldown`). Both stay
   on the caster and apply `on_hit` once per cast: `beam` (an electric arc that
-  grips the nearest enemy within `speed` px and `angle`, the same one while it
-  stays there) or `cone` (every enemy within `speed` px and `angle`)
+  grips the nearest enemy within `speed` px and `angle`, picked again each
+  cast) or `cone` (every enemy within `speed` px and `angle`)
 - `speed`: pixels/s, 0 to 1400 (for `orbit` motion: the orbit radius)
 - `size`: radius in pixels, 2 to 220
 - `lifetime`: seconds, 0.05 to 10

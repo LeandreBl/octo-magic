@@ -145,8 +145,8 @@ func _check_homing_lifetime() -> void:
 	world.free()
 
 
-## Beam: grips the nearest enemy within its angle, once per cast. Cone: hits
-## every enemy within its short reach and angle.
+## Beam: grips the nearest enemy within its wide angle, once per cast, picked
+## again each cast. Cone: hits every enemy within its short reach and angle.
 func _check_channel() -> void:
 	var world := Node2D.new()
 	root.add_child(world)
@@ -162,22 +162,28 @@ func _check_channel() -> void:
 		world.add_child(e)
 		return e
 	var near_behind: Node2D = at.call(Vector2(60, 100))  # nearest, but behind the aim
-	var off_aim: Node2D = at.call(Vector2(200, 145))  # nearer, but off the aim
+	var wide: Node2D = at.call(Vector2(150, 170))  # 54 degrees off the aim, nearest ahead
 	var aimed: Node2D = at.call(Vector2(300, 100))
 	var far: Node2D = at.call(Vector2(380, 110))
 	SpellBody.cast(spells.lightning.emit, Vector2(100, 100), Vector2.RIGHT, null, spells.lightning, world)
 	for i in 3:
 		await physics_frame
-	check(aimed.hp < 1000.0 and near_behind.hp == 1000.0 and off_aim.hp == 1000.0 and far.hp == 1000.0,
-		"beam grips the enemy closest to the aim angle")
-	var hp: float = aimed.hp
+	check(wide.hp < 1000.0 and near_behind.hp == 1000.0 and aimed.hp == 1000.0 and far.hp == 1000.0,
+		"beam grips the nearest enemy within its wide angle")
+	var wide_hp: float = wide.hp
 	for i in 3:
 		await physics_frame
-	check(aimed.hp == hp, "beam strikes once per cast")
+	check(wide.hp == wide_hp, "beam strikes once per cast")
 	SpellBody.cast(spells.frost_jet.emit, Vector2(230, 100), Vector2.RIGHT, null, spells.frost_jet, world)
 	for i in 3:
 		await physics_frame
-	check(aimed.hp < hp and near_behind.hp == 1000.0 and off_aim.hp == 1000.0 and far.hp == 1000.0, "cone hits in reach and angle only")
+	check(aimed.hp < 1000.0 and near_behind.hp == 1000.0 and wide.hp == wide_hp and far.hp == 1000.0, "cone hits in reach and angle only")
+	var hp: float = aimed.hp
+	aimed.position = Vector2(140, 100)  # now nearer than the last target
+	SpellBody.cast(spells.lightning.emit, Vector2(100, 100), Vector2.RIGHT, null, spells.lightning, world)
+	for i in 3:
+		await physics_frame
+	check(aimed.hp < hp and wide.hp == wide_hp, "beam retargets the nearest enemy each cast")
 	var mage := Player.new()
 	mage.position = Vector2(100, 100)
 	world.add_child(mage)

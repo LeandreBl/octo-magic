@@ -196,21 +196,15 @@ func _in_reach(e: Node2D) -> bool:
 		and absf(angle_difference(dir.angle(), to.angle())) <= deg_to_rad(body.angle) / 2.0
 
 
-## The arc grips its last target while it stays in reach, else the one
-## closest to the aim angle.
+## Each cast (tick) the arc grips the nearest enemy in reach: no lock.
 func _beam_target() -> Node2D:
-	var last: Variant = caster.get_meta("beam_target") if is_instance_valid(caster) and caster.has_meta("beam_target") else null
-	if is_instance_valid(last) and _in_reach(last):
-		return last
 	var best: Node2D = null
-	var best_a := INF
+	var best_d := INF
 	for e in get_tree().get_nodes_in_group("enemies"):
-		var a := absf(angle_difference(dir.angle(), (e.global_position - global_position).angle()))
-		if _in_reach(e) and a < best_a:
-			best_a = a
+		var d := global_position.distance_squared_to(e.global_position)
+		if d < best_d and _in_reach(e):
+			best_d = d
 			best = e
-	if is_instance_valid(caster):
-		caster.set_meta("beam_target", best)
 	return best
 
 
