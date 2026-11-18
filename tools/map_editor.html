@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Map zones</title>
+<style>
+  body { margin: 0; background: #111; color: #ddd; font: 14px sans-serif; overflow: hidden; }
+  #bar { position: fixed; top: 0; left: 0; right: 0; padding: 6px; background: #222d; display: flex; gap: 6px; align-items: center; z-index: 1; flex-wrap: wrap; }
+  button { background: #333; color: #ddd; border: 1px solid #555; padding: 4px 10px; cursor: pointer; }
+  button.on { background: #6a3; color: #fff; }
+  #help { opacity: .7; }
+  canvas { display: block; }
+  #legend { position: fixed; left: 8px; bottom: 8px; padding: 8px 10px; background: #222d; border: 1px solid #444; line-height: 1.7; }
+  #legend i { display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; border: 2px solid; }
+</style>
+<div id="legend">
+  <div><i style="background:#ff000045;border-color:#ff4040"></i>Solid zone (polygon): nothing walks through</div>
+  <div><i style="background:#00ffff45;border-color:#00e0e0;border-radius:50%"></i>Solid circle: tomb, trunk, statue, lantern</div>
+  <div><i style="background:#ffff0090;border-color:#cc0;border-radius:50%"></i>Monster exit (open grave), never in a player's view</div>
+  <div><i style="background:#00ff00a0;border-color:#0a0;border-radius:50%"></i>Mages' start</div>
+  <div><i style="background:#fff;border-color:#fff;width:6px;height:6px"></i>Polygon corner (drag it)</div>
+  <div><i style="background:none;border-color:#fff;border-radius:50%"></i>Test character: small circle, what collides; big one, its halo (what is above turns see-through inside it)</div>
+</div>
+<div id="bar">
+  <button data-mode="select">Select / move (S)</button>
+  <button data-mode="polygon">Polygon (P)</button>
+  <button data-mode="dummy">Test character (X)</button>
+  <button id="layer">Above layer: faded (H)</button>
+  <button data-mode="circle">Circle (C)</button>
+  <button data-mode="spawn">Monster exit (M)</button>
+  <button data-mode="start">Start (T)</button>
+  <button id="undo">Undo (Ctrl+Z)</button>
+  <button id="save">Save (Ctrl+S)</button>
+  <span id="help"></span>
+</div>
+<canvas id="c"></canvas>
+<script>
+const HELP = {
+  select: "Drag a zone or a corner to move it. Delete: remove the selected one. Double-click a polygon edge: add a corner.",
+  polygon: "Click the corners, Enter or double-click to close, Esc to cancel.",
+  dummy: "Click to place the test character, then click or drag: it walks there like the mage, stopped by the solid zones and circles. Drawn as in the game, under the above layer (H: hidden, faded, as in the game: see-through inside its halo, the big circle). Its small circle: what collides.",
+  circle: "Press at the center, drag to the radius.",
+  spawn: "Click an open grave: monsters come out there.",
+  start: "Click where the mages start.",
+};
+const canvas = document.getElementById("c"), ctx = canvas.getContext("2d");
+const img = new Image();
+let map, mode = "select", view = { x: 0, y: 0, k: 1 }, draft = [], drag = null, sel = null, history = [];
+
+function setMode(m) {
+  mode = m; draft = []; sel = null;
+  document.querySelectorAll("[data-mode]").forEach(b => b.classList.toggle("on", b.dataset.mode === m));
+  document.getElementById("help").textContent = HELP[m];
+  draw();
+}
+document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => setMode(b.dataset.mode));
+const snapshot = () => history.push(JSON.stringify(map));
+function undo() { if (history.length) { map = JSON.parse(history.pop()); sel = null; draw(); } }
+document.getElementById("undo").onclick = undo;
+document.getElementById("save").onclick = save;
+
+async function save() {
+  const r = await fetch("/save", { method: "POST", body: JSON.stringify(map) });
+  document.getElementById("help").textContent = r.ok ? "Saved to map.json." : "Save failed: " + await r.text();
+}
+
+const toMap = e => ({ x: (e.clientX - view.x) / view.k, y: (e.clientY - view.y) / view.k });
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const LISTS = ["polygons"];  // the polygon kinds
+const above = new Image();  // what stands up in the air, drawn over the characters
+const octo = new Image(); octo.src = "/octo.png";
+let dummy = null, scale = 1, see = 90, faded = 0.5, body = 20;  // the test character [x, y]; the game's Arena.SCALE, SEE, FADED
+let layer = 1;  // the above layer: 0 hidden, 1 faded, 2 as in the game
+const LAYERS = ["hidden", "faded", "as in the game"];
+document.getElementById("layer").onclick = () => { layer = (layer + 1) % 3; document.getElementById("layer").textContent = `Above layer: ${LAYERS[layer]} (H)`; draw(); };
+function segDist(p, a, b) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], l = dx * dx + dy * dy || 1;
+  const t = Math.max(0, Math.min(1, ((p.x - a[0]) * dx + (p.y - a[1]) * dy) / l));
+  return Math.hypot(p.x - a[0] - t * dx, p.y - a[1] - t * dy);
+}
+function inside(p, poly) {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if ((yi > p.y) !== (yj > p.y) && p.x < (xj - xi) * (p.y - yi) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+
+
+
+// What is under p: a corner first, then spawns, start, circles, polygons.
+function hit(p) {
+  const near = 8 / view.k;
+  for (const list of LISTS)
+    for (const [i, poly] of map[list].entries())
+      for (const [j, v] of poly.entries()) if (dist(p, { x: v[0], y: v[1] }) < near) return { kind: "corner", list, i, j };
+  if (dummy && dist(p, { x: dummy[0], y: dummy[1] }) < 32 / scale) return { kind: "dummy" };
+  for (const [i, s] of map.spawns.entries()) if (dist(p, { x: s[0], y: s[1] }) < 10 / view.k + 4) return { kind: "spawn", i };
+  if (dist(p, { x: map.start[0], y: map.start[1] }) < 12 / view.k + 4) return { kind: "start" };
+  for (let i = map.circles.length - 1; i >= 0; i--) {
+    const c = map.circles[i];
+    if (dist(p, { x: c[0], y: c[1] }) < c[2] + near) return { kind: "circle", i };
+  }
+  for (const list of LISTS)
+    for (let i = map[list].length - 1; i >= 0; i--) if (inside(p, map[list][i])) return { kind: "polygon", list, i };
+  return null;
+}
+
+// The points [x, y] a drag moves (references into map).
+function points(h) {
+  if (h.kind === "corner") return [map[h.list][h.i][h.j]];
+  if (h.kind === "polygon") return map[h.list][h.i];
+  if (h.kind === "circle") return [map.circles[h.i]];
+  if (h.kind === "spawn") return [map.spawns[h.i]];
+  if (h.kind === "dummy") return [dummy];
+  return [map.start];
+}
+
+// Moved by the mouse's whole move since the press: rounding each step
+// would make them lag or run ahead of the cursor.
+// The game's collisions (Arena.slide in game/arena.gd), in the picture's
+// pixels: pos moved by (mx, my), sliding around the solid circles and
+// pushed out of the solid polygons, for a mover of radius r.
+function slide([px, py], mx, my, r) {
+  let x = px + mx, y = py + my;
+  const len = Math.hypot(mx, my);
+  for (const [cx, cy, cr] of map.circles) {
+    const min = cr + r, dx = x - cx, dy = y - cy, d = Math.hypot(dx, dy);
+    if (d < min) {
+      const nx = d ? dx / d : 0, ny = d ? dy / d : -1;
+      let tx = -ny, ty = nx;
+      if (tx * mx + ty * my < 0) { tx = -tx; ty = -ty; }
+      const ox = nx * min + tx * len, oy = ny * min + ty * len, ol = Math.hypot(ox, oy) || 1;
+      x = cx + ox / ol * min; y = cy + oy / ol * min;
+    }
+  }
+  for (let pass = 0; pass < 3; pass++) for (const poly of map.polygons) {  // again: out of one may push into a neighbour
+    const p = { x, y }, inPoly = inside(p, poly);
+    let bx = 0, by = 0, best = Infinity;
+    for (let i = 0; i < poly.length; i++) {
+      const [ax, ay] = poly[i], [cx, cy] = poly[(i + 1) % poly.length];
+      const dx = cx - ax, dy = cy - ay, l = dx * dx + dy * dy || 1;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / l));
+      const qx = ax + t * dx, qy = ay + t * dy, d = Math.hypot(x - qx, y - qy);
+      if (d < best) { best = d; bx = qx; by = qy; }
+    }
+    if (inPoly || best < r) {
+      let ox = inPoly ? bx - x : x - bx, oy = inPoly ? by - y : y - by;
+      const ol = Math.hypot(ox, oy);
+      if (ol) { ox /= ol; oy /= ol; } else { ox = 0; oy = -1; }
+      x = bx + ox * r; y = by + oy * r;
+    }
+  }
+  // Squeezed between zones closer than the mover's width: it stays put.
+  return map.polygons.some(poly => inside({ x, y }, poly)) ? [px, py] : [x, y];
+}
+
+// As the game (Arena.under): something above covers its middle or edge.
+let aboveAlpha;
+function underAbove([x, y]) {
+  if (!aboveAlpha) {
+    const c = document.createElement("canvas"); c.width = above.width; c.height = above.height;
+    const o = c.getContext("2d"); o.drawImage(above, 0, 0); aboveAlpha = o.getImageData(0, 0, c.width, c.height).data;
+  }
+  for (let k = 0; k < 9; k++) {
+    const a = 2 * Math.PI * k / 8, r = k ? body / scale : 0;
+    const px = Math.floor(x + Math.cos(a) * r), py = Math.floor(y + Math.sin(a) * r);
+    if (px >= 0 && py >= 0 && px < above.width && py < above.height && aboveAlpha[(py * above.width + px) * 4 + 3] > 76) return true;
+  }
+  return false;
+}
+
+function move(drag, p) {
+  if (drag.what.kind === "dummy") {  // walks to the cursor like the mage: it cannot enter the solid zones
+    const tx = drag.from[0][0] + p.x - drag.start.x, ty = drag.from[0][1] + p.y - drag.start.y;
+    let [x, y] = dummy;
+    const steps = Math.ceil(Math.hypot(tx - x, ty - y) / 2);
+    for (let k = 0; k < steps; k++) [x, y] = slide([x, y], (tx - x) / (steps - k), (ty - y) / (steps - k), 12 / scale);
+    dummy[0] = x; dummy[1] = y;
+    return;
+  }
+  points(drag.what).forEach((v, k) => {
+    v[0] = Math.round(drag.from[k][0] + p.x - drag.start.x);
+    v[1] = Math.round(drag.from[k][1] + p.y - drag.start.y);
+  });
+}
+
+function remove(h) {
+  snapshot();
+  if (h.kind === "corner") {
+    map[h.list][h.i].splice(h.j, 1);
+    if (map[h.list][h.i].length < 3) map[h.list].splice(h.i, 1);
+  }
+  if (h.kind === "polygon") map[h.list].splice(h.i, 1);
+  if (h.kind === "circle") map.circles.splice(h.i, 1);
+  if (h.kind === "spawn") map.spawns.splice(h.i, 1);
+  if (h.kind === "dummy") dummy = null;
+  sel = null; draw();
+}
+
+function closeDraft() {
+  if (draft.length >= 3) { snapshot(); map.polygons.push(draft.map(v => [Math.round(v.x), Math.round(v.y)])); }
+  draft = []; draw();
+}
+
+canvas.onmousedown = e => {
+  const p = toMap(e);
+  if (e.button === 1 || e.button === 2 || e.shiftKey) { drag = { pan: true, x: e.clientX, y: e.clientY }; return; }
+  if (mode === "polygon") { draft.push(p); draw(); return; }
+  if (mode === "dummy") {
+    dummy = dummy || slide([p.x, p.y], 0, 0, 12 / scale);  // placed once, then it walks to each click
+    drag = { what: { kind: "dummy" }, start: { x: dummy[0], y: dummy[1] }, from: [[dummy[0], dummy[1]]] };
+    move(drag, p); draw(); return;
+  }
+  if (mode === "circle") { snapshot(); map.circles.push([Math.round(p.x), Math.round(p.y), 1]); drag = { circle: map.circles.length - 1 }; return; }
+  if (mode === "spawn") { snapshot(); map.spawns.push([Math.round(p.x), Math.round(p.y)]); draw(); return; }
+  if (mode === "start") { snapshot(); map.start = [Math.round(p.x), Math.round(p.y)]; draw(); return; }
+  sel = hit(p);
+  if (sel) { snapshot(); drag = { what: sel, start: p, from: points(sel).map(v => [v[0], v[1]]) }; }
+  draw();
+};
+canvas.onmousemove = e => {
+  const p = toMap(e);
+  if (!drag) { if (mode === "polygon" && draft.length) draw(p); return; }
+  if (drag.pan) { view.x += e.clientX - drag.x; view.y += e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; }
+  else if (drag.circle !== undefined) { const c = map.circles[drag.circle]; c[2] = Math.max(2, Math.round(dist(p, { x: c[0], y: c[1] }))); }
+  else move(drag, p);
+  draw();
+};
+canvas.onmouseup = () => {
+  if (drag && drag.circle !== undefined && map.circles[drag.circle][2] < 3) map.circles.splice(drag.circle, 1);
+  drag = null; draw();
+};
+canvas.ondblclick = e => {
+  if (mode === "polygon") { draft.pop(); closeDraft(); return; }  // the second click of the double-click added a corner
+  if (mode !== "select") return;
+  const p = toMap(e);
+  for (const list of LISTS)
+    for (const [i, poly] of map[list].entries())
+      for (let j = 0; j < poly.length; j++)
+        if (segDist(p, poly[j], poly[(j + 1) % poly.length]) < 6 / view.k) {
+          snapshot(); poly.splice(j + 1, 0, [Math.round(p.x), Math.round(p.y)]); sel = { kind: "corner", list, i, j: j + 1 }; draw(); return;
+        }
+};
+canvas.oncontextmenu = e => e.preventDefault();
+canvas.onwheel = e => {
+  e.preventDefault();
+  const k = Math.min(8, Math.max(0.2, view.k * (e.deltaY < 0 ? 1.15 : 1 / 1.15)));
+  view.x = e.clientX - (e.clientX - view.x) * k / view.k; view.y = e.clientY - (e.clientY - view.y) * k / view.k; view.k = k;
+  draw();
+};
+addEventListener("keydown", e => {
+  if (e.ctrlKey && e.key === "z") { e.preventDefault(); undo(); return; }
+  if (e.ctrlKey && e.key === "s") { e.preventDefault(); save(); return; }
+  if (e.key === "Enter" && mode === "polygon") closeDraft();
+  if (e.key === "h" && !e.ctrlKey) document.getElementById("layer").click();
+  if (e.key === "Escape") { draft = []; sel = null; draw(); }
+  if ((e.key === "Delete" || e.key === "Backspace") && sel) remove(sel);
+  const keys = { s: "select", p: "polygon", x: "dummy", c: "circle", m: "spawn", t: "start" };
+  if (!e.ctrlKey && keys[e.key]) setMode(keys[e.key]);
+});
+addEventListener("resize", draw);
+
+function draw(cursor) {
+  canvas.width = innerWidth; canvas.height = innerHeight;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.setTransform(view.k, 0, 0, view.k, view.x, view.y);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(img, 0, 0);
+  ctx.lineWidth = 2 / view.k;
+  const isSel = (kind, i, list) => sel && sel.i === i && sel.list === list && (sel.kind === kind || (kind === "polygon" && sel.kind === "corner"));
+  const look = { polygons: ["#ff000045", "#ff606080", "#ff4040"] };
+  for (const list of [...LISTS].reverse())
+    for (const [i, poly] of map[list].entries()) {
+      ctx.beginPath(); poly.forEach(([x, y], j) => j ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
+      ctx.fillStyle = look[list][isSel("polygon", i, list) ? 1 : 0]; ctx.fill();
+      ctx.strokeStyle = look[list][2]; ctx.stroke();
+      if (mode === "select" || isSel("polygon", i, list)) for (const [x, y] of poly) { ctx.fillStyle = "#fff"; ctx.fillRect(x - 3 / view.k, y - 3 / view.k, 6 / view.k, 6 / view.k); }
+    }
+  for (const [i, [x, y, r]] of map.circles.entries()) {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI);
+    ctx.fillStyle = isSel("circle", i, undefined) ? "#60ffff90" : "#00ffff45"; ctx.fill(); ctx.strokeStyle = "#00e0e0"; ctx.stroke();
+  }
+  for (const [i, [x, y]] of map.spawns.entries()) {
+    ctx.beginPath(); ctx.arc(x, y, 10, 0, 2 * Math.PI);
+    ctx.fillStyle = isSel("spawn", i, undefined) ? "#ffff60" : "#ffff0090"; ctx.fill(); ctx.strokeStyle = "#cc0"; ctx.stroke();
+  }
+  ctx.beginPath(); ctx.arc(map.start[0], map.start[1], 12, 0, 2 * Math.PI);
+  ctx.fillStyle = "#00ff00a0"; ctx.fill(); ctx.strokeStyle = "#0a0"; ctx.stroke();
+  if (dummy) {  // as in the game: the sprite (its first idle frame) at its size
+    const sz = octo.height / scale, [x, y] = dummy;
+    ctx.drawImage(octo, 0, 0, octo.height, octo.height, x - sz / 2, y - sz / 2, sz, sz);
+    ctx.beginPath(); ctx.arc(x, y, 12 / scale, 0, 2 * Math.PI); ctx.strokeStyle = "#fff"; ctx.stroke();
+  }
+  if (layer) {  // the above layer over it all; as in the game, see-through inside the test character's halo
+    const off = document.createElement("canvas"); off.width = above.width; off.height = above.height;
+    const o = off.getContext("2d"); o.drawImage(above, 0, 0);
+    if (dummy && layer === 2 && underAbove(dummy)) {  // the halo only while it walks under something
+      const r = see / scale, g = o.createRadialGradient(dummy[0], dummy[1], 0, dummy[0], dummy[1], r);
+      g.addColorStop(0, `rgba(0,0,0,${1 - faded})`); g.addColorStop(0.85, `rgba(0,0,0,${1 - faded})`); g.addColorStop(1, "rgba(0,0,0,0)");
+      o.globalCompositeOperation = "destination-out"; o.fillStyle = g; o.fillRect(dummy[0] - r, dummy[1] - r, 2 * r, 2 * r);
+    }
+    ctx.globalAlpha = layer === 1 ? 0.45 : 1; ctx.drawImage(off, 0, 0); ctx.globalAlpha = 1;
+    if (dummy && layer === 2 && underAbove(dummy)) { ctx.beginPath(); ctx.arc(dummy[0], dummy[1], see / scale, 0, 2 * Math.PI); ctx.strokeStyle = "#ffffff50"; ctx.stroke(); }
+  }
+  if (draft.length) {
+    ctx.beginPath(); draft.forEach((v, j) => j ? ctx.lineTo(v.x, v.y) : ctx.moveTo(v.x, v.y));
+    if (cursor) ctx.lineTo(cursor.x, cursor.y);
+    ctx.strokeStyle = "#ff0"; ctx.stroke();
+    for (const v of draft) { ctx.fillStyle = "#ff0"; ctx.fillRect(v.x - 3 / view.k, v.y - 3 / view.k, 6 / view.k, 6 / view.k); }
+  }
+}
+
+Promise.all([fetch("/map.json").then(r => r.json()), fetch("/config").then(r => r.json()),
+             new Promise(ok => { img.onload = ok; img.src = "/ground.png"; }),
+             new Promise(ok => { above.onload = ok; above.src = "/above.png"; })]).then(([m, config]) => {
+  map = m;
+  scale = config.scale; see = config.see; body = config.body; faded = config.faded;
+  view.k = Math.min(innerWidth / img.width, (innerHeight - 70) / img.height); view.y = 70;
+  setMode("select");
+});
+</script>
+</html>

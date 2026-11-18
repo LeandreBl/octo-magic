@@ -6,4 +6,5 @@ __pycache__/
 node_modules/
 addons/webrtc_native/
 web/godot/
+assets/maps/*/map.json.bak
 tools/tentacle_choices/

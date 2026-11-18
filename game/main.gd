@@ -100,7 +100,7 @@ func _run_started(map: String) -> void:
 	Run.start(Profile.equipped_spells(), Profile.bonus_list())
 	var p := local_player()
 	if p:
-		p.position = Arena.RECT.get_center()
+		p.position = Arena.START
 	add_child(Arena.new())
 	forge_status = ""
 	get_tree().paused = false
@@ -130,12 +130,15 @@ func _offer_loadout(text: String) -> void:
 
 func _next_wave() -> void:
 	_wave_started.rpc(Run.wave + 1)
-	var alive := get_tree().get_nodes_in_group("players").filter(func(p): return p.hp > 0.0)
-	var mages: Array = alive.map(func(p): return p.position)
+	# Every mage's screen: no monster appears in one. A window wider or
+	# taller than this one shows more (stretch aspect "expand"): up to 21:9 and 4:3.
+	var view := get_viewport_rect().size / Player.ZOOM
+	view = Vector2(maxf(view.x, view.y * 21.0 / 9.0), maxf(view.y, view.x * 3.0 / 4.0))
+	var seen := Arena.views(get_tree().get_nodes_in_group("players").map(func(p): return p.position), view)
 	for kind in Run.wave_plan(Run.wave):
 		spawned += 1
 		spawner.spawn({"kind": "enemy", "name": "E%d" % spawned, "type": kind,
-			"stats": Run.enemy_stats(kind, Run.wave), "pos": Arena.off_screen(mages, get_viewport_rect().size)})
+			"stats": Run.enemy_stats(kind, Run.wave), "pos": Arena.spawn_point(seen)})
 
 
 @rpc("authority", "call_local", "reliable")
@@ -265,7 +268,7 @@ static func _config(props: Dictionary, spawn: bool) -> SceneReplicationConfig:
 
 
 func _spawn_player(id: int) -> void:
-	spawner.spawn({"kind": "player", "name": "P%d" % id, "id": id, "pos": Arena.RECT.get_center()})
+	spawner.spawn({"kind": "player", "name": "P%d" % id, "id": id, "pos": Arena.START})
 
 
 ## Fresh world for a new session: the host (or solo) spawns its mage, a

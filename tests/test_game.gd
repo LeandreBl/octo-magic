@@ -201,13 +201,7 @@ func _test_waves() -> void:
 		check(not e or e[0] in ["poison", "freeze", "stun"], "%s puts a known status" % k)
 		check(not RunState.ENEMIES[k].has("gunk") or e and e[0] == "poison", "%s gunk is poison" % k)
 	check(RunState.wave_plan(9).size() > RunState.wave_plan(4).size(), "waves grow")
-	# Waves spawn out of every mage's view, even in a corner or with mages apart.
-	var mages := [Vector2(100, 100), Vector2(2400, 1600), Vector2(3000, 1600)]
-	for i in 200:
-		var pos: Vector2 = Arena.off_screen(mages, Vector2(1280, 720))
-		check(pos == pos.clamp(Arena.RECT.position, Arena.RECT.end), "spawn inside the arena")
-		var views := [Vector2(640, 360), Vector2(2400, 1600), Vector2(3000, 1600)]  # cameras stop at the edges
-		check(views.all(func(c): return absf(pos.x - c.x) > 640 or absf(pos.y - c.y) > 360), "spawn out of view (%s)" % pos)
+	# Waves spawn out of every mage's view: tests/test_arena.gd (Arena.spawn_point).
 	check(RunState.enemy_stats("skeleton", 10).hp > RunState.enemy_stats("skeleton", 1).hp, "enemies get tougher")
 	var looks := {}
 	for i in 60:

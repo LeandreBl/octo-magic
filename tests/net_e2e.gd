@@ -49,7 +49,7 @@ func _initialize() -> void:
 			return p and p.run and p.run.spells.has("primary"))
 		await until("client steers its mage", func():
 			var p := main.get_node_or_null("P2")
-			return p and p.position.distance_to(Vector2(123, 45)) < 1.0)
+			return p and p.position.distance_to(Arena.START + Vector2(12, 5)) < 1.0)
 	else:
 		main.join_game(args[1])
 		await until("joined and players spawned", func():
@@ -63,7 +63,7 @@ func _initialize() -> void:
 		click.pressed = true
 		Input.parse_input_event(click)  # fire: the host casts, peers draw it
 		await until("cast drawn from the host", func(): return main.get_children().any(func(n): return n is SpellBody))
-		main.get_node("P2").position = Vector2(123, 45)
+		main.get_node("P2").position = Arena.START + Vector2(12, 5)  # a free spot: zones push movers out
 		await until("back to solo once the host leaves", func(): return not main.multiplayer.multiplayer_peer is WebRTCMultiplayerPeer)
 	DirAccess.remove_absolute(profile)
 	print("E2E OK")

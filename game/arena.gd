@@ -1,38 +1,137 @@
 class_name Arena
 extends Node2D
-## The run's map, empty for now (objects come with task #92): only its edge is drawn.
+## The run's map: a graveyard, two painted pictures drawn SCALE times: its
+## ground (assets/maps/graveyard/ground.png), and what stands up in the air
+## (above.png: trees, roofs, statues), drawn over the movers and
+## see-through inside the local mage's halo while it walks under one. Its obstacles are placed by hand in map.json
+## (tools/map_editor.py; in the pictures' pixels): polygons (buildings, walls,
+## fences, out of bounds) and circles (tombs, trunks, statues, lanterns).
+## Movers slide around them. The monsters come out of its open graves (spawns).
 
 const MAPS := ["crypt", "cave", "ruins"]  # one per run: its music for now
-const RECT := Rect2(0, 0, 4800, 3200)  # about 4x4 screens: the camera shows a part of it
+const ART := "res://assets/maps/graveyard/"
+const SCALE := 1.5  # the pictures' pixels on the octopus' scale: a path about twice its width
+const RECT := Rect2(0, 0, 1536 * SCALE, 1024 * SCALE)  # ground.png's size, scaled
+const SEE := 140.0  # the mage's halo, in the world: what is above turns see-through inside it
+const FADED := 0.5
+const BODY := 20.0  # how far from its middle the mage's body is under something (world)
+
+static var _map: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ART + "map.json"))
+## Solid polygons, circles [x, y, r], spawns [x, y] and the mages' start,
+## scaled. Static: movers slide without a reference.
+static var polygons: Array = _map.polygons.map(func(poly): return PackedVector2Array(poly.map(func(v): return Vector2(v[0], v[1]) * SCALE)))
+static var solids: Array = _map.circles.map(func(s): return [s[0] * SCALE, s[1] * SCALE, s[2] * SCALE])
+static var spawns: Array = _map.spawns.map(func(s): return [s[0] * SCALE, s[1] * SCALE])
+static var START := Vector2(_map.start[0], _map.start[1]) * SCALE
+
+var ground: Texture2D = load(ART + "ground.png")
+var above := Sprite2D.new()
+var above_img: Image  # to tell when the mage is under something
+var halo := 0.0  # 0 off .. 1 on: eased in and out
 
 
 func _ready() -> void:
 	z_index = -1  # under the player, enemies and spells
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	above.texture = load(ART + "above.png")
+	above.centered = false
+	above.scale = Vector2.ONE * SCALE
+	above.z_as_relative = false
+	above.z_index = 10  # over the movers
+	var shader := Shader.new()
+	shader.code = """
+shader_type canvas_item;
+uniform vec2 mage;  // in UV
+uniform vec2 halo;  // its radius, in UV on each axis
+uniform float faded;
+uniform float on;  // 0 off .. 1 on
+void fragment() {
+	COLOR = texture(TEXTURE, UV);
+	COLOR.a *= mix(mix(1.0, faded, on), 1.0, smoothstep(0.85, 1.0, length((UV - mage) / halo)));
+}
+"""
+	above.material = ShaderMaterial.new()
+	above.material.shader = shader
+	above.material.set_shader_parameter("halo", Vector2.ONE * SEE / RECT.size)
+	above.material.set_shader_parameter("faded", FADED)
+	add_child(above)
+	above_img = above.texture.get_image()
+
+
+func _process(delta: float) -> void:
+	var cam := get_viewport().get_camera_2d()
+	var mage: Vector2 = cam.get_parent().global_position if cam else Vector2(-1e4, -1e4)
+	above.material.set_shader_parameter("mage", mage / RECT.size)
+	halo = move_toward(halo, 1.0 if under(mage) else 0.0, delta * 6.0)
+	above.material.set_shader_parameter("on", halo)
+
+
+## Whether something above covers a mage at pos: its middle or its edge.
+func under(pos: Vector2) -> bool:
+	for k in 9:
+		var p := pos + (Vector2.from_angle(TAU * k / 8.0) * BODY if k else Vector2.ZERO)
+		var px := Vector2i(p / SCALE)
+		if Rect2i(Vector2i.ZERO, above_img.get_size()).has_point(px) and above_img.get_pixelv(px).a > 0.3:
+			return true
+	return false
 
 
 func _draw() -> void:
-	draw_rect(RECT, Color(0, 0, 0, 0.6), false, 4.0)
+	draw_texture_rect(ground, RECT, false)
 
 
-## A spot inside the arena, just out of every mage's view (each camera is
-## centred on its mage, stopped at the arena's edges): the farthest of a few tries if none is out of all views.
-## ponytail: the host's view size stands for every peer's (min 1280x720); a much wider client screen may see spawns
-static func off_screen(mages: Array, view: Vector2) -> Vector2:
-	var seen := view.max(Vector2(1280, 720)) * 0.5
-	var half := seen + Vector2(64, 64)  # margin: a sprite fully off-screen
-	var centres := mages.map(func(m): return m.clamp(RECT.position + seen, RECT.end - seen))
-	var best := RECT.get_center()
-	var best_gap := -INF
-	for i in 32:
-		var near: Vector2 = centres.pick_random() if centres else best
-		var pos := (near + Vector2.from_angle(randf() * TAU) * half.length() * randf_range(1.0, 1.5)).clamp(RECT.position, RECT.end)
-		var gap := INF  # how far out of the nearest view, in view half-sizes (> 1: out)
-		for c in centres:
-			var d: Vector2 = (pos - c).abs() / half
-			gap = minf(gap, maxf(d.x, d.y))
-		if gap > 1.0:
-			return pos
-		if gap > best_gap:
-			best = pos
-			best_gap = gap
-	return best
+## What a mage at each of mages sees (the camera follows it, stopped at the
+## arena's edges), view: the screen's size in the world.
+static func views(mages: Array, view: Vector2) -> Array:
+	return mages.map(func(m): return Rect2((m - view / 2.0).clamp(RECT.position, RECT.end - view), view))
+
+
+## Where a monster comes out: never in a mage's view (views, grown by a
+## monster's size). An open grave near one, else a free spot off every
+## view, else the open grave farthest from them.
+static func spawn_point(seen: Array) -> Vector2:
+	var hidden := func(v: Vector2): return not seen.any(func(r): return r.grow(48.0).has_point(v))
+	var away := func(v: Vector2): return seen.map(func(r): return r.get_center().distance_to(v)).min()
+	var graves: Array = spawns.map(func(s): return Vector2(s[0], s[1])).filter(hidden)
+	if graves:
+		graves.sort_custom(func(a, b): return away.call(a) < away.call(b))
+		return graves[randi() % mini(3, graves.size())] + Vector2(randf_range(-8, 8), randf_range(-8, 8))
+	var spots := []
+	for i in 200:
+		var v := Vector2(randf_range(RECT.position.x, RECT.end.x), randf_range(RECT.position.y, RECT.end.y))
+		if hidden.call(v) and slide(v, Vector2.ZERO, 16.0) == v:
+			spots.append(v)
+	if spots:
+		spots.sort_custom(func(a, b): return away.call(a) < away.call(b))
+		return spots[0]
+	var all: Array = spawns.map(func(s): return Vector2(s[0], s[1]))
+	all.sort_custom(func(a, b): return away.call(a) > away.call(b))
+	return all[0] if all else RECT.get_center()
+
+
+## pos moved by motion, sliding around the solids (a mover of radius r).
+static func slide(pos: Vector2, motion: Vector2, r: float) -> Vector2:
+	var p := pos + motion
+	for s in solids:
+		var c := Vector2(s[0], s[1])
+		var min_d: float = s[2] + r
+		var d := p - c
+		if d.length() < min_d:
+			var n := d.normalized() if d else Vector2.UP
+			var tangent := n.orthogonal()
+			if tangent.dot(motion) < 0.0:
+				tangent = -tangent
+			p = c + (n * min_d + tangent * motion.length()).normalized() * min_d
+	for poly in polygons + polygons + polygons:  # pushed out to r from its nearest edge, sliding along it; thrice: out of one may push into a neighbour
+		var inside := Geometry2D.is_point_in_polygon(p, poly)
+		var best := Vector2.INF
+		for i in poly.size():
+			var q := Geometry2D.get_closest_point_to_segment(p, poly[i], poly[(i + 1) % poly.size()])
+			if q.distance_squared_to(p) < best.distance_squared_to(p):
+				best = q
+		if inside or p.distance_to(best) < r:
+			var out := (best - p if inside else p - best).normalized()
+			p = best + (out if out else Vector2.UP) * r
+	if polygons.any(func(poly): return Geometry2D.is_point_in_polygon(p, poly)):
+		return pos  # squeezed between zones closer than the mover's width: it stays put
+	return p

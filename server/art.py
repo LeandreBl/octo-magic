@@ -23,7 +23,7 @@ def token() -> str:
     return tok or ""
 
 
-def _request(method: str, path: str, body: dict | None = None) -> dict:
+def _request(method: str, path: str, body: dict | None = None, timeout: float = 60) -> dict:
     req = urllib.request.Request(
         API + path, method=method,
         data=json.dumps(body).encode() if body is not None else None,
@@ -31,10 +31,11 @@ def _request(method: str, path: str, body: dict | None = None) -> dict:
     )
     for attempt in range(4):
         try:
-            with urllib.request.urlopen(req, timeout=60) as r:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
                 return json.load(r)
         except urllib.error.HTTPError as e:
             if e.code not in (429, 503, 529) or attempt == 3:  # busy: wait and retry
+                e.msg += ": " + e.read().decode(errors="replace")[:500]
                 raise
             time.sleep(10 * (attempt + 1))
 

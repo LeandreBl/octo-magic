@@ -13,6 +13,7 @@ extends Node2D
 
 signal died
 
+const ZOOM := 2.0  # close on the mage: whole art pixels, the arena (Arena.RECT) about 2x2 screens
 const STICK_RANGE := 80.0
 const SHIELD_HP := 40.0
 const SHIELD_WAIT := 8.0
@@ -75,6 +76,7 @@ func _ready() -> void:
 		add_child(Tentacle.new((i + 0.5) * TAU / TENTACLES, i % 2))
 	if peer_id == multiplayer.get_unique_id():  # this peer's mage stays mid-screen, the map scrolls
 		var cam := Camera2D.new()  # stops at the arena's edges: near one, the mage leaves mid-screen
+		cam.zoom = Vector2.ONE * ZOOM
 		cam.limit_left = int(Arena.RECT.position.x)
 		cam.limit_top = int(Arena.RECT.position.y)
 		cam.limit_right = int(Arena.RECT.end.x)
@@ -241,7 +243,7 @@ func _steer(delta: float) -> void:
 		move = Vector2.ZERO
 	elif statuses.has("freeze"):
 		move *= 0.5
-	position = (position + move * stats.speed * delta).clamp(Arena.RECT.position, Arena.RECT.end)
+	position = Arena.slide(position, move * stats.speed * delta, radius).clamp(Arena.RECT.position, Arena.RECT.end)
 
 	# Gamepad (any connected one): right stick aims and fires, RT fires
 	# where the mage aims; with the right stick idle it aims where it walks.
