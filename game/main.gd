@@ -129,7 +129,7 @@ func _run_started(map: String) -> void:
 
 
 ## This peer's spells, stats and look, to the host (see Player.clean_loadout).
-## `refill`: a level-up, health and mana back to full.
+## `refill`: a level-up, +100 health and mana.
 func send_loadout(fresh: bool, refill := false) -> void:
 	if multiplayer.multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
 		return

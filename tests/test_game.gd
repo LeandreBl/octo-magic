@@ -211,7 +211,7 @@ func _test_augments(run: Object, p: Object) -> void:
 	me.mana = 0.0
 	l.refill = true
 	me.loadout_json = JSON.stringify(Player.clean_loadout(JSON.parse_string(JSON.stringify(l))))
-	check(me.hp == me.stats.hp and me.mana == me.stats.mana, "a level-up refills health and mana")
+	check(me.hp == me.stats.hp and me.mana == minf(me.stats.mana, Player.LEVEL_UP_HEAL), "a level-up gives 100 health and mana, capped")
 	orb.kind = "gold"
 	var floor := Node2D.new()
 	floor.add_child(orb)

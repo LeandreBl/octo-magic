@@ -18,6 +18,7 @@ const SIZE := 1.2  # the mage drawn this much bigger than its art (sprite, tenta
 const STICK_RANGE := 80.0
 const SHIELD_HP := 40.0
 const SHIELD_WAIT := 8.0
+const LEVEL_UP_HEAL := 100.0  # health and mana a level-up gives back (capped at the max)
 ## The octopus seen from above (PixelLab, tools/make_octopus.py): a strip of
 ## square frames, head to the top, turned toward where it goes. Its ground
 ## tentacles are not in it: TENTACLES of game/tentacle.gd under the body.
@@ -173,8 +174,8 @@ func _apply(l: Dictionary) -> void:
 		mana += maxf(0.0, l.stats.mana - stats.mana)
 		stats = l.stats
 	if l.refill:  # a level-up
-		hp = stats.hp
-		mana = stats.mana
+		hp = minf(stats.hp, hp + LEVEL_UP_HEAL)
+		mana = minf(stats.mana, mana + LEVEL_UP_HEAL)
 	if l.passive != passive:  # a new run
 		passive = l.passive
 		shield = SHIELD_HP if passive == "shield" else 0.0
