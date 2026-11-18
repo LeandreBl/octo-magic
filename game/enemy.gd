@@ -115,11 +115,11 @@ func push(velocity: Vector2) -> void:
 	knock += velocity * data.get("heavy", 1.0)
 
 
-## The nearest mage standing, or null.
-static func nearest_player(from: Node2D) -> Node2D:
+## The nearest mage standing (and passing `ok`, if given), or null.
+static func nearest_player(from: Node2D, ok := Callable()) -> Node2D:
 	var best: Node2D = null
 	for p in from.get_tree().get_nodes_in_group("players"):
-		if p.hp > 0.0 and (not best or from.position.distance_squared_to(p.position) < from.position.distance_squared_to(best.position)):
+		if p.hp > 0.0 and (not ok.is_valid() or ok.call(p)) and (not best or from.position.distance_squared_to(p.position) < from.position.distance_squared_to(best.position)):
 			best = p
 	return best
 

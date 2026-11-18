@@ -61,9 +61,7 @@ func _shimmer() -> void:
 func _physics_process(delta: float) -> void:
 	if not multiplayer.is_server():
 		return
-	var near := preload("res://game/enemy.gd").nearest_player(self)
-	if near:
-		target = near
+	target = preload("res://game/enemy.gd").nearest_player(self, wants)
 	if not is_instance_valid(target):
 		return
 	var to := target.position - position
@@ -74,6 +72,15 @@ func _physics_process(delta: float) -> void:
 	elif to.length() < maxf(magnet, target.stats.pickup):
 		speed = minf(speed + 1200.0 * delta, 700.0)
 		position += to.normalized() * minf(speed * delta, to.length())
+
+
+## A mana or life orb stays on the floor for a mage whose gauge is full.
+func wants(p: Node2D) -> bool:
+	if kind == "life":
+		return p.hp < p.stats.hp
+	if kind == "mana":
+		return p.mana < p.stats.mana
+	return true
 
 
 ## Mana and life orbs refill the mage who takes them (the rest goes to Run).

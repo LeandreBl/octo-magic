@@ -201,6 +201,12 @@ func _test_augments(run: Object, p: Object) -> void:
 	orb.kind = "life"
 	orb.give(me)
 	check(me.hp == me.stats.hp, "life orb heals, capped")
+	check(not orb.wants(me), "a life orb is left alone at full health")
+	orb.kind = "mana"
+	check(orb.wants(me), "a mana orb is wanted below full mana")
+	me.mana = me.stats.mana
+	check(not orb.wants(me), "a mana orb is left alone at full mana")
+	orb.kind = "life"
 	me.hurt(30.0)
 	me.mana = 0.0
 	l.refill = true
