@@ -35,8 +35,8 @@ const TEXT = {
     changed: "Mot de passe changé.",
     confirm: "Supprimer définitivement ton compte et ta progression ?",
     noScore: "Aucun score pour l'instant.",
-    reached: TEXT.reached,
-    noSpell: TEXT.noSpell,
+    reached: "✦ obtenu",
+    noSpell: "Aucun sort créé pour l'instant.",
   },
   en: {
     achievements: {
