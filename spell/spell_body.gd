@@ -25,6 +25,8 @@ var anchor := Vector2.ZERO  # beam / cone: offset from the caster, kept while it
 var struck := false  # beam / cone: strike once, when cast
 var target: Node2D  # beam: the enemy the arc grips
 
+const ABOVE_DECOR := 11  # over the map's trees, roofs and statues (Arena.above, z 10)
+
 
 ## Emit an "emit" dict from pos toward dir. Bursts are spread over time.
 static func cast(emit: Dictionary, pos: Vector2, aim: Vector2, owner_node: Node2D, spell: Dictionary, world: Node, depth := 0) -> void:
@@ -82,6 +84,7 @@ static func nearest_enemy(world: Node, pos: Vector2, exclude: Dictionary) -> Nod
 
 
 func _ready() -> void:
+	z_index = ABOVE_DECOR
 	speed = body.speed
 	pierce_left = body.pierce
 	bounce_left = body.bounce
@@ -233,6 +236,7 @@ func _expire() -> void:
 		fx.tex = burst
 		fx.s = body.burst_sheet.merged({"loop": false}, true)
 		fx.position = position
+		fx.z_index = ABOVE_DECOR
 		get_parent().add_child(fx)
 	queue_free()
 
