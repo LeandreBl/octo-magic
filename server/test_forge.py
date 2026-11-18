@@ -1,3 +1,4 @@
+import functools
 import io
 import json
 import unittest
@@ -90,6 +91,37 @@ class ForgeTest(unittest.TestCase):
         with mock.patch.dict(forge.JOBS, {"j": {"status": "done", "zip": b"PK", "applied": 2}}):
             h.do_GET()
         self.assertEqual(sent, [(200, b"PK", {"X-Forge-Applied": "2"})])
+
+    def test_pending_job_reports_progress_no_faster_than_the_wait(self):
+        h = forge.Handler.__new__(forge.Handler)
+        h.path, sent = "/forge/j", []
+        h._send = lambda *a: sent.append(a)
+        now = forge.time.monotonic()
+        job = {"status": "pending", "progress": 1.0, "start": now - 10, "ready": now + 30}
+        with mock.patch.dict(forge.JOBS, {"j": job}):
+            h.do_GET()  # a cached bundle: done, but a quarter of the wait gone
+            job["progress"] = 0.2
+            h.do_GET()  # the model answered, nothing drawn yet
+        self.assertEqual([s[1]["status"] for s in sent], ["pending", "pending"])
+        self.assertAlmostEqual(sent[0][1]["progress"], 0.25, places=2)
+        self.assertEqual(sent[1][1]["progress"], 0.2)
+        self.assertEqual(set(sent[1][1]), {"status", "progress"})
+
+    def test_progress_follows_the_real_steps(self):
+        import tempfile
+        steps = []
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(forge, "CACHE", forge.Path(d)), \
+                mock.patch.object(forge, "forge", lambda s, w, lang="en": {**BundleTest.SPELL, "words": w}), \
+                mock.patch.object(forge, "bundle", functools.partial(forge.bundle, draw=FakeArt())), \
+                mock.patch.object(forge.art, "token", return_value="t"):
+            forge.forge_bundle({"name": "x"}, ["ignis"], progress=steps.append)
+            self.assertEqual(steps[0], forge.MODEL_STEP)  # the model answered
+            self.assertEqual(len(steps), 1 + 4 + 1)  # then each drawing (2 bodies, burst, icon), then the zip
+            self.assertEqual(steps, sorted(steps))
+            self.assertEqual(steps[-1], 1.0)
+            steps.clear()
+            forge.forge_bundle({"name": "x"}, ["ignis"], progress=steps.append)
+            self.assertEqual(steps, [1.0])  # cached: no step but the end
 
     def test_known_combination_gives_the_same_bundle(self):
         import tempfile

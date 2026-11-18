@@ -14,8 +14,8 @@ const HUD := preload("res://ui/hud.gd")  # its spell icon
 const MAX_SHOWN := 8  # word circles drawn
 const GLYPHS_N := 10  # glyphs lit around a job's circle while forging
 const JOB := 64.0  # a job's circle
-## The forge gives no progress: glyphs follow an expected curve, slowing down
-## (never all lit) until the spell comes back.
+## Glyphs follow the forge's real progress (main.gd's job.progress); until the
+## model answers, an expected curve creeps over its step (MODEL_STEP, server/forge.py).
 const FORGE_SECONDS := 90.0
 ## PixelLab art (tools/make_forge.py); the chalk is white, tinted here.
 const ROOM: Texture2D = preload("res://assets/forge/room.png")  # the study, its table seen at three quarters
@@ -438,7 +438,7 @@ func _draw_job(chip: Control, job: Dictionary, icon: Texture2D) -> void:
 	chip.draw_texture_rect(SEAL, Rect2(Vector2.ZERO, chip.size), false, CHALK.lerp(EMBER, glow))
 	var s := JOB * 0.4
 	chip.draw_texture_rect(icon, Rect2(mid - Vector2(s, s) / 2, Vector2(s, s)), false)
-	var shown: float = GLYPHS_N if done else coverage((Time.get_ticks_msec() - job.started) / 1000.0) * GLYPHS_N
+	var shown: float = GLYPHS_N if done else maxf(job.get("progress", 0.0), 0.2 * coverage((Time.get_ticks_msec() - job.started) / 1000.0)) * GLYPHS_N
 	var g := JOB * 0.2
 	for i in mini(ceili(shown), GLYPHS_N):
 		var at := mid + Vector2.from_angle(-PI / 2 + TAU * i / GLYPHS_N) * JOB * 0.36

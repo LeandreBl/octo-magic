@@ -6,7 +6,7 @@ With ANTHROPIC_API_KEY set it calls the API; otherwise it goes through the
 from `claude setup-token`), for personal tests only.
 POST /forge {"spell": {...}, "words": "ignis, vampyrus", "scrolls": 2}
   -> {"job": id, "words": ["ignis", "vampyrus"]}   (one blank scroll per word)
-GET /forge/<id> -> {"status": "pending"} | {"error": ...} | the .spell bundle (zip),
+GET /forge/<id> -> {"status": "pending", "progress": 0..1} | {"error": ...} | the .spell bundle (zip),
   with header X-Forge-Applied: how many words were kept (the others were
   cancelled as meaningless or not in a dead language; the game gives their scrolls back)
 
@@ -31,7 +31,7 @@ import threading
 import time
 import uuid
 import zipfile
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -54,6 +54,7 @@ MAX_WORDS = 8
 MAX_REASON = 120
 CACHE = Path(os.environ.get("FORGE_CACHE", ROOT / "server/cache"))  # forged bundles, by combination
 WAIT = (30.0, 40.0)  # seconds, the least a job takes
+MODEL_STEP = 0.2  # progress once the model answered; the drawings fill the rest
 
 SYSTEM = f"""You are the spell forge of a top-down roguelike. The player wrote words
 on blank scrolls, one word per scroll. Rewrite their current spell so that each
@@ -313,17 +314,20 @@ def remember(path: Path, data: bytes) -> bytes:
     return path.read_bytes()
 
 
-def forge_bundle(spell: dict, words: list[str], lang: str = "en") -> tuple[bytes, int]:
+def forge_bundle(spell: dict, words: list[str], lang: str = "en", progress=lambda p: None) -> tuple[bytes, int]:
     """The bundle for `words` on `spell` and how many words it applied:
-    from the cache when that combination was forged before."""
+    from the cache when that combination was forged before. `progress(0..1)`
+    follows the real steps: the model answered, each drawing, the zip."""
     asked = cache_path(spell, words)
     if asked.exists():
         data = asked.read_bytes()
     else:
         new = forge(spell, words, lang=lang)
+        progress(MODEL_STEP)
         # what was kept first (it may be known without the cancelled words), then what was asked
-        data = remember(cache_path(spell, new["words"][len(old_words(spell)):]), bundle(new))
+        data = remember(cache_path(spell, new["words"][len(old_words(spell)):]), bundle(new, progress=lambda f: progress(MODEL_STEP + (1 - MODEL_STEP) * f)))
         data = remember(asked, data)
+    progress(1.0)
     with zipfile.ZipFile(io.BytesIO(data)) as z:
         kept = json.loads(z.read("manifest.json")).get("words") or []
     return data, len(kept) - len(old_words(spell))
@@ -342,7 +346,7 @@ def bodies(emit, out=None) -> list:
     return out
 
 
-def bundle(spell: dict, draw=art) -> bytes:
+def bundle(spell: dict, draw=art, progress=lambda f: None) -> bytes:
     """Draw the spell's art with PixelLab and zip it with the spell.
     A failed drawing is skipped: the game falls back to the pixel grids."""
     spell.pop("icon_file", None)  # stale refs copied from the previous bundle
@@ -369,8 +373,10 @@ def bundle(spell: dict, draw=art) -> bytes:
         tasks["icon.png"] = (None, "icon_file", lambda d=brief: (sheet.normalize_icon(draw.icon(d, sheet.ICON)), None))
     out = io.BytesIO()
     with zipfile.ZipFile(out, "w") as z, ThreadPoolExecutor(4) as pool:
-        futures = {name: pool.submit(fn) for name, (_, _, fn) in tasks.items()}
-        for name, fut in futures.items():
+        futures = {pool.submit(fn): name for name, (_, _, fn) in tasks.items()}
+        for n, fut in enumerate(as_completed(futures), 1):
+            progress(0.95 * n / len(futures))  # the last 5%: the zip
+            name = futures[fut]
             body, key, _ = tasks[name]
             try:
                 png, meta = fut.result()
@@ -394,12 +400,13 @@ JOBS: dict[str, dict] = {}
 
 def start_job(spell: dict, words: list[str], lang: str = "en") -> str:
     job_id = uuid.uuid4().hex
-    JOBS[job_id] = {"status": "pending"}
+    start = time.monotonic()
+    ready = start + random.uniform(*WAIT)
+    job = JOBS[job_id] = {"status": "pending", "progress": 0.0, "start": start, "ready": ready}
 
     def run():
-        ready = time.monotonic() + random.uniform(*WAIT)
         try:
-            data, applied = forge_bundle(spell, words, lang)
+            data, applied = forge_bundle(spell, words, lang, lambda p: job.update(progress=p))
             result = {"status": "done", "zip": data, "applied": applied}
         except ForgeError as e:
             result = {"status": "error", "error": e.say(lang)}
@@ -411,6 +418,13 @@ def start_job(spell: dict, words: list[str], lang: str = "en") -> str:
 
     threading.Thread(target=run, daemon=True).start()
     return job_id
+
+
+def shown_progress(job: dict) -> float:
+    """A pending job's progress: its real steps, but no faster than the
+    least wait (a cached combination fills up over it, not at once)."""
+    timed = (time.monotonic() - job["start"]) / (job["ready"] - job["start"])
+    return round(max(0.0, min(job["progress"], timed, 1.0)), 3)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -439,7 +453,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(404, {"error": "unknown scroll"})
         if job["status"] == "done":
             return self._send(200, job["zip"], {"X-Forge-Applied": str(job["applied"])})
-        self._send(200, {k: v for k, v in job.items() if k != "zip"})
+        if job["status"] == "pending":
+            return self._send(200, {"status": "pending", "progress": shown_progress(job)})
+        self._send(200, job)
 
     def do_POST(self) -> None:
         if self.path != "/forge":

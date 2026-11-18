@@ -37,7 +37,8 @@ var to_spawn := []  # the current wave's kinds not out yet (host)
 var _spawn_in := 0.0  # s until the next one comes out
 var map_name := "crypt"  # this run's map (its music), for players dropping in
 ## Scrolls being written, in parallel: {id, words (scrolls used), slot (of the
-## improved spell, the forged one goes there), spell (the improved one), started}.
+## improved spell, the forged one goes there), spell (the improved one), started,
+## progress (0..1, from the server while pending)}.
 var forge_jobs: Array[Dictionary] = []
 var _forge_posting := false  # words sent, not taken yet: their scrolls are not counted off
 var forge_note := ""  # forge news, shown in the HUD and the forge (ui/forge.gd)
@@ -482,6 +483,7 @@ func _on_forge_reply(result: int, code: int, headers: PackedStringArray, data: P
 		forge_note = tr("%d scroll(s) being written…") % job.words
 		forge_status = ""
 		forge_started.emit(job)
+	job.progress = clampf(float(reply.get("progress", job.get("progress", 0.0))), 0.0, 1.0)
 	get_tree().create_timer(POLL_SECONDS, true).timeout.connect(_poll.bind(job))
 
 
