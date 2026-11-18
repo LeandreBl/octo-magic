@@ -23,6 +23,7 @@ const LIST := {
 	"fleetness": {"name": "Pernicitas", "desc": "+%d%% move speed", "step": 10, "max": 8, "kind": "hero", "stat": "speed%", "pct": true},
 	"magnetism": {"name": "Magnes", "desc": "+%d%% pickup radius", "step": 30, "max": 5, "kind": "hero", "stat": "pickup%", "pct": true},
 	"damage": {"name": "Potentia", "desc": "+%d%% damage", "step": 25, "max": 9, "kind": "spell", "stat": "damage%", "pct": true},
+	"harden": {"name": "Rigor", "desc": "Flatus Gelidus freezes its targets %d%% of the time", "step": 3, "max": 5, "kind": "spell", "stat": "harden", "pct": true, "spell": "frost_jet"},
 	"chaining": {"name": "Catena", "desc": "Fulmen's arc jumps on to +%d enemy", "step": 1, "max": 5, "kind": "spell", "stat": "chain", "spell": "lightning"},
 	"hurricane": {"name": "Procella", "desc": "Flatus Gelidus pushes enemies back (+%d force)", "step": 60, "max": 5, "kind": "spell", "stat": "gust", "spell": "frost_jet"},
 	"ether_charge": {"name": "Aether", "desc": "-%d%% Fulmen mana cost", "step": -12, "max": 5, "kind": "spell", "stat": "ether%", "pct": true, "spell": "lightning"},

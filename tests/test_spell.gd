@@ -343,6 +343,22 @@ func _check_channel() -> void:
 	var slow: Array = chilled.statuses.get("slow", [0.0, 0.0])
 	check(is_equal_approx(1.0 / (1.0 + slow[0] * 0.5), 0.7) and slow[1] > 0.0, "Ventus Algidus III: the cone slows its targets by 30 %")
 	chilled.free()
+	# Rigor: a cone strike freezes its target with the caster's "harden" chance.
+	var cold: Node2D = at.call(Vector2(200, 100))
+	cold.set_physics_process(false)  # stays put, its freeze does not tick down
+	mage.aim = Vector2.RIGHT
+	mage.stats = Stats.total([])
+	SpellBody.cast(spells.frost_jet.emit, Vector2(110, 100), Vector2.RIGHT, mage, spells.frost_jet, world)
+	for i in 3:
+		await physics_frame
+	check(not cold.statuses.has("freeze"), "no Rigor: the cone never freezes")
+	mage.stats = Stats.total([Upgrades.bonus(Upgrades.LIST.harden, 5)])
+	mage.stats.harden = 1.0  # a sure freeze, for the test
+	SpellBody.cast(spells.frost_jet.emit, Vector2(110, 100), Vector2.RIGHT, mage, spells.frost_jet, world)
+	for i in 3:
+		await physics_frame
+	check(cold.statuses.has("freeze") and is_equal_approx(cold.statuses.freeze[1], SpellBody.FREEZE_TIME), "Rigor: the cone freezes its target")
+	cold.free()
 	for n in world.get_children():
 		if n is SpellBody:
 			n.free()

@@ -29,6 +29,7 @@ var index := 0  # beam / cone: which body of its emit (count > 1: one arc / cone
 var turn := 0.0  # beam / cone: its angle off the caster's aim (spread, radial...)
 
 const CHILL_TIME := 1.0  # s: how long a chilled enemy stays slowed after the cone
+const FREEZE_TIME := 0.6  # s: how long a Rigor freeze holds an enemy
 const CHAIN_REACH := 140.0  # px: how far a chained arc jumps from one enemy to the next
 const ABOVE_DECOR := 11  # over the map's trees, roofs and statues (Arena.above, z 10)
 const GROUND := -1  # zones and sub-casts (a hit's effects): under the mages, enemies and obstacles, over the floor
@@ -233,6 +234,7 @@ func _channel() -> void:
 				if gust > 0.0 and multiplayer.is_server():
 					e.push((e.global_position - global_position).normalized() * gust)
 				_chill(e)
+				_harden(e)
 
 
 ## Within `speed` px and `angle` degrees (full width) around the aim.
@@ -288,6 +290,15 @@ func _chill(e: Node2D) -> void:
 	var c := _stat("chill")
 	if c > 0.0 and multiplayer.is_server():
 		e.add_status("slow", 2.0 * c / (1.0 - c), CHILL_TIME)  # Enemy: speed / (1 + power / 2) = speed * (1 - c)
+
+
+## The Rigor skill (Upgrades "harden"): each cone strike freezes its target
+## for FREEZE_TIME with its caster's "harden" stat as chance. An engine stat,
+## not spell data: no forged spell has it.
+func _harden(e: Node2D) -> void:
+	var c := _stat("harden")
+	if c > 0.0 and multiplayer.is_server() and randf() < c:
+		e.add_status("freeze", 1.0, FREEZE_TIME)
 
 
 func _check_hits() -> void:

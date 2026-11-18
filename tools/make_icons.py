@@ -65,6 +65,7 @@ UPGRADES = {
     "channeling": "a glowing blue mana rune circle on the ground with blue mana streams spiraling up into its center",
     "antidote": "a small round glass vial of bright golden antidote liquid with a cork, a crossed-out green poison drop rune on it",
     "ether_charge": "a glowing blue-white ether crystal crackling with a small lightning charge, a mana drop rune inside",
+    "harden": "a solid pale blue ice cube with sharp frosty edges and white frost cracks, cold blue glow",
     "chaining": "a crackling blue-white lightning arc linking three small glowing orbs in a zigzag chain",
     "hurricane": "a swirling pale cyan whirlwind of icy wind gusts and snowflakes, spiraling outward",
     "chill_wind": "a small frozen hourglass covered in frost and icicles, its pale blue sand slowed to a trickle, snowflakes around it",

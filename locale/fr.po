@@ -1074,6 +1074,9 @@ msgstr "+%d PV max"
 msgid "+%d%% mana regen standing still"
 msgstr "+%d%% régén. de mana à l'arrêt"
 
+msgid "Flatus Gelidus freezes its targets %d%% of the time"
+msgstr "Flatus Gelidus gèle ses cibles %d %% du temps"
+
 msgid "Fulmen's arc jumps on to +%d enemy"
 msgstr "L'arc de Fulmen rebondit sur +%d ennemi"
 
