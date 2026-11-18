@@ -16,6 +16,8 @@ extends Node2D
 
 const POLL_SECONDS := 3.0
 const SPAWN_EVERY := 0.5  # s between two monsters of a wave: it trickles in
+const LEVEL_BLAST_RADIUS := 220.0  # px around the mage leveling up
+const LEVEL_BLAST_FORCE := 900.0  # knock speed: about 270 px of slide (enemy knock decays 1500/s)
 const Enemy := preload("res://game/enemy.gd")
 const Pickup := preload("res://game/pickup.gd")
 const Player := preload("res://game/player.gd")
@@ -62,6 +64,7 @@ func _ready() -> void:
 	net.lost.connect(_go_solo)
 	add_child(net)
 	Run.level_gained.connect(send_loadout.bind(false, true))
+	Run.level_gained.connect(func(): _level_blast.rpc_id(1))
 	_reset_world()
 	var ui := preload("res://ui/ui.gd").new()
 	ui.name = "UI"
@@ -144,6 +147,19 @@ func _offer_loadout(text: String) -> void:
 	var p := get_node_or_null("P%d" % (from if from else 1))
 	if multiplayer.is_server() and p:
 		p.loadout_json = JSON.stringify(Player.clean_loadout(JSON.parse_string(text)))
+
+
+## A mage levels up: the host pushes every enemy near it away, in a circle.
+@rpc("any_peer", "call_local", "reliable")
+func _level_blast() -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var p := get_node_or_null("P%d" % (from if from else 1))
+	if not multiplayer.is_server() or not p:
+		return
+	for e in get_tree().get_nodes_in_group("enemies"):
+		var to: Vector2 = e.position - p.position
+		if to.length() < LEVEL_BLAST_RADIUS:
+			e.push((to.normalized() if to else Vector2.RIGHT) * LEVEL_BLAST_FORCE)
 
 
 ## The wave's monsters come out one by one (_process), the first at once.
