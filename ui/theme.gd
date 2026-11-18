@@ -13,6 +13,7 @@ extends RefCounted
 ## - Button: "Primary" (gold), "Danger" (red text), "Card" (level-up card,
 ##   shop item), "SideTab" (toggle, gold when on), "Tab" (toggle, underlined).
 
+const Player := preload("res://game/player.gd")
 const INK := Color("#0b1220")  # backgrounds
 const PANEL := Color("#14233a")
 const PANEL_HI := Color("#1c3150")
@@ -293,8 +294,31 @@ static func octo(px: int, animate := true) -> TextureRect:
 	var frame_px := sheet.get_height()
 	atlas.region = Rect2(0, 0, frame_px, frame_px)
 	var r := icon_rect(atlas, px)
+	# The ground tentacles are not in the sheet (game/player.gd): the same
+	# game/tentacle.gd chains, behind the body, in art pixels scaled to the rect.
+	var legs := Node2D.new()
+	legs.show_behind_parent = true
+	r.add_child(legs)
+	for i in Player.TENTACLES:
+		legs.add_child(Player.Tentacle.new((i + 0.5) * TAU / Player.TENTACLES, i % 2))
+	var step := func(delta: float):
+		legs.position = r.size / 2.0
+		legs.scale = Vector2.ONE * minf(r.size.x, r.size.y) / frame_px
+		for c in legs.get_children():
+			c.follow(Vector2.ZERO, -PI / 2.0, delta, Time.get_ticks_msec() / 1000.0)  # head up
+			var pts: PackedVector2Array = c.chain.duplicate()  # in the legs' art pixels, not the screen's
+			for k in pts.size():
+				pts[k] = pts[k].round()  # whole art pixels: the texture stays crisp
+			c.points = pts
+	step.call(0.0)
+	r.resized.connect(step.bind(0.0))
 	if not animate:
 		return r
+	var sway := Timer.new()
+	sway.wait_time = 1.0 / 30.0
+	sway.autostart = true
+	sway.timeout.connect(func(): step.call(sway.wait_time))
+	r.add_child(sway)
 	var frames := sheet.get_width() / frame_px
 	var t := Timer.new()
 	t.wait_time = 0.12
