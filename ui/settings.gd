@@ -80,9 +80,11 @@ static func apply() -> void:
 	TranslationServer.set_locale(language())
 	for bus in BUSES:
 		if AudioServer.get_bus_index(bus) < 0:
-			AudioServer.add_bus()
+			# Not add_bus(): on the web its sample buses insert the new bus at
+			# index 0 (Godot 4.7), the Master no longer reaches the speakers and
+			# the browser plays nothing. A new count appends, sent to Master.
+			AudioServer.bus_count += 1
 			AudioServer.set_bus_name(AudioServer.bus_count - 1, bus)
-			AudioServer.set_bus_send(AudioServer.bus_count - 1, "Master")
 		var v: float = get_value("audio", bus, 1.0)
 		var i := AudioServer.get_bus_index(bus)
 		AudioServer.set_bus_volume_db(i, linear_to_db(v))
