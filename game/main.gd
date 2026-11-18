@@ -18,6 +18,7 @@ const POLL_SECONDS := 3.0
 const SPAWN_EVERY := 0.5  # s between two monsters of a wave: it trickles in
 const LEVEL_BLAST_RADIUS := 220.0  # px around the mage leveling up
 const LEVEL_BLAST_FORCE := 900.0  # knock speed: about 270 px of slide (enemy knock decays 1500/s)
+const BOSS_COINS := 30  # gold pieces a boss scatters
 const GRIMOIRE_CHANCE := 0.04  # a kill drops a grimoire (red or blue); a boss always does
 const Enemy := preload("res://game/enemy.gd")
 const Pickup := preload("res://game/pickup.gd")
@@ -204,7 +205,11 @@ func _on_summoned(kind: String, pos: Vector2) -> void:
 
 func _on_killed(e: Node2D) -> void:
 	_killed.rpc(e.kind, e.xp, e.data.get("look", e.kind), e.position, e.radius, e._angle)
-	if Run.is_boss(e.kind) or randf() < 0.5:
+	if Run.is_boss(e.kind):  # a shower of coins around it, its gold split among them
+		var n := mini(e.gold, BOSS_COINS)
+		for i in n:
+			_drop("gold", e.gold / n + int(i < e.gold % n), e.position + Vector2.from_angle(randf() * TAU) * randf_range(10, e.radius + 30))
+	elif randf() < 0.5:
 		_drop("gold", e.gold, e.position + Vector2(randf_range(-8, 8), randf_range(-8, 8)))
 	if randf() < 0.04:
 		_drop("mana", 1, e.position + Vector2(randf_range(-10, 10), -10))
