@@ -63,6 +63,14 @@ void fragment() {
 	add_child(above)
 	above_img = above.texture.get_image()
 	walk_all()  # walked now rather than at the first wave's spawn
+	# The mouse is a staff while the run's map is up: its gem, mirrored to the top left, points.
+	var staff: Image = load("res://assets/icons/staff_crystal.png").get_image()
+	staff.flip_x()
+	Input.set_custom_mouse_cursor(ImageTexture.create_from_image(staff), Input.CURSOR_ARROW, Vector2(6, 6))
+
+
+func _exit_tree() -> void:
+	Input.set_custom_mouse_cursor(null)
 
 
 func _process(delta: float) -> void:
