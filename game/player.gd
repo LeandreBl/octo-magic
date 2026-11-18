@@ -353,7 +353,7 @@ func cast(slot: String) -> bool:
 	if randf() < stats.crit:
 		s = Upgrades.scale_damage(s, Stats.CRIT_MULT)
 	mana -= cost
-	cooldowns[slot] = s.cooldown * stats.cooldown
+	cooldowns[slot] = s.cooldown * stats.cooldown / stats.cast_rate
 	_animate_cast(s)
 	SpellBody.cast(s.emit, gem(), aim, self, s, get_parent())
 	_cast_fx.rpc(slot, gem(), aim, ratio)

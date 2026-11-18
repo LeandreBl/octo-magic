@@ -11,6 +11,7 @@ const BASE := {
 	"mana_regen": 25.0,  # mana per second
 	"mana_cost": 1.0,  # multiplier on Spell.mana_cost
 	"cooldown": 1.0,  # multiplier on spell cooldowns
+	"cast_rate": 1.0,  # casts per cooldown: spell cooldowns are divided by it
 	"speed": 220.0,  # move speed, px/s
 	"pickup": 90.0,  # drops closer than this fly to the mage, px
 	"armor": 0.0,  # fraction of the damage taken that is removed (< 0: more is taken)
@@ -25,7 +26,7 @@ const BASE := {
 }
 const BOUNDS := {
 	"hp": [1.0, 1000.0], "hp_regen": [0.0, 50.0], "mana": [10.0, 1000.0],
-	"mana_regen": [0.0, 200.0], "mana_cost": [0.0, 3.0], "cooldown": [0.4, 3.0],
+	"mana_regen": [0.0, 200.0], "mana_cost": [0.0, 3.0], "cooldown": [0.4, 3.0], "cast_rate": [0.2, 5.0],
 	"speed": [80.0, 660.0], "pickup": [30.0, 600.0], "armor": [-1.0, 0.75],
 	"crit": [0.0, 1.0], "damage": [0.1, 20.0], "gold": [0.0, 6.0], "xp": [0.0, 6.0],
 	"poison": [0.0, 1.0], "orbs": [0.0, 4.0], "luck": [0.0, 4.0],

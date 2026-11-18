@@ -52,6 +52,7 @@ UPGRADES = {
     "pierce": "a silver spear tip piercing through a wooden shield",
     "toughness": "a red heart wrapped in a sturdy iron band",
     "reservoir": "a large round blue mana flask filled to the brim, glowing",
+    "haste": "a glowing wizard staff tip shooting rapid bursts of blue sparks with speed lines",
     "flow": "a swirling stream of glowing blue mana droplets in a spiral",
     "fleetness": "a winged boot with a speed trail",
     "fortune": "a four-leaf clover over a shiny gold coin",

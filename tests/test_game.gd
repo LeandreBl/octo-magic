@@ -113,6 +113,8 @@ func _test_upgrades() -> void:
 	check(Upgrades.offers({}, rng, "spell", 3, SKILLS).size() == 2, "a kind offers its own skills")
 	check(Upgrades.offers({"tough": 2}, rng, "hero", 4, SKILLS).any(func(o): return o == {"id": "tough", "level": 3}), "the next level offered")
 	check(Upgrades.offers({"tough": 4, "quick": 1, "vigor": 4, "magnet": 5}, rng, "hero", 3, SKILLS).is_empty(), "maxed skills not offered")
+	var haste: Dictionary = Upgrades.LIST.haste
+	check(haste.max == 9 and is_equal_approx(Stats.total([Upgrades.bonus(haste, 3)]).cast_rate, 1.3), "Haste: +10 % cast rate per level, 9 levels")
 
 
 func _test_run() -> void:
