@@ -49,7 +49,7 @@ look, achievements, scores, spells; saved in `user://profile.json`) and
 `Run` (`game/run.gd`: XP, level-ups, upgrades, waves). Base spells:
 `game/spells.json`; level-up upgrades: `game/upgrades.gd`.
 
-Screens (menus, HUD, level-up, shop, options, theme) are in `ui/`, entry
+Screens (menus, HUD, level-up, shop, spell forge, options, theme) are in `ui/`, entry
 `ui/ui.gd`; options are saved in `user://settings.cfg`.
 
 Design: `docs/design.md`. Spell format: `docs/spells.md`.

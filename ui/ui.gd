@@ -1,6 +1,7 @@
 extends CanvasLayer
 ## Every screen of the game, above the world: title menu, HUD, level-up choice,
-## pause, options, end of run, shop (between runs), achievements, leaderboard, multiplayer.
+## pause, options, end of run, shop and spell forge (between runs), achievements,
+## leaderboard, multiplayer.
 ## Solo, the world is paused whenever a screen other than the HUD is shown;
 ## in coop it only stops between runs.
 ## UI is drawn at screen resolution (not pixel-art scaled), scaled by the
@@ -81,6 +82,10 @@ func _ready() -> void:
 	shop.main = main
 	shop.closed.connect(back)
 	screens.shop = add_screen(shop)
+	var forge := preload("res://ui/forge.gd").new()
+	forge.main = main
+	forge.closed.connect(back)
+	screens.forge = add_screen(forge)
 	screens.achievements = add_screen(_list_screen("Achievements", _achievements_text))
 	screens.leaderboard = add_screen(_list_screen("Leaderboard", _scores_text))
 	screens.levelup = add_screen(_levelup_screen())
@@ -151,7 +156,7 @@ func show_screen(name: String) -> void:
 	for k in screens:
 		screens[k].visible = k == name
 	sticks.visible = name == ""
-	_dim.visible = name not in ["", "title", "shop", "end"]
+	_dim.visible = name not in ["", "title", "shop", "forge", "end"]
 	_dim.color.a = 0.82 if Run.active else 1.0  # out of a run, only the idle mage would show: hide it
 	get_tree().paused = not Run.active or (name != "" and main.solo())
 	if name == "title":
@@ -301,13 +306,12 @@ func _margin(left: int, top: int, right: int, bottom: int) -> MarginContainer:
 
 var _title_gold: Label
 var _title_scrolls: Label
-var _title_scrolls_hint: Label
 var _title_spell: Label
 var _title_spell_icon: TextureRect
 
 
-## Title menu: name and menu on the left, the mage on the right, the purse and
-## account top right, blank scrolls bottom left.
+## Title menu: name, Play, the spell forge and the menu on the left, the mage
+## on the right, the purse and account top right.
 func _title() -> Control:
 	var bg := ColorRect.new()
 	bg.color = UITheme.INK
@@ -382,6 +386,13 @@ func _title() -> Control:
 	play.add_theme_constant_override("h_separation", 0)
 	left.add_child(play)
 	bg.set_meta("focus", play)
+	var forge := _forge_button()
+	_title_scrolls = UITheme.label("", "", 18, UITheme.GOLD)  # the blank scrolls, right in the button
+	_title_scrolls.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
+	_title_scrolls.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_title_scrolls.offset_right = -20
+	forge.add_child(_title_scrolls)
+	left.add_child(forge)
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", 12)
@@ -397,21 +408,6 @@ func _title() -> Control:
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		grid.add_child(b)
 	left.add_child(_spacer())
-
-	var scrolls := PanelContainer.new()
-	scrolls.custom_minimum_size.x = 400
-	scrolls.add_theme_stylebox_override("panel", UITheme.frame({"rings": [[UITheme.OUTLINE, 4], [UITheme.RIM, 2]],
-		"bg": UITheme.PANEL, "rivets": UITheme.GOLD, "drop": 6}, 14))
-	var row := _hbox(14)
-	scrolls.add_child(row)
-	row.add_child(UITheme.icon_rect(UITheme.icon("scroll"), 48))
-	var texts := _vbox(2)
-	_title_scrolls = UITheme.label("", "", 18, UITheme.GOLD)
-	_title_scrolls_hint = UITheme.label("", "Caption")
-	texts.add_child(_title_scrolls)
-	texts.add_child(_title_scrolls_hint)
-	row.add_child(texts)
-	left.add_child(scrolls)
 
 	# Top right: the purse and the account.
 	var corner := _hbox(12)
@@ -434,6 +430,24 @@ func _title() -> Control:
 	return bg
 
 
+## The way to the spell forge, the heart of the game: a big parchment-red button.
+func _forge_button() -> Button:
+	var b := _button("Spell forge", open.bind("forge"))
+	b.custom_minimum_size.y = 64
+	b.add_theme_font_override("font", UITheme.PARCHMENT)
+	b.add_theme_font_size_override("font_size", 30)
+	b.icon = UITheme.icon("scroll")
+	b.expand_icon = false
+	var seal := {"rings": [[UITheme.OUTLINE, 4], [UITheme.GOLD_DIM, 2]], "bg": Color("#7a2f17"), "top": Color("#94401f"),
+		"bottom": Color("#55200f"), "drop": 5}
+	b.add_theme_stylebox_override("normal", UITheme.frame(seal, 10))
+	b.add_theme_stylebox_override("hover", UITheme.frame(seal.merged({"bg": Color("#8e3a1d")}, true), 10))
+	b.add_theme_stylebox_override("pressed", UITheme.frame(seal.merged({"drop": 0, "top": Color("#55200f")}, true), 10, 5))
+	for c in ["font_color", "font_focus_color"]:
+		b.add_theme_color_override(c, UITheme.PARCH_LIGHT)
+	return b
+
+
 func _refresh_title() -> void:
 	if not _title_gold:
 		return
@@ -441,12 +455,7 @@ func _refresh_title() -> void:
 	var spell: Dictionary = Profile.equipped_spells().primary
 	_title_spell.text = Spell.label(spell)
 	_title_spell_icon.texture = preload("res://ui/hud.gd")._icon(spell)
-	if Profile.blank_scrolls:
-		_title_scrolls.text = tr("%d blank scroll(s)") % Profile.blank_scrolls
-		_title_scrolls_hint.text = tr("To write after your next run")
-	else:
-		_title_scrolls.text = tr("No blank scroll")
-		_title_scrolls_hint.text = tr("No blank scroll: bosses drop them.")
+	_title_scrolls.text = tr("%d blank scroll(s)") % Profile.blank_scrolls if Profile.blank_scrolls else tr("No blank scroll")
 
 
 # --- lists (achievements, leaderboard) ---------------------------------------
@@ -653,7 +662,7 @@ var _end_news: VBoxContainer
 var _end_again: Button
 
 
-## End of run: what the run was worth on the left, the scroll panel on the right.
+## End of run: what the run was worth, then the way to the forge for the scrolls.
 func _end_screen() -> Control:
 	var bg := ColorRect.new()
 	bg.color = UITheme.INK
@@ -711,15 +720,10 @@ func _end_screen() -> Control:
 	_end_again.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_end_again.custom_minimum_size.x = 240
 	buttons.add_child(_end_again)
+	buttons.add_child(_forge_button())
 	buttons.add_child(_button("Main menu", _to_title))
 	left.add_child(buttons)
 	bg.set_meta("focus", _end_again)
-
-	var scroll := preload("res://ui/scroll_panel.gd").new()
-	scroll.main = main
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	cols.add_child(scroll)
 	return bg
 
 

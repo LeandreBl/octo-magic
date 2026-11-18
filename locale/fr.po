@@ -160,14 +160,8 @@ msgstr "Parchemin"
 msgid "one word per scroll, in a dead language, e.g. ignis, πῦρ, umbra"
 msgstr "un mot par parchemin, en langue morte, ex : ignis, πῦρ, umbra"
 
-msgid "Write the scrolls"
-msgstr "Écrire les parchemins"
-
 msgid "Main spell: %s\n%s"
 msgstr "Sort principal : %s\n%s"
-
-msgid "A scroll is being written."
-msgstr "Un parchemin est en cours d'écriture."
 
 msgid "No blank scroll: bosses drop them."
 msgstr "Aucun parchemin vierge : les boss en laissent tomber."
@@ -603,9 +597,6 @@ msgstr "Options"
 msgid "%d blank scroll(s)"
 msgstr "%d parchemin(s) vierge(s)"
 
-msgid "To write after your next run"
-msgstr "À écrire après ta prochaine run"
-
 msgid "No blank scroll"
 msgstr "Aucun parchemin vierge"
 
@@ -686,9 +677,6 @@ msgstr "Parchemins trouvés : %d"
 
 msgid "To write at the end of the run"
 msgstr "À écrire en fin de run"
-
-msgid "Scrolls"
-msgstr "Parchemins"
 
 msgid "Letters, ' and - only. A meaningless word gives its scroll back."
 msgstr "Lettres, ' et - seulement. Un mot vide de sens rend son parchemin."
@@ -994,3 +982,15 @@ msgstr "Possédé · placer"
 
 msgid "Owned · no free slot"
 msgstr "Possédé · aucun emplacement libre"
+
+msgid "Spell forge"
+msgstr "Forge des sorts"
+
+msgid "Write the words of the spell"
+msgstr "Écris les mots du sort"
+
+msgid "Forge the spell"
+msgstr "Forger le sort"
+
+msgid "The forge is engraving the spell… %d%%"
+msgstr "La forge grave le sort… %d %%"

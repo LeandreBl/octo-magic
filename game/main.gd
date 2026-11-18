@@ -25,6 +25,7 @@ const ON_CHANGE := SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE
 signal run_started  # on every peer
 signal run_ended  # last_run holds the result
 signal net_error(message: String)  # host lost or room closed: back to solo
+signal forged(ok: bool)  # a forge job ended: the spell came back, or the scrolls did
 
 var spawner: MultiplayerSpawner
 var net: Node  # game/net.gd
@@ -35,8 +36,8 @@ var map_name := "crypt"  # this run's map (its music), for players dropping in
 var forge_http: HTTPRequest
 var forge_job := ""  # scrolls being written on the forge
 var forge_words := 0  # scrolls used by that job
-var forge_note := ""  # forge news, shown in the HUD and the scroll panel
-var forge_status := ""  # result of the last write attempt, for the scroll panel
+var forge_note := ""  # forge news, shown in the HUD and the forge (ui/forge.gd)
+var forge_status := ""  # result of the last write attempt, for the forge
 var last_run := {}  # Run.finish() + "reached" achievements + "unlocked" spells
 
 
@@ -414,6 +415,7 @@ func _on_forge_reply(result: int, code: int, headers: PackedStringArray, data: P
 			forge_note = tr("Writing the scrolls failed (%s). Your scrolls are given back.") % msg
 			forge_status = forge_note
 			Profile.save()
+			forged.emit(false)
 		return
 	if reply.has("job"):
 		forge_job = reply.job
@@ -440,6 +442,7 @@ func _on_bundle(data: PackedByteArray, cancelled: int) -> void:
 		Profile.save()
 		forge_note = tr("The scroll is unreadable. Your scrolls are given back.")
 		forge_status = forge_note
+		forged.emit(false)
 		return
 	Profile.blank_scrolls += cancelled
 	Online.push_spell(Profile.add_forged(s, path), path)
@@ -447,3 +450,4 @@ func _on_bundle(data: PackedByteArray, cancelled: int) -> void:
 	if cancelled > 0:
 		forge_note += " " + tr("%d word(s) cancelled (meaningless, not in a dead language or cheating), scroll(s) given back.") % cancelled
 	forge_status = forge_note
+	forged.emit(true)

@@ -1,13 +1,13 @@
 extends Control
 ## Shop, between runs, in tabs: equipment, permanent bonuses, augments (kept,
-## Profile.SLOTS of them taken into a run), the mage's look and the scroll panel (the spell is the character's, chosen at its
-## creation); the mage and its total stats on the right. Reads and edits the
+## Profile.SLOTS of them taken into a run), the mage's look (the spell is the character's, chosen at its
+## creation, rewritten at the forge: ui/forge.gd); the mage and its total stats on the right. Reads and edits the
 ## Profile autoload.
 
 signal closed
 
 const UITheme := preload("res://ui/theme.gd")
-const TABS := ["Equipment", "Bonuses", "Augments", "Look", "Scrolls"]
+const TABS := ["Equipment", "Bonuses", "Augments", "Look"]
 
 var main: Node
 var _gold: Label
@@ -15,7 +15,6 @@ var _blank: Label
 var _tab := "Equipment"
 var _scroll: ScrollContainer
 var _content: Container
-var _scroll_panel: Control
 var _worn: HBoxContainer
 var _stats: VBoxContainer
 
@@ -81,9 +80,6 @@ func _ready() -> void:
 	_content = _vbox(16)
 	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inner.add_child(_content)
-	_scroll_panel = preload("res://ui/scroll_panel.gd").new()
-	_scroll_panel.main = main
-	inner.add_child(_scroll_panel)
 
 	var mage := PanelContainer.new()
 	mage.custom_minimum_size.x = 280
@@ -149,7 +145,6 @@ func _rebuild() -> void:
 		c.queue_free()
 	_gold.text = str(Profile.gold)
 	_blank.text = str(Profile.blank_scrolls)
-	_scroll_panel.visible = _tab == "Scrolls"
 	match _tab:
 		"Equipment":
 			var grid := _grid()

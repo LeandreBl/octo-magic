@@ -8,7 +8,7 @@ extends RefCounted
 ## - Label: "Title" (game name), "Header" (screen title, manuscript font),
 ##   "Subheader" (section title), "Caption" (small dim text), "Big" (numbers).
 ## - PanelContainer: "Plate" (HUD), "Tile" (stat box), "Well" (sunken box),
-##   "Parchment" (scroll panel), "Badge" (small light tag).
+##   "Parchment" (the forge's parchment), "Badge" (small light tag).
 ## - Panel: "Slot" (spell slot).
 ## - Button: "Primary" (gold), "Danger" (red text), "Card" (level-up card,
 ##   shop item), "SideTab" (toggle, gold when on), "Tab" (toggle, underlined).
