@@ -302,6 +302,8 @@ func _margin(left: int, top: int, right: int, bottom: int) -> MarginContainer:
 var _title_gold: Label
 var _title_scrolls: Label
 var _title_scrolls_hint: Label
+var _title_spell: Label
+var _title_spell_icon: TextureRect
 
 
 ## Title menu: name and menu on the left, the mage on the right, the purse and
@@ -338,16 +340,25 @@ func _title() -> Control:
 		p.size = Vector2(ring[1], ring[1])
 		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		stage.add_child(p)
-	var pedestal := Panel.new()
-	pedestal.add_theme_stylebox_override("panel", UITheme.flat(Color("#0a1322"), UITheme.OUTLINE, 4, 0, 0))
-	pedestal.position = Vector2(48, 410)
-	pedestal.size = Vector2(384, 48)
-	pedestal.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	stage.add_child(pedestal)
 	var mage := UITheme.octo(288)
 	mage.position = Vector2(96, 130)
 	mage.size = Vector2(288, 288)
 	stage.add_child(mage)
+	# Under the mage: the spell it starts the next run with.
+	var spell_box := CenterContainer.new()
+	spell_box.position = Vector2(0, 430)
+	spell_box.size = Vector2(480, 64)
+	spell_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stage.add_child(spell_box)
+	var plate := PanelContainer.new()
+	plate.theme_type_variation = "Plate"
+	spell_box.add_child(plate)
+	var s_row := _hbox(10)
+	plate.add_child(s_row)
+	_title_spell_icon = UITheme.icon_rect(null, 40)
+	s_row.add_child(_title_spell_icon)
+	_title_spell = UITheme.label("", "", 22, UITheme.GOLD)
+	s_row.add_child(_title_spell)
 
 	var m := _margin(72, 56, 32, 28)
 	m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -427,6 +438,9 @@ func _refresh_title() -> void:
 	if not _title_gold:
 		return
 	_title_gold.text = str(Profile.gold)
+	var spell: Dictionary = Profile.equipped_spells().primary
+	_title_spell.text = Spell.label(spell)
+	_title_spell_icon.texture = preload("res://ui/hud.gd")._icon(spell)
 	if Profile.blank_scrolls:
 		_title_scrolls.text = tr("%d blank scroll(s)") % Profile.blank_scrolls
 		_title_scrolls_hint.text = tr("To write after your next run")
