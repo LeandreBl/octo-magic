@@ -204,7 +204,7 @@ static func power(s: Dictionary) -> float:
 
 ## A channeled spell (beam, cone) pays CHANNEL_TAX times more per tick: held
 ## down, it must drain faster than the base mana regen, not loop forever.
-const CHANNEL_TAX := 2.5
+const CHANNEL_TAX := 2.0
 
 
 static func mana_cost(s: Dictionary) -> int:
@@ -229,7 +229,7 @@ static func _body_power(b: Dictionary) -> float:
 	match b.shape:
 		"zone": hits = 0.0  # zones only act through on_tick / on_expire
 		"beam": hits = 1.0
-		"cone": hits = 3.0  # ponytail: guess of enemies in a cone, tune in a balance pass
+		"cone": hits = 2.0  # ponytail: guess of enemies in a cone, tune in a balance pass
 	var ticks: float = b.lifetime / b.tick_interval
 	return hits * _effects_power(b.on_hit) + _effects_power(b.on_expire) \
 		+ ticks * _effects_power(b.on_tick)
