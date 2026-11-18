@@ -158,7 +158,8 @@ func finish() -> Dictionary:
 ## "from": first wave it shows up in, with "weight" (0: only summoned, or a
 ## boss). Look: "color" (its zones), sprites in assets/monsters/<kind>/.
 ## "ai" moves it (game/enemy.gd): chase, weave (zigzags in), kite (holds
-## "range", strafes), still (never moves: archers, mages).
+## "range", strafes), still (archers, mages: hold still once on screen,
+## see Enemy.VIEW, walk in when the mage is off it).
 ## "heavy": share of knockback taken.
 ## "spells": its own casts, each every "every" seconds (see Enemy.cast);
 ## "dmg" scales its "damage". "shot": the effect its shots fly as
@@ -172,7 +173,7 @@ const ENEMIES := {
 		"from": 1, "weight": 6.0, "ai": "chase", "color": "#e0dccb"},
 	"imp": {"hp": 9.0, "speed": 150.0, "radius": 14.0, "damage": 6.0, "xp": 1, "gold": 1,
 		"from": 2, "weight": 3.0, "ai": "weave", "color": "#e53935"},
-	"archer": {"hp": 12.0, "speed": 0.0, "radius": 18.0, "damage": 7.0, "xp": 2, "gold": 2,
+	"archer": {"hp": 12.0, "speed": 60.0, "radius": 18.0, "damage": 7.0, "xp": 2, "gold": 2,
 		"from": 2, "weight": 1.5, "ai": "still", "color": "#8d6e63", "shot": "arrow",
 		"spells": [{"type": "bolt", "every": 2.4}]},
 	"zombie": {"hp": 55.0, "speed": 45.0, "radius": 22.0, "damage": 18.0, "xp": 2, "gold": 2,
@@ -180,7 +181,7 @@ const ENEMIES := {
 	"skeletal_warrior": {"hp": 16.0, "speed": 95.0, "radius": 19.0, "damage": 13.0, "xp": 2, "gold": 1,
 		"from": 3, "weight": 2.0, "ai": "chase", "color": "#d7ccc8",
 		"variant": ["helmet", 0.5, {"hp": 1.4}]},
-	"marksman": {"hp": 26.0, "speed": 0.0, "radius": 18.0, "damage": 9.0, "xp": 2, "gold": 2,
+	"marksman": {"hp": 26.0, "speed": 60.0, "radius": 18.0, "damage": 9.0, "xp": 2, "gold": 2,
 		"from": 4, "weight": 1.2, "ai": "still", "color": "#6d4c41", "shot": "arrow",
 		"spells": [{"type": "bolt", "every": 2.0}]},
 	"skeletal_knight": {"hp": 45.0, "speed": 95.0, "radius": 21.0, "damage": 13.0, "xp": 3, "gold": 2,
@@ -188,7 +189,7 @@ const ENEMIES := {
 		"variant": ["gauntlets", 0.5, {"damage": 1.2}]},
 	"wraith": {"hp": 14.0, "speed": 140.0, "radius": 18.0, "damage": 7.0, "xp": 2, "gold": 1,
 		"from": 5, "weight": 1.2, "ai": "chase", "color": "#f5f5f5", "effect": ["freeze", 1.0, 1.5]},
-	"poison_mage": {"hp": 14.0, "speed": 0.0, "radius": 18.0, "damage": 5.0, "xp": 3, "gold": 3,
+	"poison_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 5.0, "xp": 3, "gold": 3,
 		"from": 5, "weight": 0.8, "ai": "still", "color": "#7cb342", "shot": "poison_orb",
 		"effect": ["poison", 0.6, 3.0], "variant": ["shield", 0.35, {"hp": 2.0}],
 		"spells": [{"type": "bolt", "every": 2.4, "dmg": 1.0}]},
@@ -197,20 +198,20 @@ const ENEMIES := {
 		"effect": ["poison", 0.3, 3.0], "gunk": [50.0, 5.0]},
 	"burning_skeleton": {"hp": 16.0, "speed": 115.0, "radius": 19.0, "damage": 13.0, "xp": 2, "gold": 2,
 		"from": 6, "weight": 1.2, "ai": "chase", "color": "#ff7043"},
-	"frost_mage": {"hp": 14.0, "speed": 0.0, "radius": 18.0, "damage": 5.0, "xp": 3, "gold": 3,
+	"frost_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 5.0, "xp": 3, "gold": 3,
 		"from": 6, "weight": 0.8, "ai": "still", "color": "#4fc3f7", "shot": "frost_orb",
 		"effect": ["freeze", 1.0, 2.0], "variant": ["shield", 0.35, {"hp": 2.0}],
 		"spells": [{"type": "bolt", "every": 2.4, "dmg": 1.0}]},
-	"putrid_archer": {"hp": 26.0, "speed": 0.0, "radius": 18.0, "damage": 8.0, "xp": 3, "gold": 2,
+	"putrid_archer": {"hp": 26.0, "speed": 60.0, "radius": 18.0, "damage": 8.0, "xp": 3, "gold": 2,
 		"from": 7, "weight": 1.0, "ai": "still", "color": "#689f38", "shot": "poison_arrow",
 		"effect": ["poison", 0.4, 3.0], "spells": [{"type": "bolt", "every": 2.0}]},
-	"fire_mage": {"hp": 14.0, "speed": 0.0, "radius": 18.0, "damage": 20.0, "xp": 3, "gold": 3,
+	"fire_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 20.0, "xp": 3, "gold": 3,
 		"from": 7, "weight": 0.8, "ai": "still", "color": "#ff5722", "shot": "fireball",
 		"variant": ["shield", 0.35, {"hp": 2.0}], "spells": [{"type": "bolt", "every": 2.6, "dmg": 1.0}]},
-	"burning_archer": {"hp": 12.0, "speed": 0.0, "radius": 18.0, "damage": 16.0, "xp": 3, "gold": 2,
+	"burning_archer": {"hp": 12.0, "speed": 60.0, "radius": 18.0, "damage": 16.0, "xp": 3, "gold": 2,
 		"from": 8, "weight": 0.8, "ai": "still", "color": "#ff9800", "shot": "fire_arrow",
 		"spells": [{"type": "bolt", "every": 2.4, "dmg": 1.0}]},
-	"lightning_mage": {"hp": 14.0, "speed": 0.0, "radius": 18.0, "damage": 11.0, "xp": 3, "gold": 3,
+	"lightning_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 11.0, "xp": 3, "gold": 3,
 		"from": 8, "weight": 0.8, "ai": "still", "color": "#e3f2fd", "shot": "spark",
 		"effect": ["stun", 1.0, 0.6], "variant": ["shield", 0.35, {"hp": 2.0}],
 		"spells": [{"type": "bolt", "every": 2.8, "dmg": 1.0}]},

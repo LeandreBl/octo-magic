@@ -468,6 +468,10 @@ func _test_play() -> void:
 		e.windup = 0.0
 		e.dash = Vector2.ZERO
 	check(cast.size() == SPELL_TYPES.size(), "every enemy spell casts: %s" % str(cast.keys()))
+	var archer: Enemy = get_nodes_in_group("enemies").filter(func(e): return e.kind == "archer")[0]
+	var far := Vector2(Enemy.VIEW.x + 100.0, 0.0)
+	check(not archer.cast(archer.data.spells[0], far), "no enemy spell from off screen")
+	check(archer._steer(far).x > 0.0 and archer._steer(Vector2(100, 0)) == Vector2.ZERO, "a still one walks in until on screen")
 	check("imp" in summons and "skeleton" in summons, "summons asked from main")
 	var zones := root.find_children("*", "Node2D", true, false).filter(func(n): return n is Enemy.Zone)
 	check(zones.size() > 5, "spells leave zones")

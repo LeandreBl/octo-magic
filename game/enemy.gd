@@ -14,6 +14,9 @@ signal killed(enemy: Node2D)
 signal summoned(kind: String, pos: Vector2)  # summon spells, spawned by main.gd
 
 const CROWD := 120  # no summons past this many enemies
+## Half the world seen on a 16:9 screen (1280x720 / Player.ZOOM): its spells
+## reach the mage only from within it (see in_view), whatever the real window.
+const VIEW := Vector2(480.0, 270.0)
 const FPS := 12.0
 const Self := preload("res://game/enemy.gd")  # its static art for the inner classes
 ## The move a spell plays (assets/monsters/<kind>/<anim>.png, if any).
@@ -194,14 +197,17 @@ func _afflict(p: Node2D) -> void:
 ## mage around the walls (Arena.way), backs off and strafes straight.
 func _steer(to: Vector2) -> Vector2:
 	var d := to.length()
-	match data.get("ai", "chase"):
+	var ai: String = data.get("ai", "chase")
+	if ai != "chase" and not in_view(to):  # too far to cast: walks in
+		return Arena.way(position, position + to)
+	match ai:
 		"still":
 			return Vector2.ZERO
 		"weave":
 			var w := Arena.way(position, position + to)
 			return w.rotated(sin(age * 5.0) * 0.8) if w.dot(to.normalized()) > 0.9 else w  # weaves only in the open
 		"kite":  # hold the range, strafe around the mage
-			var r: float = data.get("range", 260.0)
+			var r: float = minf(data.get("range", 260.0), VIEW.y - radius - 30.0)  # strafes on screen
 			return Arena.way(position, position + to) if d > r + 30.0 else -to.normalized() if d < r - 30.0 else to.orthogonal().normalized() * side
 	return Arena.way(position, position + to)
 
@@ -209,6 +215,8 @@ func _steer(to: Vector2) -> Vector2:
 ## Casts spell `sp` at its mage (`to`: from it to the mage). False when it
 ## does not fit now (out of reach, too many enemies...): tried again next frame.
 func cast(sp: Dictionary, to: Vector2) -> bool:
+	if not in_view(to):
+		return false
 	var dmg: float = touch_damage * sp.get("dmg", 0.8)
 	var d := to.length()
 	match sp.type:
@@ -243,6 +251,12 @@ func cast(sp: Dictionary, to: Vector2) -> bool:
 				_zone.rpc(at, 24.0, 0.0, 0.0, 0.0, Color(data.color), 0.0, "summon")
 				summoned.emit(sp.kind, at)
 	return true
+
+
+## Whether its mage (`to`: from it to the mage) would see all of it on a
+## 16:9 screen centred on the mage (VIEW).
+func in_view(to: Vector2) -> bool:
+	return absf(to.x) <= VIEW.x - radius and absf(to.y) <= VIEW.y - radius
 
 
 func _shot(dir: Vector2, v: float, dmg: float) -> void:
