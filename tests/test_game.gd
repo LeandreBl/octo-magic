@@ -304,6 +304,11 @@ func _test_profile() -> void:
 	check(q.scores.size() == 2 and q.forged.size() == 1 and q.gold == p.gold, "profile replaced by a copy")
 	q.apply({})
 	check(q.gold == 0 and q.scores.is_empty() and q.spells.primary == "fireball", "empty copy resets")
+	# A save from before the test scrolls gets them once, not on every load.
+	q.apply({"blank_scrolls": 2})
+	check(q.blank_scrolls == 2 + ProfileState.TEST_SCROLLS and q.test_scrolls, "test scrolls given to an old save")
+	q.apply(q.to_dict())
+	check(q.blank_scrolls == 2 + ProfileState.TEST_SCROLLS, "test scrolls given once")
 	# A corrupt save is ignored, not fatal.
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	f.store_string('{"gold": "lots", "equipped": {"robe": "robe_archmage"}, "bonuses": {"power": 99}, "spells": {"primary": "nope"}}')

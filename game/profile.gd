@@ -11,7 +11,7 @@ const PATH := "user://profile.json"
 const MAX_SCORES := 10
 ## What is saved, locally and on the server.
 const FIELDS := ["gold", "blank_scrolls", "owned", "equipped", "bonuses", "look", "stats",
-	"achievements", "scores", "spells", "forged", "augments", "slotted"]
+	"achievements", "scores", "spells", "forged", "augments", "slotted", "test_scrolls"]
 
 ## Items and permanent bonuses carry Stats bonuses (see game/stats.gd).
 ## Names and descriptions are English, translated where shown (locale/fr.po).
@@ -94,6 +94,11 @@ var spells := {}  # slot -> spell id equipped
 var forged := []  # spells from the forge: {id, slot, file, spell}
 var augments := {}  # AUGMENTS id -> true, bought
 var slotted := []  # AUGMENTS ids in the slots, SLOTS at most
+## The owner's one-off gift of TEST_SCROLLS blank scrolls, to try spells at
+## the forge: given once to every save made before it (apply), kept here so
+## it is not given again. A fresh profile counts as served.
+const TEST_SCROLLS := 50
+var test_scrolls := true
 var base_spells := []  # game/spells.json: {id, slot, unlock, spell}
 
 
@@ -125,6 +130,8 @@ func apply(d: Dictionary) -> void:
 	fresh.free()
 	gold = maxi(0, int(d.get("gold", 0)))
 	blank_scrolls = maxi(0, int(d.get("blank_scrolls", 0)))
+	if not d.get("test_scrolls", false):
+		blank_scrolls += TEST_SCROLLS
 	for id in _dict(d.get("owned")):
 		if ITEMS.has(id):
 			owned[id] = true
