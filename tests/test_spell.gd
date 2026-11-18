@@ -64,13 +64,15 @@ func _initialize() -> void:
 	check(SpellArt.sheet(b, b.icon_file) != null, "bundle icon loaded")
 	check(SpellArt.load_bundle("user://missing.spell").is_empty(), "missing bundle -> {}")
 
-	# Base spells: every bolt has its PixelLab sheets, matching the strip format.
+	# Base spells: every bolt has its PixelLab sheets, matching the strip format (the burst is optional).
 	for d in JSON.parse_string(FileAccess.get_file_as_string("res://game/spells.json")):
 		var base := Spell.sanitize(d)
 		if base.emit.body.shape != "bolt":
 			continue
 		for key in ["sheet", "burst_sheet"]:
 			var meta: Dictionary = base.emit.body[key]
+			if key == "burst_sheet" and meta.is_empty():
+				continue
 			var strip_tex := SpellArt.sheet(base, meta.get("file", ""))
 			check(strip_tex and strip_tex.get_size() == Vector2(meta.size * meta.frames, meta.size), "%s %s" % [d.id, key])
 
