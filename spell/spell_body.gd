@@ -345,7 +345,7 @@ func _draw_cone() -> void:
 	if anim:
 		var s: Dictionary = anim[1]
 		var i := int(Arena.clock * s.fps) % int(s.frames)  # the clock: ticks renew age, not the animation
-		var h := 2.0 * body.speed * tan(minf(half, 1.4))
+		var h: float = 2.0 * body.speed * tan(minf(half, 1.4))
 		draw_set_transform(Vector2.ZERO, dir.angle())
 		draw_texture_rect_region(anim[0], Rect2(0, -h / 2.0, body.speed, h), Rect2(i * s.size, 0, s.size, s.size))
 		return
