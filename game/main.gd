@@ -42,6 +42,9 @@ var last_run := {}  # Run.finish() + "reached" achievements + "unlocked" spells
 
 func _ready() -> void:
 	randomize()
+	if OS.has_feature("web"):
+		# The rune gate (web/godot-shell.html) opens its portal once this first frame is up.
+		(func(): JavaScriptBridge.eval("window.octoGameReady && window.octoGameReady()")).call_deferred()
 	spawner = MultiplayerSpawner.new()
 	spawner.spawn_function = _spawn
 	add_child(spawner)

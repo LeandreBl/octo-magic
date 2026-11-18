@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<!-- The web export's page (export_presets.cfg html/custom_html_shell), loaded in
+     /game's iframe: Godot's full-size shell with the rune gate (/runegate.js)
+     as its loading screen. Godot fills the $GODOT_* placeholders at export. -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+<title>$GODOT_PROJECT_NAME</title>
+<style>
+html, body, #canvas { margin: 0; padding: 0; border: 0; }
+body { color: #fff1e0; background-color: #120d24; overflow: hidden; touch-action: none; }
+#canvas { display: block; }
+#canvas:focus { outline: none; }
+</style>
+$GODOT_HEAD_INCLUDE
+</head>
+<body>
+<canvas id="canvas">Ton navigateur ne gère pas les canvas HTML5. / Your browser does not support HTML5 canvas.</canvas>
+<noscript>Active JavaScript pour jouer. / Enable JavaScript to play.</noscript>
+<script src="$GODOT_URL"></script>
+<script type="module">
+import { runeGate } from "/runegate.js";
+
+const GODOT_CONFIG = $GODOT_CONFIG;
+const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
+const gate = runeGate(document.body);
+
+// The game says when its first screen is up (game/main.gd); without it, a short wait.
+const ready = new Promise((resolve) => {
+  window.octoGameReady = resolve;
+  setTimeout(resolve, 4000);
+});
+
+const engine = new Engine(GODOT_CONFIG);
+const missing = Engine.getMissingFeatures({ threads: GODOT_THREADS_ENABLED });
+if (missing.length) {
+  gate.fail(`${missing.join(", ")}`);
+} else {
+  // Without a size (a compressed download), a progress that slows down and waits at 6/7.
+  const t0 = performance.now();
+  let known = false;
+  const guess = setInterval(() => {
+    if (!known) gate.progress(Math.min(0.86, 1 - Math.exp(-(performance.now() - t0) / 5000)));
+  }, 250);
+  engine.startGame({
+    onProgress(current, total) {
+      if (current > 0 && total > 0) {
+        known = true;
+        gate.progress(current / total);
+      }
+    },
+  }).then(async () => {
+    clearInterval(guess);
+    gate.progress(1);
+    await ready;
+    await gate.finish();
+  }, (err) => {
+    clearInterval(guess);
+    gate.fail(err?.message ?? err);
+    console.error(err);
+  });
+}
+</script>
+</body>
+</html>
