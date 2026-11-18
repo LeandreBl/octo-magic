@@ -13,7 +13,7 @@ extends Node2D
 
 signal died
 
-const ZOOM := 2.0  # close on the mage: whole art pixels, the arena (Arena.RECT) about 2x2 screens
+const ZOOM := 4.0 / 3.0  # on the mage: an art pixel (Arena.SCALE 1.5) is 2 screen pixels, the arena (Arena.RECT) about 2.4x2.8 screens
 const STICK_RANGE := 80.0
 const SHIELD_HP := 40.0
 const SHIELD_WAIT := 8.0
