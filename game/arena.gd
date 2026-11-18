@@ -235,6 +235,22 @@ static func _boxes(polys: Array) -> Array:
 		return b)
 
 
+## How far `me` moves to get out of the living `others` (nodes with position,
+## radius and hp) it overlaps: half of each overlap, the other one moving the
+## other half on its own turn. Feed it to slide, to stay off the walls.
+## ponytail: O(n) per mover, O(n²) a frame; a spatial grid if the crowds grow past ~200.
+static func apart(me: Node2D, others: Array) -> Vector2:
+	var out := Vector2.ZERO
+	for o in others:
+		if o == me or o.hp <= 0.0:
+			continue
+		var d: Vector2 = me.position - o.position
+		var min_d: float = me.radius + o.radius
+		if d.length_squared() < min_d * min_d:
+			out += (d.normalized() if d else Vector2.from_angle(me.get_instance_id())) * (min_d - d.length()) * 0.5
+	return out
+
+
 ## pos moved by motion, sliding around the solids (a mover of radius r).
 static func slide(pos: Vector2, motion: Vector2, r: float) -> Vector2:
 	var p := pos + motion

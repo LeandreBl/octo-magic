@@ -29,6 +29,14 @@ func _initialize() -> void:
 	var Forge: GDScript = load("res://ui/forge.gd")  # load: it needs the autoloads
 	check(Forge.coverage(0) == 0.0 and Forge.coverage(30) < Forge.coverage(60) and Forge.coverage(3600) < 1.0,
 		"forge runes fill the parchment, never full before the spell is back")
+	var a := Enemy.new()
+	var b := Enemy.new()
+	b.position = Vector2(10, 0)  # radius 12 each: 14 too close
+	check(Arena.apart(a, [a, b]) == Vector2(-7, 0) and Arena.apart(b, [a, b]) == Vector2(7, 0), "overlapping enemies push apart")
+	b.hp = 0.0
+	check(Arena.apart(a, [a, b]) == Vector2.ZERO, "the dead push nothing")
+	a.free()
+	b.free()
 	await _test_play()
 	_test_boss_death()  # in the tree, once it runs
 	print("game tests: %s" % ("OK" if failures == 0 else "%d failure(s)" % failures))

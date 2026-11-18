@@ -171,7 +171,7 @@ func _physics_process(delta: float) -> void:
 		motion = dash * slow
 		if dash_time <= 0.0:
 			dash = Vector2.ZERO
-	position = Arena.slide(position, (motion + knock) * delta, radius)
+	position = Arena.slide(position, (motion + knock) * delta + Arena.apart(self, get_tree().get_nodes_in_group("enemies")), radius)
 	knock = knock.move_toward(Vector2.ZERO, 1500.0 * delta)
 	hit_cooldown -= delta
 	if to.length() < radius + target.radius and hit_cooldown <= 0.0:

@@ -318,7 +318,7 @@ func _steer(delta: float) -> void:
 		move = Vector2.ZERO
 	elif statuses.has("freeze"):
 		move *= 0.5
-	position = Arena.slide(position, move * stats.speed * delta, radius).clamp(Arena.RECT.position, Arena.RECT.end)
+	position = Arena.slide(position, move * stats.speed * delta + Arena.apart(self, get_tree().get_nodes_in_group("players")), radius).clamp(Arena.RECT.position, Arena.RECT.end)
 
 	# Gamepad (any connected one): right stick aims and fires, RT fires
 	# where the mage aims; with the right stick idle it aims where it walks.
