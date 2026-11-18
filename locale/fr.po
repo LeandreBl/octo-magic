@@ -594,8 +594,11 @@ msgstr "PV %d / %d  ·  bouclier %d"
 msgid "Options"
 msgstr "Options"
 
-msgid "%d blank scroll(s)"
-msgstr "%d parchemin(s) vierge(s)"
+msgid "%d blank scroll"
+msgstr "%d parchemin vierge"
+
+msgid "%d blank scrolls"
+msgstr "%d parchemins vierges"
 
 msgid "No blank scroll"
 msgstr "Aucun parchemin vierge"

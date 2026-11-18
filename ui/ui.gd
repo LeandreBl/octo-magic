@@ -330,6 +330,7 @@ func _margin(left: int, top: int, right: int, bottom: int) -> MarginContainer:
 
 var _title_gold: Label
 var _title_scrolls: Label
+var _title_glow: Panel  # a gold aura around the forge button while blank scrolls wait
 var _title_spell: Label
 var _title_spell_icon: TextureRect
 
@@ -416,6 +417,20 @@ func _title() -> Control:
 	_title_scrolls.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_title_scrolls.offset_right = -20
 	forge.add_child(_title_scrolls)
+	_title_glow = Panel.new()
+	var aura := StyleBoxFlat.new()
+	aura.bg_color = UITheme.GOLD
+	aura.set_corner_radius_all(12)
+	aura.shadow_color = Color(UITheme.GOLD, 0.6)
+	aura.shadow_size = 16
+	_title_glow.add_theme_stylebox_override("panel", aura)
+	_title_glow.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_title_glow.show_behind_parent = true
+	_title_glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	forge.add_child(_title_glow)
+	var pulse := _title_glow.create_tween().set_loops().set_trans(Tween.TRANS_SINE)
+	pulse.tween_property(_title_glow, "modulate:a", 0.35, 1.2)
+	pulse.tween_property(_title_glow, "modulate:a", 1.0, 1.2)
 	left.add_child(forge)
 	var grid := GridContainer.new()
 	grid.columns = 2
@@ -479,7 +494,9 @@ func _refresh_title() -> void:
 	var spell: Dictionary = Profile.equipped_spells().primary
 	_title_spell.text = Spell.label(spell)
 	_title_spell_icon.texture = preload("res://ui/hud.gd")._icon(spell)
-	_title_scrolls.text = tr("%d blank scroll(s)") % Profile.blank_scrolls if Profile.blank_scrolls else tr("No blank scroll")
+	var n: int = Profile.blank_scrolls
+	_title_scrolls.text = tr("No blank scroll") if not n else (tr("%d blank scroll") if n == 1 else tr("%d blank scrolls")) % n
+	_title_glow.visible = n > 0
 
 
 # --- lists (achievements, leaderboard) ---------------------------------------
