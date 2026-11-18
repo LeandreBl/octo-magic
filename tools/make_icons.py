@@ -63,6 +63,10 @@ UPGRADES = {
 }
 
 
+SHINE = ("a quick bright golden sparkle glint burst, small yellow and white star twinkles popping out from the center,"
+         " shiny gold coin shine. Seen from above, one-shot burst, short, centered, fits within 32x32 pixels.")
+
+
 def jobs() -> dict[str, str]:
     out = {k: f"{STYLE}: {v}" for k, v in SPELLS.items()}
     out |= {f"up_{k}": f"{STYLE}: {v}" for k, v in UPGRADES.items()}
@@ -105,6 +109,12 @@ def main() -> None:
             print("ok", id_)
         except Exception as e:  # keep going: one failure must not lose the rest
             print("FAILED", id_, e)
+    # The glint of a gold heap once it lands (game/pickup.gd SHINE): a one-shot strip.
+    shine = OUT / "drop_gold_shine.png"
+    if not shine.exists() and (not only or "drop_gold_shine" in only):
+        strip, meta = sheet.normalize(*art.vfx(SHINE, "drop_gold_shine"), loop=False)
+        shine.write_bytes(strip)
+        print("ok drop_gold_shine", meta)
 
 
 if __name__ == "__main__":

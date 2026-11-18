@@ -190,7 +190,16 @@ func _test_augments(run: Object, p: Object) -> void:
 	orb.kind = "life"
 	orb.give(me)
 	check(me.hp == me.stats.hp, "life orb heals, capped")
-	orb.free()
+	orb.kind = "gold"
+	var floor := Node2D.new()
+	floor.add_child(orb)
+	orb._process(0.1)
+	check(orb._hop().x > 0.0, "gold pops up when dropped")
+	orb._process(1.0)
+	check(orb._hop() == Vector2.ZERO and floor.get_child_count() == 2, "gold lands and glints once")
+	orb._process(1.0)
+	check(floor.get_child_count() == 2, "a single glint")
+	floor.free()
 	me.free()
 	run.start({}, [])
 	check(run.passive == "" and run.spells.is_empty(), "no augment slotted, none in the run")

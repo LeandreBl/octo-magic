@@ -12,12 +12,41 @@ const TEXTURES := {  # PixelLab, tools/make_icons.py
 }
 const SIZES := {"xp": 16.0, "gold": 24.0, "mana": 20.0, "life": 22.0, "scroll": 24.0}  # px on the floor
 const REFILL := 0.25  # a mana or life orb gives back this share of the max
+const HOPS := [[0.32, 26.0], [0.18, 7.0]]  # gold pops out of the enemy: (duration s, height px) per hop
+const SHINE := {"size": 24, "frames": 7, "fps": 12, "loop": false}  # assets/icons/drop_gold_shine.png
 
 var kind := "xp"
 var value := 1
 var target: Node2D
 var magnet := 0.0
 var speed := 0.0
+var age := 0.0  # drawn only: the synced position stays on the floor
+
+
+func _process(delta: float) -> void:
+	var total: float = HOPS[0][0] + HOPS[1][0]
+	if kind != "gold" or age >= total:
+		return
+	age += delta
+	queue_redraw()
+	if age >= total:  # settled: the heap glints once
+		var fx := SpellBody.Burst.new()
+		fx.tex = preload("res://assets/icons/drop_gold_shine.png")
+		fx.s = SHINE
+		fx.position = position
+		fx.scale = Vector2.ONE * 0.5
+		get_parent().add_child(fx)
+
+
+## Gold's draw offset and squash while it bounces: (lift px, squash 0..1).
+func _hop() -> Vector2:
+	var t := age
+	for h in HOPS:
+		if t < h[0]:
+			var k: float = t / h[0]
+			return Vector2(h[1] * sin(PI * k), 1.0 - absf(sin(PI * k)))
+		t -= h[0]
+	return Vector2.ZERO
 
 
 ## A soft shimmer: brightness drifts around white, each drop on its own phase.
@@ -54,4 +83,7 @@ func give(p: Node2D) -> void:
 
 func _draw() -> void:
 	var sz: float = SIZES[kind]
+	var hop := _hop()
+	if hop.x > 0.0:  # squashed as it touches the floor
+		draw_set_transform(Vector2(0, -hop.x + hop.y * sz * 0.1), 0.0, Vector2(1.0 + hop.y * 0.2, 1.0 - hop.y * 0.2))
 	draw_texture_rect(TEXTURES[kind], Rect2(-sz / 2.0, -sz / 2.0, sz, sz), false)
