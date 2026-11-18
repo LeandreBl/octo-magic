@@ -1083,6 +1083,9 @@ msgstr "Flatus Gelidus repousse les ennemis (+%d de force)"
 msgid "-%d%% Fulmen mana cost"
 msgstr "-%d%% de coût en mana de Fulmen"
 
+msgid "Flatus Gelidus slows its targets by %d%%"
+msgstr "Flatus Gelidus ralentit ses cibles de %d%%"
+
 msgid "Records"
 msgstr "Palmarès"
 

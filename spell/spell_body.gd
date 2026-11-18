@@ -28,6 +28,7 @@ var links: Array = []  # beam: the enemies the arc jumps on to from its target (
 var index := 0  # beam / cone: which body of its emit (count > 1: one arc / cone each)
 var turn := 0.0  # beam / cone: its angle off the caster's aim (spread, radial...)
 
+const CHILL_TIME := 1.0  # s: how long a chilled enemy stays slowed after the cone
 const CHAIN_REACH := 140.0  # px: how far a chained arc jumps from one enemy to the next
 const ABOVE_DECOR := 11  # over the map's trees, roofs and statues (Arena.above, z 10)
 const GROUND := -1  # zones and sub-casts (a hit's effects): under the mages, enemies and obstacles, over the floor
@@ -231,6 +232,7 @@ func _channel() -> void:
 				apply_effects(body.on_hit, global_position, e)
 				if gust > 0.0 and multiplayer.is_server():
 					e.push((e.global_position - global_position).normalized() * gust)
+				_chill(e)
 
 
 ## Within `speed` px and `angle` degrees (full width) around the aim.
@@ -277,6 +279,15 @@ func _chain() -> Array:
 func _stat(key: String) -> float:
 	var st: Variant = caster.get("stats") if is_instance_valid(caster) else null
 	return float(st.get(key, 0.0)) if st is Dictionary else 0.0
+
+
+## The Ventus Algidus skill (Upgrades "chill_wind"): a cone slows what it
+## strikes by its caster's "chill" stat (a speed fraction) for CHILL_TIME.
+## An engine stat, not spell data: no forged spell has it.
+func _chill(e: Node2D) -> void:
+	var c := _stat("chill")
+	if c > 0.0 and multiplayer.is_server():
+		e.add_status("slow", 2.0 * c / (1.0 - c), CHILL_TIME)  # Enemy: speed / (1 + power / 2) = speed * (1 - c)
 
 
 func _check_hits() -> void:

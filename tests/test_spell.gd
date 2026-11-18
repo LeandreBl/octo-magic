@@ -325,6 +325,27 @@ func _check_channel() -> void:
 			n.free()
 	aimed.knock = Vector2.ZERO
 	aimed.set_physics_process(true)
+	# Ventus Algidus III: the cone slows what it strikes by 30 %, none without it.
+	aimed.position = Vector2(-900, -900)
+	var chilled: Node2D = at.call(Vector2(220, 110))
+	chilled.set_physics_process(false)  # held in place: nothing pushes it out of the cone
+	SpellBody.cast(spells.frost_jet.emit, Vector2(100, 100), Vector2.RIGHT, mage, spells.frost_jet, world)
+	for i in 3:
+		await physics_frame
+	check(chilled.hp < 1000.0 and not chilled.statuses.has("slow"), "no Ventus Algidus: the cone does not slow")
+	for n in world.get_children():
+		if n is SpellBody:
+			n.free()
+	mage.stats = Stats.total([Upgrades.bonus(Upgrades.LIST.chill_wind, 3)])
+	SpellBody.cast(spells.frost_jet.emit, Vector2(100, 100), Vector2.RIGHT, mage, spells.frost_jet, world)
+	for i in 3:
+		await physics_frame
+	var slow: Array = chilled.statuses.get("slow", [0.0, 0.0])
+	check(is_equal_approx(1.0 / (1.0 + slow[0] * 0.5), 0.7) and slow[1] > 0.0, "Ventus Algidus III: the cone slows its targets by 30 %")
+	chilled.free()
+	for n in world.get_children():
+		if n is SpellBody:
+			n.free()
 	mage.stats = Stats.total([])
 	mage.aim = Vector2.RIGHT
 	mage.firing = {"primary": true}

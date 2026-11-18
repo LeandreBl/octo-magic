@@ -26,6 +26,7 @@ const LIST := {
 	"chaining": {"name": "Catena", "desc": "Fulmen's arc jumps on to +%d enemy", "step": 1, "max": 5, "kind": "spell", "stat": "chain", "spell": "lightning"},
 	"hurricane": {"name": "Procella", "desc": "Flatus Gelidus pushes enemies back (+%d force)", "step": 60, "max": 5, "kind": "spell", "stat": "gust", "spell": "frost_jet"},
 	"ether_charge": {"name": "Aether", "desc": "-%d%% Fulmen mana cost", "step": -12, "max": 5, "kind": "spell", "stat": "ether%", "pct": true, "spell": "lightning"},
+	"chill_wind": {"name": "Ventus Algidus", "desc": "Flatus Gelidus slows its targets by %d%%", "step": 10, "max": 5, "kind": "spell", "stat": "chill", "pct": true, "spell": "frost_jet"},
 }
 const KINDS := ["hero", "spell"]
 const ROMAN := [[10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]]

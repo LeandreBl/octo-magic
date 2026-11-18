@@ -67,6 +67,7 @@ UPGRADES = {
     "ether_charge": "a glowing blue-white ether crystal crackling with a small lightning charge, a mana drop rune inside",
     "chaining": "a crackling blue-white lightning arc linking three small glowing orbs in a zigzag chain",
     "hurricane": "a swirling pale cyan whirlwind of icy wind gusts and snowflakes, spiraling outward",
+    "chill_wind": "a swirling gust of icy pale-blue wind with tiny snowflakes and frost crystals blowing through it",
     "fireproof": "a round red and gold shield deflecting orange flames, a glowing protective rune in its center",
 }
 

@@ -326,6 +326,7 @@ func _draw() -> void:
 	if statuses.has("freeze"): tint = Color("#9be7ff")
 	elif statuses.has("burn"): tint = Color("#ffb08a")
 	elif statuses.has("poison"): tint = Color("#d1b8ff")
+	elif statuses.has("slow"): tint = Color("#cdeeff")
 	var size := radius * 2.5  # the art fills ~90% of its frame: its body overflows the hit circle a bit
 	var look: String = data.get("look", kind)
 	var anim := _act if _act_time > 0.0 and art(look + "/" + _act) else "walk"
