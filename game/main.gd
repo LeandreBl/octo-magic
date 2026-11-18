@@ -191,6 +191,29 @@ func _level_blast() -> void:
 		var to: Vector2 = e.position - p.position
 		if to.length() < LEVEL_BLAST_RADIUS:
 			e.push((to.normalized() if to else Vector2.RIGHT) * LEVEL_BLAST_FORCE)
+	_level_wave.rpc(p.position)
+
+
+## The level-up blast seen on every peer: the PixelLab shockwave (fx/shockwave.png)
+## spreading out to LEVEL_BLAST_RADIUS. Game time: in solo it crawls with the
+## world under the level-up cards and spreads as time comes back.
+@rpc("authority", "call_local", "reliable")
+func _level_wave(at: Vector2) -> void:
+	var tex := Enemy.art("fx/shockwave")
+	if not tex:
+		return
+	var n := tex.get_width() / tex.get_height()
+	var s := Sprite2D.new()
+	s.texture = tex
+	s.hframes = n
+	s.position = at
+	s.z_index = SpellBody.ABOVE_DECOR
+	s.scale = Vector2.ONE * LEVEL_BLAST_RADIUS / (tex.get_height() * 0.375)  # the last ring spans 3/4 of a frame
+	add_child(s)
+	var tw := s.create_tween()
+	tw.tween_property(s, "frame", n - 1, n / Enemy.FPS)
+	tw.tween_property(s, "modulate:a", 0.0, 0.25)
+	tw.tween_callback(s.queue_free)
 
 
 ## The wave's monsters come out one by one (_process), the first at once.
