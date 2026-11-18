@@ -446,7 +446,7 @@ func _test_profile() -> void:
 	check(p.equip_item("robe_novice") and p.equip_item("robe_warden"), "re-equip owned")
 	check(not p.equip_item("staff_crystal"), "cannot equip unowned")
 	var st := Stats.total(p.bonus_list())
-	check(st.hp == 100.0 + 30.0 + 10.0 and st.mana_regen == 25.0 + 3.0 * Profile_max("focus"), "stats sum items and bonuses")
+	check(st.hp == 100.0 + 30.0 + 10.0 and st.mana_regen == 5.0 + 3.0 * Profile_max("focus"), "stats sum items and bonuses")
 	check(is_equal_approx(st.armor, 0.05), "robe armor")
 	# End of run: gold kept, scores sorted, achievements unlock spells.
 	var reached := p.record_run({"score": 300, "wave": 10, "level": 4, "kills": 120, "bosses": 1, "gold": 70, "scrolls": 1})

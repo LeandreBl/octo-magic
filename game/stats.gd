@@ -8,7 +8,7 @@ const BASE := {
 	"hp": 100.0,  # max HP
 	"hp_regen": 0.0,  # HP per second
 	"mana": 100.0,  # max mana
-	"mana_regen": 25.0,  # mana per second
+	"mana_regen": 5.0,  # mana per second
 	"mana_cost": 1.0,  # multiplier on Spell.mana_cost
 	"cooldown": 1.0,  # multiplier on spell cooldowns
 	"cast_rate": 1.0,  # casts per cooldown: spell cooldowns are divided by it
