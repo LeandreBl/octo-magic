@@ -650,11 +650,14 @@ func _refresh_pause() -> void:
 		_skill_icons(_pause_picks, 40)
 
 
-## The run's skills in `box`, icons of `size` px, their level as a tooltip.
+## The run's skills in `box`, icons of `size` px, their name, level and
+## effect as a tooltip.
 func _skill_icons(box: Control, size: int) -> void:
 	for id in Run.levels:
 		var icon := UITheme.icon_box(UITheme.icon("up_" + id), size, UITheme.RIM)
-		icon.tooltip_text = Upgrades.title(Run.list[id], Run.levels[id])
+		var u: Dictionary = Run.list[id]
+		icon.tooltip_text = "%s\n%s" % [Upgrades.title(u, Run.levels[id]), Upgrades.describe(u)]
+		icon.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # already translated
 		icon.mouse_filter = Control.MOUSE_FILTER_PASS
 		box.add_child(icon)
 
