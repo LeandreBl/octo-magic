@@ -159,6 +159,36 @@ const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 
+// The chevron lock's clunk, synthesized: a low thump and a short metallic ping.
+// Browsers may keep audio suspended until a click or key on the page.
+let audio = null;
+function clunk(last) {
+  try {
+    audio ??= new AudioContext();
+    if (audio.state === "suspended") audio.resume().catch(() => {});
+    const now = audio.currentTime;
+    const out = audio.createGain();
+    out.gain.value = 0.35;
+    out.connect(audio.destination);
+    const tone = (type, f0, f1, gain, decay) => {
+      const o = audio.createOscillator();
+      const g = audio.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(f0, now);
+      o.frequency.exponentialRampToValueAtTime(f1, now + decay);
+      g.gain.setValueAtTime(gain, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + decay);
+      o.connect(g).connect(out);
+      o.start(now);
+      o.stop(now + decay);
+    };
+    tone("sine", 140, 55, 1, 0.25); // the thump
+    tone("square", last ? 660 : 880, last ? 640 : 860, 0.12, last ? 0.6 : 0.12); // the ping
+  } catch {}
+}
+addEventListener("pointerdown", () => audio?.resume(), { capture: true });
+addEventListener("keydown", () => audio?.resume(), { capture: true });
+
 function svg(tag, attrs = {}, ...children) {
   const e = document.createElementNS(SVG, tag);
   for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
@@ -271,6 +301,7 @@ export function runeGate(parent = document.body, { lang = language() } = {}) {
     await wait(reduced() ? 0 : behind > 1 ? 150 : 220);
     runes[address[n]].classList.add("lit");
     chevrons[order[n]].classList.add("on");
+    clunk(n === CHEVRONS - 1);
     pips.children[n].classList.add("on");
     locked = n + 1;
     count.textContent = t.locked(locked);
