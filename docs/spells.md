@@ -117,7 +117,10 @@ every enemy inside the zone).
 
 Mana cost is computed from the spell's damage potential (count, pierce,
 bounce, ticks, areas, sub-casts). A stronger spell is not refused, it costs
-more mana (max 100 = a full mana bar, which regenerates at 25/s). In a run,
-every level-up upgrade but Thrift also taxes the cost +10 % (`Run.UPGRADE_TAX`).
+more mana, with no cap. In a run, every level-up upgrade but Thrift also taxes
+the cost +10 % (`Run.UPGRADE_TAX`). A spell costing more than the max mana
+falls back to a failsafe (`Upgrades.weakened`): each cast takes the whole max
+mana and deals max mana / cost of the damage, drawn see-through, its hits
+only dealing damage (no status, knockback or sub-cast).
 
 Examples: `spell/examples.json`.

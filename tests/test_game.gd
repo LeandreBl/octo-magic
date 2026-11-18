@@ -485,6 +485,19 @@ func _test_play() -> void:
 		check(player.cast(id), "%s casts" % id)
 		for i in 20:
 			await physics_frame
+	var id0: String = spells.keys()[0]
+	var cost: int = run.mana_cost(id0)
+	player.stats.mana = cost * 0.5  # the failsafe: all the max mana for half the damage
+	player.mana = player.stats.mana
+	player.cooldowns = {}
+	check(player.cast(id0) and player.mana < 1.0, "a spell over the max mana casts on all of it")
+	var weak := player._spell(id0, 0.5)
+	check(weak.weak and is_same(weak, player._spell(id0, 0.5)) and absf(_damage(weak) - _damage(spells[id0]) * 0.5) < 0.01,
+		"its failsafe deals the share of damage, kept between casts")
+	var rich := Upgrades.weakened(Spell.sanitize({"emit": {"body": {"on_hit": [{"type": "damage", "amount": 10},
+		{"type": "status", "status": "slow", "power": 0.5, "duration": 1}]}}}), 0.5)
+	check(rich.emit.body.on_hit.size() == 1 and rich.emit.body.on_hit[0].amount == 5.0, "the failsafe's hits only damage")
+	player.stats.mana = Stats.BASE.mana
 	for i in 120:
 		await physics_frame
 	var hp_after := 0.0

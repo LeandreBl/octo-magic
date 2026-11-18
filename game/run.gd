@@ -120,7 +120,7 @@ func cost_mult(slot: String) -> float:
 
 
 func mana_cost(slot: String) -> int:
-	return clampi(roundi(Spell.mana_cost(spells[slot]) * cost_mult(slot) * stats.mana_cost), 1, 100)
+	return maxi(roundi(Spell.mana_cost(spells[slot]) * cost_mult(slot) * stats.mana_cost), 1)
 
 
 func collect(kind: String, value: int) -> void:

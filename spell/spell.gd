@@ -198,7 +198,7 @@ static func power(s: Dictionary) -> float:
 
 
 static func mana_cost(s: Dictionary) -> int:
-	return clampi(roundi(power(s) * 0.4), 1, 100)
+	return maxi(roundi(power(s) * 0.4), 1)
 
 
 ## A cost as shown: per second for a channeled spell (beam, cone: one cast per

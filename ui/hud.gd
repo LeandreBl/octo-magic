@@ -276,7 +276,7 @@ func _process(_delta: float) -> void:
 		var left: float = p.cooldowns.get(slot, 0.0)
 		ui[1].offset_top = -ui[5].size.y * clampf(left / sp.cooldown, 0.0, 1.0)
 		ui[6].text = ("%.1f" % left) if left > 0.05 and sp.cooldown >= 1.0 else ""
-		var can: bool = p.mana >= cost
+		var can: bool = p.mana >= mini(cost, floori(p.stats.mana))  # over the max mana: the failsafe (Player.cast)
 		ui[0].modulate = Color.WHITE if can else Color(0.45, 0.45, 0.6)
 		ui[5].add_theme_stylebox_override("panel", _ready_box if can and left <= 0.05 else _busy_box)
 

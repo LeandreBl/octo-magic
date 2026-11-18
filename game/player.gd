@@ -52,6 +52,7 @@ var shield_wait := 0.0  # seconds until a broken shield is back
 var statuses := {}  # name -> [power, time_left], from the host
 var cooldowns := {}  # slot -> seconds left
 var held := {}  # slot -> bool, from a touch UI
+var _weak := {}  # slot -> [spell, ratio, its weakened version], see _spell
 var aim := Vector2.RIGHT
 var radius := 12.0
 var look := {"hat": "#3a2a99", "robe": "#6a4cff", "staff": "#8d6e63", "ring": ""}
@@ -123,7 +124,7 @@ static func clean_loadout(raw: Variant) -> Dictionary:
 		if s is Dictionary:
 			spells[slot] = Spell.sanitize(s)
 			var mult: Variant = l.get("mult", {}).get(slot, 1.0) if l.get("mult") is Dictionary else 1.0
-			costs[slot] = clampi(roundi(Spell.mana_cost(spells[slot]) * clampf(float(mult) if mult is float else 1.0, 0.2, 100.0) * stats.mana_cost), 1, 100)
+			costs[slot] = maxi(roundi(Spell.mana_cost(spells[slot]) * clampf(float(mult) if mult is float else 1.0, 0.2, 100.0) * stats.mana_cost), 1)
 	var look_in: Dictionary = l.get("look") if l.get("look") is Dictionary else {}
 	var out_look := {}
 	for k in ["hat", "robe", "staff", "ring"]:
@@ -317,25 +318,41 @@ func _steer(delta: float) -> void:
 
 func cast(slot: String) -> bool:
 	var cost: int = run.mana_cost(slot)
+	var ratio := minf(1.0, stats.mana / cost)  # < 1: costs more than the max mana, the failsafe
+	cost = mini(cost, floori(stats.mana))
 	if cooldowns.get(slot, 0.0) > 0.0 or mana < cost:
 		return false
-	var s: Dictionary = run.spells[slot]
+	var s := _spell(slot, ratio)
 	if randf() < stats.crit:
 		s = Upgrades.scale_damage(s, Stats.CRIT_MULT)
 	mana -= cost
 	cooldowns[slot] = s.cooldown * stats.cooldown
 	_animate_cast(s)
 	SpellBody.cast(s.emit, gem(), aim, self, s, get_parent())
-	_cast_fx.rpc(slot, gem(), aim)
+	_cast_fx.rpc(slot, gem(), aim, ratio)
 	return true
+
+
+## The spell of `slot`, weakened (Upgrades.weakened) when ratio < 1. Kept
+## while the slot's spell and ratio hold: a channel's ticks renew one body.
+func _spell(slot: String, ratio: float) -> Dictionary:
+	var s: Dictionary = run.spells[slot]
+	if ratio >= 1.0:
+		return s
+	var w: Array = _weak.get(slot, [])
+	if w.is_empty() or not is_same(w[0], s) or w[1] != ratio:
+		w = [s, ratio, Upgrades.weakened(s, ratio)]
+		_weak[slot] = w
+	return w[2]
 
 
 ## Peers only draw the host's casts: their bodies apply no effects.
 @rpc("authority", "call_remote", "unreliable_ordered")
-func _cast_fx(slot: String, pos: Vector2, dir: Vector2) -> void:
+func _cast_fx(slot: String, pos: Vector2, dir: Vector2, ratio := 1.0) -> void:
 	if run and run.spells.has(slot):
-		SpellBody.cast(run.spells[slot].emit, pos, dir, self, run.spells[slot], get_parent())
-		_animate_cast(run.spells[slot])
+		var s := _spell(slot, ratio)
+		SpellBody.cast(s.emit, pos, dir, self, s, get_parent())
+		_animate_cast(s)
 
 
 ## A channeled spell (beam, cone) keeps the gem glowing while it ticks; any

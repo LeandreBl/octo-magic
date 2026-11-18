@@ -98,6 +98,24 @@ static func scale_damage(spell: Dictionary, mult: float) -> Dictionary:
 	return Spell.sanitize(s)
 
 
+## The failsafe of a spell costing more than the max mana: `ratio` (max mana /
+## cost) of its damage, its hits only deal damage (no status, push, sub-cast),
+## drawn see-through (SpellBody reads "weak").
+static func weakened(spell: Dictionary, ratio: float) -> Dictionary:
+	var s := scale_damage(spell, ratio)
+	_each_body(s.emit, func(b): b.on_hit = b.on_hit.filter(func(f): return f.type == "damage"))
+	s.weak = true
+	return s
+
+
+static func _each_body(emit: Dictionary, fn: Callable) -> void:
+	fn.call(emit.body)
+	for key in ["on_expire", "on_tick"]:
+		for f in emit.body[key]:
+			if f.type == "cast":
+				_each_body(f.emit, fn)
+
+
 static func _each_effect(emit: Dictionary, fn: Callable) -> void:
 	for key in ["on_hit", "on_expire", "on_tick"]:
 		for f in emit.body[key]:
