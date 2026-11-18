@@ -400,20 +400,20 @@ func _check_channel() -> void:
 		await physics_frame
 	check(conus.max == 5 and is_equal_approx(mage.stats.cone, 1.75) and aimed.hp < hp, "Conus Glaciei V: the cone 75 % longer reaches it")
 	# Immolatio II: the fireball sets what it strikes on fire, 10 a second; none without it.
-	var burnt: Node2D = at.call(Vector2(130, 100))
-	burnt.set_physics_process(false)
+	var aflame: Node2D = at.call(Vector2(130, 100))
+	aflame.set_physics_process(false)
 	mage.stats = Stats.total([])
 	SpellBody.cast(spells.fireball.emit, Vector2(100, 100), Vector2.RIGHT, mage, spells.fireball, world)
 	for i in 6:
 		await physics_frame
-	check(burnt.hp < 1000.0 and not burnt.statuses.has("burn"), "no Immolatio: the fireball does not burn")
+	check(aflame.hp < 1000.0 and not aflame.statuses.has("burn"), "no Immolatio: the fireball does not burn")
 	mage.stats = Stats.total([Upgrades.bonus(Upgrades.LIST.immolation, 2)])
 	SpellBody.cast(spells.fireball.emit, Vector2(100, 100), Vector2.RIGHT, mage, spells.fireball, world)
 	for i in 6:
 		await physics_frame
-	var burn: Array = burnt.statuses.get("burn", [0.0, 0.0])
+	var burn: Array = aflame.statuses.get("burn", [0.0, 0.0])
 	check(burn[0] == 10.0 and burn[1] > 0.0, "Immolatio II: the fireball burns its targets 10 a second")
-	burnt.free()
+	aflame.free()
 	for n in world.get_children():
 		if n is SpellBody:
 			n.free()
