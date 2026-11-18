@@ -10,7 +10,8 @@ signal paused
 
 const UITheme := preload("res://ui/theme.gd")
 const FRAME: Texture2D = preload("res://assets/ui/gauge_frame.png")  # hollow, 9-sliced
-const RIM := 6  # its rim, top and bottom (7 at the end caps)
+const LIQUID: Shader = preload("res://ui/liquid.gdshader")
+const RIM := 6 # its rim, top and bottom (7 at the end caps)
 const GAP := 6  # between the gauges
 const SHARE := 1.0 / 3.0  # of the screen width the gauges take at base max HP and mana
 const MAX_SHARE := 0.45  # their cap, however high the max HP and mana go
@@ -188,6 +189,11 @@ func _bar(parent: Control, color: Color, height: int) -> ProgressBar:
 	fill.set_content_margin(SIDE_RIGHT, RIM + 1)
 	bar.add_theme_stylebox_override("fill", fill)
 	bar.add_theme_stylebox_override("background", StyleBoxEmpty.new())  # see-through when empty
+	var liquid := ShaderMaterial.new()  # the fill as a liquid: translucent, rippling
+	liquid.shader = LIQUID
+	liquid.set_shader_parameter("top", RIM)
+	liquid.set_shader_parameter("height", height - RIM * 2)
+	bar.material = liquid
 	var frame := Panel.new()  # the frame, hollow
 	var box := StyleBoxTexture.new()
 	box.texture = FRAME
