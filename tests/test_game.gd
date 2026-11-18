@@ -105,7 +105,7 @@ func _test_upgrades() -> void:
 	check(offers.size() == 3 and offers.all(func(o): return o.level == 1), "3 offers, at level I")
 	check(offers.map(func(o): return o.id).reduce(func(seen, id): seen[id] = 1; return seen, {}).size() == 3, "distinct offers")
 	check(Upgrades.offers({}, rng, "spell", 3, SKILLS).size() == 2, "a kind offers its own skills")
-	check(Upgrades.offers({"tough": 2}, rng, "hero", 3, SKILLS).any(func(o): return o == {"id": "tough", "level": 3}), "the next level offered")
+	check(Upgrades.offers({"tough": 2}, rng, "hero", 4, SKILLS).any(func(o): return o == {"id": "tough", "level": 3}), "the next level offered")
 	check(Upgrades.offers({"tough": 4, "quick": 1, "vigor": 4, "magnet": 5}, rng, "hero", 3, SKILLS).is_empty(), "maxed skills not offered")
 
 
