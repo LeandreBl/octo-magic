@@ -30,6 +30,7 @@ const CHALK_DIM := Color(0.85, 0.8, 0.72, 0.72)
 const CARVED := Color("#c9965f")  # carved in the wood: the fresh wood under the dark top
 const GROOVE := Color("#0d0703")  # the groove's shaded upper wall
 const EMBER := Color("#ffb347")  # chalk lit by the forge
+const RED_CHALK := Color(1.0, 0.3, 0.22)  # the words, written in the magic circle
 
 var main: Node
 var _circle: Control  # the big magic circle, the words' circles in it
@@ -97,10 +98,10 @@ func _ready() -> void:
 	box.add_child(body)
 	_page = _vbox(4)
 	_page.custom_minimum_size.x = 500
-	_page.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_page.size_flags_vertical = Control.SIZE_SHRINK_END  # the circle clear of the books at the back
 	body.add_child(_page)
 	_circle = Control.new()
-	_circle.custom_minimum_size = Vector2(400, 400 * TILT)
+	_circle.custom_minimum_size = Vector2(380, 380 * TILT)
 	_circle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_circle.draw.connect(_draw_circle)
 	_page.add_child(_circle)
@@ -418,11 +419,13 @@ func _draw_circle() -> void:
 		_circle.draw_set_transform(Vector2.ZERO)  # the words stay upright, at their circle
 		at = flat * at
 		if word:
-			var fs := 24
-			while fs > 10 and font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > seal * 0.6:
+			var fs := 26
+			while fs > 10 and font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > seal * 0.7:
 				fs -= 1
 			var w := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-			_circle.draw_string(font, at + Vector2(-w / 2, fs * 0.35), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, tint)
+			var red := RED_CHALK.lerp(EMBER, lit)
+			red.a *= _drawn
+			_circle.draw_string(font, at + Vector2(-w / 2, fs * 0.35), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, red)
 
 
 ## A job's circle: the spell's icon in it, its glyphs lit one after the other,
