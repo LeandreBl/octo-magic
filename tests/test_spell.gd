@@ -271,7 +271,7 @@ func _check_channel() -> void:
 		"beam follows the caster's aim and gem every frame")
 	mage.firing = {"primary": false}
 	await physics_frame
-	check(arc.is_queued_for_deletion() or not is_instance_valid(arc), "released beam stops at once")
+	check(not is_instance_valid(arc) or arc.is_queued_for_deletion(),"released beam stops at once")
 	mage.free()
 	check(Spell.mana_cost(spells.fireball) > 3 * Spell.mana_cost(spells.magic_missile), "fireball costs far more than a missile")
 	check(Spell.cost_text(spells.lightning, 2) == "%d/s" % roundi(2 / spells.lightning.cooldown), "a channeled cost is shown per second")

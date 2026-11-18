@@ -193,9 +193,9 @@ func _move(delta: float) -> void:
 ## Cast by the player, they follow its aim and its staff's gem every frame (the
 ## arc re-grips too).
 func _channel() -> void:
-	# Released: the arc / cone stops at once, not at the end of its lifetime.
-	# ponytail: any held slot keeps it, per-slot if a mage gets two channels.
-	var firing: Variant = caster.get("firing") if depth == 0 and is_instance_valid(caster) else null
+	# Released: after its strike, the arc / cone stops at once, not at the end
+	# of its lifetime. ponytail: any held slot keeps it, per-slot if a mage gets two channels.
+	var firing: Variant = caster.get("firing") if struck and depth == 0 and is_instance_valid(caster) else null
 	if firing is Dictionary and not firing.values().has(true):
 		queue_free()
 		return
