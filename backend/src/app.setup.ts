@@ -9,7 +9,8 @@ const MAX_BUNDLE = "4mb";
 /** Everything main.ts and the tests share: routes, bodies, errors. */
 export function setupApp(app: NestExpressApplication, webDir?: string) {
   app.setGlobalPrefix("api", { exclude: ["health", "api/config"] });
-  app.useGlobalFilters(new HttpExceptionFilter());
+  const web = webDir || resolve(__dirname, "../../web");
+  app.useGlobalFilters(new HttpExceptionFilter(web));
   app.enableCors();
 
   // Bodies per route, whatever the Content-Type the game sends: the profile
@@ -27,6 +28,6 @@ export function setupApp(app: NestExpressApplication, webDir?: string) {
   // The website (web/: landing, account, /terms, /privacy, the game page)
   // and, in the image, the game's web export under /godot. Locally (no
   // WEB_DIR) the repository's web/ and assets/, from src/ or dist/ alike.
-  app.useStaticAssets(webDir || resolve(__dirname, "../../web"), { extensions: ["html"] });
+  app.useStaticAssets(web, { extensions: ["html"] });
   app.useStaticAssets(resolve(__dirname, "../../assets"), { prefix: "/assets" });
 }

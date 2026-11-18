@@ -148,6 +148,17 @@ test("website pages are public", async () => {
   }
 });
 
+test("unknown pages get the site's 404 page, unknown API routes JSON", async () => {
+  for (const [p, lang] of [["/nope", "fr"], ["/en/nope", "en"]]) {
+    const r = await api(p, null);
+    assert.equal(r.status, 404);
+    assert.match(await r.text(), new RegExp(`<html lang="${lang}">`));
+  }
+  const r = await api("/api/nope", null);
+  assert.equal(r.status, 404);
+  assert.match((await r.json()).error, /Cannot GET/);
+});
+
 test("config and health are public", async () => {
   assert.deepEqual(await (await api("/api/config", null)).json(), { firebaseApiKey: "k" });
   assert.deepEqual(await (await api("/health", null)).json(), { ok: true });
