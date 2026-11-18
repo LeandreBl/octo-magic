@@ -270,6 +270,8 @@ func _expire() -> void:
 
 func apply_effects(list: Array, pos: Vector2, target: Node2D) -> void:
 	for f in list:
+		if f.type == "knockback" and f.force > 0.0:
+			_repel_shots(f.get("radius", 0.0), pos, f.force)
 		if f.type != "cast" and not multiplayer.is_server():
 			continue  # coop: the host applies effects, peers only draw
 		match f.type:
@@ -284,6 +286,19 @@ func apply_effects(list: Array, pos: Vector2, target: Node2D) -> void:
 						"damage": e.take_damage(f.amount)
 						"status": e.add_status(f.status, f.power, f.duration)
 						"knockback": e.push((e.global_position - pos).normalized() * f.force)
+
+
+## A repelling knockback also turns enemy shots (Enemy.Shot) in reach away from
+## `pos`, same speed. Run on every peer: shots are local, their hits host-side.
+func _repel_shots(radius: float, pos: Vector2, force: float) -> void:
+	if radius <= 0.0:
+		if body.shape != "zone":
+			return  # a single-target hit
+		radius = body.size
+	for s in get_tree().get_nodes_in_group("shots"):
+		var away: Vector2 = s.position - pos
+		if away.length() <= radius + s.RADIUS and s.velocity.dot(away) < 0.0:
+			s.velocity = away.normalized() * maxf(s.velocity.length(), force)
 
 
 func _targets(radius: float, pos: Vector2, target: Node2D) -> Array:

@@ -116,11 +116,34 @@ func _initialize() -> void:
 	await _check_homing_lifetime()
 	await _check_channel()
 	await _check_loop_once()
+	await _check_repel_shots()
 
 	# Every example spell in the docs is valid and runs without crashing.
 	var examples: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://spell/examples.json"))
 	check(examples is Array and examples.size() > 0, "example spells load")
 	_run_examples(examples if examples is Array else [])
+
+
+## A repelling zone turns incoming enemy shots away, same speed.
+func _check_repel_shots() -> void:
+	var world := Node2D.new()
+	root.add_child(world)
+	var spell := Spell.sanitize({"emit": {"body": {"shape": "zone", "size": 60,
+		"on_tick": [{"type": "knockback", "force": 200}]}}})
+	SpellBody.cast(spell.emit, Vector2(100, 100), Vector2.RIGHT, null, spell, world)
+	var zone: SpellBody = world.get_child(0)
+	var shot := Enemy.Shot.new()
+	shot.position = Vector2(140, 100)
+	shot.velocity = Vector2(-300, 0)  # flying into the zone
+	world.add_child(shot)
+	var far := Enemy.Shot.new()
+	far.position = Vector2(400, 100)
+	far.velocity = Vector2(-300, 0)
+	world.add_child(far)
+	zone.apply_effects(zone.body.on_tick, zone.global_position, null)
+	check(shot.velocity.x > 0.0 and is_equal_approx(shot.velocity.length(), 300.0), "repel turns a shot away")
+	check(far.velocity == Vector2(-300, 0), "shots out of reach untouched")
+	world.free()
 
 
 ## Overlapping zones of one spell play their loop once; a survivor takes it over.

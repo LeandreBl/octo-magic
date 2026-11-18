@@ -405,6 +405,9 @@ class Shot extends Node2D:
 	var from: Node2D  # its enemy, for its effect (may be dead by the hit)
 	var age := 0.0
 
+	func _ready() -> void:
+		add_to_group("shots")  # repelled by spells (SpellBody._repel_shots)
+
 	func _physics_process(delta: float) -> void:
 		position += velocity * delta
 		age += delta
