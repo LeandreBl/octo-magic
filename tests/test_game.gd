@@ -128,6 +128,8 @@ func _test_upgrades() -> void:
 	check(haste.max == 9 and is_equal_approx(Stats.total([Upgrades.bonus(haste, 3)]).cast_rate, 1.3), "Haste: +10 % cast rate per level, 9 levels")
 	var flow: Dictionary = Upgrades.LIST.flow
 	check(flow.max == 9 and is_equal_approx(Stats.total([Upgrades.bonus(flow, 2)]).mana_regen, Stats.BASE.mana_regen * 1.7), "Flow: +35 % mana regeneration per level, 9 levels")
+	var power: Dictionary = Upgrades.LIST.damage
+	check(power.max == 9 and is_equal_approx(Stats.total([Upgrades.bonus(power, 3)]).damage, 1.75), "Power: +25 % spell damage per level, 9 levels")
 	var antidote: Dictionary = Upgrades.LIST.antidote
 	check(antidote.max == 9 and is_equal_approx(Stats.total([Upgrades.bonus(antidote, 3)]).poison, 0.7), "Antidote: +10 % poison resistance per level, 9 levels")
 	var magnetism: Dictionary = Upgrades.LIST.magnetism
