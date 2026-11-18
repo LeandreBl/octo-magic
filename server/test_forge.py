@@ -156,6 +156,7 @@ class ForgeTest(unittest.TestCase):
         self.assertIn("on_expire", forge.SYSTEM)
         self.assertIn("Étincelle", forge.SYSTEM)
         self.assertIn("dead language", forge.SYSTEM)
+        self.assertIn("murus", forge.SYSTEM)
 
     def test_errors_in_the_players_language(self):
         with self.assertRaises(forge.ForgeError) as e:

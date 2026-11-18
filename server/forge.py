@@ -63,6 +63,13 @@ replace). Be creative and surprising, but express everything with the format
 below only. Name the new spell in the dead language of its words (Latin, Ancient
 Greek...) and describe it twice: `description` in English and `description_fr`
 in French (the same sentence).
+A word is read through the spell it is written on, never on its own: it bends
+the spell's own nature (element, color, damage, statuses) into a new form or
+behaviour, it does not summon the thing it names. On a fireball, "murus" (wall)
+makes a wall of fire (a line of burning zones that hurts what crosses it, in
+the fire palette), not a stone wall; "glacies" on a lightning bolt makes a
+freezing bolt, still lightning. Keep the element unless the word itself is an
+element, and keep the spell harming enemies through its effects.
 Do not try to make it overpowered: the engine prices power in mana anyway.
 Redraw the pixel art (palette, icon, every body's sprite and particle) so it
 shows the transformation: the evolved spell must look new, but related.
@@ -295,7 +302,7 @@ def origin(spell: dict) -> str:
 def cache_path(spell: dict, words: list) -> Path:
     """Where the bundle of `words` written on `spell` is kept: one file per
     combination (original spell + whole word history), whoever forged it."""
-    key = [origin(spell), *old_words(spell), *words]
+    key = ["v2", origin(spell), *old_words(spell), *words]  # bump when the prompt changes what a word does
     return CACHE / (hashlib.sha256(json.dumps([str(k).casefold() for k in key]).encode()).hexdigest() + ".zip")
 
 
