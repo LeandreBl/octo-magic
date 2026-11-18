@@ -324,6 +324,7 @@ func _zone(pos: Vector2, r: float, delay: float, damage: float, dps: float, colo
 func _draw() -> void:
 	var tint := Color.WHITE
 	if statuses.has("freeze"): tint = Color("#9be7ff")
+	elif statuses.has("stun"): tint = Color("#fff27a")
 	elif statuses.has("burn"): tint = Color("#ffb08a")
 	elif statuses.has("poison"): tint = Color("#d1b8ff")
 	elif statuses.has("slow"): tint = Color("#cdeeff")

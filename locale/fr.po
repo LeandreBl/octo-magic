@@ -1080,6 +1080,9 @@ msgstr "Flatus Gelidus gèle ses cibles %d %% du temps"
 msgid "Telum Magicum fires +%d missile"
 msgstr "Telum Magicum tire +%d missile"
 
+msgid "Fulmen stuns its targets %d%% of the time"
+msgstr "Fulmen étourdit ses cibles %d %% du temps"
+
 msgid "Fulmen's arc jumps on to +%d enemy"
 msgstr "L'arc de Fulmen rebondit sur +%d ennemi"
 

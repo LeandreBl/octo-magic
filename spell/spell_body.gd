@@ -32,6 +32,7 @@ var ember_timer := 0.0  # bolt: time since its last ember (the caster's "embers"
 const BURN_TIME := 3.0  # s: how long an immolated enemy burns after the bolt
 const CHILL_TIME := 1.0  # s: how long a chilled enemy stays slowed after the cone
 const FREEZE_TIME := 0.6  # s: how long a Rigor freeze holds an enemy
+const STUN_TIME := 0.6  # s: how long a Stupor stun holds an enemy
 const CHAIN_REACH := 140.0  # px: how far a chained arc jumps from one enemy to the next
 const EMBER_EVERY := 0.12  # s: a cast bolt drops one ember this often (Embers)
 const ABOVE_DECOR := 11  # over the map's trees, roofs and statues (Arena.above, z 10)
@@ -231,6 +232,7 @@ func _channel() -> void:
 		links = _chain()
 		for e in ([target] if target else []) + links:
 			apply_effects(body.on_hit, e.global_position if e != target else global_position, e)
+			_stun(e)
 	else:
 		var gust := _stat("gust")  # Procella (Upgrades "hurricane"): an engine stat, not spell data
 		for e in get_tree().get_nodes_in_group("enemies"):
@@ -344,6 +346,15 @@ func _immolate(e: Node2D) -> void:
 	var b := _stat("immolate")
 	if b > 0.0 and depth == 0 and not spell.has("weak") and multiplayer.is_server():
 		e.add_status("burn", b, BURN_TIME)
+
+
+## The Stupor skill (Upgrades "stun"): each arc strike (target and chained
+## links) stuns its enemy for STUN_TIME with its caster's "stun" stat as
+## chance. An engine stat, not spell data: no forged spell has it.
+func _stun(e: Node2D) -> void:
+	var c := _stat("stun")
+	if c > 0.0 and multiplayer.is_server() and randf() < c:
+		e.add_status("stun", 1.0, STUN_TIME)
 
 
 func _check_hits() -> void:

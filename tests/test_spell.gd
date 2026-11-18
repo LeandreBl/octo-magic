@@ -300,6 +300,27 @@ func _check_channel() -> void:
 	for i in 3:
 		await physics_frame
 	check(hops[0].hp < hops_hp[0] and hops[1].hp == hops_hp[1], "a chained arc only jumps within reach")
+	# Stupor: an arc strike stuns its target with the caster's "stun" chance.
+	for n in world.get_children():
+		if n is SpellBody:
+			n.free()
+	aimed.statuses.erase("stun")
+	mage.stats = Stats.total([])
+	SpellBody.cast(spells.lightning.emit, Vector2(100, 100), Vector2.RIGHT, mage, spells.lightning, world)
+	for i in 3:
+		await physics_frame
+	check(not aimed.statuses.has("stun"), "no Stupor: the arc never stuns")
+	for n in world.get_children():
+		if n is SpellBody:
+			n.free()
+	mage.stats = Stats.total([Upgrades.bonus(Upgrades.LIST.stun, 5)])
+	mage.stats.stun = 1.0  # a sure stun, for the test
+	SpellBody.cast(spells.lightning.emit, Vector2(100, 100), Vector2.RIGHT, mage, spells.lightning, world)
+	for i in 3:
+		await physics_frame
+	check(aimed.statuses.has("stun") and aimed.statuses.stun[1] > 0.0, "Stupor: the arc stuns its target")
+	aimed.statuses.erase("stun")
+	mage.stats = Stats.total([])
 	for e in hops:
 		e.free()
 	for n in world.get_children():

@@ -67,6 +67,7 @@ UPGRADES = {
     "ether_charge": "a glowing blue-white ether crystal crackling with a small lightning charge, a mana drop rune inside",
     "harden": "a solid pale blue ice cube with sharp frosty edges and white frost cracks, cold blue glow",
     "more_missiles": "a single glowing violet magic orb splitting into a wide fan of five small violet sparks, a plus rune above it",
+    "stun": "a small round yellow star burst with dizzy swirling stars and tiny lightning sparks circling it, stunned symbol",
     "chaining": "a crackling blue-white lightning arc linking three small glowing orbs in a zigzag chain",
     "hurricane": "a swirling pale cyan whirlwind of icy wind gusts and snowflakes, spiraling outward",
     "chill_wind": "a small frozen hourglass covered in frost and icicles, its pale blue sand slowed to a trickle, snowflakes around it",
