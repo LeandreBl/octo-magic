@@ -41,6 +41,8 @@ static func play(spell: Dictionary, body: Dictionary, depth: int, node: Node2D, 
 		var p := AudioStreamPlayer2D.new()
 		p.autoplay = true  # also when the world enters the tree later
 		p.bus = "SFX"
+		p.pitch_scale = Sfx.speed
+		p.add_to_group("sfx")
 		p.stream = cast_stream(spell.element, body, depth)
 		p.volume_db = CAST_DB - 4.0 * depth
 		p.position = node.position
@@ -52,6 +54,8 @@ static func _attach_loop(s: AudioStreamWAV, node: Node2D, depth: int) -> void:
 	var p := AudioStreamPlayer2D.new()
 	p.autoplay = true
 	p.bus = "SFX"
+	p.pitch_scale = Sfx.speed
+	p.add_to_group("sfx")
 	p.stream = s
 	p.volume_db = LOOP_DB - 3.0 * depth
 	node.add_child(p)

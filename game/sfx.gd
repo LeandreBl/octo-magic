@@ -38,6 +38,9 @@ const ECHO_DELAY := 0.11  # s between repeats of the tail
 const ECHO_FEEDBACK := 0.4
 const GAP := 0.04  # s: the same sound twice closer than this plays once (boss rings, swarms)
 const MUSIC_DB := -6.0
+const MIN_SPEED := 0.5  # the sound follows the level-up slow motion down to this (lower turns to rumble)
+
+static var speed := 1.0  # every sound's pitch_scale factor (works with the web's sample playback)
 
 static var _node: Sfx
 var _players := {}  # name -> AudioStreamPlayer
@@ -57,17 +60,29 @@ func _enter_tree() -> void:
 		p.volume_db = r.db
 		p.bus = r.get("bus", "SFX")
 		p.max_polyphony = 4
+		p.add_to_group("sfx")
 		add_child(p)
 		_players[n] = p
 	_music = AudioStreamPlayer.new()
 	_music.bus = "Music"
 	_music.volume_db = MUSIC_DB
+	_music.add_to_group("sfx")
 	add_child(_music)
 	# Every button of the UI, whoever builds it.
 	get_tree().node_added.connect(func(n):
 		if n is BaseButton:
 			n.pressed.connect(play.bind("click"))
 			n.mouse_entered.connect(func(): if not n.disabled: play("hover")))
+
+
+## Every sound (group "sfx") slows down with the game time.
+func _process(_delta: float) -> void:
+	var s := maxf(Engine.time_scale, MIN_SPEED)
+	if s == speed:
+		return
+	speed = s
+	for p in get_tree().get_nodes_in_group("sfx"):
+		p.pitch_scale = p.get_meta("pitch", 1.0) * s
 
 
 func _exit_tree() -> void:
@@ -82,7 +97,8 @@ static func play(sound: String) -> void:
 		return
 	_node._last[sound] = now
 	var p: AudioStreamPlayer = _node._players[sound]
-	p.pitch_scale = randf_range(0.94, 1.06) if p.bus == "SFX" else 1.0
+	p.set_meta("pitch", randf_range(0.94, 1.06) if p.bus == "SFX" else 1.0)
+	p.pitch_scale = p.get_meta("pitch") * speed
 	p.play()
 
 
