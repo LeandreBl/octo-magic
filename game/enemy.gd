@@ -69,9 +69,8 @@ static func art(file: String) -> Texture2D:
 static func draw_frame(item: CanvasItem, tex: Texture2D, f: int, size: float, flip := false, tint := Color.WHITE) -> void:
 	var n := tex.get_height()
 	var src := Rect2(wrapi(f, 0, tex.get_width() / n) * n, 0, n, n)
-	var dst := Rect2(-size / 2.0, -size / 2.0, size, size)
-	if flip:
-		dst = Rect2(size / 2.0, -size / 2.0, -size, size)
+	# a negative width mirrors the rect in place (as Sprite2D.flip_h): same position
+	var dst := Rect2(-size / 2.0, -size / 2.0, -size if flip else size, size)
 	item.draw_texture_rect_region(tex, dst, src, tint)
 
 
