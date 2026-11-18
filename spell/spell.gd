@@ -258,7 +258,7 @@ static func scale_damage(spell: Dictionary, mult: float) -> Dictionary:
 
 ## A spell cast short of mana: `ratio` (mana left / cost) of its damage, its
 ## hits only deal damage (no status, push, sub-cast), drawn see-through
-## (SpellBody reads "weak", the ratio; SpellSound plays it that much quieter).
+## (SpellBody reads "weak", the ratio, as alpha; SpellSound plays it that much quieter).
 static func weakened(spell: Dictionary, ratio: float) -> Dictionary:
 	var s := scale_damage(spell, ratio)
 	_each_body(s.emit, func(b): b.on_hit = b.on_hit.filter(func(f): return f.type == "damage"))

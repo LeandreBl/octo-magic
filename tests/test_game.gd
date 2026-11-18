@@ -622,7 +622,7 @@ func _test_play() -> void:
 	player.cooldowns = {}
 	check(player.cast(id0) and player.mana == 0.0, "a spell short of mana casts on what is left")
 	var weak := player._spell(id0, 0.5)
-	check(weak.weak and is_same(weak, player._spell(id0, 0.5)) and absf(_damage(weak) - _damage(spells[id0]) * 0.5) < 0.01,
+	check(weak.weak == 0.5 and is_same(weak, player._spell(id0, 0.5)) and absf(_damage(weak) - _damage(spells[id0]) * 0.5) < 0.01,
 		"weakened, it deals the share of damage, kept between casts")
 	player.cooldowns = {}
 	check(player.cast(id0) and player._weak[id0][1] == 1.0 / Player.RATIO_STEPS, "without mana it still casts, at the weakest")
