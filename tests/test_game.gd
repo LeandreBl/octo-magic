@@ -44,7 +44,7 @@ func _test_french() -> void:
 					texts.append(m.get_string(1).c_unescape())
 	texts += Upgrades.SLOT_NAMES.values()
 	texts += Upgrades.RARITIES.values().map(func(r): return r.name)
-	for d in [Upgrades.LIST, RunState.SHOP, ProfileState.ITEMS, ProfileState.BONUSES, ProfileState.ACHIEVEMENTS]:
+	for d in [Upgrades.LIST, ProfileState.AUGMENTS, ProfileState.ITEMS, ProfileState.BONUSES, ProfileState.ACHIEVEMENTS]:
 		for v in d.values():
 			texts.append(v.name)
 			if v.has("desc") and not v.desc.begins_with("+%d projectile") and not v.desc.begins_with("+3 mana/s"):
@@ -139,7 +139,7 @@ func _test_run() -> void:
 	check(run.mana_cost("primary") == maxi(1, roundi(Spell.mana_cost(run.spells.primary) * 0.5)), "mana cost stat")
 	run.collect("gold", 10)
 	check(run.gold == 15, "gold bonus")
-	_test_run_shop(run)
+	_test_augments(run, p)
 	run.wave = 6
 	run.killed("boss")
 	var r := run.finish()
@@ -148,17 +148,28 @@ func _test_run() -> void:
 	p.free()
 
 
-## One active and one passive per run, bought with the run's gold.
-func _test_run_shop(run: Object) -> void:
-	var gold: int = run.gold
-	check(not run.spells.has("secondary") and run.passive == "", "run slots empty at the start")
-	check(not run.buy("ring_of_fire") and run.gold == gold, "too poor for the ring")
-	run.gold = 100
-	check(run.buy("ring_of_fire") and run.gold == 60 and run.spells.secondary.emit.pattern == "radial", "ring bought")
-	check(not run.buy("ring_of_fire") and run.gold == 60, "one active per run")
-	check(run.buy("shield") and run.passive == "shield" and not run.buy("shield"), "one passive per run")
-	var l := Player.clean_loadout(JSON.parse_string(JSON.stringify({"spells": run.spells, "passive": "shield"})))
-	check(l.spells.has("secondary") and l.passive == "shield", "loadout keeps the bought slots")
+## Augments: bought once in the shop and kept, the slotted ones start every run.
+func _test_augments(run: Object, p: Object) -> void:
+	p.path = "user://test_augments.json"
+	p.gold = 0
+	check(not p.buy_augment("ring_of_fire") and p.augments.is_empty(), "too poor for the ring")
+	p.gold = 3000
+	check(p.buy_augment("ring_of_fire") and p.gold == 1500 and p.slotted == ["ring_of_fire"], "ring bought and slotted")
+	check(not p.buy_augment("ring_of_fire") and p.gold == 1500, "bought once")
+	check(p.buy_augment("shield") and p.slotted == ["ring_of_fire", "shield"], "shield bought and slotted")
+	p.slotted = ["a", "b", "c"]  # full
+	check(not p.can_slot("shield"), "no more than SLOTS")
+	p.slotted = ["ring_of_fire"]
+	check(p.toggle_augment("shield") and p.toggle_augment("ring_of_fire") and p.slotted == ["shield"], "slot and unslot")
+	p.toggle_augment("ring_of_fire")
+	var saved: Dictionary = JSON.parse_string(JSON.stringify(p.to_dict()))
+	saved.slotted.append("god_mode")
+	p.apply(saved)
+	check(p.augments.size() == 2 and p.slotted == ["shield", "ring_of_fire"], "augments saved, unknown dropped")
+	run.start(p.equipped_spells(), [], p.slotted_augments())
+	check(run.spells.secondary.emit.pattern == "radial" and run.passive == "shield", "a run starts with the slotted augments")
+	var l := Player.clean_loadout(JSON.parse_string(JSON.stringify({"spells": run.spells, "passive": run.passive})))
+	check(l.spells.has("secondary") and l.passive == "shield", "loadout keeps the augments")
 	check(Player.clean_loadout({"passive": "god_mode"}).passive == "", "unknown passive dropped")
 	var st: Dictionary = Player.clean_loadout({"stats": {"armor": 5, "hp": "x", "god": 1}}).stats
 	check(st.armor == Stats.BOUNDS.armor[1] and st.hp == Stats.BASE.hp and st.keys() == Stats.BASE.keys(), "loadout stats clamped")
@@ -173,7 +184,8 @@ func _test_run_shop(run: Object) -> void:
 	check(me.shield == 0.0, "no shield without the passive")
 	me.free()
 	run.start({}, [])
-	check(run.passive == "" and run.spells.is_empty(), "run slots reset")
+	check(run.passive == "" and run.spells.is_empty(), "no augment slotted, none in the run")
+	DirAccess.remove_absolute(p.path)
 
 
 func _test_waves() -> void:

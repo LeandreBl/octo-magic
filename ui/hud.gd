@@ -278,11 +278,11 @@ func _process(_delta: float) -> void:
 	_scroll_note.text = main.forge_note if main.forge_note else tr("To write at the end of the run")
 	_passive.visible = p.passive != ""
 	if p.passive:  # no key: it applies itself
-		_shield.text = "%s %d" % [tr(Run.SHOP[p.passive].name), p.shield]
+		_shield.text = "%s %d" % [tr(Profile.AUGMENTS[p.passive].name), p.shield]
 		_shield_wait.offset_top = -_shield_wait.get_parent().size.y * clampf(p.shield_wait / p.SHIELD_WAIT, 0.0, 1.0)
 	for slot in _slots:
 		var ui: Array = _slots[slot]
-		ui[0].get_parent().get_parent().visible = Run.spells.has(slot)  # secondary: once bought
+		ui[0].get_parent().get_parent().visible = Run.spells.has(slot)  # secondary: an active augment slotted
 		if not Run.spells.has(slot):
 			continue
 		var sp: Dictionary = Run.spells[slot]

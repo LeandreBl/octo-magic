@@ -586,9 +586,6 @@ msgstr "Bouclier"
 msgid "Absorbs 40 damage, back 8 s after it breaks"
 msgstr "Absorbe 40 dégâts, revient 8 s après s'être brisé"
 
-msgid "Run shop"
-msgstr "Boutique de la run"
-
 msgid "%s: %s (%d gold)"
 msgstr "%s : %s (%d or)"
 
@@ -627,17 +624,11 @@ msgstr "Ennemis vaincus"
 msgid "Upgrades taken"
 msgstr "Améliorations prises"
 
-msgid "The run's gold buys a secondary spell and a passive. They are gone at the end of the run."
-msgstr "L'or de la run achète un sort secondaire et un passif. Ils disparaissent à la fin de la run."
-
 msgid "PASSIVE"
 msgstr "PASSIF"
 
 msgid "ACTIVE · RIGHT CLICK"
 msgstr "ACTIF · CLIC DROIT"
-
-msgid "Owned"
-msgstr "Possédé"
 
 msgid "Pick an upgrade for this run"
 msgstr "Choisis une amélioration pour cette run"
@@ -985,3 +976,21 @@ msgstr "Dégâts subis"
 
 msgid "Critical chance"
 msgstr "Chance de critique"
+
+msgid "Augments"
+msgstr "Augments"
+
+msgid "Slots %d/%d"
+msgstr "Emplacements %d/%d"
+
+msgid "Bought once, kept for every run. Each run starts with the slotted ones: one active at most."
+msgstr "Achetés une fois, gardés pour toutes les runs. Chaque run commence avec ceux placés dans les emplacements : un actif au plus."
+
+msgid "Slotted · remove"
+msgstr "Placé · retirer"
+
+msgid "Owned · slot"
+msgstr "Possédé · placer"
+
+msgid "Owned · no free slot"
+msgstr "Possédé · aucun emplacement libre"

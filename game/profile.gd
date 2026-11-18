@@ -1,6 +1,6 @@
 extends Node
 ## Autoload `Profile`: everything kept between runs, saved in user:// as JSON.
-## Gold, shop (items and permanent bonuses), the mage's look, achievements and
+## Gold, shop (items, permanent bonuses and augments), the mage's look, achievements and
 ## unlocks, local scores, blank scrolls and the player's spells.
 ## The UI reads these fields and calls the methods; logic stays here.
 
@@ -11,7 +11,7 @@ const PATH := "user://profile.json"
 const MAX_SCORES := 10
 ## What is saved, locally and on the server.
 const FIELDS := ["gold", "blank_scrolls", "owned", "equipped", "bonuses", "look", "stats",
-	"achievements", "scores", "spells", "forged"]
+	"achievements", "scores", "spells", "forged", "augments", "slotted"]
 
 ## Items and permanent bonuses carry Stats bonuses (see game/stats.gd).
 ## Names and descriptions are English, translated where shown (locale/fr.po).
@@ -29,6 +29,20 @@ const ITEMS := {
 	"ring_gold": {"kind": "ring", "name": "Ring of fortune", "price": 250, "color": "#ffd54f", "bonus": {"gold%": 0.25}},
 	"ring_ruby": {"kind": "ring", "name": "Ruby ring", "price": 300, "color": "#e53935", "bonus": {"crit": 0.1}},
 	"ring_sapphire": {"kind": "ring", "name": "Sapphire ring", "price": 350, "color": "#448aff", "bonus": {"mana": 30.0, "mana_regen": 5.0}},
+}
+
+## Augments: bought once and kept, a run starts with the ones put in the
+## SLOTS: "active" (the secondary spell, right click: one at most) or
+## "passive" (applied by game/player.gd).
+const SLOTS := 3
+const RING_OF_FIRE := {"name": "Ring of fire", "element": "fire", "color": "#ff7a1f", "cooldown": 3.0,
+	"emit": {"pattern": "radial", "count": 12, "body": {"shape": "bolt", "speed": 320, "size": 8, "lifetime": 0.9,
+		"on_hit": [{"type": "damage", "amount": 14}, {"type": "status", "status": "burn", "power": 3, "duration": 2}]}}}
+const AUGMENTS := {
+	"ring_of_fire": {"name": "Ring of fire", "desc": "Fireballs burst out all around you",
+		"price": 1500, "kind": "active", "spell": RING_OF_FIRE},
+	"shield": {"name": "Shield", "desc": "Absorbs 40 damage, back 8 s after it breaks",
+		"price": 1000, "kind": "passive"},
 }
 
 ## Permanent bonuses: level n costs price * GROWTH^n.
@@ -78,6 +92,8 @@ var achievements := {}  # id -> unix time reached
 var scores := []  # best first: {score, wave, level, kills, time}
 var spells := {}  # slot -> spell id equipped
 var forged := []  # spells from the forge: {id, slot, file, spell}
+var augments := {}  # AUGMENTS id -> true, bought
+var slotted := []  # AUGMENTS ids in the slots, SLOTS at most
 var base_spells := []  # game/spells.json: {id, slot, unlock, spell}
 
 
@@ -138,6 +154,12 @@ func apply(d: Dictionary) -> void:
 			var s := SpellArt.load_bundle(file) if file.begins_with("user://") else {}
 			forged.append({"id": str(f.get("id")), "slot": f.slot, "file": file,
 				"spell": s if not s.is_empty() else Spell.sanitize(f.get("spell"))})
+	for id in _dict(d.get("augments")):
+		if AUGMENTS.has(id):
+			augments[id] = true
+	for id in _arr(d.get("slotted")):
+		if can_slot(str(id)):
+			slotted.append(str(id))
 	for slot in _dict(d.get("spells")):
 		if slot in Upgrades.SLOTS and _entry(str(d.spells[slot]), slot):
 			spells[slot] = str(d.spells[slot])
@@ -213,6 +235,40 @@ func buy_bonus(id: String) -> bool:
 	bonuses[id] = bonuses.get(id, 0) + 1
 	_saved()
 	return true
+
+
+func buy_augment(id: String) -> bool:
+	if not AUGMENTS.has(id) or augments.has(id) or gold < AUGMENTS[id].price:
+		return false
+	gold -= AUGMENTS[id].price
+	augments[id] = true
+	if can_slot(id):
+		slotted.append(id)
+	_saved()
+	return true
+
+
+## Owned, not slotted, a slot free, and no second active.
+func can_slot(id: String) -> bool:
+	return augments.has(id) and id not in slotted and slotted.size() < SLOTS \
+		and not (AUGMENTS[id].kind == "active" and slotted.any(func(s): return AUGMENTS[s].kind == "active"))
+
+
+## Puts augment `id` in a slot, or takes it out.
+func toggle_augment(id: String) -> bool:
+	if id in slotted:
+		slotted.erase(id)
+	elif can_slot(id):
+		slotted.append(id)
+	else:
+		return false
+	_saved()
+	return true
+
+
+## The slotted augments, what the next run starts with.
+func slotted_augments() -> Array:
+	return slotted.map(func(id): return AUGMENTS[id].merged({"id": id}))
 
 
 func set_look(key: String, color: String) -> void:

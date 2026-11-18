@@ -31,7 +31,8 @@
 
 ## Sorts
 - Un seul sort équipé, au clic gauche (tâche #94).
-- En run, l'or de la run achète (menu pause) **un sort secondaire** (clic droit / Espace / RB) et **un passif**, vides au départ et remis à zéro à chaque run (tâche #123, `Run.SHOP`) : anneau de feu (boules de feu à 360°) et bouclier (absorbe 40 dégâts, revient 8 s après s'être brisé).
+- **Rien ne s'achète pendant une run** : la boutique est entre les runs (tâche #195, remplace la boutique de run de #123).
+- **Augments** (`Profile.AUGMENTS`, onglet de la boutique) : achetés une fois avec l'or du profil, gardés pour toutes les runs, chers (anneau de feu 1500, bouclier 1000). **3 emplacements** (`Profile.SLOTS`) : chaque run commence avec les augments placés, un actif (sort secondaire : clic droit / Espace / RB) au plus, le reste en passifs ou futurs bonus ; ça force à choisir. Anneau de feu (boules de feu à 360°), bouclier (absorbe 40 dégâts, revient 8 s après s'être brisé).
 - Améliorations par sort : vitesse du projectile (si pertinent), nombre de projectiles, coût en mana, dégâts, cadence, zone…
 - Inspiration : sorts de base et augments de Solomon's Boneyard, **avec nos noms, nos valeurs et nos visuels** (on reprend la mécanique, pas le contenu).
 

@@ -107,7 +107,7 @@ func _run_started(map: String) -> void:
 	for n in get_children():
 		if n is Node2D and not n.is_in_group("players"):
 			n.free()
-	Run.start(Profile.equipped_spells(), Profile.bonus_list())
+	Run.start(Profile.equipped_spells(), Profile.bonus_list(), Profile.slotted_augments())
 	var p := local_player()
 	if p:
 		p.position = Arena.START

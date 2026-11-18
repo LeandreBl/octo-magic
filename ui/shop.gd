@@ -1,13 +1,13 @@
 extends Control
-## Shop, between runs, in tabs: equipment, permanent bonuses, the mage's look
-## and the scroll panel (the spell is the character's, chosen at its
+## Shop, between runs, in tabs: equipment, permanent bonuses, augments (kept,
+## Profile.SLOTS of them taken into a run), the mage's look and the scroll panel (the spell is the character's, chosen at its
 ## creation); the mage and its total stats on the right. Reads and edits the
 ## Profile autoload.
 
 signal closed
 
 const UITheme := preload("res://ui/theme.gd")
-const TABS := ["Equipment", "Bonuses", "Look", "Scrolls"]
+const TABS := ["Equipment", "Bonuses", "Augments", "Look", "Scrolls"]
 
 var main: Node
 var _gold: Label
@@ -159,6 +159,19 @@ func _rebuild() -> void:
 			var grid := _grid()
 			for id in Profile.BONUSES:
 				_bonus_card(grid, id)
+		"Augments":
+			var slots := _hbox(10)
+			slots.add_child(UITheme.label(tr("Slots %d/%d") % [Profile.slotted.size(), Profile.SLOTS], "Subheader"))
+			for i in Profile.SLOTS:
+				var id: String = Profile.slotted[i] if i < Profile.slotted.size() else ""
+				slots.add_child(UITheme.icon_box(_augment_icon(id) if id else null, 56, UITheme.GOLD if id else UITheme.RIM))
+			_content.add_child(slots)
+			var hint := UITheme.label("Bought once, kept for every run. Each run starts with the slotted ones: one active at most.", "Caption")
+			hint.autowrap_mode = TextServer.AUTOWRAP_WORD
+			_content.add_child(hint)
+			var grid := _grid()
+			for id in Profile.AUGMENTS:
+				_augment_card(grid, id)
 		"Look":
 			_content.add_child(UITheme.label("Hat", "Subheader"))
 			var row := HFlowContainer.new()
@@ -277,6 +290,25 @@ func _bonus_card(grid: Control, id: String) -> void:
 		c[1].add_child(UITheme.label("max", "", 16, UITheme.GOOD))
 	else:
 		_price(c[1], "", price)
+
+
+static func _augment_icon(id: String) -> Texture2D:
+	return UITheme.glyph("shield", UITheme.MANA, 4) if Profile.AUGMENTS[id].kind == "passive" else UITheme.icon("fire_nova")
+
+
+## Owned: a press slots it or takes it out; else buys it.
+func _augment_card(grid: Control, id: String) -> void:
+	var a: Dictionary = Profile.AUGMENTS[id]
+	var on: bool = id in Profile.slotted
+	var owned: bool = Profile.augments.has(id)
+	var c := _card(grid, _augment_icon(id), tr(a.name), tr(a.desc), on,
+		func(): return Profile.toggle_augment(id) if owned else Profile.buy_augment(id))
+	c[0].get_child(0).get_child(0).add_child(UITheme.tag(tr("PASSIVE") if a.kind == "passive" else tr("ACTIVE · RIGHT CLICK")))
+	c[0].disabled = not on and (not Profile.can_slot(id) if owned else Profile.gold < a.price)
+	if on:
+		c[1].add_child(UITheme.label(tr("Slotted · remove"), "", 16, UITheme.GOOD))
+	else:
+		_price(c[1], tr("Owned · slot") if Profile.can_slot(id) else tr("Owned · no free slot"), -1 if owned else a.price)
 
 
 ## The mage panel: worn items, and the total stats with every bonus.

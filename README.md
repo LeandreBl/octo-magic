@@ -43,7 +43,7 @@ Controls: move WASD / arrows / left stick / left half of the screen; aim
 with the mouse / right stick / right half. Spell: left click (or aim
 stick); there is only one. Pause: Escape / Start. Keys can be rebound in Options.
 
-Game state: autoloads `Profile` (`game/profile.gd`: gold, shop, bonuses,
+Game state: autoloads `Profile` (`game/profile.gd`: gold, shop, bonuses, augments,
 look, achievements, scores, spells; saved in `user://profile.json`) and
 `Run` (`game/run.gd`: XP, level-ups, upgrades, waves). Base spells:
 `game/spells.json`; level-up upgrades: `game/upgrades.gd`.

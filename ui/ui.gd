@@ -1,6 +1,6 @@
 extends CanvasLayer
 ## Every screen of the game, above the world: title menu, HUD, level-up choice,
-## pause, options, end of run, shop, achievements, leaderboard, multiplayer.
+## pause, options, end of run, shop (between runs), achievements, leaderboard, multiplayer.
 ## Solo, the world is paused whenever a screen other than the HUD is shown;
 ## in coop it only stops between runs.
 ## UI is drawn at screen resolution (not pixel-art scaled), scaled by the
@@ -479,25 +479,19 @@ func _scores_text() -> String:
 
 # --- pause -------------------------------------------------------------------
 
-var _pause_rows := {}  # "wave", "level", "kills" -> value Label
+var _pause_rows := {}  # "wave", "level", "kills", "gold" -> value Label
 var _pause_picks: HFlowContainer
-var _pause_gold: Label
-var _shop_ui := {}  # Run.SHOP id -> [buy Button, owned Control]
 
 
-## Pause: menu and run summary on the left, the run shop on the right (the
-## run's gold buys one active and one passive, Run.SHOP).
+## Pause: menu and run summary (nothing is bought in a run: the shop is
+## between runs).
 func _pause_screen() -> Control:
 	var center := CenterContainer.new()
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size.x = 960
 	center.add_child(panel)
-	var cols := _hbox(36)
-	panel.add_child(cols)
-
 	var left := _vbox(14)
 	left.custom_minimum_size.x = 340
-	cols.add_child(left)
+	panel.add_child(left)
 	left.add_child(UITheme.label("Pause", "Header"))
 	var resume_b := _button("Resume", resume, "Primary")
 	left.add_child(resume_b)
@@ -508,7 +502,7 @@ func _pause_screen() -> Control:
 	well.theme_type_variation = "Well"
 	var sum := _vbox(10)
 	well.add_child(sum)
-	for k in [["wave", "Wave"], ["level", "Level"], ["kills", "Enemies defeated"]]:
+	for k in [["wave", "Wave"], ["level", "Level"], ["kills", "Enemies defeated"], ["gold", "Gold"]]:
 		var r := _stat_row(k[1])
 		sum.add_child(r[0])
 		_pause_rows[k[0]] = r[1]
@@ -518,81 +512,14 @@ func _pause_screen() -> Control:
 	_pause_picks.add_theme_constant_override("v_separation", 6)
 	sum.add_child(_pause_picks)
 	left.add_child(well)
-
-	var line := ColorRect.new()
-	line.color = UITheme.INK
-	line.custom_minimum_size.x = 6
-	cols.add_child(line)
-
-	var right := _vbox(16)
-	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cols.add_child(right)
-	var head := _hbox(12)
-	right.add_child(head)
-	var title := UITheme.label("Run shop", "Subheader")
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	head.add_child(title)
-	var purse := PanelContainer.new()
-	purse.add_theme_stylebox_override("panel", UITheme.flat(UITheme.INK, UITheme.OUTLINE, 3, 6, 0))
-	var p_row := _hbox(6)
-	purse.add_child(p_row)
-	p_row.add_child(UITheme.icon_rect(UITheme.icon("gold"), 28))
-	_pause_gold = UITheme.label("", "", 22, UITheme.GOLD)
-	p_row.add_child(_pause_gold)
-	head.add_child(purse)
-	var hint := UITheme.label("The run's gold buys a secondary spell and a passive. They are gone at the end of the run.", "Caption")
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD
-	hint.custom_minimum_size.x = 480
-	right.add_child(hint)
-	for id in Run.SHOP:
-		right.add_child(_run_shop_item(id))
 	return center
-
-
-func _run_shop_item(id: String) -> Control:
-	var it: Dictionary = Run.SHOP[id]
-	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", UITheme.flat(UITheme.INK, UITheme.RIM, 3, 14, 0))
-	var row := _hbox(14)
-	card.add_child(row)
-	var tex: Texture2D = UITheme.glyph("shield", UITheme.MANA, 4) if it.slot == "passive" else UITheme.icon("fire_nova")
-	row.add_child(UITheme.icon_box(tex, 64))
-	var texts := _vbox(4)
-	texts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(texts)
-	var name_row := _hbox(8)
-	name_row.add_child(UITheme.label(it.name, "", 21, UITheme.GOLD))
-	name_row.add_child(UITheme.tag(tr("PASSIVE") if it.slot == "passive" else tr("ACTIVE · RIGHT CLICK")))
-	texts.add_child(name_row)
-	var desc := UITheme.label(it.desc, "", 16)
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD
-	texts.add_child(desc)
-	var buy := _button(str(it.price), func():
-		if Run.buy(id):
-			main.send_loadout(false))
-	buy.icon = UITheme.icon("gold")
-	buy.expand_icon = false
-	buy.custom_minimum_size = Vector2(104, 48)
-	buy.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	buy.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	row.add_child(buy)
-	var owned := PanelContainer.new()
-	owned.add_theme_stylebox_override("panel", UITheme.flat(Color("#10261a"), Color("#2f6b3a"), 3, 10, 0))
-	owned.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var o_row := _hbox(8)
-	owned.add_child(o_row)
-	o_row.add_child(UITheme.icon_rect(UITheme.glyph("check", UITheme.GOOD, 2), 16))
-	o_row.add_child(UITheme.label("Owned", "", 18, UITheme.GOOD))
-	row.add_child(owned)
-	_shop_ui[id] = [buy, owned]
-	return card
 
 
 func _refresh_pause() -> void:
 	_pause_rows.wave.text = str(Run.wave)
 	_pause_rows.level.text = str(Run.level)
 	_pause_rows.kills.text = str(Run.kills)
-	_pause_gold.text = str(Run.gold)
+	_pause_rows.gold.text = str(Run.gold)
 	if _pause_picks.get_child_count() != Run.picked.size():
 		for c in _pause_picks.get_children():
 			c.queue_free()
@@ -601,12 +528,6 @@ func _refresh_pause() -> void:
 			box.tooltip_text = tr(Upgrades.LIST[id].name)
 			box.mouse_filter = Control.MOUSE_FILTER_PASS
 			_pause_picks.add_child(box)
-	for id in _shop_ui:
-		var it: Dictionary = Run.SHOP[id]
-		var owned: bool = Run.passive == id or (it.slot != "passive" and Run.spells.has(it.slot))
-		_shop_ui[id][0].visible = not owned
-		_shop_ui[id][0].disabled = not Run.can_buy(id)
-		_shop_ui[id][1].visible = owned
 
 
 # --- level up ----------------------------------------------------------------

@@ -8,18 +8,6 @@ signal leveled_up(offers: Array)  # pause and let the player pick one
 
 const BOSS_EVERY := 5
 const UPGRADE_TAX := 1.1  # an upgraded spell costs 10 % more mana per upgrade
-const RING_OF_FIRE := {"name": "Ring of fire", "element": "fire", "color": "#ff7a1f", "cooldown": 3.0,
-	"emit": {"pattern": "radial", "count": 12, "body": {"shape": "bolt", "speed": 320, "size": 8, "lifetime": 0.9,
-		"on_hit": [{"type": "damage", "amount": 14}, {"type": "status", "status": "burn", "power": 3, "duration": 2}]}}}
-## Bought with the run's gold, one active (slot "secondary") and one passive
-## per run, empty at the start. A passive is applied by game/player.gd.
-const SHOP := {
-	"ring_of_fire": {"name": "Ring of fire", "desc": "Fireballs burst out all around you",
-		"price": 40, "slot": "secondary", "spell": RING_OF_FIRE},
-	"shield": {"name": "Shield", "desc": "Absorbs 40 damage, back 8 s after it breaks",
-		"price": 30, "slot": "passive"},
-}
-
 var active := false
 var wave := 0
 var level := 1
@@ -37,12 +25,13 @@ var pending := 0  # level-ups not chosen yet
 var rng := RandomNumberGenerator.new()
 var bonuses := []  # Stats bonuses: the profile's, then the hero augments
 var stats := Stats.total([])  # Stats.total(bonuses)
-var passive := ""  # a Run.SHOP id, "" until one is bought
+var passive := ""  # a Profile.AUGMENTS passive id, "" without one
 
 
-## `equipped`: slot -> spell; `bonus_list`: Profile.bonus_list(). The damage
-## stat is applied to the spells, once, here and at buy().
-func start(equipped: Dictionary, bonus_list := []) -> void:
+## `equipped`: slot -> spell; `bonus_list`: Profile.bonus_list(); `augments`:
+## Profile.slotted_augments(), an active one is the secondary spell. The
+## damage stat is applied to the spells, once, here.
+func start(equipped: Dictionary, bonus_list := [], augments := []) -> void:
 	bonuses = bonus_list.duplicate()
 	stats = Stats.total(bonuses)
 	active = true
@@ -64,6 +53,12 @@ func start(equipped: Dictionary, bonus_list := []) -> void:
 		spells[slot] = Upgrades.scale_damage(equipped[slot], stats.damage)
 		mana_mult[slot] = 1.0
 		ups[slot] = 0
+	for a in augments:
+		if a.kind == "active":
+			spells.secondary = Upgrades.scale_damage(Spell.sanitize(a.spell), stats.damage)
+			mana_mult.secondary = 1.0
+		elif passive == "":  # ponytail: one passive played (the shield is the only one), a list when there are more
+			passive = a.id
 	rng.randomize()
 	changed.emit()
 
@@ -113,26 +108,6 @@ func choose(i: int) -> bool:
 		_offer()
 	changed.emit()
 	return not offers.is_empty()
-
-
-## Is SHOP item `id` for sale: its slot empty and enough gold?
-func can_buy(id: String) -> bool:
-	var it: Dictionary = SHOP[id]
-	return active and gold >= it.price and (passive == "" if it.slot == "passive" else not spells.has(it.slot))
-
-
-func buy(id: String) -> bool:
-	if not can_buy(id):
-		return false
-	gold -= SHOP[id].price
-	var it: Dictionary = SHOP[id]
-	if it.slot == "passive":
-		passive = id
-	else:
-		spells[it.slot] = Upgrades.scale_damage(Spell.sanitize(it.spell), stats.damage)
-		mana_mult[it.slot] = 1.0
-	changed.emit()
-	return true
 
 
 ## Mana cost multiplier of `slot`: thrift lowers it, every other upgrade raises it.

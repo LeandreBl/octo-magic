@@ -1,9 +1,9 @@
 extends Node2D
 ## The mage. Twin-stick: keyboard/mouse, gamepad, or touch (left half of the
 ## screen moves, right half aims and fires the main spell).
-## Main spell: left click / right stick or RT / touch aim; secondary (bought in the
-## run): right click / Space / RB. `held` lets a touch UI fire them.
-## Passive "shield" (bought in the run): absorbs SHIELD_HP damage, comes back
+## Main spell: left click / right stick or RT / touch aim; secondary (an active
+## augment): right click / Space / RB. `held` lets a touch UI fire them.
+## Passive augment "shield": absorbs SHIELD_HP damage, comes back
 ## SHIELD_WAIT seconds after it breaks.
 ## Every number of the mage comes from `stats` (game/stats.gd, from the loadout).
 ## Coop (see main.gd): the owner peer steers its mage (position, aim, firing
@@ -40,7 +40,7 @@ var loadout_json := "":
 var stats := Stats.total([])
 var hp: float = stats.hp
 var mana: float = stats.mana
-var passive := ""  # a Run.SHOP id
+var passive := ""  # a Profile.AUGMENTS passive id
 var shield := 0.0  # hp left on the shield, synced for drawing
 var shield_wait := 0.0  # seconds until a broken shield is back
 var statuses := {}  # name -> [power, time_left], from the host
@@ -128,7 +128,7 @@ func _apply(l: Dictionary) -> void:
 		hp += maxf(0.0, l.stats.hp - stats.hp)
 		mana += maxf(0.0, l.stats.mana - stats.mana)
 		stats = l.stats
-	if l.passive != passive:  # bought, or a new run
+	if l.passive != passive:  # a new run
 		passive = l.passive
 		shield = SHIELD_HP if passive == "shield" else 0.0
 

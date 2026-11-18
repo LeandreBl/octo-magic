@@ -5,7 +5,7 @@ class_name Upgrades
 ## ("stat") are Stats bonuses on the mage (Run.bonuses, see game/stats.gd). "desc" formats the value: "step" times the tier.
 
 const SLOTS := ["primary"]  # the spell equipped from the profile
-const RUN_SLOTS := ["primary", "secondary"]  # + the active bought in a run (Run.SHOP)
+const RUN_SLOTS := ["primary", "secondary"]  # secondary: an active augment (Profile.AUGMENTS)
 const SLOT_NAMES := {"primary": "Spell", "secondary": "Secondary spell"}  # English, translated where shown
 const RARITIES := {
 	"common": {"name": "Common", "tier": 1, "weight": 60.0, "color": "#d8d2c4"},
