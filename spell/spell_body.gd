@@ -26,8 +26,7 @@ var struck := false  # beam / cone: strike once, when cast
 var target: Node2D  # beam: the enemy the arc grips
 
 const ABOVE_DECOR := 11  # over the map's trees, roofs and statues (Arena.above, z 10)
-const UNDER_DECOR := 1  # sub-casts (a hit's effects): over the movers (z 0), behind the obstacles
-const GROUND := -1  # zones (spell passives): under the mages and enemies, over the floor
+const GROUND := -1  # zones and sub-casts (a hit's effects): under the mages, enemies and obstacles, over the floor
 
 
 ## Emit an "emit" dict from pos toward dir. Bursts are spread over time.
@@ -104,8 +103,8 @@ static func nearest_enemy(world: Node, pos: Vector2, exclude: Dictionary) -> Nod
 
 
 func _ready() -> void:
-	# Only the cast projectile flies over the decor; derivatives go behind it, zones under the movers.
-	z_index = GROUND if body.shape == "zone" else ABOVE_DECOR if depth == 0 else UNDER_DECOR
+	# Only the cast projectile flies over the decor; zones and sub-casts stay on the ground, under the movers.
+	z_index = ABOVE_DECOR if depth == 0 and body.shape != "zone" else GROUND
 	speed = body.speed
 	pierce_left = body.pierce
 	bounce_left = body.bounce
