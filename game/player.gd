@@ -303,7 +303,6 @@ func _animate_cast(s: Dictionary) -> void:
 
 func _draw() -> void:
 	modulate.a = 1.0 if hp > 0.0 else 0.3  # down until the next run
-	draw_circle(Vector2.ZERO, radius * 1.6, Color(look.robe, 0.45))  # robe colour under it: who is who in coop
 	var anim := "channel" if _channel_t > 0.0 else "cast" if _cast_t > 0.0 else "idle"
 	var tex: Texture2D = SPRITES[anim]
 	var size := float(tex.get_height())
