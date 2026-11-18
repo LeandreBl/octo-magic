@@ -100,7 +100,7 @@ func _process(delta: float) -> void:
 		_next_wave()
 
 
-## Every drop on the map flies to the player (wave cleared, boss down).
+## Every drop on the map flies to the player (wave cleared, boss down, level-up).
 func _pull_drops() -> void:
 	for p in get_tree().get_nodes_in_group("pickups"):
 		p.magnet = INF
@@ -179,13 +179,14 @@ func _offer_loadout(text: String) -> void:
 		p.loadout_json = JSON.stringify(Player.clean_loadout(JSON.parse_string(text)))
 
 
-## A mage levels up: the host pushes every enemy near it away, in a circle.
+## A mage levels up: the host pulls every drop in and pushes every enemy near it away, in a circle.
 @rpc("any_peer", "call_local", "reliable")
 func _level_blast() -> void:
 	var from := multiplayer.get_remote_sender_id()
 	var p := get_node_or_null("P%d" % (from if from else 1))
 	if not multiplayer.is_server() or not p:
 		return
+	_pull_drops()
 	for e in get_tree().get_nodes_in_group("enemies"):
 		var to: Vector2 = e.position - p.position
 		if to.length() < LEVEL_BLAST_RADIUS:
