@@ -28,8 +28,13 @@ const REFILL := 0.25  # a mana or life orb gives back this share of the max
 const QUAD := 4.0
 const QUAD_TIME := 10.0  # s
 const HOPS := [[0.32, 26.0], [0.18, 7.0]]  # gold pops out of the enemy: (duration s, height px) per hop
-const HALO := 1.8  # the gold glow under a drop, to spot it on the floor: its size, x the drop's
-static var _halo := _make_halo()
+const HALO := 1.8  # the glow under a drop, to spot it on the floor: its size, x the drop's
+static var _halo := _make_halo(Color(1.0, 0.82, 0.25))
+## A grimoire glows its own colour, and twinkles: red for the hero, blue for the spells.
+static var _halos := {
+	"grimoire_hero": _make_halo(Color(1.0, 0.2, 0.15), 0.8),
+	"grimoire_spell": _make_halo(Color(0.25, 0.55, 1.0), 0.8),
+}
 const SHINE := {"size": 24, "frames": 7, "fps": 12, "loop": false}  # assets/icons/drop_gold_shine.png
 
 var kind := "gold"
@@ -42,6 +47,8 @@ var age := 0.0  # drawn only: the synced position stays on the floor
 
 func _process(delta: float) -> void:
 	_shimmer()
+	if kind in _halos:
+		queue_redraw()  # the halo twinkles
 	var total: float = HOPS[0][0] + HOPS[1][0]
 	if kind != "gold" or age >= total:
 		return
@@ -129,13 +136,19 @@ func _draw() -> void:
 	if hop.x > 0.0:  # squashed as it touches the floor
 		draw_set_transform(Vector2(0, -hop.x + hop.y * sz * 0.1), 0.0, Vector2(1.0 + hop.y * 0.2, 1.0 - hop.y * 0.2))
 	var h := sz * HALO
-	draw_texture_rect(_halo, Rect2(-h / 2.0, -h / 2.0, h, h), false)
+	var halo: Texture2D = _halos.get(kind, _halo)
+	var glow := Color.WHITE
+	if kind in _halos:  # twinkle: a slow swell with a quick flicker on top, each grimoire on its own phase
+		var t := Arena.clock + get_instance_id() % 628 * 0.01
+		h *= 1.15 + 0.15 * sin(t * 3.0)
+		glow.a = clampf(0.75 + 0.25 * sin(t * 3.0) * sin(t * 11.0), 0.0, 1.0)
+	draw_texture_rect(halo, Rect2(-h / 2.0, -h / 2.0, h, h), false, glow)
 	draw_texture_rect(tex, Rect2(-sz / 2.0, -sz / 2.0, sz, sz), false)
 
 
-static func _make_halo() -> GradientTexture2D:
+static func _make_halo(c: Color, alpha := 0.55) -> GradientTexture2D:
 	var g := Gradient.new()
-	g.colors = PackedColorArray([Color(1.0, 0.82, 0.25, 0.55), Color(1.0, 0.82, 0.25, 0.0)])
+	g.colors = PackedColorArray([Color(c, alpha), Color(c, 0.0)])
 	var tex := GradientTexture2D.new()
 	tex.gradient = g
 	tex.fill = GradientTexture2D.FILL_RADIAL
