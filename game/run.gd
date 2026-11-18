@@ -1,10 +1,11 @@
 extends Node
 ## Autoload `Run`: the state of the current run, for the game scene and the UI.
-## Pure logic (no nodes): XP and level-ups, upgrade offers, run spells, waves.
+## Pure logic (no nodes): XP and level-ups, grimoires and their upgrade offers,
+## run spells, waves.
 ## Scripts loaded by the tests never name the autoload: they get it passed.
 
 signal changed
-signal leveled_up(offers: Array)  # pause and let the player pick one
+signal offered(offers: Array)  # a grimoire opened: let the player pick one
 signal level_gained  # one or more levels: health and mana back to full
 
 const BOSS_EVERY := 5
@@ -21,8 +22,8 @@ var spells := {}  # slot -> spell, upgraded copies of the profile's spells
 var mana_mult := {}  # slot -> mana cost multiplier ("mana" upgrades)
 var ups := {}  # slot -> upgrades taken on it, each one taxes the cost (UPGRADE_TAX)
 var picked := []  # augment ids taken, in order
-var offers := []  # current level-up choice, [] when none
-var pending := 0  # level-ups not chosen yet
+var offers := []  # current grimoire choice, [] when none
+var pending := []  # grimoires picked up, not chosen yet: Upgrades.KINDS ("hero" red, "spell" blue)
 var rng := RandomNumberGenerator.new()
 var bonuses := []  # Stats bonuses: the profile's, then the hero augments
 var stats := Stats.total([])  # Stats.total(bonuses)
@@ -45,7 +46,7 @@ func start(equipped: Dictionary, bonus_list := [], augments := []) -> void:
 	scrolls = 0
 	picked = []
 	offers = []
-	pending = 0
+	pending = []
 	spells = {}
 	mana_mult = {}
 	ups = {}
@@ -74,23 +75,22 @@ func add_xp(amount: int) -> void:
 	while xp >= xp_to_next(level):
 		xp -= xp_to_next(level)
 		level += 1
-		pending += 1
 	if level > before:
 		level_gained.emit()
-	if offers.is_empty() and pending > 0:
-		_offer()
 	changed.emit()
 
 
+## Opens the next grimoire: its kind's offers; one with nothing left to improve is lost.
 func _offer() -> void:
-	offers = Upgrades.offers(spells.primary, mana_mult.primary, stats, rng)
-	if offers.is_empty():  # nothing left to improve
-		pending = 0
-	else:
-		leveled_up.emit(offers)
+	while offers.is_empty() and not pending.is_empty():
+		offers = Upgrades.offers(spells.primary, mana_mult.primary, stats, rng, pending[0])
+		if offers.is_empty():
+			pending.pop_front()
+	if not offers.is_empty():
+		offered.emit(offers)
 
 
-## Take offer `i`. Returns true while more level-ups wait for a choice.
+## Take offer `i`. Returns true while more grimoires wait for a choice.
 func choose(i: int) -> bool:
 	if i < 0 or i >= offers.size():
 		return not offers.is_empty()
@@ -106,10 +106,9 @@ func choose(i: int) -> bool:
 		spells.primary = Upgrades.apply(spells.primary, o.id, tier)
 		ups.primary += 1
 	picked.append(o.id)
-	pending -= 1
+	pending.pop_front()
 	offers = []
-	if pending > 0:
-		_offer()
+	_offer()
 	changed.emit()
 	return not offers.is_empty()
 
@@ -128,6 +127,10 @@ func collect(kind: String, value: int) -> void:
 		"xp": add_xp(roundi(value * stats.xp))
 		"gold": gold += roundi(value * stats.gold)
 		"scroll": scrolls += value
+		"grimoire_hero", "grimoire_spell":
+			pending.append(kind.trim_prefix("grimoire_"))
+			if offers.is_empty():
+				_offer()
 	changed.emit()
 
 
@@ -146,7 +149,7 @@ func score() -> int:
 func finish() -> Dictionary:
 	active = false
 	offers = []
-	pending = 0
+	pending = []
 	changed.emit()
 	return {"score": score(), "wave": wave, "level": level, "kills": kills,
 		"bosses": bosses, "gold": gold, "scrolls": scrolls}

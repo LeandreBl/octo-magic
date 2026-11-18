@@ -97,7 +97,9 @@ func _ready() -> void:
 
 	main.run_ended.connect(_on_run_ended)
 	main.run_started.connect(show_screen.bind(""))  # also on peers when the host starts
-	Run.leveled_up.connect(_show_level_up)
+	Run.offered.connect(_show_level_up)
+	Run.changed.connect(func():  # a grimoire picked up while choosing
+		_level_more.text = tr("+%d more grimoire(s) waiting") % (Run.pending.size() - 1) if Run.pending.size() > 1 else "")
 	Profile.changed.connect(_refresh_title)
 	_forge_corner = _forge_button()
 	_forge_corner.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
@@ -208,7 +210,7 @@ func _appear(screen: Control) -> void:
 		return
 	var tw := screen.create_tween().set_parallel().set_ignore_time_scale()  # level-up slow motion
 	screen.modulate.a = 0.0
-	tw.tween_property(screen, "modulate:a", 1.0, 0.12)
+	tw.tween_property(screen, "modulate:a", 1.0, LEVEL_UP_FADE if screen == screens.get("levelup") else 0.12)
 	var panel: Control = screen.get_child(0) if screen is CenterContainer and screen.get_child_count() else null
 	if panel:
 		panel.pivot_offset = panel.size / 2
@@ -259,7 +261,7 @@ func resume() -> void:
 
 func _unhandled_input(e: InputEvent) -> void:
 	# Level up: 1, 2, 3 pick a card.
-	if current == "levelup" and e is InputEventKey and e.pressed and not e.echo \
+	if current == "levelup" and _cards_ready and e is InputEventKey and e.pressed and not e.echo \
 			and e.keycode >= KEY_1 and e.keycode < KEY_1 + _level_box.get_child_count():
 		get_viewport().set_input_as_handled()
 		_level_box.get_child(e.keycode - KEY_1).pressed.emit()
@@ -630,10 +632,14 @@ func _refresh_pause() -> void:
 
 const LEVEL_UP_TIME_SCALE := 0.05  # solo: the world crawls while the player picks
 const LEVEL_UP_RECOVER := 1.5  # seconds (real time) back to full speed after the pick
+const LEVEL_UP_FADE := 0.5  # seconds (real time) the choice fades in, cards locked meanwhile
+const GRIMOIRES := {"hero": ["Red grimoire", Color("#ff6b5a")], "spell": ["Blue grimoire", Color("#5aa8ff")]}
 
 var _level_box: HBoxContainer
 var _level_title: Label
 var _level_more: Label
+var _cards_ready := false  # the choice fully shown: a click meant for a spell can't pick a card
+var _arm_tween: Tween
 
 
 func _levelup_screen() -> Control:
@@ -669,18 +675,37 @@ func _show_level_up(offers: Array) -> void:
 	for c in _level_box.get_children():  # not free(): a pressed button is mid-signal
 		_level_box.remove_child(c)
 		c.queue_free()
-	_level_title.text = tr("Level %d!") % Run.level
-	_level_more.text = tr("+%d more level(s) waiting") % (Run.pending - 1) if Run.pending > 1 else ""
+	var g: Array = GRIMOIRES[Run.pending[0]]
+	_level_title.text = tr(g[0])
+	_level_title.add_theme_color_override("font_color", g[1])
+	_cards_ready = false
 	for i in offers.size():
 		var o: Dictionary = offers[i]
 		var u: Dictionary = Upgrades.LIST[o.id]
 		var b := _button("", func():
+			if not _cards_ready:  # gamepad/keyboard accept on the focused card
+				return
 			var more := Run.choose(i)
 			main.send_loadout(false)
 			if not more:
 				show_screen(""))
 		b.theme_type_variation = "Card"
 		b.custom_minimum_size = Vector2(264, 372)
+		b.mouse_filter = Control.MOUSE_FILTER_IGNORE  # until _arm_cards: no press can start on it
+		var glow := Panel.new()  # gold halo, lit by _arm_cards
+		var gs := UITheme.flat(Color.TRANSPARENT, UITheme.GOLD, 3, 0, 0)
+		gs.draw_center = false
+		gs.set_corner_radius_all(10)
+		gs.shadow_color = Color(UITheme.GOLD, 0.7)
+		gs.shadow_size = 18
+		gs.set_expand_margin_all(4)
+		glow.add_theme_stylebox_override("panel", gs)
+		glow.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		glow.show_behind_parent = true
+		glow.modulate.a = 0.0
+		glow.name = "Glow"
+		b.add_child(glow)
 		var m := _margin(20, 16, 20, 22)
 		m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		m.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -712,6 +737,20 @@ func _show_level_up(offers: Array) -> void:
 	screens.levelup.set_meta("focus", _level_box.get_child(0))
 	show_screen("levelup")
 	Sfx.play("level_up")
+	if _arm_tween:
+		_arm_tween.kill()
+	_arm_tween = create_tween().set_ignore_time_scale()
+	_arm_tween.tween_interval(LEVEL_UP_FADE)
+	_arm_tween.tween_callback(_arm_cards)
+
+
+## The choice is fully opaque: the cards take clicks and light their gold halo.
+func _arm_cards() -> void:
+	_cards_ready = true
+	var tw := create_tween().set_ignore_time_scale().set_parallel()
+	for b in _level_box.get_children():
+		b.mouse_filter = Control.MOUSE_FILTER_STOP
+		tw.tween_property(b.get_node("Glow"), "modulate:a", 1.0, 0.25)
 
 
 ## Solo level-up: time almost stops while the halo blooms, then eases back to

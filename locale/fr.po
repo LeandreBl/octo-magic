@@ -639,11 +639,14 @@ msgstr "Choisis une amélioration pour cette run"
 msgid "1 · 2 · 3 or click to pick"
 msgstr "1 · 2 · 3 ou clic pour choisir"
 
-msgid "Level %d!"
-msgstr "Niveau %d !"
+msgid "+%d more grimoire(s) waiting"
+msgstr "+%d autre(s) grimoire(s) en attente"
 
-msgid "+%d more level(s) waiting"
-msgstr "+%d autre(s) niveau(x) en attente"
+msgid "Red grimoire"
+msgstr "Grimoire rouge"
+
+msgid "Blue grimoire"
+msgstr "Grimoire bleu"
 
 msgid "%s · %s"
 msgstr "%s · %s"

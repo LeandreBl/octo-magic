@@ -1,9 +1,10 @@
 class_name Upgrades
-## Level-up augments, each rolled with a rarity that multiplies its strength.
+## Grimoire augments, each rolled with a rarity that multiplies its strength.
 ## Spell augments edit the equipped spell's JSON (Spell.sanitize clamps it
 ## again; "mana" is kept outside the spell, see Run.mana_mult); hero augments
 ## ("stat") are Stats bonuses on the mage (Run.bonuses, see game/stats.gd). "desc" formats the value: "step" times the tier
 ## ("flat": the same at every rarity). "chance": how often the augment enters the offer pool (default always).
+## A grimoire offers one kind: "hero" (red, the stat ones) or "spell" (blue, the rest).
 
 const SLOTS := ["primary"]  # the spell equipped from the profile
 const RUN_SLOTS := ["primary", "secondary"]  # secondary: an active augment (Profile.AUGMENTS)
@@ -32,6 +33,7 @@ const LIST := {
 	"fortune": {"name": "Fortune", "desc": "+%d%% gold", "step": 15, "stat": "gold%", "pct": true},
 	"insight": {"name": "Insight", "desc": "+%d%% experience", "step": 15, "stat": "xp%", "pct": true},
 }
+const KINDS := ["hero", "spell"]
 const MANA_FLOOR := 0.4  # "mana" augments stop at 40 % of the cost
 
 
@@ -124,10 +126,12 @@ static func _each_effect(emit: Dictionary, fn: Callable) -> void:
 				_each_effect(f.emit, fn)
 
 
-## Up to `n` distinct {id, rarity} offers among the augments that still apply
-## to the equipped spell or the stats, each with its own rarity roll.
-static func offers(spell: Dictionary, mana_mult: float, stats: Dictionary, rng: RandomNumberGenerator, n := 3) -> Array:
-	var pool := LIST.keys().filter(func(id): return applies(spell, id, mana_mult, stats) and rng.randf() < LIST[id].get("chance", 1.0))
+## Up to `n` distinct {id, rarity} offers among the augments of `kind` (KINDS,
+## "" for both) that still apply to the equipped spell or the stats, each with
+## its own rarity roll.
+static func offers(spell: Dictionary, mana_mult: float, stats: Dictionary, rng: RandomNumberGenerator, kind := "", n := 3) -> Array:
+	var pool := LIST.keys().filter(func(id): return kind in ["", "hero" if LIST[id].has("stat") else "spell"] \
+		and applies(spell, id, mana_mult, stats) and rng.randf() < LIST[id].get("chance", 1.0))
 	for i in range(pool.size() - 1, 0, -1):  # Fisher-Yates with the run's rng
 		var j := rng.randi_range(0, i)
 		var t = pool[i]

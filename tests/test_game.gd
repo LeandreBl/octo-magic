@@ -119,31 +119,37 @@ func _test_run() -> void:
 	check(run.spells.keys() == ["primary"], "one spell, no secondary or ultimate")
 	check(is_equal_approx(_damage(run.spells.primary), _damage(p.equipped_spells().primary) * 1.5), "damage bonus applied")
 	var got := []
-	run.leveled_up.connect(func(o): got.append(o))
+	run.offered.connect(func(o): got.append(o))
 	var gained := [0]
 	run.level_gained.connect(func(): gained[0] += 1)
 	run.add_xp(RunState.xp_to_next(1) - 1)
-	check(run.level == 1 and got.is_empty(), "no level-up before the threshold")
+	check(run.level == 1 and gained[0] == 0, "no level-up before the threshold")
 	run.add_xp(1 + RunState.xp_to_next(2))  # two level-ups at once
-	check(run.level == 3 and run.pending == 2 and got.size() == 1 and run.offers.size() == 3, "level-ups queue")
-	check(gained[0] == 1, "one refill for the levels gained at once")
+	check(run.level == 3 and gained[0] == 1, "one refill for the levels gained at once")
+	check(got.is_empty() and run.offers.is_empty(), "a level-up offers no upgrade")
+	run.collect("grimoire_hero", 1)
+	run.collect("grimoire_spell", 1)  # two grimoires queue
+	check(run.pending == ["hero", "spell"] and got.size() == 1 and run.offers.size() == 3, "grimoires queue")
+	check(run.offers.all(func(o): return Upgrades.LIST[o.id].has("stat")), "a red grimoire offers hero stats")
+	var stats: Dictionary = run.stats.duplicate()
+	check(run.choose(0), "a second choice waits")
+	check(run.stats != stats, "hero choice applied")
+	check(run.offers.all(func(o): return not Upgrades.LIST[o.id].has("stat")), "a blue grimoire offers spell stats")
 	var o: Dictionary = run.offers[0]
 	var before: Dictionary = run.spells.primary
 	var cost := run.mana_cost("primary")
-	var stats: Dictionary = run.stats.duplicate()
-	check(run.choose(0), "a second choice waits")
-	check(run.spells.primary != before or run.mana_cost("primary") < cost or run.stats != stats or o.id == "mana", "choice applied")
-	check(not run.choose(0) and run.pending == 0 and run.offers.is_empty(), "all choices made")
+	check(not run.choose(0) and run.pending.is_empty() and run.offers.is_empty(), "all choices made")
+	check(run.spells.primary != before or run.mana_cost("primary") < cost, "spell choice applied")
 	check(run.picked.size() == 2, "picks recorded")
 	run.offers = [{"id": "toughness", "rarity": "epic"}]
-	run.pending = 1
+	run.pending = ["hero"]
 	var hp: float = run.stats.hp
 	run.choose(0)
 	check(run.stats.hp == hp + 60.0, "hero augment raises the run stat")
 	run.start(p.equipped_spells())
 	cost = run.mana_cost("primary")
 	run.offers = [{"id": "cooldown", "rarity": "common"}]
-	run.pending = 1
+	run.pending = ["spell"]
 	run.choose(0)
 	check(run.mana_cost("primary") > cost, "an upgrade raises the mana cost")
 	run.start(p.equipped_spells(), [{"gold%": 0.5}, {"mana_cost%": -0.5}])
