@@ -30,6 +30,7 @@ const LIST := {
 	"ether_charge": {"name": "Aether", "desc": "-%d%% Fulmen mana cost", "step": -12, "max": 5, "kind": "spell", "stat": "ether%", "pct": true, "spell": "lightning"},
 	"chill_wind": {"name": "Ventus Algidus", "desc": "Flatus Gelidus slows its targets by %d%%", "step": 10, "max": 5, "kind": "spell", "stat": "chill", "pct": true, "spell": "frost_jet"},
 	"cone_of_ice": {"name": "Conus Glaciei", "desc": "+%d%% Flatus Gelidus cone size", "step": 15, "max": 5, "kind": "spell", "stat": "cone%", "pct": true, "spell": "frost_jet"},
+	"embers": {"name": "Favillae", "desc": "Pila Ignea leaves burning embers: +%d damage a tick", "step": 2, "max": 5, "kind": "spell", "stat": "embers", "spell": "fireball"},
 }
 const KINDS := ["hero", "spell"]
 const ROMAN := [[10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]]

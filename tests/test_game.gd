@@ -67,7 +67,7 @@ func _test_french() -> void:
 	for m in RegEx.create_from_string("\"[A-Z_]+\": \"([^\"]+)\"").search_all(FileAccess.get_file_as_string("res://game/online.gd")):
 		texts.append(m.get_string(1))  # Online.ERRORS (the autoload needs Profile)
 	texts += Settings.REBINDABLE.values().filter(func(t): return t != "Pause")
-	var same := ["Scribe", "Robur", "Parsimonia", "Inspiratio", "Celeritas", "Tutela Ignis", "Fluxus", "Receptaculum", "Meditatio", "Antidotum", "Pernicitas", "Magnes", "Potentia", "Catena", "Procella", "Aether", "Ventus Algidus", "Rigor", "Plura Tela", "Conus Glaciei", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Pila Ignea", "Telum Magicum", "Fragmen Glaciei", "Arcus Fulguris", "Spiculum Veneni", "Tela Arcana", "Poison", "Zone", "Projectiles", "Abomination"]
+	var same := ["Scribe", "Robur", "Parsimonia", "Inspiratio", "Celeritas", "Tutela Ignis", "Fluxus", "Receptaculum", "Meditatio", "Antidotum", "Pernicitas", "Magnes", "Potentia", "Catena", "Procella", "Aether", "Ventus Algidus", "Rigor", "Plura Tela", "Conus Glaciei", "Favillae", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Pila Ignea", "Telum Magicum", "Fragmen Glaciei", "Arcus Fulguris", "Spiculum Veneni", "Tela Arcana", "Poison", "Zone", "Projectiles", "Abomination"]
 	for t in texts:
 		check(t in same or TranslationServer.translate(t) != t, "French for: " + t)
 	check(Spell.describe({"description": "x", "description_fr": "y"}) == "y", "forged spell described in French")
@@ -148,6 +148,10 @@ func _test_upgrades() -> void:
 	var conus := {"cone_of_ice": Upgrades.LIST.cone_of_ice}
 	check(Upgrades.offers({}, rng, "spell", 3, conus, "frost_jet").size() == 1 and Upgrades.offers({}, rng, "spell", 3, conus, "lightning").is_empty()
 		and Upgrades.title(conus.cone_of_ice, 5) == "Conus Glaciei V", "Conus Glaciei: for Flatus Gelidus only, up to V")
+	var favillae: Dictionary = Upgrades.LIST.embers
+	check(favillae.max == 5 and favillae.spell == "fireball" and Upgrades.title(favillae, 5) == "Favillae V"
+		and Stats.total([Upgrades.bonus(favillae, 5)]).embers == 10.0 and not Spell.sanitize({"embers": 5}).has("embers"),
+		"Favillae: embers +2 damage a tick a level, up to V, only for Pila Ignea, never spell data")
 	check(Upgrades.offers({"tough": 2}, rng, "hero", 4, SKILLS).any(func(o): return o == {"id": "tough", "level": 3}), "the next level offered")
 	check(Upgrades.offers({"tough": 4, "quick": 1, "vigor": 4, "magnet": 5}, rng, "hero", 3, SKILLS).is_empty(), "maxed skills not offered")
 	var haste: Dictionary = Upgrades.LIST.haste

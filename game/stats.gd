@@ -32,6 +32,7 @@ const BASE := {
 	"harden": 0.0,  # chance a cone strike freezes its target (SpellBody, Rigor)
 	"missiles": 0.0,  # bodies added to each primary cast (Player.emit, Plura Tela)
 	"cone": 1.0,  # multiplier on a cone's reach and width (SpellBody, Conus Glaciei)
+	"embers": 0.0,  # damage a tick of the burning embers a cast bolt leaves (SpellBody, Favillae)
 }
 const BOUNDS := {
 	"hp": [1.0, 1000.0], "hp_regen": [0.0, 50.0], "mana": [10.0, 1000.0],
@@ -39,7 +40,7 @@ const BOUNDS := {
 	"speed": [80.0, 660.0], "pickup": [30.0, 600.0], "armor": [-1.0, 0.75],
 	"crit": [0.0, 1.0], "damage": [0.1, 20.0], "gold": [0.0, 6.0], "xp": [0.0, 6.0],
 	"poison": [0.0, 1.0], "fire": [0.0, 1.0], "orbs": [0.0, 4.0], "luck": [0.0, 4.0],
-	"choices": [3.0, 4.0], "still_regen": [1.0, 4.0], "chain": [0.0, 5.0], "gust": [0.0, 300.0], "ether": [0.2, 1.0], "chill": [0.0, 0.5], "harden": [0.0, 0.15], "missiles": [0.0, 5.0], "cone": [1.0, 3.0],
+	"choices": [3.0, 4.0], "still_regen": [1.0, 4.0], "chain": [0.0, 5.0], "gust": [0.0, 300.0], "ether": [0.2, 1.0], "chill": [0.0, 0.5], "harden": [0.0, 0.15], "missiles": [0.0, 5.0], "cone": [1.0, 3.0], "embers": [0.0, 10.0],
 }
 const CRIT_MULT := 2.0
 

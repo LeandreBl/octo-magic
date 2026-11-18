@@ -1095,6 +1095,9 @@ msgstr "Flatus Gelidus ralentit ses cibles de %d%%"
 msgid "+%d%% Flatus Gelidus cone size"
 msgstr "+%d%% de taille du cône de Flatus Gelidus"
 
+msgid "Pila Ignea leaves burning embers: +%d damage a tick"
+msgstr "Pila Ignea laisse des braises ardentes : +%d dégâts par tic"
+
 msgid "Records"
 msgstr "Palmarès"
 

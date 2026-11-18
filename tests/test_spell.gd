@@ -359,6 +359,25 @@ func _check_channel() -> void:
 		await physics_frame
 	check(cold.statuses.has("freeze") and is_equal_approx(cold.statuses.freeze[1], SpellBody.FREEZE_TIME), "Rigor: the cone freezes its target")
 	cold.free()
+	# Favillae: a cast fireball leaves burning embers (fire zones) on its path; none without the skill.
+	var embers := func() -> Array:
+		return world.get_children().filter(func(n): return n is SpellBody and n.body.shape == "zone")
+	SpellBody.cast(spells.fireball.emit, Vector2(100, 600), Vector2.RIGHT, mage, spells.fireball, world)
+	for i in 20:
+		await physics_frame
+	check(embers.call().is_empty(), "no Favillae: a fireball leaves no embers")
+	mage.stats = Stats.total([Upgrades.bonus(Upgrades.LIST.embers, 3)])
+	SpellBody.cast(spells.fireball.emit, Vector2(100, 600), Vector2.RIGHT, mage, spells.fireball, world)
+	for i in 20:
+		await physics_frame
+	var trail: Array = embers.call()
+	check(trail.size() >= 2 and trail.all(func(z): return z.body.on_tick[0].amount == 6.0 and z.anim and z.position.y == 600.0),
+		"Favillae III: the fireball leaves a trail of embers, 6 damage a tick, drawn as fire")
+	var burnt: Node2D = at.call(trail[0].position)
+	for i in 40:
+		await physics_frame
+	check(burnt.hp < 1000.0, "an ember burns the enemy standing on it")
+	burnt.free()
 	for n in world.get_children():
 		if n is SpellBody:
 			n.free()

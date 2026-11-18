@@ -27,10 +27,12 @@ var target: Node2D  # beam: the enemy the arc grips
 var links: Array = []  # beam: the enemies the arc jumps on to from its target (the caster's "chain" stat)
 var index := 0  # beam / cone: which body of its emit (count > 1: one arc / cone each)
 var turn := 0.0  # beam / cone: its angle off the caster's aim (spread, radial...)
+var ember_timer := 0.0  # bolt: time since its last ember (the caster's "embers" stat)
 
 const CHILL_TIME := 1.0  # s: how long a chilled enemy stays slowed after the cone
 const FREEZE_TIME := 0.6  # s: how long a Rigor freeze holds an enemy
 const CHAIN_REACH := 140.0  # px: how far a chained arc jumps from one enemy to the next
+const EMBER_EVERY := 0.12  # s: a cast bolt drops one ember this often (Embers)
 const ABOVE_DECOR := 11  # over the map's trees, roofs and statues (Arena.above, z 10)
 const GROUND := -1  # zones and sub-casts (a hit's effects): under the mages, enemies and obstacles, over the floor
 
@@ -155,6 +157,8 @@ func _physics_process(delta: float) -> void:
 		_move(delta)
 	if body.shape == "bolt":
 		_check_hits()
+		if depth == 0:
+			_drop_embers(delta)
 	if not body.on_tick.is_empty():
 		tick_timer += delta
 		if tick_timer >= body.tick_interval:
@@ -307,6 +311,28 @@ func _harden(e: Node2D) -> void:
 	var c := _stat("harden")
 	if c > 0.0 and multiplayer.is_server() and randf() < c:
 		e.add_status("freeze", 1.0, FREEZE_TIME)
+
+
+## The Embers skill (Upgrades "embers"): a cast bolt leaves a trail of
+## burning embers, small fire zones hurting the enemies on them. An engine
+## stat, not spell data: no forged spell has it.
+func _drop_embers(delta: float) -> void:
+	var dmg := _stat("embers")
+	if dmg <= 0.0 or spell.has("weak"):
+		return
+	ember_timer += delta
+	if ember_timer < EMBER_EVERY:
+		return
+	ember_timer -= EMBER_EVERY
+	var e := SpellBody.new()
+	e.body = Spell._body({"shape": "zone", "size": 14, "lifetime": 2.0, "tick_interval": 0.5,
+		"on_tick": [{"type": "damage", "amount": dmg * caster.stats.damage}],
+		"sheet": {"file": "fire_pool.png", "size": 104, "frames": 8, "fps": 12}}, 1)
+	e.caster = caster
+	e.spell = spell.merged({"bundle": "res://assets/monsters/fx"}, true)  # the fire pool art
+	e.position = position
+	e.depth = 1
+	get_parent().add_child(e)
 
 
 func _check_hits() -> void:

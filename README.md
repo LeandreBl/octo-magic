@@ -31,7 +31,8 @@ and the spells are words you write on scrolls, forged by an AI.
   slows its targets by 10 % a level, up to V), Rigor
   (Flatus Gelidus freezes its targets for 0.6 s, +3 % chance a strike a level,
   up to V), Plura Tela (Telum Magicum fires +1 missile a level, up to V), Conus Glaciei
-  (Flatus Gelidus's cone +15 % longer and wider a level, up to V).
+  (Flatus Gelidus's cone +15 % longer and wider a level, up to V), Favillae
+  (Pila Ignea leaves a trail of burning embers, +2 damage a tick a level, up to V).
 - Permadeath: the run ends when every mage is down; gold and scrolls are kept.
   A solo run is saved at the start of each wave (pause → Save and quit), in
   the cloud with the character: Play continues it on any device.
