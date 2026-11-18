@@ -182,6 +182,8 @@ def call_cli(payload: dict) -> dict:
         env={k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"},  # empty in compose
     )
     reply = json.loads(out.stdout or "{}")
+    if reply.get("is_error") or out.returncode:  # e.g. a bad CLAUDE_CODE_OAUTH_TOKEN: logged by the job
+        raise RuntimeError(f"claude -p: {reply.get('result') or out.stderr.strip()[:300]}")
     data = reply.get("structured_output")
     if not isinstance(data, dict):  # seen once: answer only in `result`
         try:
