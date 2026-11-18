@@ -11,7 +11,9 @@ edited by PixelLab so one tentacle grips the staff) edited by pixen with
 NO_TENTACLES, seed 3: the body, the hat and the staff in a short tentacle.
 The animation is a PixMiniMax one, written to assets/octo/idle.png: a strip
 of FRAMES square frames of SIZE pixels, read by game/player.gd (which draws the
-gem's flash on a cast itself). Each run draws new ones.
+gem's flash on a cast itself). Each run draws new ones. assets/octo/cast.png
+(the staff struck forward) was drawn by an earlier version of this script
+(git show ec3957d^:tools/make_octopus.py); redraw it with the body.
 
 Run: python3 tools/make_octopus.py  (the body; --tentacle: 64 tentacles to
 tools/tentacle_choices/, then --pick <n> copies one to assets/octo/tentacle.png)

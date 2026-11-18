@@ -36,17 +36,20 @@ const BLAZE := {"name": "Blaze of glory", "element": "fire", "color": "#ff7a1f",
 		"on_hit": [{"type": "damage", "amount": 80}, {"type": "status", "status": "burn", "power": 5, "duration": 2}]}}}
 const RATIO_STEPS := 20.0  # a cast short of mana deals its share of damage in 1/20 steps
 const LEVEL_UP_HEAL := 100.0  # health and mana a level-up gives back (capped at the max)
-## The octopus seen from above (PixelLab, tools/make_octopus.py): a strip of
+## The octopus seen from above (PixelLab, tools/make_octopus.py): strips of
 ## square frames, head to the top, turned toward where it goes. Its ground
-## tentacles are not in it: TENTACLES of game/tentacle.gd under the body.
-const SPRITE := preload("res://assets/octo/idle.png")
+## tentacles are not in them: TENTACLES of game/tentacle.gd under the body.
+## "cast": the staff struck forward, played once per non-channeled cast.
+const SPRITES := {"idle": preload("res://assets/octo/idle.png"), "cast": preload("res://assets/octo/cast.png")}
 const Tentacle := preload("res://game/tentacle.gd")
 const TENTACLES := 8
-const CAST_TIME := 0.4  # s: the gem's flash, once per cast
-## Where the staff's crystal is in the sprite, in pixels from the center, head
+const CAST_TIME := 0.4  # s: the staff strike and the gem's flash, once per cast
+## Where the staff's crystal is in each frame, in pixels from the center, head
 ## up: spells leave from it and it flashes on a cast. Measured on the PixelLab
-## strip (centroid of the bright blue pixels); remeasure when it is redrawn.
-const GEM := Vector2(17, -20.7)
+## strips (centroid of the bright blue pixels); remeasure when they are redrawn.
+const GEM := {"idle": [Vector2(17, -20.7)],
+	"cast": [Vector2(17, -18.6), Vector2(17, -15.6), Vector2(-14.9, -29.3), Vector2(-11.8, -27.8),
+		Vector2(-11.3, -28.5), Vector2(-7.7, -28.3), Vector2(1.1, -26.2), Vector2(7.8, -24)]}
 const GEM_GLOW := Color("#8fe9ff")
 const DYE := preload("res://game/dye.gdshader")
 
@@ -431,9 +434,27 @@ func _animate_cast(s: Dictionary) -> void:
 		_cast_t = CAST_TIME
 
 
-## The staff's crystal, in global coordinates.
+## The animation and frame drawn now: the cast strip while a cast plays (not
+## while channeling: a beam or cone only glows), else the idle loop.
+func _frame() -> Array:
+	var anim := "cast" if _cast_t > 0.0 and _channel_t <= 0.0 else "idle"
+	var frames: int = SPRITES[anim].get_width() / SPRITES[anim].get_height()
+	var f := int(Arena.clock * 8.0) % frames
+	if anim == "cast":
+		f = clampi(int((1.0 - _cast_t / CAST_TIME) * frames), 0, frames - 1)
+	return [anim, f]
+
+
+## The staff's crystal of the frame drawn now, in the sprite's coordinates.
+func _gem_local() -> Vector2:
+	var af := _frame()
+	var pts: Array = GEM[af[0]]
+	return pts[mini(af[1], pts.size() - 1)]
+
+
+## The staff's crystal, in global coordinates, as drawn now.
 func gem() -> Vector2:
-	return global_position + SIZE * GEM.rotated(_angle + PI / 2.0)
+	return global_position + SIZE * _gem_local().rotated(_angle + PI / 2.0)
 
 
 ## Standing still with the Meditatio skill: mana regen times stats.still_regen.
@@ -448,8 +469,10 @@ func _draw() -> void:
 		for i in 3:
 			var a := Arena.clock * 3.0 + i * TAU / 3.0
 			draw_arc(Vector2.ZERO, radius + 4.0 + 2.0 * sin(Arena.clock * 4.0), a, a + 1.2, 8, Color(0.4, 0.7, 1.0, 0.6), 2.0)
-	var size := float(SPRITE.get_height())
-	var f := int(Arena.clock * 8.0) % (SPRITE.get_width() / SPRITE.get_height())
+	var af := _frame()
+	var tex: Texture2D = SPRITES[af[0]]
+	var f: int = af[1]
+	var size := float(tex.get_height())
 	draw_set_transform(Vector2.ZERO, _angle + PI / 2.0)  # the sprite's head is up
 	var filter := Color.TRANSPARENT  # on the body and the tentacles (game/dye.gdshader)
 	for st in STATUS_FILTERS:
@@ -458,13 +481,14 @@ func _draw() -> void:
 			break
 	for m in _dye:
 		m.set_shader_parameter("status", filter)
-	draw_texture_rect_region(SPRITE, Rect2(Vector2(-size, -size) / 2.0, Vector2(size, size)), Rect2(f * size, 0, size, size))
+	draw_texture_rect_region(tex, Rect2(Vector2(-size, -size) / 2.0, Vector2(size, size)), Rect2(f * size, 0, size, size))
 	# The gem's glow: a flash fading over a cast, a steady flicker while channeling.
 	var glow := 0.7 + 0.3 * sin(Arena.clock * 25.0) if _channel_t > 0.0 else maxf(0.0, _cast_t / CAST_TIME)
+	var gem_at := _gem_local()
 	if glow > 0.0:
-		draw_circle(GEM, 6.0 * glow, Color(GEM_GLOW, 0.35 * glow))
-		draw_circle(GEM, 3.5 * glow, Color(GEM_GLOW, 0.7 * glow))
-		draw_circle(GEM, 1.5 * glow, Color(Color.WHITE, glow))
+		draw_circle(gem_at, 6.0 * glow, Color(GEM_GLOW, 0.35 * glow))
+		draw_circle(gem_at, 3.5 * glow, Color(GEM_GLOW, 0.7 * glow))
+		draw_circle(gem_at, 1.5 * glow, Color(Color.WHITE, glow))
 	draw_set_transform(Vector2.ZERO)
 	if shield > 0.0:
 		draw_arc(Vector2.ZERO, radius + 6, 0.0, TAU, 32, Color(0.5, 0.85, 1.0, 0.3 + 0.5 * shield / SHIELD_HP), 3.0)
