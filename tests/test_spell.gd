@@ -306,11 +306,12 @@ func _check_channel() -> void:
 		if n is SpellBody:
 			n.free()
 	# Procella: the cone pushes the enemies it strikes away from the caster.
-	var x := aimed.position.x
+	aimed.position = mage.gem() + Vector2(80, 0)
+	aimed.set_physics_process(false)  # held there, off the map's obstacles
 	SpellBody.cast(spells.frost_jet.emit, Vector2(100, 100), Vector2.RIGHT, mage, spells.frost_jet, world)
 	for i in 3:
 		await physics_frame
-	check(is_equal_approx(aimed.position.x, x), "no Procella: the cone does not push")
+	check(aimed.knock == Vector2.ZERO, "no Procella: the cone does not push")
 	for n in world.get_children():
 		if n is SpellBody:
 			n.free()
@@ -318,11 +319,12 @@ func _check_channel() -> void:
 	SpellBody.cast(spells.frost_jet.emit, Vector2(100, 100), Vector2.RIGHT, mage, spells.frost_jet, world)
 	for i in 3:
 		await physics_frame
-	check(aimed.position.x > x + 1.0, "Procella V: the cone pushes the enemy back")
+	check(aimed.knock.x > 0.0 and is_zero_approx(aimed.knock.y), "Procella V: the cone pushes the enemy back")
 	for n in world.get_children():
 		if n is SpellBody:
 			n.free()
-	aimed.position = Vector2(200, 100)
+	aimed.knock = Vector2.ZERO
+	aimed.set_physics_process(true)
 	mage.stats = Stats.total([])
 	mage.aim = Vector2.RIGHT
 	mage.firing = {"primary": true}
