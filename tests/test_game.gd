@@ -651,6 +651,11 @@ func _test_play() -> void:
 	player.statuses.poison[1] = 5.0
 	player._physics_process(1.0)
 	check(player.hp < hp, "poison hurts over time")
+	player.hp = 2.0
+	player._physics_process(1.0)
+	player.hurt(1e9, false, true)
+	check(is_equal_approx(player.hp, 1.0), "poison never kills: it leaves the mage at 1 hp")
+	player.hp = player.stats.hp
 	player.afflict("stun", 1.0, 1.0)
 	var at := player.position
 	player._steer(0.5)

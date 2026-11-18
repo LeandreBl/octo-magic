@@ -11,7 +11,7 @@ extends Node2D
 ## Every number of the mage comes from `stats` (game/stats.gd, from the loadout).
 ## Coop (see main.gd): the owner peer steers its mage (position, aim, firing
 ## are synced from it); the host owns the rest (hp, mana, loadout, statuses)
-## and casts. Statuses from enemies (afflict): poison hurts every second,
+## and casts. Statuses from enemies (afflict): poison hurts every second (never below 1 hp),
 ## freeze slows, stun roots; the owner reads them to steer.
 
 signal died
@@ -211,7 +211,7 @@ func heal(amount: float) -> void:
 
 
 ## `fire`: fire damage (fire mages and archers, burning skeletons, fire pools), under the "fire" stat.
-func hurt(amount: float, fire := false) -> void:
+func hurt(amount: float, fire := false, poison := false) -> void:
 	if hp <= 0.0:
 		return
 	amount *= (1.0 - stats.armor) * (stats.fire if fire else 1.0)
@@ -221,6 +221,8 @@ func hurt(amount: float, fire := false) -> void:
 		amount -= absorbed
 		if shield <= 0.0:
 			shield_wait = SHIELD_WAIT
+	if poison:  # poison never kills: it leaves the mage at 1 hp at worst
+		amount = maxf(0.0, minf(amount, hp - 1.0))
 	hp -= amount
 	if hp > 0.0 and hp < stats.hp * POTION_AT and potions > 0:
 		potions -= 1
@@ -299,7 +301,7 @@ func _physics_process(delta: float) -> void:
 	for st in statuses.keys():
 		statuses[st][1] -= delta
 		if st == "poison":
-			hurt(statuses[st][0] * delta * stats.poison)
+			hurt(statuses[st][0] * delta * stats.poison, false, true)
 		if statuses[st][1] <= 0.0:
 			statuses.erase(st)
 	mana = minf(stats.mana, mana + stats.mana_regen * (stats.still_regen if channeling() else 1.0) * delta)

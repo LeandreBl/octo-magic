@@ -440,9 +440,9 @@ class Zone extends Node2D:
 			for p in get_tree().get_nodes_in_group("players"):
 				if p.hp > 0.0 and position.distance_to(p.position) < radius + p.radius:
 					if was < delay and damage > 0.0:
-						p.hurt(damage, fx == "fire_pool")
+						p.hurt(damage, fx == "fire_pool", fx == "poison")
 					if dps > 0.0:
-						p.hurt(dps * delta, fx == "fire_pool")
+						p.hurt(dps * delta, fx == "fire_pool", fx == "poison")
 		if age > delay + maxf(linger, _fx_len()):
 			queue_free()
 
