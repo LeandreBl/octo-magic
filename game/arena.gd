@@ -19,7 +19,13 @@ const BODY := 20.0  # how far from its middle the mage's body is under something
 static var _map: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ART + "map.json"))
 ## Solid polygons, circles [x, y, r], spawns [x, y] and the mages' start,
 ## scaled. Static: movers slide without a reference.
-static var polygons: Array = _map.polygons.map(func(poly): return PackedVector2Array(poly.map(func(v): return Vector2(v[0], v[1]) * SCALE)))
+static var polygons: Array = _map.polygons.map(func(poly): return PackedVector2Array(poly.map(func(v): return Vector2(v[0], v[1]) * SCALE))):
+	set(v):
+		polygons = v
+		boxes = _boxes(v)
+## Each polygon's bounding box: slide skips the polygons far from the mover
+## (it runs for every mover, every frame).
+static var boxes: Array = _boxes(polygons)
 static var solids: Array = _map.circles.map(func(s): return [s[0] * SCALE, s[1] * SCALE, s[2] * SCALE])
 static var spawns: Array = _map.spawns.map(func(s): return [s[0] * SCALE, s[1] * SCALE])
 static var START := Vector2(_map.start[0], _map.start[1]) * SCALE
@@ -99,14 +105,23 @@ static func spawn_point(seen: Array) -> Vector2:
 	var spots := []
 	for i in 200:
 		var v := Vector2(randf_range(RECT.position.x, RECT.end.x), randf_range(RECT.position.y, RECT.end.y))
-		if hidden.call(v) and slide(v, Vector2.ZERO, 16.0) == v:
+		if hidden.call(v):
 			spots.append(v)
-	if spots:
-		spots.sort_custom(func(a, b): return away.call(a) < away.call(b))
-		return spots[0]
+	spots.sort_custom(func(a, b): return away.call(a) < away.call(b))
+	for v in spots:  # the nearest free one: slide only until then
+		if slide(v, Vector2.ZERO, 16.0) == v:
+			return v
 	var all: Array = spawns.map(func(s): return Vector2(s[0], s[1]))
 	all.sort_custom(func(a, b): return away.call(a) > away.call(b))
 	return all[0] if all else RECT.get_center()
+
+
+static func _boxes(polys: Array) -> Array:
+	return polys.map(func(poly):
+		var b := Rect2(poly[0], Vector2.ZERO)
+		for v in poly:
+			b = b.expand(v)
+		return b)
 
 
 ## pos moved by motion, sliding around the solids (a mover of radius r).
@@ -122,7 +137,11 @@ static func slide(pos: Vector2, motion: Vector2, r: float) -> Vector2:
 			if tangent.dot(motion) < 0.0:
 				tangent = -tangent
 			p = c + (n * min_d + tangent * motion.length()).normalized() * min_d
-	for poly in polygons + polygons + polygons:  # pushed out to r from its nearest edge, sliding along it; thrice: out of one may push into a neighbour
+	for k in polygons.size() * 3:  # pushed out to r from its nearest edge, sliding along it; thrice: out of one may push into a neighbour
+		var j := k % polygons.size()
+		if not boxes[j].grow(r + 1.0).has_point(p):
+			continue  # outside it and farther than r from its edges
+		var poly: PackedVector2Array = polygons[j]
 		var inside := Geometry2D.is_point_in_polygon(p, poly)
 		var best := Vector2.INF
 		for i in poly.size():
@@ -132,6 +151,7 @@ static func slide(pos: Vector2, motion: Vector2, r: float) -> Vector2:
 		if inside or p.distance_to(best) < r:
 			var out := (best - p if inside else p - best).normalized()
 			p = best + (out if out else Vector2.UP) * r
-	if polygons.any(func(poly): return Geometry2D.is_point_in_polygon(p, poly)):
-		return pos  # squeezed between zones closer than the mover's width: it stays put
+	for j in polygons.size():
+		if boxes[j].has_point(p) and Geometry2D.is_point_in_polygon(p, polygons[j]):
+			return pos  # squeezed between zones closer than the mover's width: it stays put
 	return p
