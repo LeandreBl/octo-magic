@@ -19,6 +19,7 @@ signal died
 const ZOOM := 4.0 / 3.0  # on the mage: an art pixel (Arena.SCALE 1.5) is 2 screen pixels, the arena (Arena.RECT) about 2.4x2.8 screens
 const SIZE := 1.2  # the mage drawn this much bigger than its art (sprite, tentacles, gem); the hitbox `radius` stays
 const STICK_RANGE := 80.0
+const MISSILE_FAN := 12.0  # degrees between Plura Tela missiles, on a spell with no spread
 const STILL_TIME := 3.0  # s without moving before the mage channels
 const SHIELD_HP := 40.0
 const SHIELD_WAIT := 8.0
@@ -370,9 +371,24 @@ func cast(slot: String) -> bool:
 	mana = maxf(0.0, mana - cost)
 	cooldowns[slot] = s.cooldown * stats.cooldown / stats.cast_rate
 	_animate_cast(s)
-	SpellBody.cast(s.emit, gem(), aim, self, s, get_parent())
+	SpellBody.cast(emit(slot, s), gem(), aim, self, s, get_parent())
 	_cast_fx.rpc(slot, gem(), aim, ratio)
 	return true
+
+
+## The emit `slot`'s spell `s` is cast with: the Plura Tela sub-skill
+## (Upgrades "more_missiles") adds its "missiles" stat to the primary's bodies,
+## fanned out over MISSILE_FAN degrees a body when the spell has no spread.
+## An engine stat, not spell data: no forged spell has it, nor pays mana for it.
+func emit(slot: String, s: Dictionary) -> Dictionary:
+	var n := int(stats.get("missiles", 0.0))
+	if slot != "primary" or n == 0:
+		return s.emit
+	var e: Dictionary = s.emit.duplicate()
+	e.count += n
+	if e.spread == 0:
+		e.spread = MISSILE_FAN * n
+	return e
 
 
 ## The spell of `slot`, weakened (Spell.weakened) when ratio < 1 (cast
@@ -394,7 +410,7 @@ func _spell(slot: String, ratio: float) -> Dictionary:
 func _cast_fx(slot: String, pos: Vector2, dir: Vector2, ratio := 1.0) -> void:
 	if run and run.spells.has(slot):
 		var s := _spell(slot, ratio)
-		SpellBody.cast(s.emit, pos, dir, self, s, get_parent())
+		SpellBody.cast(emit(slot, s), pos, dir, self, s, get_parent())
 		_animate_cast(s)
 
 

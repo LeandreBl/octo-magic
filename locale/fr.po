@@ -1077,6 +1077,9 @@ msgstr "+%d%% régén. de mana à l'arrêt"
 msgid "Flatus Gelidus freezes its targets %d%% of the time"
 msgstr "Flatus Gelidus gèle ses cibles %d %% du temps"
 
+msgid "Telum Magicum fires +%d missile"
+msgstr "Telum Magicum tire +%d missile"
+
 msgid "Fulmen's arc jumps on to +%d enemy"
 msgstr "L'arc de Fulmen rebondit sur +%d ennemi"
 

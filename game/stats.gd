@@ -30,6 +30,7 @@ const BASE := {
 	"ether": 1.0,  # multiplier on the primary spell's mana cost, on top of mana_cost (Aether)
 	"chill": 0.0,  # fraction of their speed a cone's targets lose (SpellBody, Ventus Algidus)
 	"harden": 0.0,  # chance a cone strike freezes its target (SpellBody, Rigor)
+	"missiles": 0.0,  # bodies added to each primary cast (Player.emit, Plura Tela)
 }
 const BOUNDS := {
 	"hp": [1.0, 1000.0], "hp_regen": [0.0, 50.0], "mana": [10.0, 1000.0],
@@ -37,7 +38,7 @@ const BOUNDS := {
 	"speed": [80.0, 660.0], "pickup": [30.0, 600.0], "armor": [-1.0, 0.75],
 	"crit": [0.0, 1.0], "damage": [0.1, 20.0], "gold": [0.0, 6.0], "xp": [0.0, 6.0],
 	"poison": [0.0, 1.0], "fire": [0.0, 1.0], "orbs": [0.0, 4.0], "luck": [0.0, 4.0],
-	"choices": [3.0, 4.0], "still_regen": [1.0, 4.0], "chain": [0.0, 5.0], "gust": [0.0, 300.0], "ether": [0.2, 1.0], "chill": [0.0, 0.5], "harden": [0.0, 0.15],
+	"choices": [3.0, 4.0], "still_regen": [1.0, 4.0], "chain": [0.0, 5.0], "gust": [0.0, 300.0], "ether": [0.2, 1.0], "chill": [0.0, 0.5], "harden": [0.0, 0.15], "missiles": [0.0, 5.0],
 }
 const CRIT_MULT := 2.0
 
