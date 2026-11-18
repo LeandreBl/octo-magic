@@ -193,7 +193,7 @@ func _check_homing_lifetime() -> void:
 	var fast := Spell.sanitize({"emit": {"body": {"speed": 900,
 		"motion": [{"type": "homing", "strength": 1}]}}})
 	SpellBody.cast(fast.emit, Vector2(0, 0), Vector2.RIGHT, null, fast, world)
-	var fb: SpellBody = world.get_child(world.get_child_count() - 1)
+	var fb: SpellBody = world.get_children().filter(func(c): return c is SpellBody)[-1]
 	fb.set_physics_process(false)
 	var target := Enemy.new()
 	target.position = Vector2(0, 120)

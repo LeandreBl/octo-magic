@@ -161,9 +161,9 @@ func _move(delta: float) -> void:
 				var e := nearest_enemy(get_parent(), global_position, hit_ids)
 				if e:
 					var diff := angle_difference(dir.angle(), (e.global_position - global_position).angle())
-					# Turn rate grows with speed (turning radius stays about
-					# 100 px / strength), so fast bolts don't circle their target.
-					var rate := m.strength * 3.0 * maxf(1.0, speed / 300.0)
+					# Turn rate grows with speed (turning radius about 50 px /
+					# strength), so fast bolts don't circle a target inside it.
+					var rate: float = m.strength * maxf(3.0, speed / 50.0)
 					dir = dir.rotated(clampf(clampf(diff, -1, 1) * rate * delta, -absf(diff), absf(diff)))
 			"accelerate":
 				speed = maxf(0.0, speed + m.strength * 300.0 * delta)
