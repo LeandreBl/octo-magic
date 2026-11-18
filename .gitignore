@@ -6,3 +6,4 @@ __pycache__/
 node_modules/
 addons/webrtc_native/
 web/godot/
+tools/tentacle_choices/

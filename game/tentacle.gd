@@ -6,15 +6,15 @@ extends Line2D
 ## synced position. Shape by the code, texture by PixelLab (tools/make_octopus.py).
 
 const TEX := preload("res://assets/octo/tentacle.png")
-const POINTS := 8
-const LENGTH := 44.0  # px, base to tip
-const ROOT := 6.0  # px from the body centre to the base
-const REACH := 0.8  # where the tip rests, in LENGTH: the slack curls the chain
+const POINTS := 6
+const LENGTH := 29.0  # px, base to tip: the texture's width, drawn 1:1 to stay pixel art
+const ROOT := 8.0  # px from the body centre to the base
+const REACH := 0.85  # how far from its base the tip rests, in LENGTH: the slack curls the chain
 const STEP := 0.45  # the tip steps when that far (in LENGTH) from its rest spot
 const STEP_TIME := 0.1  # s: a step's glide
 const GAIT := 0.15  # s: the two tentacle groups take turns this long each
 const DAMP := 0.85
-const SWAY := 0.35  # px/frame²: the sideways wiggle that keeps it alive
+const SWAY := 0.2  # px/frame²: the sideways wiggle that keeps it alive
 
 var dir := 0.0  # rad from the heading
 var group := 0  # 0 or 1: groups step in turn, like legs
@@ -33,7 +33,7 @@ func _init(direction := 0.0, step_group := 0) -> void:
 	texture = TEX
 	texture_mode = Line2D.LINE_TEXTURE_STRETCH
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	width = LENGTH * TEX.get_height() / TEX.get_width()
+	width = TEX.get_height()
 	show_behind_parent = true
 
 
@@ -41,7 +41,7 @@ func _init(direction := 0.0, step_group := 0) -> void:
 func follow(center: Vector2, heading: float, delta: float, t: float) -> void:
 	var a := heading + dir
 	var base := center + Vector2.from_angle(a) * ROOT
-	var rest := center + Vector2.from_angle(a + 0.2 * sin(t * 1.3 + dir * 3.0)) * LENGTH * REACH
+	var rest := base + Vector2.from_angle(a + 0.2 * sin(t * 1.3 + dir * 3.0)) * LENGTH * REACH
 	if chain.is_empty():
 		_center = center
 		foot = rest
@@ -78,4 +78,7 @@ func follow(center: Vector2, heading: float, delta: float, t: float) -> void:
 				chain[i] += fix / 2.0
 				chain[i + 1] -= fix / 2.0
 	chain[0] = base
-	points = get_global_transform().affine_inverse() * chain if is_inside_tree() else chain
+	var local := get_global_transform().affine_inverse() * chain if is_inside_tree() else chain.duplicate()
+	for i in POINTS:
+		local[i] = local[i].round()  # whole pixels: the texture stays crisp
+	points = local

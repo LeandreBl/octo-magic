@@ -17,7 +17,8 @@ PixMiniMax strikes toward the bottom of the image whatever the prompt: the
 strike and the channel are drawn on the still turned 180 degrees, then turned
 back so they strike forward (up).
 
-Run: python3 tools/make_octopus.py  (--tentacle: also a new tentacle texture)
+Run: python3 tools/make_octopus.py  (the body; --tentacle: 64 tentacles to
+tools/tentacle_choices/, then --pick <n> copies one to assets/octo/tentacle.png)
 """
 
 import base64
@@ -31,6 +32,7 @@ import art  # noqa: E402
 import sheet  # noqa: E402
 
 OUT = ROOT / "assets/octo"
+STILL = ROOT / "tools/octo_still.png"
 BODY = ROOT / "tools/octo_body.png"
 SIZE = 96
 FRAMES = 8
@@ -52,12 +54,14 @@ CHANNEL = ("the tentacle keeps gripping the staff and holds it leaning forward t
            " moving it, the crystal at its tip pulses and crackles with a continuous stream of blue magic sparks,, the"
            " body breathes gently, seamless loop")
 CHANNEL_FROM = 4
-# One tentacle lying horizontally, base on the left (its round bulb then cropped by
-# hand, assets/octo/tentacle.png): game/tentacle.gd stretches
-# it along its chain.
-TENTACLE = ("one single straight purple octopus tentacle lying horizontally, seen from directly above, thick round"
-            " base on the left tapering smoothly to a thin pointed tip on the right, small pink suction cups along its"
-            " middle, dark purple outline, game sprite")
+# One tentacle in the style of the still's own (a 32-pixel crop of its left
+# tentacles as the style reference), drawn 1:1 by game/tentacle.gd along its
+# chain. PixelLab draws 64 of them, the tip curled on the left and the base cut
+# by the right edge: each is cropped and flipped (base on the left), then one is
+# picked by eye.
+TENTACLE = ("one single straight octopus tentacle lying horizontally across the whole image, thick on the left, thin"
+            " pointed tip on the right, purple with a light pink highlight line, black outline")
+TENTACLE_STYLE = "the chunky purple tentacle of the reference, same thickness and colors"
 
 
 def _turn(px: bytes) -> bytes:
@@ -89,17 +93,38 @@ def _write(name: str, frames: list[bytes], size: int = SIZE) -> None:
     print(name, len(frames))
 
 
-def tentacle() -> bytes:
-    res = art._request("POST", "/create-image-pixen", {
-        "description": TENTACLE, "image_size": {"width": 128, "height": 32}, "no_background": True,
-        "view": "high top-down", "outline": "single color black outline", "detail": "medium detail"})
-    return base64.b64decode(res["image"]["base64"])
+def tentacles() -> list[tuple[int, int, bytes]]:
+    """64 tentacles of 32x32 pixels as (w, h, RGBA), in the still's style."""
+    w, _, px = sheet.read_png(STILL.read_bytes())
+    crop = b"".join(bytes(px[((30 + y) * w + 4) * 4:((30 + y) * w + 36) * 4]) for y in range(32))
+    job = art._request("POST", "/generate-with-style-v2", {
+        "style_images": [{"image": _b64(sheet.write_png(32, 32, crop)), "width": 32, "height": 32}],
+        "description": TENTACLE, "style_description": TENTACLE_STYLE, "no_background": True})
+    return [sheet.read_png(base64.b64decode(i["base64"])) for i in art._wait(job, "tentacles", 600)["images"]]
+
+
+def tentacle(img: tuple[int, int, bytes]) -> bytes:
+    """One of tentacles(), cropped to its tentacle and flipped: base on the left."""
+    w, h, px = img
+    cols = [x for x in range(w) for y in range(h) if px[(y * w + x) * 4 + 3]]
+    rows = [y for y in range(h) for x in range(w) if px[(y * w + x) * 4 + 3]]
+    x0, x1, y0, y1 = min(cols), max(cols) + 1, min(rows), max(rows) + 1
+    out = b"".join(bytes(px[(y * w + x) * 4:(y * w + x) * 4 + 4]) for y in range(y0, y1) for x in reversed(range(x0, x1)))
+    return sheet.write_png(x1 - x0, y1 - y0, out)
 
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    if "--tentacle" in sys.argv:
-        (OUT / "tentacle.png").write_bytes(tentacle())
+    if "--tentacle" in sys.argv:  # then pick one: --pick <index>
+        imgs = tentacles()
+        (ROOT / "tools/tentacle_choices").mkdir(exist_ok=True)
+        for i, img in enumerate(imgs):
+            (ROOT / f"tools/tentacle_choices/{i}.png").write_bytes(tentacle(img))
+        return
+    if "--pick" in sys.argv:
+        pick = ROOT / f"tools/tentacle_choices/{sys.argv[sys.argv.index('--pick') + 1]}.png"
+        (OUT / "tentacle.png").write_bytes(pick.read_bytes())
+        return
     body = bytes(sheet.read_png(BODY.read_bytes())[2])
     _write("idle", animate(body, IDLE))
     cast = animate(_turn(body), CAST)  # turned: see the docstring
