@@ -20,6 +20,14 @@ func _initialize() -> void:
 	if Geometry2D.is_point_in_polygon(Arena.slide(Vector2(20, 50), Vector2.ZERO, 12.0), square):
 		failures += 1
 		printerr("FAIL: out of a polygon it is in")
+	# A closed pen (a thick square ring, away from the start): no monster comes out inside.
+	var pen := PackedVector2Array([Vector2(100, 100), Vector2(500, 100), Vector2(500, 500), Vector2(100, 500),
+		Vector2(100, 101), Vector2(140, 140), Vector2(140, 460), Vector2(460, 460), Vector2(460, 140), Vector2(140, 140), Vector2(100, 101)])
+	Arena.polygons = [pen]
+	var open := Arena.walkable()
+	if open.is_empty() or open.any(func(v): return Rect2(100, 100, 400, 400).has_point(v)):
+		failures += 1
+		printerr("FAIL: the ground stops at a closed pen (%d points)" % open.size())
 	Arena.polygons = keep
 	Arena.solids = circles
 	if not Arena.RECT.has_point(Arena.START):
