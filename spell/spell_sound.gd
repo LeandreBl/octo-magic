@@ -4,7 +4,9 @@ class_name SpellSound
 ## same sound (the noise is seeded by the data).
 ## - a one-shot sound when an emit is cast (sub-casts too: higher, quieter);
 ## - a looping sound on continuous bodies (zones, orbits, ticking bodies),
-##   instead of the one-shot, for as long as the body lives.
+##   instead of the one-shot, for as long as the body lives. One loop per
+##   sound: overlapping bodies with the same loop (two burning zones) play it
+##   once, a surviving body takes it over when the playing one dies.
 
 const RATE := 22050
 const CAST_DB := -8.0
@@ -13,6 +15,7 @@ const LOOP_DB := -14.0
 # ponytail: unbounded cache keyed by spell data, fine for the few spells of a
 # run; make it an LRU if forged spells pile up in one session.
 static var _cache := {}
+static var _loops := {}  # loop stream -> live bodies wanting it, the first one plays it
 
 
 static func is_continuous(body: Dictionary) -> bool:
@@ -23,19 +26,47 @@ static func is_continuous(body: Dictionary) -> bool:
 ## Plays the sound of one emitted body: a loop on the body if it is
 ## continuous, else a one-shot left in the world where it was cast.
 static func play(spell: Dictionary, body: Dictionary, depth: int, node: Node2D, world: Node) -> void:
-	var p := AudioStreamPlayer2D.new()
-	p.autoplay = true  # also when the world enters the tree later
-	p.bus = "SFX"
 	if is_continuous(body):
-		p.stream = loop_stream(spell.element, body, depth)
-		p.volume_db = LOOP_DB - 3.0 * depth
-		node.add_child(p)
+		var s := loop_stream(spell.element, body, depth)
+		var bodies: Array = _loops.get_or_add(s, [])
+		while not bodies.is_empty() and not is_instance_valid(bodies[0]):
+			bodies.pop_front()  # freed outside the tree, no tree_exiting (tests)
+		if node in bodies:
+			return  # a channel tick on a body already looping
+		bodies.append(node)
+		node.tree_exiting.connect(_release.bind(s, node, depth))
+		if bodies.size() == 1:
+			_attach_loop(s, node, depth)
 	else:
+		var p := AudioStreamPlayer2D.new()
+		p.autoplay = true  # also when the world enters the tree later
+		p.bus = "SFX"
 		p.stream = cast_stream(spell.element, body, depth)
 		p.volume_db = CAST_DB - 4.0 * depth
 		p.position = node.position
 		p.finished.connect(p.queue_free)
 		world.add_child(p)
+
+
+static func _attach_loop(s: AudioStreamWAV, node: Node2D, depth: int) -> void:
+	var p := AudioStreamPlayer2D.new()
+	p.autoplay = true
+	p.bus = "SFX"
+	p.stream = s
+	p.volume_db = LOOP_DB - 3.0 * depth
+	node.add_child(p)
+
+
+## The playing body leaves: the next live one (if any) plays the loop.
+static func _release(s: AudioStreamWAV, node: Node2D, depth: int) -> void:
+	var bodies: Array = _loops.get(s, [])
+	var was_playing: bool = not bodies.is_empty() and bodies[0] == node
+	bodies.erase(node)
+	while not bodies.is_empty() and not (is_instance_valid(bodies[0]) and not bodies[0].is_queued_for_deletion()):
+		bodies.pop_front()  # gone or dying
+	if was_playing and not bodies.is_empty():
+		_attach_loop(s, bodies[0], depth)
+
 
 
 static func _pitch(body: Dictionary, depth: int) -> float:

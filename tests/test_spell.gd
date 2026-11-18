@@ -114,11 +114,31 @@ func _initialize() -> void:
 
 	await _check_homing_lifetime()
 	await _check_channel()
+	await _check_loop_once()
 
 	# Every example spell in the docs is valid and runs without crashing.
 	var examples: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://spell/examples.json"))
 	check(examples is Array and examples.size() > 0, "example spells load")
 	_run_examples(examples if examples is Array else [])
+
+
+## Overlapping zones of one spell play their loop once; a survivor takes it over.
+func _check_loop_once() -> void:
+	await process_frame  # the root in the tree: bodies leaving it hand the loop over
+	var zone := Spell.sanitize({"emit": {"body": {"shape": "zone"}}})
+	var sw := Node2D.new()
+	root.add_child(sw)
+	var za := Node2D.new()
+	var zb := Node2D.new()
+	sw.add_child(za)
+	sw.add_child(zb)
+	SpellSound.play(zone, zone.emit.body, 0, za, sw)
+	SpellSound.play(zone, zone.emit.body, 0, zb, sw)
+	SpellSound.play(zone, zone.emit.body, 0, za, sw)  # a channel tick on the same body
+	check(za.get_child_count() == 1 and zb.get_child_count() == 0, "one loop for overlapping zones")
+	za.free()
+	check(zb.get_child_count() == 1, "the surviving zone takes the loop over")
+	sw.free()
 
 
 ## Auto-aim bolts outlive their lifetime; out of the map they die only once
