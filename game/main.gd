@@ -200,7 +200,7 @@ func _on_summoned(kind: String, pos: Vector2) -> void:
 
 
 func _on_killed(e: Node2D) -> void:
-	_killed.rpc(e.kind, e.xp, e.data.get("look", e.kind), e.position, e.radius, e._angle, e._flip)
+	_killed.rpc(e.kind, e.xp, e.data.get("look", e.kind), e.position, e.radius, e._angle)
 	if Run.is_boss(e.kind) or randf() < 0.5:
 		_drop("gold", e.gold, e.position + Vector2(randf_range(-8, 8), randf_range(-8, 8)))
 	if randf() < 0.04:
@@ -217,7 +217,7 @@ func _on_killed(e: Node2D) -> void:
 
 ## Kills and drops are shared: every peer counts them in its own Run.
 @rpc("authority", "call_local", "reliable")
-func _killed(kind: String, xp: int, look: String, pos: Vector2, radius: float, angle: float, flip: bool) -> void:
+func _killed(kind: String, xp: int, look: String, pos: Vector2, radius: float, angle: float) -> void:
 	Run.killed(kind)
 	Run.collect("xp", xp)  # XP comes from the kill itself, no crystal to pick up
 	if not Run.is_boss(kind):
@@ -233,7 +233,7 @@ func _killed(kind: String, xp: int, look: String, pos: Vector2, radius: float, a
 	fx.look = kind
 	fx.position = pos
 	fx.radius = radius
-	fx.flip = flip
+	fx.angle = angle
 	add_child(fx)
 
 

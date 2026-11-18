@@ -10,9 +10,7 @@ octopus still tools/octo_still.png, at its size: ~25 choices are kept in
 tools/monster_choices/<kind>/, the first becomes base.png (copy another one
 over it, delete its animations, and run again to change). One with "from" is
 a Pixen edit of that monster's base: its overhead pose kept, which a new
-look loses (PixelLab draws faces again). One with "front" (the bosses) is
-seen from above but a bit from the front, facing the bottom: its face gives it
-weight, and game/enemy.gd mirrors it instead of turning it.
+look loses (PixelLab draws faces again). The bosses too, at twice the size.
 
 Writes assets/monsters/<kind>/<anim>.png, strips of square frames (the
 frame size is the strip height), and assets/monsters/fx/<name>.png (same
@@ -86,22 +84,24 @@ MONSTERS = {
     "frost_mage_shield": (48, {"from": ("frost_mage", SHIELD)}, SHIELDED),
     "lightning_mage": (48, {"from": ("fire_mage", "replace the fire in its hands with crackling white balls of lightning" + KEEP)}, CAST),
     "lightning_mage_shield": (48, {"from": ("lightning_mage", SHIELD)}, SHIELDED),
-    "boss": (96, {"front": "a towering lich king, a skeleton in ornate violet robes with a golden crown, holding a glowing staff,"
-                           " huge imposing boss"}, {
-        "walk": "floating toward the viewer, robes flowing, seamless loop",
-        "summon": "raises its glowing staff, violet necrotic magic swirls around it, summoning",
-        "death": "staggers in agony, cracks of blinding violet light burst out of its body, about to explode"}),
-    "death_knight": (96, {"front": "a huge undead death knight in black spiked plate armor and spiked helmet,"
-                                   " a frost glowing greatsword, huge imposing boss"}, {
-        "windup": "raises its greatsword and roars, bracing to charge toward the viewer",
-        "slam": "slams its greatsword into the ground, an icy shockwave bursting around it",
-        "death": "staggers and drops to its knees, blinding icy blue light bursting through cracks in its armor, about to explode"}),
-    "abomination": (96, {"front": "a giant bloated undead flesh abomination stitched from corpses, green ooze dripping,"
-                                  " small stitched head sunk between huge shoulders, huge imposing boss"}, {
-        "walk": "lumbering heavily toward the viewer, seamless loop",
-        "summon": "its belly bursts open and small red imps crawl out",
-        "attack": "rears back and spews a wide spray of green acid toward the viewer",
-        "death": "swells up grotesquely, bloating bigger and bigger, glowing green light bursting through its seams, about to burst"}),
+    "boss": (96, {"look": (DARK + "a towering lich king, a skeleton in ornate violet robes, holding a glowing staff,"
+                                  " huge imposing boss", "skull wearing a golden crown")}, {
+        "walk": "floating toward the bottom of the image, robes flowing, seen from directly above, seamless loop",
+        "summon": "raises its glowing staff, violet necrotic magic swirls around it, summoning, seen from directly above",
+        "death": "staggers in agony, cracks of blinding violet light burst out of its body, about to explode, seen from directly above"}),
+    "death_knight": (96, {"look": (DARK + "a huge undead death knight in black spiked plate armor, a frost glowing greatsword,"
+                                          " huge imposing boss", "black spiked helmet")}, {
+        "windup": "raises its greatsword and roars, bracing to charge toward the bottom of the image, seen from directly above",
+        "slam": "slams its greatsword into the ground, an icy shockwave bursting around it, seen from directly above",
+        "death": "staggers and drops to its knees, blinding icy blue light bursting through cracks in its armor, about to explode,"
+                 " seen from directly above"}),
+    "abomination": (96, {"look": (DARK + "a giant bloated undead flesh abomination stitched from corpses, green ooze dripping,"
+                                         " huge shoulders, huge imposing boss", "small stitched head sunk between its shoulders")}, {
+        "walk": "lumbering heavily toward the bottom of the image, seen from directly above, seamless loop",
+        "summon": "its belly bursts open and small red imps crawl out, seen from directly above",
+        "attack": "rears back and spews a wide spray of green acid toward the bottom of the image, seen from directly above",
+        "death": "swells up grotesquely, bloating bigger and bigger, glowing green light bursting through its seams, about to burst,"
+                 " seen from directly above"}),
 }
 # Effects of the attacks (game/enemy.gd Shot and Zone, Run.ENEMIES "shot"), name -> brief.
 FX = {
@@ -154,9 +154,7 @@ def monster(kind: str) -> None:
     d.mkdir(parents=True, exist_ok=True)
     base = d / "base.png"
     if not base.exists():
-        if "front" in how:
-            base.write_bytes(art.front(DARK + how["front"], size))
-        elif "from" in how:
+        if "from" in how:
             src = OUT / how["from"][0] / "base.png"
             for _ in range(180):  # drawn by another job of this run
                 if src.exists():

@@ -6,9 +6,8 @@ extends Node2D
 ## its position, hp and statuses, and draw its shots and zones.
 ## Look: PixelLab sprites (tools/make_monsters.py), assets/monsters/<kind>/
 ## <anim>.png strips of square frames seen from straight above, facing down,
-## turned toward where it goes (or its mage when still; the bosses, a bit
-## from the front, only mirrored), and the effects of its
-## attacks in assets/monsters/fx/.
+## turned toward where it goes (or its mage when still), and the effects of
+## its attacks in assets/monsters/fx/.
 
 signal killed(enemy: Node2D)
 signal summoned(kind: String, pos: Vector2)  # summon spells, spawned by main.gd
@@ -46,8 +45,6 @@ var age := 0.0
 var side := 1.0  # kite: which way it strafes
 var _heard_hp := 0.0  # hp at the last hit sound: hosts and peers hear hits on the synced hp
 var _last_pos := Vector2.ZERO
-var _flip: bool:  # a boss faces left: mirrored (its death too, main.gd)
-	get: return data.get("boss", false) and cos(_angle) < 0.0
 var _angle := PI / 2.0  # its heading: from the synced position (or the nearest mage), the same on every peer
 var _moving := false
 var _act := ""  # a special move playing (SPELL_ANIM), for _act_time seconds
@@ -66,12 +63,10 @@ static func art(file: String) -> Texture2D:
 
 
 ## Draws frame `f` (wrapped) of strip `tex` on `item`, centered, `size` wide.
-static func draw_frame(item: CanvasItem, tex: Texture2D, f: int, size: float, flip := false, tint := Color.WHITE) -> void:
+static func draw_frame(item: CanvasItem, tex: Texture2D, f: int, size: float, tint := Color.WHITE) -> void:
 	var n := tex.get_height()
 	var src := Rect2(wrapi(f, 0, tex.get_width() / n) * n, 0, n, n)
-	# a negative width mirrors the rect in place (as Sprite2D.flip_h): same position
-	var dst := Rect2(-size / 2.0, -size / 2.0, -size if flip else size, size)
-	item.draw_texture_rect_region(tex, dst, src, tint)
+	item.draw_texture_rect_region(tex, Rect2(-size / 2.0, -size / 2.0, size, size), src, tint)
 
 
 func setup(k: String, s: Dictionary) -> void:
@@ -313,9 +308,8 @@ func _draw() -> void:
 		var f := int(Arena.clock * FPS) if _moving or data.get("ai") == "still" else 0
 		if anim != "walk":  # the move plays once over its duration
 			f = mini(int((1.0 - _act_time / _act_len) * n), n - 1)
-		if not data.get("boss", false):  # bosses, seen a bit from the front: mirrored (_flip), never turned
-			draw_set_transform(Vector2.ZERO, _angle - PI / 2.0)  # the art faces down
-		draw_frame(self, tex, f, size, _flip, tint)
+		draw_set_transform(Vector2.ZERO, _angle - PI / 2.0)  # the art faces down
+		draw_frame(self, tex, f, size, tint)
 		draw_set_transform(Vector2.ZERO)
 	else:  # not generated yet
 		draw_circle(Vector2.ZERO, radius, Color(data.get("color", "#4caf50")) * tint)
@@ -349,7 +343,7 @@ class Corpse extends Node2D:
 	func _draw() -> void:
 		var n := _tex.get_width() / _tex.get_height()
 		draw_set_transform(Vector2.ZERO, angle - PI / 2.0)  # the art faces down
-		Self.draw_frame(self, _tex, mini(int(age * FPS), n - 1), radius * 2.5, false,
+		Self.draw_frame(self, _tex, mini(int(age * FPS), n - 1), radius * 2.5,
 			Color(1, 1, 1, clampf((_len() + FADE - age) / FADE, 0.0, 1.0)))
 
 
@@ -395,7 +389,7 @@ class Zone extends Node2D:
 			var n := _fx_tex.get_width() / _fx_tex.get_height()
 			var f := int((age - delay) * FPS)
 			var left := delay + maxf(linger, _fx_len()) - age
-			Self.draw_frame(self, _fx_tex, f if linger > 0.0 else mini(f, n - 1), radius * 2.4, false,
+			Self.draw_frame(self, _fx_tex, f if linger > 0.0 else mini(f, n - 1), radius * 2.4,
 				Color(1, 1, 1, clampf(left / 0.3, 0.0, 1.0)))
 		else:
 			draw_circle(Vector2.ZERO, radius, Color(color, 0.45 if linger > 0.0 else 0.6 * (1.0 - (age - delay) / 0.2)))

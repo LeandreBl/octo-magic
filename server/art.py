@@ -81,17 +81,6 @@ def icon(description: str, size: int = 32) -> bytes:
     return base64.b64decode(res["image"]["base64"])
 
 
-def front(description: str, size: int) -> bytes:
-    """A creature seen from above but a bit from the front (high top-down,
-    facing south): size x size PNG. The bosses: their face gives them weight."""
-    res = _request("POST", "/create-image-pixen", {
-        "description": description, "image_size": {"width": size, "height": size},
-        "no_background": True, "view": "high top-down", "direction": "south",
-        "outline": "single color black outline", "detail": "highly detailed",
-    })
-    return base64.b64decode(res["image"]["base64"])
-
-
 def styled(style: bytes, description: str, timeout: float = 600) -> list[bytes]:
     """Creatures drawn in the framing and look of the PNG `style` (its size,
     square) -> ~25 choices, PNGs."""

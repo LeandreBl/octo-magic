@@ -16,7 +16,7 @@ const SHAKE := 18.0  # px of camera shake at the big blast (calibration knob)
 
 var look := "boss"
 var radius := 58.0
-var flip := false
+var angle := PI / 2.0  # its heading, as enemy.gd turns it
 var age := 0.0
 var _blasts := []  # [time s, offset, size px]
 var _flash := ColorRect.new()
@@ -81,7 +81,9 @@ func _draw() -> void:
 			var n := tex.get_width() / tex.get_height()
 			var f := mini(int(age / AGONY * n), n - 1) if death else 0
 			var glow := 1.0 + age / AGONY * (1.5 + sin(age * 40.0))
-			Enemy.draw_frame(self, tex, f, size, flip, Color(glow, glow, glow))
+			draw_set_transform(Vector2.ZERO, angle - PI / 2.0)  # the art faces down
+			Enemy.draw_frame(self, tex, f, size, Color(glow, glow, glow))
+			draw_set_transform(Vector2.ZERO)
 	else:
 		_sheet("fx/shockwave", boom, radius * 8.0, Color(1, 1, 1, clampf(2.0 - boom * 2.0, 0.0, 1.0)))
 		_sheet("fx/boss_explosion", boom, radius * 7.0)
@@ -96,5 +98,5 @@ func _sheet(file: String, t: float, size: float, tint := Color.WHITE, at := Vect
 	if not tex or t < 0.0 or t >= length(file):
 		return
 	draw_set_transform(at)
-	Enemy.draw_frame(self, tex, int(t * Enemy.FPS), size, false, tint)
+	Enemy.draw_frame(self, tex, int(t * Enemy.FPS), size, tint)
 	draw_set_transform(Vector2.ZERO)
