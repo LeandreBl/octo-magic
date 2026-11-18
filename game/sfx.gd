@@ -38,7 +38,9 @@ const ECHO_DELAY := 0.11  # s between repeats of the tail
 const ECHO_FEEDBACK := 0.4
 const GAP := 0.04  # s: the same sound twice closer than this plays once (boss rings, swarms)
 const MUSIC_DB := -6.0
-const MUSIC_FADE := 3.0  # s: a track fades out over the next one fading in
+## s: a track fades in from silence over its first seconds, out to silence over
+## its last ones, then the next starts; a track cut short fades out over the new one.
+const MUSIC_FADE := 10.0
 ## assets/music: a run starts on one (the host's pick), then shuffles through the others.
 const TRACKS := ["crypt", "ancient_evil", "catacombs", "apocalypse", "witch_lair", "dark_shrine", "dark_forest"]
 ## Sounds placed in the world (Sfx.play's `at`, spells) fade to silence this
@@ -54,6 +56,7 @@ var _last := {}  # name -> msec of the last play
 var _music: AudioStreamPlayer  # the one playing; _music_out the one fading out
 var _music_out: AudioStreamPlayer
 var _track := ""  # the one playing
+var _tick := 0  # usec of the last frame: the music's own clock (the web's sample playback gives no position)
 
 
 func _enter_tree() -> void:
@@ -75,7 +78,7 @@ func _enter_tree() -> void:
 		var m := AudioStreamPlayer.new()
 		m.bus = "Music"
 		m.add_to_group("sfx")
-		# Ends without a fade if the position does not move (web sample playback).
+		# The stream ran out before its clock (_process) faded it out: the next one.
 		m.finished.connect(func(): if m == _music and _track != "": music(TRACKS.filter(func(t): return t != _track).pick_random()))
 		add_child(m)
 		_music_out = _music
@@ -91,10 +94,21 @@ func _enter_tree() -> void:
 
 ## Every sound (group "sfx") slows down with the game time.
 func _process(_delta: float) -> void:
-	# The track near its end: the next one (another at random) fades in over it.
-	if _track != "" and _music.playing and not _music.stream_paused \
-			and _music.stream.get_length() - _music.get_playback_position() < MUSIC_FADE:
-		music(TRACKS.filter(func(t): return t != _track).pick_random())
+	var now := Time.get_ticks_usec()
+	var dt := (now - _tick) / 1e6 if _tick else 0.0  # real time: the game's delta slows down with it
+	_tick = now
+	for m: AudioStreamPlayer in [_music, _music_out]:
+		if not m or not m.playing or m.stream_paused:  # none headless
+			continue
+		var pos: float = m.get_meta("pos") + dt * m.pitch_scale
+		var end: float = m.get_meta("end")
+		m.set_meta("pos", pos)
+		if pos < end:
+			m.volume_db = MUSIC_DB + linear_to_db(maxf(music_gain(pos, end), 0.001))
+			continue
+		m.stop()  # faded out (stop() does not emit finished)
+		if m == _music and _track != "":
+			music(TRACKS.filter(func(t): return t != _track).pick_random())
 	var s := maxf(Engine.time_scale, MIN_SPEED)
 	if s == speed:
 		return
@@ -137,14 +151,14 @@ static func play(sound: String, at: Variant = null) -> void:
 
 
 ## Plays `track` to its end, then another of TRACKS at random, each fading
-## into the next; "" (or a track that is not there) fades the music out.
+## in and out (MUSIC_FADE); "" (or a track that is not there) fades the music out.
 static func music(track: String) -> void:
 	if not _node:
 		return
 	var path := "res://assets/music/%s.ogg" % track
 	if track == "" or not ResourceLoader.exists(path):
 		_node._track = ""
-		_node._fade(_node._music, false)
+		_node._fade_out(_node._music)
 		return
 	if track == _node._track and _node._music.playing:
 		return
@@ -152,25 +166,27 @@ static func music(track: String) -> void:
 	var m := _node._music_out
 	_node._music_out = _node._music
 	_node._music = m
-	_node._fade(_node._music_out, false)
+	_node._fade_out(_node._music_out)
 	m.stream = load(path)
-	m.volume_db = -60.0
+	m.set_meta("pos", 0.0)
+	m.set_meta("end", m.stream.get_length())
+	m.volume_db = MUSIC_DB + linear_to_db(0.001)
 	m.stream_paused = false
 	m.play()
-	_node._fade(m, true)
 
 
-## Fades `m` in to MUSIC_DB, or out to silence and stops it.
-func _fade(m: AudioStreamPlayer, fade_in: bool) -> void:
-	if m.has_meta("tween"):
-		(m.get_meta("tween") as Tween).kill()
-	if not m.playing:
-		return
-	var t := create_tween()
-	m.set_meta("tween", t)
-	t.tween_property(m, "volume_db", MUSIC_DB if fade_in else -60.0, MUSIC_FADE)
-	if not fade_in:
-		t.tween_callback(m.stop)
+## The music's volume (0 to 1) `pos` s into a track that ends at `end` s:
+## rising over the first MUSIC_FADE s, falling over the last ones.
+static func music_gain(pos: float, end: float) -> float:
+	return clampf(minf(pos, end - pos) / MUSIC_FADE, 0.0, 1.0)
+
+
+## Ends `m` sooner: from its volume now down to silence over MUSIC_FADE s at most.
+func _fade_out(m: AudioStreamPlayer) -> void:
+	if m.playing:
+		var pos: float = m.get_meta("pos")
+		var end: float = m.get_meta("end")
+		m.set_meta("end", pos + MUSIC_FADE * music_gain(pos, end))
 
 
 ## Holds the music where it is (pause menu), or lets it go on.
@@ -178,12 +194,6 @@ static func pause_music(paused: bool) -> void:
 	if _node:
 		_node._music.stream_paused = paused
 		_node._music_out.stream_paused = paused
-		for m in [_node._music, _node._music_out]:
-			var t: Tween = m.get_meta("tween", null)
-			if t and t.is_valid() and paused:
-				t.pause()
-			elif t and t.is_valid():
-				t.play()
 
 
 static func stream(sound: String) -> AudioStreamWAV:
