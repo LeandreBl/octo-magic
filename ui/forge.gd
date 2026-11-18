@@ -440,9 +440,10 @@ func _draw_circle() -> void:
 	var d := side * 1.0  # its rings span 0.84 of it
 	var flat := Transform2D(0, Vector2(1, TILT), 0, mid)  # on the table, around the circle's middle
 	_circle.draw_set_transform_matrix(flat)
-	_circle.draw_texture_rect(CIRCLE, Rect2(-Vector2(d, d) / 2, Vector2(d, d)), false, chalk)
-
 	var job := _focused()
+	var rings := chalk.lerp(Color(UITheme.GOLD, chalk.a), _progress(job)) if job else chalk  # gilded as its spell is forged
+	_circle.draw_texture_rect(CIRCLE, Rect2(-Vector2(d, d) / 2, Vector2(d, d)), false, rings)
+
 	if job:  # its glyphs lit around the big circle
 		_glyphs(_circle, job, Vector2.ZERO, d * 0.47, d * 0.08, 0.0, false)
 	var seals := _words.size() if job else _blanks  # a job: a circle per word written
@@ -487,10 +488,16 @@ func _draw_job(chip: Control, job: Dictionary, icon: Texture2D) -> void:
 ## A job's glyphs on `c`, around `mid` at `radius`, `g` wide: lit one after the
 ## other, the newest still hot; all of them once `done`.
 func _glyphs(c: CanvasItem, job: Dictionary, mid: Vector2, radius: float, g: float, glow: float, done: bool) -> void:
-	var shown: float = GLYPHS_N if done else maxf(job.get("progress", 0.0), 0.2 * coverage((Time.get_ticks_msec() - job.started) / 1000.0)) * GLYPHS_N
+	var shown: float = GLYPHS_N if done else _progress(job) * GLYPHS_N
 	for i in mini(ceili(shown), GLYPHS_N):
 		var at := mid + Vector2.from_angle(-PI / 2 + TAU * i / GLYPHS_N) * radius
 		var hot := clampf(1.0 - (shown - i) / 3.0, 0.0, 1.0)  # the last ones are still hot
 		var tint := CHALK.lerp(EMBER, maxf(hot, glow))
 		tint.a = clampf(shown - i, 0.0, 1.0)  # the glyph being lit fades in
 		c.draw_texture_rect_region(GLYPHS, Rect2(at - Vector2(g, g) / 2, Vector2(g, g)), Rect2(_order[i] * 32, 0, 32, 32), tint)
+
+
+## A job's progress shown, 0..1: the forge's real one, an expected curve creeping
+## until the model answers.
+static func _progress(job: Dictionary) -> float:
+	return maxf(job.get("progress", 0.0), 0.2 * coverage((Time.get_ticks_msec() - job.started) / 1000.0))
