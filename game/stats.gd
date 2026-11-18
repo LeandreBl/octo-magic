@@ -21,6 +21,7 @@ const BASE := {
 	"poison": 1.0,  # multiplier on poison damage taken
 	"orbs": 1.0,  # multiplier on what mana and life orbs refill
 	"luck": 1.0,  # multiplier on grimoire and scroll drop chances (the best mage's, on the host)
+	"choices": 3.0,  # cards a grimoire offers
 }
 const BOUNDS := {
 	"hp": [1.0, 1000.0], "hp_regen": [0.0, 50.0], "mana": [10.0, 1000.0],
@@ -28,6 +29,7 @@ const BOUNDS := {
 	"speed": [80.0, 660.0], "pickup": [30.0, 600.0], "armor": [-1.0, 0.75],
 	"crit": [0.0, 1.0], "damage": [0.1, 20.0], "gold": [0.0, 6.0], "xp": [0.0, 6.0],
 	"poison": [0.0, 1.0], "orbs": [0.0, 4.0], "luck": [0.0, 4.0],
+	"choices": [3.0, 4.0],
 }
 const CRIT_MULT := 2.0
 

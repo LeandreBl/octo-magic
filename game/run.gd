@@ -26,7 +26,7 @@ var rng := RandomNumberGenerator.new()
 var bonuses := []  # the profile's Stats bonuses
 var stats := Stats.total([])  # Stats.total(bonuses and the skills')
 var passives := []  # the slotted Profile.AUGMENTS passive ids
-var choices := 3  # cards a grimoire offers
+var choices := 3  # cards a grimoire offers by the perks (Creativity); stats.choices by the skills
 
 
 ## `equipped`: slot -> spell; `bonus_list`: Profile.bonus_list(); `augments`:
@@ -130,8 +130,11 @@ func add_xp(amount: int) -> void:
 
 ## Opens the next grimoire: its kind's offers; one with every skill maxed is lost.
 func _offer() -> void:
+	var n := maxi(choices, int(stats.choices))  # Creativity and Inspiration do not stack
+	# A dead pick at the cap: Inspiration counted as taken.
+	var lv := levels if n < Stats.BOUNDS.choices[1] else levels.merged({"inspiration": 1})
 	while offers.is_empty() and not pending.is_empty():
-		offers = Upgrades.offers(levels, rng, pending[0], choices, list)
+		offers = Upgrades.offers(lv, rng, pending[0], n, list)
 		if offers.is_empty():
 			pending.pop_front()
 	if not offers.is_empty():

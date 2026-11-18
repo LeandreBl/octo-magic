@@ -150,6 +150,7 @@ func _test_run() -> void:
 	check(run.stats.hp == hp + 50.0 and run.levels.tough == 2, "taken again: level II")
 	run.start(p.equipped_spells())
 	check(run.levels.is_empty() and run.stats.hp == Stats.BASE.hp, "a new run starts with no skill")
+	_test_inspiration(run)
 	run.list = Upgrades.LIST
 	run.start(p.equipped_spells(), [{"gold%": 0.5}, {"mana_cost%": -0.5}])
 	check(run.mana_cost("primary") == maxi(1, roundi(Spell.mana_cost(run.spells.primary) * 0.5)), "mana cost stat")
@@ -261,6 +262,26 @@ func _test_augments(run: Object, p: Object) -> void:
 	check(run.passives.is_empty() and run.spells.is_empty(), "no augment slotted, none in the run")
 	_test_perks(run, p)
 	DirAccess.remove_absolute(p.path)
+
+
+## Inspiration: a 4th card per grimoire, once; not stacked with Creativity.
+func _test_inspiration(run: Object) -> void:
+	run.list = SKILLS.merged({"inspiration": Upgrades.LIST.inspiration})
+	var ids := func(): return run.offers.map(func(o): return o.id)
+	for c in [[3, {}, 3, true], [3, {"inspiration": 1}, 4, false], [4, {}, 4, false]]:
+		run.choices = c[0]
+		run.levels = c[1]
+		run._restat()
+		run.pending = ["hero"]
+		run.offers = []
+		run._offer()
+		check(run.offers.size() == c[2] and (c[3] or not "inspiration" in ids.call()),
+			"inspiration: %d cards with perk %d, skill %s" % [c[2], c[0], c[1]])
+	run.choices = 3
+	run.levels = {}
+	run.pending = []
+	run.offers = []
+	run._restat()
 
 
 ## Perks: passive augments with Stats bonuses, run rules, extra slots.

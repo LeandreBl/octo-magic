@@ -1182,3 +1182,9 @@ msgstr "Extrême"
 
 msgid "Deal and take double damage"
 msgstr "Inflige et subit le double de dégâts"
+
+msgid "Inspiration"
+msgstr "Inspiration"
+
+msgid "+%d choice per grimoire"
+msgstr "+%d choix par grimoire"
