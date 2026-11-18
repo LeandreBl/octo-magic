@@ -1,16 +1,16 @@
 # Local development: loaded automatically by `docker compose` next to
 # docker-compose.yml. On the VPS, COMPOSE_FILE skips it (see example.env).
 #
-# Without ANTHROPIC_API_KEY, the server uses the forge running on the host,
-# `python3 server/forge.py`, which goes through your logged-in `claude` CLI
-# (your Claude account). With a key, set FORGE_URL=http://forge:8765 in .env
-# to use the forge container instead.
+# The server uses the forge container (ANTHROPIC_API_KEY or
+# CLAUDE_CODE_OAUTH_TOKEN in .env). With neither, run `python3 server/forge.py`
+# on the host (your logged-in `claude` CLI) and set
+# FORGE_URL=http://host.docker.internal:8765 in .env.
 
 services:
   server:
     ports:
       - "${PORT:-8080}:8080"
     environment:
-      FORGE_URL: ${FORGE_URL:-http://host.docker.internal:8765}
+      FORGE_URL: ${FORGE_URL:-http://forge:8765}
     extra_hosts:
       - host.docker.internal:host-gateway

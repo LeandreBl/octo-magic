@@ -9,8 +9,9 @@ Create, combine and cast spells to conquer a dungeon.
 - Online (website, web game, accounts, forge, coop lobby, TURN):
   `cp example.env .env`, fill it, `docker compose up -d --build`, then
   http://localhost:8080.
-  Locally without `ANTHROPIC_API_KEY`, also run `python3 server/forge.py`:
-  the forge then uses your logged-in `claude` CLI (Claude account). On the
+  Locally without `ANTHROPIC_API_KEY` nor `CLAUDE_CODE_OAUTH_TOKEN`, also run
+  `python3 server/forge.py` (your logged-in `claude` CLI) and set
+  `FORGE_URL=http://host.docker.internal:8765` in `.env`. On the
   VPS, behind Traefik: https://octo-magic.notdotio.com (website and game),
   https://octo-magic.api.notdotio.com (API), TURN on
   octo-magic.turn.notdotio.com (see the end of `example.env`).
