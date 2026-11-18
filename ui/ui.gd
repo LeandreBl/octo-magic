@@ -133,6 +133,7 @@ func show_screen(name: String) -> void:
 		screens[k].visible = k == name
 	sticks.visible = name == ""
 	_dim.visible = name not in ["", "title", "shop", "end"]
+	_dim.color.a = 0.82 if Run.active else 1.0  # out of a run, only the idle mage would show: hide it
 	get_tree().paused = not Run.active or (name != "" and main.solo())
 	if name == "title":
 		_refresh_title()
