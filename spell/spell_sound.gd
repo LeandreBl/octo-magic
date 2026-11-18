@@ -82,15 +82,32 @@ static func _release(s: AudioStream, node: Node2D, depth: int, db: float) -> voi
 
 ## A continuous body's recorded sound, looped; null if none (or missing: coop
 ## peers lack a forged bundle, like its sheets).
+## A forged spell (bundle in user://, no `sound`) takes the recording of the
+## base spell with its element and shape: a forged Fulmen still crackles.
 static func _recorded(spell: Dictionary, body: Dictionary) -> AudioStream:
 	var key: String = spell.get("bundle", "") + "/" + body.get("sound", "")
 	if body.get("sound", "").is_empty() or not key.begins_with("res://") or not ResourceLoader.exists(key):
+		key = _base_recordings().get(spell.element + "/" + body.shape, "")
+	if key.is_empty() or not ResourceLoader.exists(key):
 		return null
 	if not _cache.has(key):
 		var s: AudioStreamOggVorbis = load(key)
 		s.loop = true
 		_cache[key] = s
 	return _cache[key]
+
+
+static var _base := {}  # "element/shape" -> res:// Ogg of a base spell (game/spells.json)
+
+
+static func _base_recordings() -> Dictionary:
+	if _base.is_empty():
+		_base[""] = ""  # read once, even with no recording
+		for d in JSON.parse_string(FileAccess.get_file_as_string("res://game/spells.json")):
+			var b: Dictionary = d.get("emit", {}).get("body", {})
+			if b.get("sound") is String and d.get("bundle") is String:
+				_base[str(d.get("element")) + "/" + str(b.get("shape"))] = d.bundle + "/" + b.sound
+	return _base
 
 
 static func _pitch(body: Dictionary, depth: int) -> float:

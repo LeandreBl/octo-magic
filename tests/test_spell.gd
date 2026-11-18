@@ -117,6 +117,10 @@ func _initialize() -> void:
 			var sp := Spell.sanitize(d)
 			var rec := SpellSound._recorded(sp, sp.emit.body)
 			check(rec is AudioStreamOggVorbis and rec.loop, "%s plays its recorded loop" % d.id)
+			var forged := sp.duplicate(true)  # a forge bundle: in user://, no `sound`
+			forged.bundle = "user://spells/forged_1"
+			forged.emit.body.erase("sound")
+			check(SpellSound._recorded(forged, forged.emit.body) == rec, "a forged %s keeps its base recording" % d.id)
 	check(SpellSound.cast_stream("fire", base.emit.body, 0) !=SpellSound.cast_stream("fire", base.emit.body, 1), "sub-casts sound different")
 
 	await _check_homing_lifetime()
