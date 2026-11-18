@@ -1,5 +1,6 @@
 extends Node2D
-## A drop: gold heap, mana or life orb, or blank scroll. Flies to the player once within
+## A drop: gold heap, mana or life orb, blank scroll, or grimoire (red: hero
+## stats, blue: spell stats; Run opens its upgrade choice). Flies to the player once within
 ## its pickup stat (or `magnet`, raised at the end of a wave), then reports itself.
 ## Coop: simulated on the host, flies to the nearest mage; peers get its position.
 
@@ -9,8 +10,10 @@ const TEXTURES := {  # PixelLab, tools/make_icons.py
 	"gold": preload("res://assets/icons/drop_gold.png"),
 	"mana": preload("res://assets/icons/drop_mana.png"), "life": preload("res://assets/icons/drop_life.png"),
 	"scroll": preload("res://assets/icons/scroll.png"),
+	"grimoire_hero": preload("res://assets/icons/drop_grimoire_hero.png"),
+	"grimoire_spell": preload("res://assets/icons/drop_grimoire_spell.png"),
 }
-const SIZES := {"gold": 24.0, "mana": 20.0, "life": 22.0, "scroll": 24.0}  # px on the floor
+const SIZES := {"gold": 24.0, "mana": 20.0, "life": 22.0, "scroll": 24.0, "grimoire_hero": 26.0, "grimoire_spell": 26.0}  # px on the floor
 const REFILL := 0.25  # a mana or life orb gives back this share of the max
 const HOPS := [[0.32, 26.0], [0.18, 7.0]]  # gold pops out of the enemy: (duration s, height px) per hop
 const HALO := 1.8  # the gold glow under a drop, to spot it on the floor: its size, x the drop's

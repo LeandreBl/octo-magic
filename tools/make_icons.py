@@ -88,6 +88,9 @@ def jobs() -> dict[str, str]:
     out["drop_mana"] = f"{orb}: beautiful glowing sapphire blue mana orb, bright cyan core light inside, deep blue edges, small white specular highlight top-left, soft blue aura"
     out["drop_life"] = f"{orb}: beautiful glowing ruby red life orb, bright scarlet core light inside, deep crimson edges, small white specular highlight top-left, soft red aura"
     out["scroll"] = f"{STYLE}: a blank rolled parchment scroll with a red wax seal"
+    # Grimoires (red: hero stats, blue: spell stats): picked up, they open the upgrade choice.
+    out["drop_grimoire_hero"] = f"{drop}: a small closed spellbook grimoire with a crimson red leather cover, gold corners and a glowing gold rune on the cover"
+    out["drop_grimoire_spell"] = f"{drop}: a small closed spellbook grimoire with a deep blue leather cover, silver corners and a glowing cyan rune on the cover"
     return out
 
 

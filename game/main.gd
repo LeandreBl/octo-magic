@@ -18,6 +18,7 @@ const POLL_SECONDS := 3.0
 const SPAWN_EVERY := 0.5  # s between two monsters of a wave: it trickles in
 const LEVEL_BLAST_RADIUS := 220.0  # px around the mage leveling up
 const LEVEL_BLAST_FORCE := 900.0  # knock speed: about 270 px of slide (enemy knock decays 1500/s)
+const GRIMOIRE_CHANCE := 0.04  # a kill drops a grimoire (red or blue); a boss always does
 const Enemy := preload("res://game/enemy.gd")
 const Pickup := preload("res://game/pickup.gd")
 const Player := preload("res://game/player.gd")
@@ -65,6 +66,7 @@ func _ready() -> void:
 	add_child(net)
 	Run.level_gained.connect(send_loadout.bind(false, true))
 	Run.level_gained.connect(func(): _level_blast.rpc_id(1))
+	Run.level_gained.connect(func(): Sfx.play("level_up"))
 	_reset_world()
 	var ui := preload("res://ui/ui.gd").new()
 	ui.name = "UI"
@@ -204,6 +206,8 @@ func _on_killed(e: Node2D) -> void:
 		_drop("mana", 1, e.position + Vector2(randf_range(-10, 10), -10))
 	if randf() < 0.01:  # rarer than the rest
 		_drop("life", 1, e.position + Vector2(randf_range(-10, 10), 10))
+	if Run.is_boss(e.kind) or randf() < GRIMOIRE_CHANCE:
+		_drop("grimoire_" + Upgrades.KINDS.pick_random(), 1, e.position + Vector2(randf_range(-12, 12), -16))
 	if randf() < (0.05 if Run.is_boss(e.kind) else 0.0025):  # rare: ~1 boss in 20
 		_drop("scroll", 1, e.position + Vector2(0, 14))
 	if Run.is_boss(e.kind):
@@ -235,7 +239,7 @@ func _killed(kind: String, xp: int, look: String, pos: Vector2, radius: float, a
 @rpc("authority", "call_local", "reliable")
 func _collected(kind: String, value: int) -> void:
 	Run.collect(kind, value)
-	Sfx.play(kind)
+	Sfx.play("scroll" if kind.begins_with("grimoire") else kind)
 	if kind == "scroll":
 		forge_note = tr("Blank scroll found! You can write on it at the end of the run.")
 
