@@ -119,13 +119,6 @@ const CSS = `
 }
 .rg.open .rg-horizon::before { opacity: 1; animation: rg-swirl 2.4s linear infinite, rg-in .5s ease-out both; }
 .rg.open .rg-horizon::after { animation: rg-flash 1.1s ease-out both; }
-.rg.open .rg-ripple {
-  position: absolute; inset: 0; border-radius: 50%; opacity: 0; pointer-events: none;
-  background: repeating-radial-gradient(circle, transparent 0 7%, #ffffff30 8%, transparent 10%);
-  box-shadow: inset 0 0 30px 12px #120d24cc;
-}
-.rg.open .rg-ripple { opacity: 1; animation: rg-ripple 1.6s linear infinite; }
-.rg-horizon img { opacity: 0; transition: opacity .3s; }
 .rg.open .rg-horizon { animation: rg-kawoosh .9s cubic-bezier(.2, 1.6, .4, 1) both; }
 .rg-band { fill: none; stroke: #0c0919; stroke-width: 32; }
 .rg-rune { fill: none; stroke: #5b4a96; stroke-width: 2.6; stroke-linecap: square; stroke-linejoin: miter; transition: stroke .3s; }
