@@ -352,7 +352,8 @@ def bundle(spell: dict, draw=art) -> bytes:
         for i, b in enumerate(bodies(spell.get("emit"))[:ART_BODIES]):
             look = str(b.get("look") or spell.get("description") or "magic projectile")
             if b.get("shape") == "zone":
-                look += ". Seen from above, a magic area on the ground, seamless loop, fits within 64x64 pixels."
+                look += (". Seen from above, a magic area effect, seamless loop, fits within 64x64 pixels."
+                         " Only the effect itself on a transparent background: no ground, no floor, no backdrop.")
             else:
                 look += (". Top-down game projectile flying to the right, seamless loop, centered,"
                          " fits within 24x24 pixels.")

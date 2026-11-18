@@ -189,6 +189,17 @@ class BundleTest(unittest.TestCase):
         deepest = body["on_expire"][0]["emit"]["body"]["on_tick"][0]["emit"]["body"]
         self.assertNotIn("sheet", deepest)  # past ART_BODIES: pixel grids
 
+    def test_opaque_floor_cut_out(self):
+        png, meta = grid_png()
+        w, h, px = sheet.read_png(png)
+        for i in range(w * h):  # a two-tone gray floor under the moving dot
+            if not px[i * 4 + 3]:
+                px[i * 4:i * 4 + 4] = b"\x80\x80\x80\xff" if i % 3 else b"\x90\x90\x90\xff"
+        out, m = sheet.normalize(sheet.write_png(w, h, px), meta, loop=True)
+        _, _, px = sheet.read_png(out)
+        self.assertEqual(m["size"], 8)  # cropped to the dot's path, as without floor
+        self.assertEqual({bytes(px[i:i + 4]) for i in range(0, len(px), 4) if px[i + 3]}, {b"\xff\x00\x00\xff"})
+
     def test_still_drawing_rejected(self):
         with mock.patch.object(forge.art, "token", return_value="t"):
             z, m = self.open(forge.bundle(json.loads(json.dumps(self.SPELL)), FakeArt(still={"body0"})))

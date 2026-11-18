@@ -109,6 +109,39 @@ def _strip(frames, fw, fh, box, size) -> bytes:
     return write_png(size * n, size, out)
 
 
+def _cut_background(frames, fw, fh, tol=24):
+    """PixelLab's /vfx has no transparent-background option: a ground effect
+    often comes on an opaque floor filling the frame. When most of the frame
+    border is opaque, the colors on the border in every frame (the floor stays,
+    the effect moves) are the background: clear in each frame the pixels of
+    those colors connected to the border. Frames are edited in place."""
+    border = [y * fw + x for y in range(fh) for x in range(fw) if x in (0, fw - 1) or y in (0, fh - 1)]
+    if sum(frames[0][i * 4 + 3] == 255 for i in border) * 2 < len(border):
+        return  # already transparent
+    rgb = lambda f, i: bytes(f[i * 4:i * 4 + 3])
+    palette = set.intersection(*({rgb(f, i) for i in border if f[i * 4 + 3]} for f in frames)) \
+        or {rgb(frames[0], i) for i in border}
+    near = {}
+
+    def is_bg(f, i):
+        c = rgb(f, i)
+        if c not in near:
+            near[c] = any(max(abs(a - b) for a, b in zip(c, p)) <= tol for p in palette)
+        return f[i * 4 + 3] and near[c]
+
+    for f in frames:
+        todo = [i for i in border if is_bg(f, i)]
+        seen = set(todo)
+        while todo:
+            i = todo.pop()
+            f[i * 4 + 3] = 0
+            x, y = i % fw, i // fw
+            for j, ok in ((i - 1, x > 0), (i + 1, x < fw - 1), (i - fw, y > 0), (i + fw, y < fh - 1)):
+                if ok and j not in seen and is_bg(f, j):
+                    seen.add(j)
+                    todo.append(j)
+
+
 def normalize(png: bytes, meta: dict, loop: bool) -> tuple[bytes, dict]:
     """A PixelLab sheet (grid of meta w x h frames, meta cols per row, at
     meta fps) -> (strip PNG, {size, frames, fps}) following the convention."""
@@ -123,6 +156,8 @@ def normalize(png: bytes, meta: dict, loop: bool) -> tuple[bytes, dict]:
     frames = [frames[min(n - 1, i * src_fps // FPS)] for i in range(count)]
     if len(frames) < 2 or all(f == frames[0] for f in frames):
         raise SheetError("not animated")
+    frames = [bytearray(f) for f in frames]  # resampling repeats frames: cut each once
+    _cut_background(frames, fw, fh)
     box = _bbox(fw, fh, frames)
     size = -(-max(box[2] - box[0], box[3] - box[1]) // 8) * 8
     return _strip(frames, fw, fh, box, size), {"size": size, "frames": len(frames), "fps": FPS, "loop": loop}
