@@ -36,7 +36,15 @@ static func cast(emit: Dictionary, pos: Vector2, aim: Vector2, owner_node: Node2
 			await world.get_tree().create_timer(emit.burst_delay).timeout
 			if not is_instance_valid(world):
 				return
-		var b := SpellBody.new()
+		var b := _channeled(emit.body, owner_node, depth, world)
+		if b:  # a channel tick renews the live arc / cone: one on screen, not a stack
+			b.age = 0.0
+			b.struck = false
+			b.dir = dirs[i]
+			b.position = pos
+			SpellSound.play(spell, emit.body, depth, b, world)
+			continue
+		b = SpellBody.new()
 		b.body = emit.body
 		b.caster = owner_node
 		b.spell = spell
@@ -47,6 +55,16 @@ static func cast(emit: Dictionary, pos: Vector2, aim: Vector2, owner_node: Node2
 		# One sound per emit; each body of a timed burst gets its own one-shot.
 		if i == 0 or (emit.burst_delay > 0.0 and not SpellSound.is_continuous(emit.body)):
 			SpellSound.play(spell, emit.body, depth, b, world)
+
+
+static func _channeled(body: Dictionary, owner_node: Node2D, depth: int, world: Node) -> SpellBody:
+	if body.shape not in ["beam", "cone"]:
+		return null
+	for n in world.get_children():
+		if n is SpellBody and is_same(n.body, body) and n.caster == owner_node \
+				and n.depth == depth and not n.is_queued_for_deletion():
+			return n
+	return null
 
 
 static func _directions(emit: Dictionary, pos: Vector2, aim: Vector2, world: Node) -> Array:

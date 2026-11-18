@@ -200,7 +200,11 @@ func _check_channel() -> void:
 	await physics_frame
 	mage.aim = Vector2.DOWN
 	await physics_frame
-	var arc: SpellBody = world.get_children().filter(func(n): return n is SpellBody and n.caster == mage)[0]
+	SpellBody.cast(spells.lightning.emit, Vector2(110, 100), Vector2.RIGHT, mage, spells.lightning, world)
+	var arcs := world.get_children().filter(func(n): return n is SpellBody and n.caster == mage)
+	check(arcs.size() == 1, "held beam renews its arc instead of stacking a new one each tick")
+	var arc: SpellBody = arcs[0]
+	await physics_frame
 	check(arc.dir == Vector2.DOWN and arc.position.is_equal_approx(mage.gem()) and mage.gem() != mage.position,
 		"beam follows the caster's aim and gem every frame")
 	mage.free()
