@@ -166,8 +166,8 @@ msgstr "Sort précédent"
 msgid "Next spell"
 msgstr "Sort suivant"
 
-msgid "%s · spell %d of %d"
-msgstr "%s · sort %d sur %d"
+msgid "%s · equipped by %s"
+msgstr "%s · équipé par %s"
 
 msgid "No blank scroll: bosses drop them."
 msgstr "Aucun parchemin vierge : les boss en laissent tomber."

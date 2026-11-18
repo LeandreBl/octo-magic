@@ -335,8 +335,9 @@ func _test_profile() -> void:
 	check(p.available_spells("primary").size() == 7, "achievements unlock spells")
 	check(p.equip_spell("primary", "spark") and not p.equip_spell("primary", "arcane_missiles"), "equip unlocked only")
 	check(p.add_forged(Spell.base(), "user://spells/forged_1.spell") == "forged_1", "forged spell kept")
-	var owned := p.owned_spells()
-	check(owned.size() == 8 and owned[-1].id == "forged_1", "forge picks among unlocked base and forged spells")
+	var owned := p.equipped_entries()
+	check(owned.size() == 1 and owned[0].id == "forged_1", "forge picks among the equipped spells only")
+	owned = p.available_spells("primary")
 	var Forge: GDScript = load("res://ui/forge.gd")
 	check(Forge.step(owned, "forged_1", 1) == owned[0].id and Forge.step(owned, owned[0].id, -1) == "forged_1",
 		"forge spell picker wraps around")

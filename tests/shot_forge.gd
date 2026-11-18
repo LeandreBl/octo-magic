@@ -22,7 +22,7 @@ func _initialize() -> void:
 	root.get_texture().get_image().save_png(out + ".png")
 	for i in 2:  # two spells being forged, the first one for longer
 		var job := {"id": "shot%d" % i, "slot": "primary", "spell": Spell.base(),
-			"started": Time.get_ticks_msec() - 60000 / (i + 1), "text": "ignis umbra"}
+			"started": Time.get_ticks_msec() - 60000 / (i + 1), "text": "ignis umbra", "who": "Merlin"}
 		main.forge_jobs.append(job)
 		forge._on_started(job)
 	for i in 2:

@@ -428,7 +428,7 @@ func _forge_request(path: String, headers: PackedStringArray, done: Callable,
 
 
 ## `words`: one word per scroll, separated by spaces or commas; `entry`: the
-## owned spell to improve (Profile.owned_spells()), the result takes its slot.
+## equipped spell to improve (Profile.equipped_entries()), the result takes its slot.
 func write_scroll(words: String, entry: Dictionary) -> void:
 	var word := words.strip_edges()
 	if word.is_empty() or not can_write():
@@ -440,7 +440,7 @@ func write_scroll(words: String, entry: Dictionary) -> void:
 		forge_status = tr("Log in (main menu → Account) to write the scrolls.")
 		return
 	forge_status = tr("Writing the scrolls…")
-	var job := {"slot": entry.slot, "spell": entry.spell, "words": 0, "text": word}
+	var job := {"slot": entry.slot, "spell": entry.spell, "who": Online.character_name(), "words": 0, "text": word}
 	var body := JSON.stringify({"spell": entry.spell, "words": word,
 		"scrolls": Profile.blank_scrolls, "lang": TranslationServer.get_locale()})
 	if not _forge_request("/api/forge", auth + PackedStringArray(["Content-Type: application/json"]),

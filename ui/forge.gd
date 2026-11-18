@@ -37,8 +37,8 @@ var _circle: Control  # the big magic circle, the words' circles in it
 var _page: VBoxContainer  # the circle, the line to write on, the button, the status
 var _rows: VBoxContainer  # the spell's stats, a name and a value per row
 var _spell: Label  # the chosen spell's description
-var _pick := ""  # id of the owned spell to improve; empty: the equipped main spell
-var _shown := ""  # id of the spell drawn in the picker
+var _pick := ""  # id of the equipped spell to improve; empty: the main one
+var _shown := ""  # id of the spell drawn in the picker, and of its character
 var _icon: TextureRect
 var _name: Label
 var _element: Label
@@ -157,7 +157,7 @@ func _ready() -> void:
 	_page.add_child(_new)
 	_page.move_child(_new, _write.get_index() + 1)
 
-	# The spell to improve, picked among the owned ones with the arrows: its
+	# The spell to improve, picked among the equipped ones with the arrows: its
 	# icon, its name carved in the wood, its description and stats in chalk.
 	var view := _vbox(10)
 	view.custom_minimum_size.x = 360
@@ -173,7 +173,7 @@ func _ready() -> void:
 		arrow.icon = UITheme.glyph(side[0], Color.WHITE)
 		arrow.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		arrow.tooltip_text = side[2]
-		arrow.pressed.connect(func(): _pick = step(Profile.owned_spells(), _chosen().id, side[1]))
+		arrow.pressed.connect(func(): _pick = step(Profile.equipped_entries(), _chosen().id, side[1]))
 		_arrows.append(arrow)
 	picker.add_child(_arrows[0])
 	picker.add_child(_icon)
@@ -256,14 +256,13 @@ func _on_write() -> void:
 	main.write_scroll(_edit.text, _chosen())
 
 
-## The owned spell to improve: the picked one, else the equipped main spell.
+## The equipped spell to improve: the picked one, else the main one.
 func _chosen() -> Dictionary:
-	var owned := Profile.owned_spells()
-	for id in [_pick, Profile.spells.get("primary", "")]:
-		for e in owned:
-			if e.id == id:
-				return e
-	return owned[0]
+	var equipped := Profile.equipped_entries()
+	for e in equipped:
+		if e.id == _pick:
+			return e
+	return equipped[0]
 
 
 ## The id `by` spells after `id` in `owned`, wrapping around.
@@ -316,8 +315,15 @@ func _on_started(job: Dictionary) -> void:
 ## lighting up around it.
 func _job_chip(job: Dictionary) -> Control:
 	var chip := Control.new()
-	chip.custom_minimum_size = Vector2(JOB, JOB)
-	chip.tooltip_text = Spell.label(job.spell)
+	chip.custom_minimum_size = Vector2(JOB, JOB + 18)
+	chip.tooltip_text = "%s · %s" % [job.get("who", ""), Spell.label(job.spell)]
+	var who := _chalk(Label.new(), 13, CHALK_DIM)  # whose spell, under its circle
+	who.text = job.get("who", "")
+	who.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	who.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	who.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	who.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	chip.add_child(who)
 	chip.set_meta("job", job.id)
 	chip.set_meta("glow", 0.0)  # its glyphs flare up once the spell is forged
 	chip.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -363,12 +369,13 @@ func _process(delta: float) -> void:
 	for chip in _jobs.get_children():
 		chip.queue_redraw()
 	var e := _chosen()
-	if e.id != _shown:  # the icon is built once per pick
-		_shown = e.id
+	if e.id + Online.character != _shown:  # the icon is built once per pick
+		_shown = e.id + Online.character
 		_icon.texture = HUD._icon(e.spell)
 		_name.text = Spell.label(e.spell)
-		_element.text = tr("%s · spell %d of %d") % [tr(str(e.spell.get("element", "")).capitalize()),
-			Profile.owned_spells().find(e) + 1, Profile.owned_spells().size()]
+		var element := tr(str(e.spell.get("element", "")).capitalize())
+		var who := Online.character_name()
+		_element.text = tr("%s · equipped by %s") % [element, who] if who else element
 		_spell.text = Spell.describe(e.spell)
 		for c in _rows.get_children():
 			c.queue_free()
@@ -389,7 +396,7 @@ func _process(delta: float) -> void:
 	_new.visible = not job.is_empty()
 	var can: bool = main.can_write()
 	for a in _arrows:
-		a.disabled = Profile.owned_spells().size() < 2
+		a.disabled = Profile.equipped_entries().size() < 2
 	_edit.editable = can
 	_write.disabled = not can
 	_words = Array(str(job.get("text", "") if job else _edit.text).replace(",", " ").split(" ", false))
@@ -467,11 +474,11 @@ func _draw_circle() -> void:
 ## A job's circle: the spell's icon in it, its glyphs lit one after the other,
 ## the newest still hot; all of them once the spell is forged.
 func _draw_job(chip: Control, job: Dictionary, icon: Texture2D) -> void:
-	var mid := chip.size / 2
+	var mid := Vector2(JOB, JOB) / 2  # the circle on top, the mage's name under it
 	var done: bool = chip.get_meta("job") == ""
 	var glow: float = chip.get_meta("glow")
 	var front: bool = job.id == _focus  # in the foreground: its circle lit
-	chip.draw_texture_rect(SEAL, Rect2(Vector2.ZERO, chip.size), false, CHALK.lerp(EMBER, maxf(glow, 0.6 if front else 0.0)))
+	chip.draw_texture_rect(SEAL, Rect2(Vector2.ZERO, Vector2(JOB, JOB)), false, CHALK.lerp(EMBER, maxf(glow, 0.6 if front else 0.0)))
 	var s := JOB * 0.4
 	chip.draw_texture_rect(icon, Rect2(mid - Vector2(s, s) / 2, Vector2(s, s)), false)
 	_glyphs(chip, job, mid, JOB * 0.36, JOB * 0.2, glow, done)

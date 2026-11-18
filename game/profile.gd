@@ -300,9 +300,9 @@ func available_spells(slot: String) -> Array:
 	return (base_spells + forged).filter(func(e): return e.slot == slot and is_unlocked(e))
 
 
-## Every spell the player has, any slot: unlocked base spells, then forged.
-func owned_spells() -> Array:
-	return (base_spells + forged).filter(is_unlocked)
+## The spells equipped in the slots, as entries: the only ones the forge improves.
+func equipped_entries() -> Array:
+	return Upgrades.SLOTS.map(func(slot): return _entry(spells[slot], slot)).filter(func(e): return not e.is_empty())
 
 
 func _entry(id: String, slot: String) -> Dictionary:

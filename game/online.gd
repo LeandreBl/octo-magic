@@ -76,6 +76,14 @@ func _ready() -> void:
 		changed.emit()
 
 
+## The active character's name, "" without one.
+func character_name() -> String:
+	for c in characters:
+		if c is Dictionary and str(c.get("id")) == character:
+			return str(c.get("name", ""))
+	return ""
+
+
 func logged_in() -> bool:
 	return not _refresh.is_empty()
 

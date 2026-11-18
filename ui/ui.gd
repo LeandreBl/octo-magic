@@ -521,8 +521,7 @@ func _refresh_title() -> void:
 	_title_gold.text = str(Profile.gold)
 	var spell: Dictionary = Profile.equipped_spells().primary
 	_title_spell.text = Spell.label(spell)
-	var me: Array = Online.characters.filter(func(c): return c is Dictionary and str(c.get("id")) == Online.character)
-	_title_name.text = str(me[0].get("name", "")) if me else ""
+	_title_name.text = Online.character_name()
 	_title_spell_icon.texture = preload("res://ui/hud.gd")._icon(spell)
 	var n: int = Profile.blank_scrolls
 	_title_scrolls.text = tr("No blank scroll") if not n else (tr("%d blank scroll") if n == 1 else tr("%d blank scrolls")) % n
