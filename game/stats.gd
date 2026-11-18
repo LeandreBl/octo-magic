@@ -24,12 +24,17 @@ const BASE := {
 }
 const BOUNDS := {
 	"hp": [1.0, 1000.0], "hp_regen": [0.0, 50.0], "mana": [10.0, 1000.0],
-	"mana_regen": [0.0, 200.0], "mana_cost": [0.3, 3.0], "cooldown": [0.4, 3.0],
+	"mana_regen": [0.0, 200.0], "mana_cost": [0.0, 3.0], "cooldown": [0.4, 3.0],
 	"speed": [80.0, 660.0], "pickup": [30.0, 600.0], "armor": [-1.0, 0.75],
 	"crit": [0.0, 1.0], "damage": [0.1, 20.0], "gold": [0.0, 6.0], "xp": [0.0, 6.0],
 	"poison": [0.0, 1.0], "orbs": [0.0, 4.0], "luck": [0.0, 4.0],
 }
 const CRIT_MULT := 2.0
+
+
+## A spell's mana cost under the "mana_cost" multiplier: at least 1, 0 only at 0 (free spells).
+static func cost(base: int, mult: float) -> int:
+	return maxi(roundi(base * mult), 1 if mult > 0.0 else 0)
 
 
 static func total(bonuses: Array) -> Dictionary:

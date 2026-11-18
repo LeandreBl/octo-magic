@@ -152,7 +152,7 @@ func choose(i: int) -> bool:
 
 
 func mana_cost(slot: String) -> int:
-	return maxi(roundi(Spell.mana_cost(spells[slot]) * stats.mana_cost), 1)
+	return Stats.cost(Spell.mana_cost(spells[slot]), stats.mana_cost)
 
 
 func collect(kind: String, value: int) -> void:

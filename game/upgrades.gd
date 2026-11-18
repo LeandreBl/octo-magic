@@ -9,7 +9,9 @@ class_name Upgrades
 const SLOTS := ["primary"]  # the spell equipped from the profile
 const RUN_SLOTS := ["primary", "secondary"]  # secondary: an active augment (Profile.AUGMENTS)
 const SLOT_NAMES := {"primary": "Spell", "secondary": "Secondary spell"}  # English, translated where shown
-const LIST := {}
+const LIST := {
+	"thrift": {"name": "Thrift", "desc": "-%d%% mana cost", "step": -15, "max": 11, "kind": "spell", "stat": "mana_cost%", "pct": true},
+}
 const KINDS := ["hero", "spell"]
 const ROMAN := [[10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]]
 
@@ -26,7 +28,7 @@ static func roman(n: int) -> String:
 
 ## Skill `u`'s text: its value per level, translated.
 static func describe(u: Dictionary) -> String:
-	return TranslationServer.translate(u.desc) % u.step
+	return TranslationServer.translate(u.desc) % abs(u.step)  # the sign is in the text
 
 
 ## Skill `u` at `level` as a Stats bonus.
