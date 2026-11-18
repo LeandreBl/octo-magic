@@ -19,7 +19,7 @@ signal died
 const ZOOM := 4.0 / 3.0  # on the mage: an art pixel (Arena.SCALE 1.5) is 2 screen pixels, the arena (Arena.RECT) about 2.4x2.8 screens
 const SIZE := 1.2  # the mage drawn this much bigger than its art (sprite, tentacles, gem); the hitbox `radius` stays
 const STICK_RANGE := 80.0
-const STILL_TIME := 0.2  # s without moving before the mage channels
+const STILL_TIME := 3.0  # s without moving before the mage channels
 const SHIELD_HP := 40.0
 const SHIELD_WAIT := 8.0
 const PASSIVES := ["shield", "potions", "blaze_of_glory", "weird_eye"]
