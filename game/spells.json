@@ -67,7 +67,7 @@
   "slot": "primary",
   "unlock": "",
   "name": "Fulmen",
-  "description": "Held, an electric arc curves onto the nearest enemy ahead, far off-screen, and strikes it constantly, for mana.",
+  "description": "Held, an electric arc curves onto the nearest enemy ahead, the closest to the aim, far off-screen, and strikes it constantly, for mana.",
   "element": "lightning",
   "color": "#9fd8ff",
   "cooldown": 0.15,

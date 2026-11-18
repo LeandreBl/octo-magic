@@ -196,14 +196,17 @@ func _in_reach(e: Node2D) -> bool:
 		and absf(angle_difference(dir.angle(), to.angle())) <= deg_to_rad(body.angle) / 2.0
 
 
-## Each cast (tick) the arc grips the nearest enemy in reach: no lock.
+## Each cast (tick) the arc grips the enemy in reach that is both nearest and
+## closest to the aim: no lock. At the angle's edge an enemy counts as twice as far.
 func _beam_target() -> Node2D:
 	var best: Node2D = null
-	var best_d := INF
+	var best_score := INF
+	var half := maxf(deg_to_rad(body.angle) / 2.0, 0.001)
 	for e in get_tree().get_nodes_in_group("enemies"):
-		var d := global_position.distance_squared_to(e.global_position)
-		if d < best_d and _in_reach(e):
-			best_d = d
+		var to: Vector2 = e.global_position - global_position
+		var score: float = to.length() * (1.0 + absf(angle_difference(dir.angle(), to.angle())) / half)
+		if score < best_score and _in_reach(e):
+			best_score = score
 			best = e
 	return best
 
