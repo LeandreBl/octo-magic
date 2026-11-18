@@ -30,6 +30,7 @@ var turn := 0.0  # beam / cone: its angle off the caster's aim (spread, radial..
 var ember_timer := 0.0  # bolt: time since its last ember (the caster's "embers" stat)
 
 const BURN_TIME := 3.0  # s: how long an immolated enemy burns after the bolt
+const CONE_ALPHA := 0.5  # a cone's sheet opacity: a cold wind, the enemies seen through it
 const CHILL_TIME := 1.0  # s: how long a chilled enemy stays slowed after the cone
 const FREEZE_TIME := 0.6  # s: how long a Rigor freeze holds an enemy
 const STUN_TIME := 0.6  # s: how long a Stupor stun holds an enemy
@@ -524,7 +525,8 @@ func _bolt(pts: PackedVector2Array) -> void:
 	draw_polyline(pts, Color.WHITE, 1.0, true)
 
 
-## The cone's sheet (apex on its left edge) stretched over the area it hurts;
+## The cone's sheet (apex on its left edge), see-through like a cold wind and
+## kept inside the area it hurts (its far corners on the reach, not past it);
 ## no sheet: a flickering polygon.
 func _draw_cone() -> void:
 	var k := _cone_scale()
@@ -533,9 +535,11 @@ func _draw_cone() -> void:
 	if anim:
 		var s: Dictionary = anim[1]
 		var i := int(Arena.clock * s.fps) % int(s.frames)  # the clock: ticks renew age, not the animation
-		var h: float = 2.0 * reach * tan(minf(half, 1.4))
+		var a := minf(half, 1.4)
+		var w := reach * cos(a)
+		var h := 2.0 * reach * sin(a)
 		draw_set_transform(Vector2.ZERO, dir.angle())
-		draw_texture_rect_region(anim[0], Rect2(0, -h / 2.0, reach, h), Rect2(i * s.size, 0, s.size, s.size))
+		draw_texture_rect_region(anim[0], Rect2(0, -h / 2.0, w, h), Rect2(i * s.size, 0, s.size, s.size), Color(1, 1, 1, CONE_ALPHA))
 		return
 	var pts := PackedVector2Array([Vector2.ZERO])
 	for i in 9:
