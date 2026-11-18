@@ -9,7 +9,8 @@ extends Control
 signal paused
 
 const UITheme := preload("res://ui/theme.gd")
-const RIM := 4  # gauge frame thickness
+const FRAME: Texture2D = preload("res://assets/ui/gauge_frame.png")  # hollow, 9-sliced
+const RIM := 6  # its rim, top and bottom (7 at the end caps)
 const GAP := 6  # between the gauges
 const SHARE := 1.0 / 3.0  # of the screen width the gauges take at base max HP and mana
 const MAX_SHARE := 0.45  # their cap, however high the max HP and mana go
@@ -119,7 +120,7 @@ func _ready() -> void:
 	b_name.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
 	b_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_boss.add_child(b_name)
-	_bar(_boss, UITheme.HP, 16).fill_mode = ProgressBar.FILL_END_TO_BEGIN
+	_bar(_boss, UITheme.HP, 20).fill_mode = ProgressBar.FILL_END_TO_BEGIN
 
 	# Top right: the primary spell, the secondary under it, then the passive.
 	var right := _box(VBoxContainer.new(), 10)
@@ -176,8 +177,10 @@ func _bar(parent: Control, color: Color, height: int) -> ProgressBar:
 	bar.show_percentage = false
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var fill := UITheme.fill(color)
-	fill.set_corner_radius_all(height / 2)
+	fill.set_corner_radius_all((height - RIM * 2) / 2)
 	fill.set_expand_margin_all(-RIM)  # inside the frame
+	fill.expand_margin_left = -RIM - 1
+	fill.expand_margin_right = -RIM - 1
 	bar.add_theme_stylebox_override("fill", fill)
 	bar.add_theme_stylebox_override("background", StyleBoxEmpty.new())  # see-through when empty
 	var text := Label.new()
@@ -187,19 +190,17 @@ func _bar(parent: Control, color: Color, height: int) -> ProgressBar:
 	text.add_theme_font_size_override("font_size", 15)
 	text.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
 	bar.add_child(text)
-	for ring in [[UITheme.OUTLINE, 0], [UITheme.GOLD_DIM, RIM / 2]]:  # child 1+: the frame, hollow
-		var frame := Panel.new()
-		var box := UITheme.flat(Color.TRANSPARENT, ring[0], RIM if ring[1] == 0 else RIM / 2, 0, 0)
-		box.draw_center = false
-		box.set_corner_radius_all(height / 2)
-		frame.add_theme_stylebox_override("panel", box)
-		frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		frame.offset_left = ring[1]
-		frame.offset_top = ring[1]
-		frame.offset_right = -ring[1]
-		frame.offset_bottom = -ring[1]
-		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		bar.add_child(frame)
+	var frame := Panel.new()  # child 1: the frame, hollow
+	var box := StyleBoxTexture.new()
+	box.texture = FRAME
+	box.set_texture_margin(SIDE_LEFT, 12)  # the end caps keep their shape
+	box.set_texture_margin(SIDE_RIGHT, 12)
+	box.set_texture_margin(SIDE_TOP, 8)
+	box.set_texture_margin(SIDE_BOTTOM, 8)
+	frame.add_theme_stylebox_override("panel", box)
+	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.add_child(frame)
 	parent.add_child(bar)
 	return bar
 
