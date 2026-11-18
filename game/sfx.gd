@@ -38,8 +38,7 @@ const ECHO_FEEDBACK := 0.4
 const GAP := 0.04  # s: the same sound twice closer than this plays once (boss rings, swarms)
 const MUSIC_DB := -6.0
 ## assets/music: a run starts on one (the host's pick), then shuffles through the others.
-const TRACKS := ["crypt", "cave", "ruins", "ancient_evil", "catacombs", "apocalypse", "witch_lair",
-	"whispers", "dark_shrine", "menace", "zombies_march", "ghost_land", "ninth_circle", "dark_forest"]
+const TRACKS := ["crypt", "ancient_evil", "catacombs", "apocalypse", "witch_lair", "dark_shrine", "dark_forest"]
 ## Sounds placed in the world (Sfx.play's `at`, spells) fade to silence this
 ## far (px) from the local mage, who hears them (AudioListener2D on it).
 const HEARING := 900.0
