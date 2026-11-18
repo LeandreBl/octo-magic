@@ -12,27 +12,15 @@ const CELL := 46.0  # a rune's square on the parchment
 ## The forge gives no progress: runes follow an expected curve, slowing down
 ## (never full) until the spell comes back.
 const FORGE_SECONDS := 90.0
-const WOOD := Color("#4a2c17")
-const WOOD_DARK := Color("#2e1a0c")
 const FLAME := Color("#ffb347")
-## Elder Futhark-like runes: strokes in a unit square.
-const RUNES := [
-	[[Vector2(0.3, 0), Vector2(0.3, 1)], [Vector2(0.3, 0.15), Vector2(0.75, 0)], [Vector2(0.3, 0.45), Vector2(0.75, 0.3)]],
-	[[Vector2(0.3, 1), Vector2(0.3, 0), Vector2(0.7, 0.3), Vector2(0.7, 1)]],
-	[[Vector2(0.3, 0), Vector2(0.3, 1)], [Vector2(0.3, 0.3), Vector2(0.7, 0.5), Vector2(0.3, 0.7)]],
-	[[Vector2(0.3, 1), Vector2(0.3, 0), Vector2(0.7, 0.25), Vector2(0.3, 0.5), Vector2(0.7, 1)]],
-	[[Vector2(0.7, 0), Vector2(0.3, 0.5), Vector2(0.7, 1)]],
-	[[Vector2(0.25, 0), Vector2(0.75, 1)], [Vector2(0.75, 0), Vector2(0.25, 1)]],
-	[[Vector2(0.3, 0), Vector2(0.3, 1)], [Vector2(0.7, 0), Vector2(0.7, 1)], [Vector2(0.3, 0.35), Vector2(0.7, 0.65)]],
-	[[Vector2(0.5, 0), Vector2(0.5, 1)], [Vector2(0.3, 0.35), Vector2(0.7, 0.6)]],
-	[[Vector2(0.45, 0.1), Vector2(0.2, 0.35), Vector2(0.45, 0.6)], [Vector2(0.55, 0.4), Vector2(0.8, 0.65), Vector2(0.55, 0.9)]],
-	[[Vector2(0.5, 0), Vector2(0.5, 1)], [Vector2(0.2, 0.1), Vector2(0.5, 0.4), Vector2(0.8, 0.1)]],
-	[[Vector2(0.7, 0), Vector2(0.3, 0.35), Vector2(0.7, 0.65), Vector2(0.3, 1)]],
-	[[Vector2(0.5, 0), Vector2(0.5, 1)], [Vector2(0.2, 0.3), Vector2(0.5, 0), Vector2(0.8, 0.3)]],
-	[[Vector2(0.3, 0), Vector2(0.3, 1)], [Vector2(0.3, 0), Vector2(0.7, 0.25), Vector2(0.3, 0.5), Vector2(0.7, 0.75), Vector2(0.3, 1)]],
-	[[Vector2(0.25, 1), Vector2(0.25, 0), Vector2(0.75, 0.5)], [Vector2(0.75, 1), Vector2(0.75, 0), Vector2(0.25, 0.5)]],
-	[[Vector2(0.2, 1), Vector2(0.65, 0.5), Vector2(0.5, 0.15), Vector2(0.35, 0.5), Vector2(0.8, 1)]],
-]
+const PX := 3  # screen pixels per art pixel
+## PixelLab art (tools/make_forge.py).
+const TABLE: Texture2D = preload("res://assets/forge/table.png")
+const PARCHMENT: Texture2D = preload("res://assets/forge/parchment.png")
+const CANDLE: Texture2D = preload("res://assets/forge/candle.png")  # 8 frames of 64 px
+const QUILL: Texture2D = preload("res://assets/forge/quill.png")
+const RUNES: Texture2D = preload("res://assets/forge/runes.png")  # glowing gold runes of 32 px
+const RUNE_INK := Color(0.42, 0.2, 0.1)  # a cooled rune: the gold darkened to ink
 
 var main: Node
 var _parchment: PanelContainer
@@ -51,9 +39,14 @@ var _fade := 0.0  # runes shown, 0..1
 var _started := 0.0  # Time.get_ticks_msec() when the job started
 var _busy := false  # a forge job runs
 var _time := 0.0
+var _order := PackedInt32Array()  # which rune goes in each cell
 
 
 func _ready() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	for i in 512:
+		_order.append(rng.randi() % 12)
 	var m := MarginContainer.new()
 	m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	for side in [["left", 32], ["right", 32], ["top", 28], ["bottom", 28]]:
@@ -88,8 +81,8 @@ func _ready() -> void:
 	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(center)
 	_parchment = PanelContainer.new()
-	_parchment.theme_type_variation = "Parchment"
-	_parchment.custom_minimum_size = Vector2(820, 560)
+	_parchment.add_theme_stylebox_override("panel", _sheet())
+	_parchment.custom_minimum_size = Vector2(900, 620)
 	center.add_child(_parchment)
 	_page = _vbox(14)
 	_parchment.add_child(_page)
@@ -182,6 +175,18 @@ func _ready() -> void:
 
 	main.forged.connect(_on_forged)
 	visibility_changed.connect(_lay_down)
+
+
+## The parchment sheet, its rolled edges kept crisp at PX, the middle stretched.
+func _sheet() -> StyleBoxTexture:
+	var img := PARCHMENT.get_image()
+	img.resize(img.get_width() * PX, img.get_height() * PX, Image.INTERPOLATE_NEAREST)
+	var sb := StyleBoxTexture.new()
+	sb.texture = ImageTexture.create_from_image(img)
+	for side in [[SIDE_LEFT, 24, 84], [SIDE_RIGHT, 24, 84], [SIDE_TOP, 18, 60], [SIDE_BOTTOM, 18, 56]]:
+		sb.set_texture_margin(side[0], side[1] * PX)
+		sb.set_content_margin(side[0], side[2])
+	return sb
 
 
 ## Dark ink on the parchment: no light text shadow.
@@ -282,33 +287,24 @@ func _process(delta: float) -> void:
 	_status.text = main.forge_status + "\n" + state if main.forge_status and not _busy else state
 
 
-## The room: a dark wall, a wooden table, two candles beside the parchment.
+## The room: a dark wall, the wooden table, two candles beside the parchment.
 func _draw() -> void:
-	var w := size.x
-	var h := size.y
-	draw_rect(Rect2(0, 0, w, h), UITheme.INK)
-	var top := h * 0.38
-	draw_rect(Rect2(0, top, w, h - top), WOOD)
-	draw_rect(Rect2(0, top, w, 10), WOOD_DARK)
-	var y := top + 70.0
-	while y < h:
-		draw_rect(Rect2(0, y, w, 4), WOOD_DARK)
-		y += 90.0
+	draw_rect(Rect2(Vector2.ZERO, size), UITheme.INK)
+	var top := size.y * 0.38
+	draw_set_transform(Vector2(0, top), 0, Vector2(PX, PX))
+	draw_texture_rect(TABLE, Rect2(0, 0, size.x / PX, (size.y - top) / PX), true)
+	draw_set_transform(Vector2.ZERO)
+	draw_rect(Rect2(0, top - 4, size.x, 8), Color(0, 0, 0, 0.5))  # the table's far edge
 	var r := _parchment.get_global_rect()
 	r.position -= global_position
 	var flicker := 0.85 + 0.15 * sin(_time * 9.0) * sin(_time * 3.7)
-	for x in [r.position.x - 110, r.end.x + 70]:
-		var base := Vector2(x, r.end.y - 20)
-		for g in [[150.0, 0.06], [90.0, 0.08], [45.0, 0.12]]:
-			draw_circle(base + Vector2(20, -150), g[0] * flicker, Color(FLAME, g[1]))
-		draw_rect(Rect2(base + Vector2(0, -120), Vector2(40, 120)), UITheme.PARCH_LIGHT)
-		draw_rect(Rect2(base + Vector2(-12, -6), Vector2(64, 12)), WOOD_DARK)
-		var tip := base + Vector2(20 + 3 * sin(_time * 7.0), -150 - 8 * flicker)
-		draw_colored_polygon(PackedVector2Array([base + Vector2(12, -124), tip, base + Vector2(28, -124)]), FLAME)
-		draw_circle(base + Vector2(20, -130), 7, UITheme.GOLD_LIGHT)
-	# The forge's glow on the parchment while it works.
-	if _fade > 0:
-		draw_rect(r.grow(12 + 6 * sin(_time * 3.0)), Color(UITheme.GOLD, 0.12 * _fade + 0.3 * _glow), false, 6)
+	var frame := int(_time * 8.0) % 8
+	var side := 64.0 * PX
+	for x in [r.position.x - side - 8, r.end.x + 8]:
+		var at := Vector2(x, minf(r.end.y, size.y - 16) - side)
+		for g in [[170.0, 0.05], [100.0, 0.07], [50.0, 0.1]]:  # its light on the table
+			draw_circle(at + Vector2(side / 2, side * 0.2), g[0] * flicker, Color(FLAME, g[1]))
+		draw_texture_rect_region(CANDLE, Rect2(at, Vector2(side, side)), Rect2(frame * 64, 0, 64, 64))
 
 
 ## Runes engraved line by line, the newest glowing as if still hot.
@@ -324,14 +320,10 @@ func _draw_runes() -> void:
 		var cell := origin + Vector2(i % cols, i / cols) * CELL
 		var fresh := clampf(shown - i, 0.0, 1.0)  # the rune being engraved fades in
 		var hot := clampf(1.0 - (shown - i) / 6.0, 0.0, 1.0)  # the last ones are still hot
-		var ink := UITheme.PARCH_RED.lerp(UITheme.GOLD, maxf(hot, _glow))
-		ink.a = fresh * _fade
-		for stroke in RUNES[hash(i) % RUNES.size()]:
-			var pts := PackedVector2Array()
-			for p in stroke:
-				pts.append(cell + Vector2(8, 6) + p * Vector2(CELL - 16, CELL - 12))
-			_runes.draw_polyline(pts, ink, 4.0)
-	if _busy and shown < total:  # the quill's spark, where the forge writes
+		var tint := RUNE_INK.lerp(Color.WHITE, maxf(hot, _glow))
+		tint.a = fresh * _fade
+		_runes.draw_texture_rect_region(RUNES, Rect2(cell, Vector2(CELL, CELL)), Rect2(_order[i % _order.size()] * 32, 0, 32, 32), tint)
+	if _busy and shown < total:  # the quill writing the next rune, its nib bottom left
 		var at := origin + Vector2(int(shown) % cols + 0.5, int(shown) / cols + 0.5) * CELL
-		_runes.draw_circle(at, 10 + 3 * sin(_time * 12.0), Color(UITheme.GOLD, 0.35 * _fade))
-		_runes.draw_circle(at, 4, Color(UITheme.GOLD_LIGHT, _fade))
+		at += Vector2(4 * sin(_time * 14.0), 3 * cos(_time * 9.0))
+		_runes.draw_texture_rect(QUILL, Rect2(at - Vector2(8, 88), Vector2(96, 96)), false, Color(1, 1, 1, _fade))
