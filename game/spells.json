@@ -95,7 +95,7 @@
   "description": "A homing magic missile.",
   "element": "arcane",
   "color": "#c77dff",
-  "cooldown": 1.0,
+  "cooldown": 0.7,
   "emit": {
    "pattern": "aim",
    "count": 1,
