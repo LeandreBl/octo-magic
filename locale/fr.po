@@ -115,9 +115,6 @@ msgstr "Gauche"
 msgid "Right"
 msgstr "Droite"
 
-msgid "HP %d / %d"
-msgstr "PV %d / %d"
-
 msgid "Level %d  ·  XP %d / %d"
 msgstr "Niveau %d  ·  XP %d / %d"
 

@@ -1,14 +1,18 @@
 extends Control
-## In-run HUD: level, HP, mana, XP (top left), wave and the boss countdown
-## (top center), gold, score and a pause button for touch (top right), spell
-## slots with key, mana cost and cooldown (bottom center: touch a slot to cast
-## it; key or gamepad button below), the passive (shield left, time until
-## it is back), and the bosses' health under the wave (theirs only: the other
-## enemies show none).
+## In-run HUD: pause, the wave and the boss countdown, gold and score (top
+## left); HP, XP (the level in it) and mana gauges, each as wide as its max
+## and hollow when empty, with the bosses' health under them (top center: the
+## other enemies show none); the spell slots, primary then secondary, with key,
+## mana cost and cooldown (top right: touch a slot to cast it), then the
+## passive (shield, time until it is back).
 
 signal paused
 
 const UITheme := preload("res://ui/theme.gd")
+const RIM := 4  # gauge frame thickness
+const GAP := 6  # between the gauges
+const SHARE := 1.0 / 3.0  # of the screen width the gauges take at base max HP and mana
+const MAX_SHARE := 0.45  # their cap, however high the max HP and mana go
 
 var main: Node
 var _hp: ProgressBar
@@ -39,42 +43,25 @@ func _ready() -> void:
 		margin.add_theme_constant_override("margin_" + side, 16)
 	add_child(margin)
 
-	# Top left: level badge and bars.
-	var vitals := _plate(margin, Control.SIZE_SHRINK_BEGIN, Control.SIZE_SHRINK_BEGIN)
-	var row := _box(HBoxContainer.new(), 10)
-	vitals.add_child(row)
-	var badge := PanelContainer.new()
-	badge.add_theme_stylebox_override("panel", UITheme.flat(UITheme.INK, UITheme.GOLD, 3, 0, 0))
-	badge.custom_minimum_size = Vector2(64, 64)
-	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var b_col := _box(VBoxContainer.new(), -4)
-	b_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	badge.add_child(b_col)
-	var lv := UITheme.label("LV.", "", 12, UITheme.TEXT_DIM)
-	lv.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	b_col.add_child(lv)
-	_level = UITheme.label("", "", 28, UITheme.GOLD)
-	_level.add_theme_font_override("font", UITheme.BODY_BOLD)
-	_level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	b_col.add_child(_level)
-	row.add_child(badge)
-	var bars := _box(VBoxContainer.new(), 6)
-	bars.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_child(bars)
-	_hp = _bar(bars, UITheme.HP, 24)
-	_mana = _bar(bars, UITheme.MANA, 24)
-	_xp = _bar(bars, UITheme.XP, 10)
-
-	# Top center: the wave, and pips counting down to the next boss; under
-	# it, the bosses' health while one is up.
-	var top := _box(VBoxContainer.new(), 8)
-	top.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	top.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	margin.add_child(top)
-	var wave := _plate(top, Control.SIZE_SHRINK_CENTER, Control.SIZE_SHRINK_BEGIN)
+	# Top left: the wave and pips counting down to the next boss, the purse
+	# and score, pause.
+	var left := _box(HBoxContainer.new(), 12)
+	left.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	left.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	margin.add_child(left)
+	var pause := Button.new()
+	pause.icon = UITheme.glyph("pause", UITheme.TEXT)
+	pause.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	pause.tooltip_text = "Pause"
+	pause.focus_mode = Control.FOCUS_NONE
+	pause.custom_minimum_size = Vector2(56, 56)
+	pause.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	pause.pressed.connect(paused.emit)
+	left.add_child(pause)
+	var wave := _plate(left, Control.SIZE_SHRINK_BEGIN, Control.SIZE_SHRINK_BEGIN)
 	var w_col := _box(VBoxContainer.new(), 4)
 	wave.add_child(w_col)
-	_wave = UITheme.label("", "", 32, UITheme.GOLD)
+	_wave = UITheme.label("", "", 26, UITheme.GOLD)
 	_wave.add_theme_font_override("font", UITheme.BODY_BOLD)
 	_wave.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
 	_wave.add_theme_constant_override("shadow_offset_x", 3)
@@ -97,50 +84,52 @@ func _ready() -> void:
 		pips.add_child(frame)
 		_pips.append(pip)
 	pips.add_child(UITheme.label("boss", "", 13, UITheme.TEXT_DIM))
+	var purse := _plate(left, Control.SIZE_SHRINK_BEGIN, Control.SIZE_SHRINK_BEGIN)
+	var p_col := _box(VBoxContainer.new(), 0)
+	purse.add_child(p_col)
+	var g_row := _box(HBoxContainer.new(), 6)
+	p_col.add_child(g_row)
+	g_row.add_child(UITheme.icon_rect(UITheme.icon("gold"), 28))
+	_gold = UITheme.label("", "", 24, UITheme.GOLD)
+	g_row.add_child(_gold)
+	_score = UITheme.label("", "", 15, UITheme.TEXT_DIM)
+	p_col.add_child(_score)
+
+	# Top center: HP, XP (the level in it) and mana gauges, sized by their
+	# max; under them, the bosses' health while one is up.
+	var top := _box(VBoxContainer.new(), 8)
+	top.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	top.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	margin.add_child(top)
+	var gauges := _box(HBoxContainer.new(), GAP)
+	gauges.alignment = BoxContainer.ALIGNMENT_CENTER
+	top.add_child(gauges)
+	_hp = _bar(gauges, UITheme.HP, 28)
+	_hp.fill_mode = ProgressBar.FILL_END_TO_BEGIN  # empties from the left
+	_xp = _bar(gauges, UITheme.XP, 28)
+	_xp.fill_mode = ProgressBar.FILL_BOTTOM_TO_TOP
+	_level = _xp.get_child(0)
+	_level.add_theme_font_override("font", UITheme.BODY_BOLD)
+	_level.add_theme_font_size_override("font_size", 18)
+	_mana = _bar(gauges, UITheme.MANA, 28)
+	_mana.fill_mode = ProgressBar.FILL_END_TO_BEGIN
 	_boss = _box(VBoxContainer.new(), 2)
 	top.add_child(_boss)
 	var b_name := UITheme.label("", "", 20, UITheme.TEXT)
 	b_name.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
 	b_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_boss.add_child(b_name)
-	_bar(_boss, UITheme.HP, 16).custom_minimum_size.x = 640
+	_bar(_boss, UITheme.HP, 16).fill_mode = ProgressBar.FILL_END_TO_BEGIN
 
-	# Top right: purse, score, pause.
-	var right := _box(HBoxContainer.new(), 12)
+	# Top right: the primary spell, the secondary under it, then the passive.
+	var right := _box(VBoxContainer.new(), 10)
 	right.size_flags_horizontal = Control.SIZE_SHRINK_END
 	right.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	margin.add_child(right)
-	var purse := _plate(right, Control.SIZE_SHRINK_BEGIN, Control.SIZE_SHRINK_BEGIN)
-	var p_col := _box(VBoxContainer.new(), 0)
-	purse.add_child(p_col)
-	var g_row := _box(HBoxContainer.new(), 6)
-	g_row.alignment = BoxContainer.ALIGNMENT_END
-	p_col.add_child(g_row)
-	g_row.add_child(UITheme.icon_rect(UITheme.icon("gold"), 28))
-	_gold = UITheme.label("", "", 24, UITheme.GOLD)
-	g_row.add_child(_gold)
-	_score = UITheme.label("", "", 15, UITheme.TEXT_DIM)
-	_score.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	p_col.add_child(_score)
-	var pause := Button.new()
-	pause.icon = UITheme.glyph("pause", UITheme.TEXT)
-	pause.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	pause.tooltip_text = "Pause"
-	pause.focus_mode = Control.FOCUS_NONE
-	pause.custom_minimum_size = Vector2(56, 56)
-	pause.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	pause.pressed.connect(paused.emit)
-	right.add_child(pause)
-
-	# Bottom center: spell slots, then the passive.
-	var bottom := _box(HBoxContainer.new(), 14)
-	bottom.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	bottom.size_flags_vertical = Control.SIZE_SHRINK_END
-	margin.add_child(bottom)
 	for slot in Upgrades.RUN_SLOTS:
-		bottom.add_child(_slot(slot))
+		right.add_child(_slot(slot))
 	_passive = _box(VBoxContainer.new(), 6)
-	_passive.size_flags_vertical = Control.SIZE_SHRINK_END
+	_passive.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	var p_panel := Panel.new()
 	p_panel.theme_type_variation = "Slot"
 	p_panel.custom_minimum_size = Vector2(60, 60)
@@ -159,7 +148,9 @@ func _ready() -> void:
 	_shield = UITheme.label("", "", 14, UITheme.TEXT_DIM)
 	_shield.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_passive.add_child(_shield)
-	bottom.add_child(_passive)
+	right.add_child(_passive)
+
+
 
 
 func _box(c: BoxContainer, gap: int) -> BoxContainer:
@@ -184,7 +175,11 @@ func _bar(parent: Control, color: Color, height: int) -> ProgressBar:
 	bar.custom_minimum_size = Vector2(250, height)
 	bar.show_percentage = false
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bar.add_theme_stylebox_override("fill", UITheme.fill(color) if height > 12 else UITheme.flat(color, color, 0, 0, 0))
+	var fill := UITheme.fill(color)
+	fill.set_corner_radius_all(height / 2)
+	fill.set_expand_margin_all(-RIM)  # inside the frame
+	bar.add_theme_stylebox_override("fill", fill)
+	bar.add_theme_stylebox_override("background", StyleBoxEmpty.new())  # see-through when empty
 	var text := Label.new()
 	text.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -192,14 +187,19 @@ func _bar(parent: Control, color: Color, height: int) -> ProgressBar:
 	text.add_theme_font_size_override("font_size", 15)
 	text.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
 	bar.add_child(text)
-	var regen := Label.new()  # child 1: the bar's regen per second, right-aligned
-	regen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	regen.offset_right = -8
-	regen.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	regen.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	regen.add_theme_font_size_override("font_size", 13)
-	regen.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
-	bar.add_child(regen)
+	for ring in [[UITheme.OUTLINE, 0], [UITheme.GOLD_DIM, RIM / 2]]:  # child 1+: the frame, hollow
+		var frame := Panel.new()
+		var box := UITheme.flat(Color.TRANSPARENT, ring[0], RIM if ring[1] == 0 else RIM / 2, 0, 0)
+		box.draw_center = false
+		box.set_corner_radius_all(height / 2)
+		frame.add_theme_stylebox_override("panel", box)
+		frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		frame.offset_left = ring[1]
+		frame.offset_top = ring[1]
+		frame.offset_right = -ring[1]
+		frame.offset_bottom = -ring[1]
+		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bar.add_child(frame)
 	parent.add_child(bar)
 	return bar
 
@@ -207,8 +207,7 @@ func _bar(parent: Control, color: Color, height: int) -> ProgressBar:
 func _set_bar(bar: ProgressBar, value: float, max_value: float, text: String, regen := "") -> void:
 	bar.max_value = max_value
 	bar.value = value
-	bar.get_child(0).text = text
-	bar.get_child(1).text = regen
+	bar.get_child(0).text = text + ("  " + regen if regen else "")
 
 
 func _slot(slot: String) -> Control:
@@ -219,8 +218,8 @@ func _slot(slot: String) -> Control:
 	panel.custom_minimum_size = Vector2(84, 84)
 	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	panel.clip_contents = true
-	# ponytail: the touch also reaches player.gd's aim stick (right half); fine
-	# while every slot sits at the bottom center.
+	# ponytail: the touch also starts player.gd's aim stick (right half, where
+	# the slots sit); fine while a tap barely drags it.
 	panel.gui_input.connect(func(e):
 		if e is InputEventScreenTouch:
 			var me: Node2D = main.local_player()
@@ -268,12 +267,13 @@ func _process(_delta: float) -> void:
 	var p: Node2D = main.local_player()
 	if not visible or not Run.active or not p:
 		return
-	_set_bar(_hp, p.hp, p.stats.hp, tr("HP %d / %d") % [maxf(p.hp, 0.0), p.stats.hp] + ("  · " + tr("Potions %d") % p.potions if p.potions > 0 else ""),
+	_set_bar(_hp, p.hp, p.stats.hp, "%d / %d" % [maxf(p.hp, 0.0), p.stats.hp] + ("  · " + tr("Potions %d") % p.potions if p.potions > 0 else ""),
 			"+%.1f/s" % p.stats.hp_regen if p.stats.hp_regen > 0.0 else "")
-	_set_bar(_mana, p.mana, p.stats.mana, "Mana %d / %d" % [p.mana, p.stats.mana],
+	_set_bar(_mana, p.mana, p.stats.mana, "%d / %d" % [p.mana, p.stats.mana],
 			"+%d/s" % p.stats.mana_regen if p.stats.mana_regen > 0.0 else "")
 	_set_bar(_xp, Run.xp, Run.xp_to_next(Run.level), "")
 	_level.text = str(Run.level)
+	_size_gauges(p.stats.hp, p.stats.mana)
 	_wave.text = tr("Wave %d") % Run.wave
 	var done := Run.BOSS_EVERY if Run.wave > 0 and Run.wave % Run.BOSS_EVERY == 0 else Run.wave % Run.BOSS_EVERY
 	for i in _pips.size():
@@ -309,6 +309,19 @@ func _process(_delta: float) -> void:
 		var can: bool = p.mana >= mini(cost, floori(p.stats.mana))  # over the max mana: the failsafe (Player.cast)
 		ui[0].modulate = Color.WHITE if can else Color(0.45, 0.45, 0.6)
 		ui[5].add_theme_stylebox_override("panel", _ready_box if can and left <= 0.05 else _busy_box)
+
+
+## HP and mana as wide as their max (XP a quarter of HP): SHARE of the screen
+## at the base max, up to MAX_SHARE; the boss bar spans the three.
+func _size_gauges(hp_max: float, mana_max: float) -> void:
+	var screen := get_viewport_rect().size.x
+	var total := hp_max * 1.25 + mana_max
+	var per := screen * SHARE / (Stats.BASE.hp * 1.25 + Stats.BASE.mana)
+	per = minf(per, screen * MAX_SHARE / total)
+	_hp.custom_minimum_size.x = roundf(hp_max * per)
+	_xp.custom_minimum_size.x = roundf(hp_max * per / 4.0)
+	_mana.custom_minimum_size.x = roundf(mana_max * per)
+	_boss.get_child(1).custom_minimum_size.x = roundf(total * per) + GAP * 2
 
 
 ## The button of a spell slot, for the device in use.
