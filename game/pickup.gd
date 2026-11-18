@@ -5,7 +5,12 @@ extends Node2D
 
 signal collected(kind: String, value: int)
 
-const SIZES := {"xp": 12.0, "gold": 18.0, "mana": 14.0, "life": 16.0, "scroll": 20.0}  # px on the floor
+const TEXTURES := {  # PixelLab, tools/make_icons.py
+	"xp": preload("res://assets/icons/drop_xp.png"), "gold": preload("res://assets/icons/drop_gold.png"),
+	"mana": preload("res://assets/icons/drop_mana.png"), "life": preload("res://assets/icons/drop_life.png"),
+	"scroll": preload("res://assets/icons/scroll.png"),
+}
+const SIZES := {"xp": 16.0, "gold": 24.0, "mana": 20.0, "life": 22.0, "scroll": 24.0}  # px on the floor
 const REFILL := 0.25  # a mana or life orb gives back this share of the max
 
 var kind := "xp"
@@ -42,6 +47,5 @@ func give(p: Node2D) -> void:
 
 
 func _draw() -> void:
-	var tex := preload("res://ui/theme.gd").icon("scroll" if kind == "scroll" else "drop_" + kind)
 	var sz: float = SIZES[kind]
-	draw_texture_rect(tex, Rect2(-sz / 2.0, -sz / 2.0, sz, sz), false)
+	draw_texture_rect(TEXTURES[kind], Rect2(-sz / 2.0, -sz / 2.0, sz, sz), false)
