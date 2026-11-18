@@ -2,7 +2,7 @@ extends Control
 ## In-run HUD: pause and score (top left; the wave and gold are in the
 ## pause menu); HP, XP and mana gauges (no text), each as wide as its max
 ## and hollow when empty, with the bosses' health under them (top center: the
-## other enemies show none); the spell slots, primary then secondary, with key,
+## other enemies show none); the spell slots, primary then secondary, with
 ## mana cost and cooldown (top right: touch a slot to cast it), then the
 ## passive (shield, time until it is back).
 
@@ -206,12 +206,10 @@ func _slot(slot: String) -> Control:
 	panel.add_child(cost)
 	var under := _box(HBoxContainer.new(), 6)
 	under.alignment = BoxContainer.ALIGNMENT_CENTER
-	var key := UITheme.tag("")
-	under.add_child(key)
 	var label := UITheme.label("", "", 14)
 	under.add_child(label)
 	box.add_child(under)
-	_slots[slot] = [icon, cd, null, cost, label, panel, secs, key.get_child(0)]
+	_slots[slot] = [icon, cd, null, cost, label, panel, secs]
 	return box
 
 
@@ -245,7 +243,6 @@ func _process(_delta: float) -> void:
 			ui[0].texture = _icon(sp)
 		ui[3].text = Spell.cost_text(sp, cost)
 		ui[4].text = Spell.label(sp)  # follows a language change
-		ui[7].text = _binding(slot)
 		var left: float = p.cooldowns.get(slot, 0.0)
 		ui[1].offset_top = -ui[5].size.y * clampf(left / sp.cooldown, 0.0, 1.0)
 		ui[6].text = ("%.1f" % left) if left > 0.05 and sp.cooldown >= 1.0 else ""
@@ -265,13 +262,6 @@ func _size_gauges(hp_max: float, mana_max: float) -> void:
 	_xp.custom_minimum_size.x = roundf(hp_max * per / 4.0)
 	_mana.custom_minimum_size.x = roundf(mana_max * per)
 	_boss.get_child(1).custom_minimum_size.x = roundf(total * per) + GAP * 2
-
-
-## The button of a spell slot, for the device in use.
-func _binding(slot: String) -> String:
-	if Settings.pad:
-		return Settings.pad_button("RT", "R2") if slot == "primary" else Settings.pad_button("RB", "R1")
-	return tr("Left click" if slot == "primary" else "Right click")
 
 
 ## The spell's icon, else the first frame of its projectile, else a disc of its color.

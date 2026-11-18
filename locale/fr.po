@@ -127,9 +127,6 @@ msgstr "%d or  ·  score %d"
 msgid "Scrolls found: %d%s"
 msgstr "Parchemins trouvés : %d%s"
 
-msgid "Left click"
-msgstr "Clic G"
-
 msgid "%d gold  ·  %d blank scroll(s)"
 msgstr "%d or  ·  %d parchemin(s) vierge(s)"
 
@@ -570,9 +567,6 @@ msgstr "Trois missiles qui traquent les ennemis."
 
 msgid "Secondary spell"
 msgstr "Sort secondaire"
-
-msgid "Right click"
-msgstr "Clic D"
 
 msgid "Ring of fire"
 msgstr "Anneau de feu"
