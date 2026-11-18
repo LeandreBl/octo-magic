@@ -4,7 +4,7 @@
   "slot": "primary",
   "unlock": "",
   "name": "Fireball",
-  "description": "A heavy fireball that explodes on impact. High damage, high mana cost.",
+  "description": "A heavy fireball that sets its target on fire. High damage, high mana cost.",
   "element": "fire",
   "color": "#ff6a1f",
   "cooldown": 0.6,
@@ -35,13 +35,7 @@
       "radius": 0
      }
     ],
-    "on_expire": [
-     {
-      "type": "damage",
-      "amount": 10,
-      "radius": 45
-     }
-    ],
+    "on_expire": [],
     "tick_interval": 0.5,
     "on_tick": [],
     "sheet": {
@@ -50,13 +44,6 @@
      "frames": 12,
      "fps": 12,
      "loop": true
-    },
-    "burst_sheet": {
-     "file": "fireball_burst.png",
-     "size": 56,
-     "frames": 10,
-     "fps": 12,
-     "loop": false
     }
    }
   },

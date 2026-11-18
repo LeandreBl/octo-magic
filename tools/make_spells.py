@@ -24,10 +24,9 @@ OUT = ROOT / "assets/spells"
 SPELLS_JSON = ROOT / "game/spells.json"
 BOLT = ". Top-down game projectile flying to the right, seamless loop, centered, fits within {n}x{n} pixels."
 BURST = ". Seen from above, one-shot burst, short, centered, fits within {n}x{n} pixels."
-# id -> (projectile look, size, impact look, size)
+# id -> (projectile look, size, impact look, size); no impact look = no burst
 SPELLS = {
-    "fireball": ("a blazing orange and yellow fireball with a flickering flame tail", 32,
-                 "a fiery orange explosion with flames and embers", 64),
+    "fireball": ("a blazing orange and yellow fireball with a flickering flame tail", 32, None, 0),
     "magic_missile": ("a glowing violet arcane bolt with a short sparkling trail", 24,
                       "a small violet arcane spark burst", 32),
     "frost_shard": ("a sharp pale blue ice shard spinning slightly, frosty glints", 24,
@@ -62,7 +61,7 @@ def main() -> None:
     only = set(sys.argv[1:]) or set(SPELLS)
     spells = json.loads(SPELLS_JSON.read_text())
     with ThreadPoolExecutor(6) as pool:
-        jobs = {(s, b): pool.submit(draw, s, b) for s in SPELLS if s in only for b in (False, True)}
+        jobs = {(s, b): pool.submit(draw, s, b) for s in SPELLS if s in only for b in (False, True) if not b or SPELLS[s][2]}
     for d in spells:
         for burst in (False, True):
             job = jobs.get((d["id"], burst))
