@@ -26,13 +26,6 @@
       "type": "damage",
       "amount": 28,
       "radius": 0
-     },
-     {
-      "type": "status",
-      "status": "burn",
-      "power": 3,
-      "duration": 2,
-      "radius": 0
      }
     ],
     "on_expire": [],
