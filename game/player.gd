@@ -29,6 +29,7 @@ const POTION_HEAL := 0.5
 const BLAZE := {"name": "Blaze of glory", "element": "fire", "color": "#ff7a1f", "cooldown": 1.0,
 	"emit": {"pattern": "radial", "count": 24, "body": {"shape": "bolt", "speed": 380, "size": 10, "lifetime": 0.9,
 		"on_hit": [{"type": "damage", "amount": 80}, {"type": "status", "status": "burn", "power": 5, "duration": 2}]}}}
+const RATIO_STEPS := 20.0  # a cast short of mana deals its share of damage in 1/20 steps
 const LEVEL_UP_HEAL := 100.0  # health and mana a level-up gives back (capped at the max)
 ## The octopus seen from above (PixelLab, tools/make_octopus.py): a strip of
 ## square frames, head to the top, turned toward where it goes. Its ground
@@ -348,15 +349,17 @@ func _steer(delta: float) -> void:
 
 
 func cast(slot: String) -> bool:
-	var cost: int = run.mana_cost(slot)
-	var ratio := minf(1.0, stats.mana / cost)  # < 1: costs more than the max mana, the failsafe
-	cost = mini(cost, floori(stats.mana))
-	if cooldowns.get(slot, 0.0) > 0.0 or mana < cost:
+	if cooldowns.get(slot, 0.0) > 0.0:
 		return false
+	# Short of mana it still casts, weakened, on what is left: that share of the
+	# cost deals that share of the damage. Stepped by 5 % (at least 5 %) so a
+	# channel's ticks keep one weakened body (SpellBody._channeled).
+	var cost: int = run.mana_cost(slot)
+	var ratio := clampf(ceilf(maxf(mana, 0.0) / cost * RATIO_STEPS) / RATIO_STEPS, 1.0 / RATIO_STEPS, 1.0)
 	var s := _spell(slot, ratio)
 	if randf() < stats.crit:
 		s = Upgrades.scale_damage(s, Stats.CRIT_MULT)
-	mana -= cost
+	mana = maxf(0.0, mana - cost)
 	cooldowns[slot] = s.cooldown * stats.cooldown / stats.cast_rate
 	_animate_cast(s)
 	SpellBody.cast(s.emit, gem(), aim, self, s, get_parent())
@@ -364,7 +367,8 @@ func cast(slot: String) -> bool:
 	return true
 
 
-## The spell of `slot`, weakened (Upgrades.weakened) when ratio < 1. Kept
+## The spell of `slot`, weakened (Upgrades.weakened) when ratio < 1 (cast
+## short of mana). Kept
 ## while the slot's spell and ratio hold: a channel's ticks renew one body.
 func _spell(slot: String, ratio: float) -> Dictionary:
 	var s: Dictionary = run.spells[slot]

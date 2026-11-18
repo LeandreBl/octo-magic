@@ -113,7 +113,7 @@ func _ready() -> void:
 		anchor = position - caster.global_position
 	homing = body.motion.any(func(m): return m.type == "homing" and m.strength > 0.0)
 	color = Color.html(spell.color)
-	if spell.get("weak"):  # the failsafe of a spell over the max mana (Upgrades.weakened)
+	if spell.get("weak"):  # cast short of mana (Upgrades.weakened)
 		modulate.a = 0.45
 	anim = SpellArt.animation(spell, body)
 	var dot := SpellArt.texture(body.particle, spell.palette)

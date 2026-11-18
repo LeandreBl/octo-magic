@@ -619,13 +619,14 @@ func _test_play() -> void:
 			await physics_frame
 	var id0: String = spells.keys()[0]
 	var cost: int = run.mana_cost(id0)
-	player.stats.mana = cost * 0.5  # the failsafe: all the max mana for half the damage
-	player.mana = player.stats.mana
+	player.mana = cost * 0.5  # short of mana: all of it for half the damage
 	player.cooldowns = {}
-	check(player.cast(id0) and player.mana < 1.0, "a spell over the max mana casts on all of it")
+	check(player.cast(id0) and player.mana == 0.0, "a spell short of mana casts on what is left")
 	var weak := player._spell(id0, 0.5)
 	check(weak.weak and is_same(weak, player._spell(id0, 0.5)) and absf(_damage(weak) - _damage(spells[id0]) * 0.5) < 0.01,
-		"its failsafe deals the share of damage, kept between casts")
+		"weakened, it deals the share of damage, kept between casts")
+	player.cooldowns = {}
+	check(player.cast(id0) and player._weak[id0][1] == 1.0 / Player.RATIO_STEPS, "without mana it still casts, at the weakest")
 	var rich := Upgrades.weakened(Spell.sanitize({"emit": {"body": {"on_hit": [{"type": "damage", "amount": 10},
 		{"type": "status", "status": "slow", "power": 0.5, "duration": 1}]}}}), 0.5)
 	check(rich.emit.body.on_hit.size() == 1 and rich.emit.body.on_hit[0].amount == 5.0, "the failsafe's hits only damage")

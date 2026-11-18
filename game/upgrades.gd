@@ -56,8 +56,7 @@ static func scale_damage(spell: Dictionary, mult: float) -> Dictionary:
 	return Spell.sanitize(s)
 
 
-## The failsafe of a spell costing more than the max mana: `ratio` (max mana /
-## cost) of its damage, its hits only deal damage (no status, push, sub-cast),
+## A spell cast short of mana: `ratio` (mana left / cost) of its damage, its hits only deal damage (no status, push, sub-cast),
 ## drawn see-through (SpellBody reads "weak").
 static func weakened(spell: Dictionary, ratio: float) -> Dictionary:
 	var s := scale_damage(spell, ratio)
