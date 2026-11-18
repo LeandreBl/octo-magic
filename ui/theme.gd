@@ -312,6 +312,7 @@ static func octo(px: int, animate := true) -> TextureRect:
 			c.points = pts
 	step.call(0.0)
 	r.resized.connect(step.bind(0.0))
+	r.ready.connect(step.bind(0.0))  # a size set before it entered the tree
 	if not animate:
 		return r
 	var sway := Timer.new()
