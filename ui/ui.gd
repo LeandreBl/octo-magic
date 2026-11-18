@@ -21,6 +21,7 @@ var sticks: Control
 var _dim: ColorRect  # darkens the world behind menus
 var _logged_in := false  # at the last Online.changed
 var _prompt: Label  # gamepad button prompts, while a gamepad is in use
+var _on_fullscreen: JavaScriptObject  # kept alive: the browser calls it on fullscreenchange
 
 
 func _ready() -> void:
@@ -46,6 +47,12 @@ func _ready() -> void:
 	screens.title = add_screen(_title())
 	screens.pause = add_screen(_pause_screen())
 	Run.changed.connect(_refresh_pause)
+	if OS.has_feature("web"):
+		# Escape out of the site's fullscreen is eaten by the browser: pause on the exit instead.
+		_on_fullscreen = JavaScriptBridge.create_callback(func(_a):
+			if not JavaScriptBridge.eval("!!window.parent.document.fullscreenElement"):
+				open_pause())
+		JavaScriptBridge.get_interface("parent").document.addEventListener("fullscreenchange", _on_fullscreen)
 	var options := preload("res://ui/options.gd").new()
 	options.closed.connect(back)
 	options.scale_changed.connect(_layout)
