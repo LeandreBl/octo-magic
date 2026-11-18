@@ -26,7 +26,9 @@ static func is_continuous(body: Dictionary) -> bool:
 
 ## Plays the sound of one emitted body: a loop on the body if it is
 ## continuous, else a one-shot left in the world where it was cast.
+## A spell cast short of mana (Spell.weakened) sounds as weak as it hits.
 static func play(spell: Dictionary, body: Dictionary, depth: int, node: Node2D, world: Node) -> void:
+	var db := linear_to_db(spell.get("weak", 1.0))
 	if is_continuous(body):
 		var s := loop_stream(spell.element, body, depth)
 		var bodies: Array = _loops.get_or_add(s, [])
@@ -35,9 +37,9 @@ static func play(spell: Dictionary, body: Dictionary, depth: int, node: Node2D, 
 		if node in bodies:
 			return  # a channel tick on a body already looping
 		bodies.append(node)
-		node.tree_exiting.connect(_release.bind(s, node, depth))
+		node.tree_exiting.connect(_release.bind(s, node, depth, db))
 		if bodies.size() == 1:
-			_attach_loop(s, node, depth)
+			_attach_loop(s, node, depth, db)
 	else:
 		var p := AudioStreamPlayer2D.new()
 		p.autoplay = true  # also when the world enters the tree later
@@ -46,13 +48,13 @@ static func play(spell: Dictionary, body: Dictionary, depth: int, node: Node2D, 
 		p.pitch_scale = Sfx.speed
 		p.add_to_group("sfx")
 		p.stream = cast_stream(spell.element, body, depth)
-		p.volume_db = CAST_DB - 4.0 * depth
+		p.volume_db = CAST_DB - 4.0 * depth + db
 		p.position = node.position
 		p.finished.connect(p.queue_free)
 		world.add_child(p)
 
 
-static func _attach_loop(s: AudioStreamWAV, node: Node2D, depth: int) -> void:
+static func _attach_loop(s: AudioStreamWAV, node: Node2D, depth: int, db: float) -> void:
 	var p := AudioStreamPlayer2D.new()
 	p.autoplay = true
 	p.bus = "SFX"
@@ -60,19 +62,19 @@ static func _attach_loop(s: AudioStreamWAV, node: Node2D, depth: int) -> void:
 	p.pitch_scale = Sfx.speed
 	p.add_to_group("sfx")
 	p.stream = s
-	p.volume_db = LOOP_DB - 3.0 * depth
+	p.volume_db = LOOP_DB - 3.0 * depth + db
 	node.add_child(p)
 
 
 ## The playing body leaves: the next live one (if any) plays the loop.
-static func _release(s: AudioStreamWAV, node: Node2D, depth: int) -> void:
+static func _release(s: AudioStreamWAV, node: Node2D, depth: int, db: float) -> void:
 	var bodies: Array = _loops.get(s, [])
 	var was_playing: bool = not bodies.is_empty() and bodies[0] == node
 	bodies.erase(node)
 	while not bodies.is_empty() and not (is_instance_valid(bodies[0]) and not bodies[0].is_queued_for_deletion()):
 		bodies.pop_front()  # gone or dying
 	if was_playing and not bodies.is_empty():
-		_attach_loop(s, bodies[0], depth)
+		_attach_loop(s, bodies[0], depth, db)
 
 
 

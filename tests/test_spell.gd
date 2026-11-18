@@ -162,6 +162,10 @@ func _check_loop_once() -> void:
 	check(za.get_child_count() == 1 and zb.get_child_count() == 0, "one loop for overlapping zones")
 	za.free()
 	check(zb.get_child_count() == 1, "the surviving zone takes the loop over")
+	var bolt := Spell.sanitize({"emit": {"body": {}}})
+	SpellSound.play(Spell.weakened(bolt, 0.5), bolt.emit.body, 0, zb, sw)
+	var shot: AudioStreamPlayer2D = sw.get_child(sw.get_child_count() - 1)
+	check(is_equal_approx(shot.volume_db, SpellSound.CAST_DB + linear_to_db(0.5)), "half the damage, half the sound")
 	sw.free()
 
 
