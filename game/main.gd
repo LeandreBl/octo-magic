@@ -87,9 +87,14 @@ func _process(delta: float) -> void:
 			_spawn_in = SPAWN_EVERY
 			_spawn_enemy(to_spawn.pop_front())
 	elif get_tree().get_nodes_in_group("enemies").is_empty():
-		for p in get_tree().get_nodes_in_group("pickups"):
-			p.magnet = INF  # wave cleared: the drops fly to the player
+		_pull_drops()  # wave cleared
 		_next_wave()
+
+
+## Every drop on the map flies to the player (wave cleared, boss down).
+func _pull_drops() -> void:
+	for p in get_tree().get_nodes_in_group("pickups"):
+		p.magnet = INF
 
 
 # --- run (the host drives it, peers follow through RPCs) ----------------------
@@ -183,6 +188,8 @@ func _on_killed(e: Node2D) -> void:
 		_drop("life", 1, e.position + Vector2(randf_range(-10, 10), 10))
 	if Run.is_boss(e.kind) or randf() < 0.01:
 		_drop("scroll", 1, e.position + Vector2(0, 14))
+	if Run.is_boss(e.kind):
+		_pull_drops.call_deferred()  # after its own drops' deferred spawns
 
 
 ## Kills and drops are shared: every peer counts them in its own Run.
