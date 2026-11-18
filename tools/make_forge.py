@@ -1,5 +1,7 @@
 """Generate the spell forge's art with PixelLab (server/art.py), for ui/forge.gd:
-the table, the parchment, a flickering candle, the quill and the runes.
+a wizard's study, its table seen at three quarters (books, candles, papers),
+chalk magic circles drawn on it (a big one, a small one per word) and chalk
+glyphs.
 Writes assets/forge/<name>.png; existing files are kept (delete one to redo it).
 
 Run: python3 tools/make_forge.py [name ...]
@@ -18,9 +20,7 @@ import sheet  # noqa: E402
 from make_monsters import _strip  # noqa: E402
 
 OUT = ROOT / "assets/forge"
-RUNE = ("a single ancient norse rune letter drawn as thick glowing golden yellow strokes, only gold and yellow"
-        " colors, no circle, no stone, centered")
-# Elder Futhark runes (runes.png, one per frame): their shapes, so they differ.
+# Elder Futhark runes (glyphs.png, one per frame): their shapes, so they differ.
 RUNES = [
     "Kenaz: an arrowhead shape like the less-than sign <",
     "Gebo: a big X cross",
@@ -37,53 +37,53 @@ RUNES = [
 ]
 
 
-def image(description: str, w: int, h: int, background: bool = False) -> bytes:
+def image(description: str, w: int, h: int, background: bool = False, outline: str = "lineless") -> bytes:
     res = art._request("POST", "/create-image-pixen", {
         "description": description, "image_size": {"width": w, "height": h},
         "no_background": not background, "view": "high top-down",
-        "outline": "single color black outline", "detail": "highly detailed",
+        "outline": outline, "detail": "highly detailed",
     }, timeout=180)
     return base64.b64decode(res["image"]["base64"])
 
 
-def table() -> bytes:
-    return image("seamless tileable texture of dark oak wooden table planks seen from above, horizontal boards,"
-                 " warm brown wood grain, a few nail heads, no objects, fills the whole image", 128, 128, True)
+def room() -> bytes:
+    return image("high three-quarter view of a big empty wooden table in a dark medieval room at night, the table"
+                 " top takes most of the frame, a few small lit candles at its four corners, small stacks of old"
+                 " books at the back left, loose small parchment sheets at the back right, wide empty bare wooden"
+                 " center, warm candlelight", 428, 240, True)
 
 
-def parchment() -> bytes:
-    png = image("a large blank parchment sheet lying flat seen from above, an even smooth light cream beige"
-                 " paper filling the whole image, a thin darker brown aged rim and slightly curled corners,"
-                 " clean plain center with no holes, no stains, no white spots, nothing written on it", 256, 192, True)
-    return _clear(png)
+CHALK = ("drawn by hand with white chalk on a dark wooden table, slightly smudged dusty chalk strokes,"
+         " only white and pale grey chalk colors, flat seen from straight above, transparent background")
 
 
-def _clear(png: bytes) -> bytes:
-    """The flat background PixelLab leaves around the sheet (the corner's color) -> transparent."""
+def chalk(png: bytes) -> bytes:
+    """Only the chalk: dark pixels (outline, fill) cleared, the rest white with
+    its lightness as alpha, so ui/forge.gd tints it (chalk, glowing gold)."""
     w, h, px = sheet.read_png(png)
-    corner = px[0:3]
     for i in range(0, len(px), 4):
-        if px[i:i + 3] == corner:
-            px[i + 3] = 0
+        light = sum(px[i:i + 3]) // 3
+        px[i:i + 4] = bytes([255, 255, 255, min(px[i + 3], max(0, light - 100) * 255 // 155)])
     return sheet.write_png(w, h, bytes(px))
 
 
-def candle() -> bytes:
-    base = art.sprite("a single lit wax candle standing in a small brass candlestick holder, cream wax with drips,"
-                      " a bright small orange flame on top, seen from the front", 64, "highly detailed")
-    return _strip(art.animate(base, "the candle flame flickers and sways gently, the candle itself stays still", 8)[-8:])
+def circle() -> bytes:
+    return chalk(image(f"a big round magic summoning circle: two thin concentric rings with a band of small arcane"
+                 f" glyphs between them, a hexagram star inside, an empty plain center, {CHALK}", 192, 192))
 
 
-def quill() -> bytes:
-    return art.sprite("a white feather quill pen with a dark ink-wet nib, tilted, the nib pointing down left", 48,
-                      "highly detailed")
+def seal() -> bytes:
+    return chalk(image("a small round magic circle drawn with white chalk on a plain pure black background: one thin"
+                       " white ring, a second thinner inner ring with tiny runes between them, the middle left"
+                       " completely empty and black, flat, seen from straight above", 64, 64, True))
 
 
-def runes() -> bytes:
-    return _strip([art.icon(f"{RUNE}: the rune {r}") for r in RUNES])
+def glyphs() -> bytes:
+    return chalk(_strip([art.icon(f"a single ancient rune letter drawn as thick white chalk strokes on nothing, only white"
+                            f" and pale grey, no circle, no stone, centered: the rune {r}") for r in RUNES]))
 
 
-JOBS = {"table": table, "parchment": parchment, "candle": candle, "quill": quill, "runes": runes}
+JOBS = {"room": room, "circle": circle, "seal": seal, "glyphs": glyphs}
 
 
 def _make(name: str) -> None:
