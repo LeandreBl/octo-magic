@@ -15,6 +15,7 @@ extends Node2D
 ## (OfflineMultiplayerPeer): one code path.
 
 const POLL_SECONDS := 3.0
+const SPAWN_EVERY := 0.5  # s between two monsters of a wave: it trickles in
 const Enemy := preload("res://game/enemy.gd")
 const Pickup := preload("res://game/pickup.gd")
 const Player := preload("res://game/player.gd")
@@ -28,6 +29,8 @@ signal net_error(message: String)  # host lost or room closed: back to solo
 var spawner: MultiplayerSpawner
 var net: Node  # game/net.gd
 var spawned := 0  # names of spawned enemies and drops
+var to_spawn := []  # the current wave's kinds not out yet (host)
+var _spawn_in := 0.0  # s until the next one comes out
 var map_name := "crypt"  # this run's map (its music), for players dropping in
 var forge_http: HTTPRequest
 var forge_job := ""  # scrolls being written on the forge
@@ -72,10 +75,17 @@ func solo() -> bool:
 	return multiplayer.multiplayer_peer is OfflineMultiplayerPeer
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not Run.active or not local_player():
 		return
-	if multiplayer.is_server() and get_tree().get_nodes_in_group("enemies").is_empty():
+	if not multiplayer.is_server():
+		return
+	if to_spawn:
+		_spawn_in -= delta
+		if _spawn_in <= 0.0:
+			_spawn_in = SPAWN_EVERY
+			_spawn_enemy(to_spawn.pop_front())
+	elif get_tree().get_nodes_in_group("enemies").is_empty():
 		for p in get_tree().get_nodes_in_group("pickups"):
 			p.magnet = INF  # wave cleared: the drops fly to the player
 		_next_wave()
@@ -128,17 +138,23 @@ func _offer_loadout(text: String) -> void:
 		p.loadout_json = JSON.stringify(Player.clean_loadout(JSON.parse_string(text)))
 
 
+## The wave's monsters come out one by one (_process), the first at once.
 func _next_wave() -> void:
 	_wave_started.rpc(Run.wave + 1)
-	# Every mage's screen: no monster appears in one. A window wider or
-	# taller than this one shows more (stretch aspect "expand"): up to 21:9 and 4:3.
+	to_spawn = Run.wave_plan(Run.wave)
+	_spawn_in = 0.0
+
+
+## One monster of the wave, at a random spot off every mage's screen. A
+## window wider or taller than this one shows more (stretch aspect
+## "expand"): up to 21:9 and 4:3.
+func _spawn_enemy(kind: String) -> void:
 	var view := get_viewport_rect().size / Player.ZOOM
 	view = Vector2(maxf(view.x, view.y * 21.0 / 9.0), maxf(view.y, view.x * 3.0 / 4.0))
 	var seen := Arena.views(get_tree().get_nodes_in_group("players").map(func(p): return p.position), view)
-	for kind in Run.wave_plan(Run.wave):
-		spawned += 1
-		spawner.spawn({"kind": "enemy", "name": "E%d" % spawned, "type": kind,
-			"stats": Run.enemy_stats(kind, Run.wave), "pos": Arena.spawn_point(seen)})
+	spawned += 1
+	spawner.spawn({"kind": "enemy", "name": "E%d" % spawned, "type": kind,
+		"stats": Run.enemy_stats(kind, Run.wave), "pos": Arena.spawn_point(seen)})
 
 
 @rpc("authority", "call_local", "reliable")

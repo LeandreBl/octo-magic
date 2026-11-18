@@ -93,24 +93,18 @@ static func views(mages: Array, view: Vector2) -> Array:
 
 
 ## Where a monster comes out: never in a mage's view (views, grown by a
-## monster's size). An open grave near one, else a free spot off every
-## view, else the open grave farthest from them.
+## monster's size). A random open grave off every view, else a random free
+## spot off every view, else the open grave farthest from them.
 static func spawn_point(seen: Array) -> Vector2:
 	var hidden := func(v: Vector2): return not seen.any(func(r): return r.grow(48.0).has_point(v))
-	var away := func(v: Vector2): return seen.map(func(r): return r.get_center().distance_to(v)).min()
 	var graves: Array = spawns.map(func(s): return Vector2(s[0], s[1])).filter(hidden)
 	if graves:
-		graves.sort_custom(func(a, b): return away.call(a) < away.call(b))
-		return graves[randi() % mini(3, graves.size())] + Vector2(randf_range(-8, 8), randf_range(-8, 8))
-	var spots := []
+		return graves.pick_random() + Vector2(randf_range(-8, 8), randf_range(-8, 8))
 	for i in 200:
 		var v := Vector2(randf_range(RECT.position.x, RECT.end.x), randf_range(RECT.position.y, RECT.end.y))
-		if hidden.call(v):
-			spots.append(v)
-	spots.sort_custom(func(a, b): return away.call(a) < away.call(b))
-	for v in spots:  # the nearest free one: slide only until then
-		if slide(v, Vector2.ZERO, 16.0) == v:
+		if hidden.call(v) and slide(v, Vector2.ZERO, 16.0) == v:
 			return v
+	var away := func(v: Vector2): return seen.map(func(r): return r.get_center().distance_to(v)).min()
 	var all: Array = spawns.map(func(s): return Vector2(s[0], s[1]))
 	all.sort_custom(func(a, b): return away.call(a) > away.call(b))
 	return all[0] if all else RECT.get_center()
