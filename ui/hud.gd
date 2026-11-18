@@ -192,14 +192,23 @@ func _bar(parent: Control, color: Color, height: int) -> ProgressBar:
 	text.add_theme_font_size_override("font_size", 15)
 	text.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
 	bar.add_child(text)
+	var regen := Label.new()  # child 1: the bar's regen per second, right-aligned
+	regen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	regen.offset_right = -8
+	regen.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	regen.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	regen.add_theme_font_size_override("font_size", 13)
+	regen.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
+	bar.add_child(regen)
 	parent.add_child(bar)
 	return bar
 
 
-func _set_bar(bar: ProgressBar, value: float, max_value: float, text: String) -> void:
+func _set_bar(bar: ProgressBar, value: float, max_value: float, text: String, regen := "") -> void:
 	bar.max_value = max_value
 	bar.value = value
 	bar.get_child(0).text = text
+	bar.get_child(1).text = regen
 
 
 func _slot(slot: String) -> Control:
@@ -259,8 +268,10 @@ func _process(_delta: float) -> void:
 	var p: Node2D = main.local_player()
 	if not visible or not Run.active or not p:
 		return
-	_set_bar(_hp, p.hp, p.stats.hp, tr("HP %d / %d") % [maxf(p.hp, 0.0), p.stats.hp])
-	_set_bar(_mana, p.mana, p.stats.mana, "Mana %d / %d" % [p.mana, p.stats.mana])
+	_set_bar(_hp, p.hp, p.stats.hp, tr("HP %d / %d") % [maxf(p.hp, 0.0), p.stats.hp],
+			"+%.1f/s" % p.stats.hp_regen if p.stats.hp_regen > 0.0 else "")
+	_set_bar(_mana, p.mana, p.stats.mana, "Mana %d / %d" % [p.mana, p.stats.mana],
+			"+%d/s" % p.stats.mana_regen if p.stats.mana_regen > 0.0 else "")
 	_set_bar(_xp, Run.xp, Run.xp_to_next(Run.level), "")
 	_level.text = str(Run.level)
 	_wave.text = tr("Wave %d") % Run.wave
