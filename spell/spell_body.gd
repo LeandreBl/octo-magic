@@ -165,10 +165,17 @@ func _move(delta: float) -> void:
 
 ## Beam and cone stay on the caster and strike once, when cast: a channeled
 ## spell is recast every `cooldown`, so each cast is one tick (and costs mana).
+## Cast by the player, they follow its aim every frame (the arc re-grips too).
 func _channel() -> void:
 	if is_instance_valid(caster):
+		var aim: Variant = caster.get("aim")
+		if depth == 0 and aim is Vector2 and aim != Vector2.ZERO:
+			dir = aim.normalized()
+			anchor = dir * anchor.length()
 		global_position = caster.global_position + anchor
 	if struck:
+		if body.shape == "beam":
+			target = _beam_target()
 		return
 	struck = true
 	if body.shape == "beam":

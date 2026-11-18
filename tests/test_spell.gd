@@ -174,6 +174,18 @@ func _check_channel() -> void:
 	for i in 3:
 		await physics_frame
 	check(aimed.hp == hp, "beam strikes once per cast")
+	var mage := Player.new()
+	mage.position = Vector2(100, 100)
+	world.add_child(mage)
+	mage.set_physics_process(false)  # aim set by hand, not by the mouse
+	mage.aim = Vector2.RIGHT
+	SpellBody.cast(spells.lightning.emit, Vector2(110, 100), Vector2.RIGHT, mage, spells.lightning, world)
+	await physics_frame
+	mage.aim = Vector2.DOWN
+	await physics_frame
+	var arc: SpellBody = world.get_children().filter(func(n): return n is SpellBody and n.caster == mage)[0]
+	check(arc.dir == Vector2.DOWN and arc.position.is_equal_approx(Vector2(100, 110)), "beam follows the caster's aim every frame")
+	mage.free()
 	SpellBody.cast(spells.frost_jet.emit, Vector2(230, 100), Vector2.RIGHT, null, spells.frost_jet, world)
 	for i in 3:
 		await physics_frame
