@@ -114,8 +114,7 @@ const CSS = `
 }
 .rg.open .rg-ripple { opacity: 1; animation: rg-ripple 1.6s linear infinite; }
 .rg-horizon img {
-  position: absolute; left: 30%; top: 30%; width: 40%; height: 40%; image-rendering: pixelated; opacity: .55;
-  filter: drop-shadow(0 0 18px #8b5cf6); animation: rg-float 4s ease-in-out infinite;
+  position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; image-rendering: pixelated; opacity: .55;
 }
 .rg.open .rg-horizon::before { opacity: 1; animation: rg-swirl 2.4s linear infinite, rg-in .5s ease-out both; }
 .rg.open .rg-horizon::after { animation: rg-flash 1.1s ease-out both; }
@@ -151,7 +150,6 @@ const CSS = `
 @keyframes rg-flash { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: .15; } }
 @keyframes rg-kawoosh { 0% { transform: scale(.6); } 60% { transform: scale(1.08); } 100% { transform: scale(1); } }
 @keyframes rg-ripple { from { transform: scale(1); } to { transform: scale(1.25); } }
-@keyframes rg-float { 50% { transform: translateY(-6px); } }
 @media (prefers-reduced-motion: reduce) {
   .rg *, .rg *::before, .rg *::after { animation: none !important; }
 }
