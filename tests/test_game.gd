@@ -78,7 +78,7 @@ func _test_upgrades() -> void:
 	check(is_equal_approx(_damage(up), _damage(s) * 1.2), "damage upgrade")
 	check(is_equal_approx(_damage(Upgrades.apply(s, "damage", 3)), _damage(s) * 1.6), "an epic is three commons")
 	check(Upgrades.apply(s, "count").emit.count == s.emit.count + 1, "count upgrade")
-	check(Upgrades.apply(s, "count", 2).emit.count == s.emit.count + 2, "rare count upgrade")
+	check(Upgrades.apply(s, "count", 2).emit.count == s.emit.count + 1, "count upgrade is +1 at every rarity")
 	check(Upgrades.apply(s, "cooldown").cooldown < s.cooldown, "cooldown upgrade")
 	check(Upgrades.apply(s, "pierce").emit.body.pierce == s.emit.body.pierce + 1, "pierce upgrade")
 	check(Upgrades.apply(up, "damage") == Spell.sanitize(Upgrades.apply(up, "damage")), "upgraded spell is sanitized")
@@ -96,10 +96,13 @@ func _test_upgrades() -> void:
 	check(offers.size() == 3 and offers[0].id != offers[1].id and offers[1].id != offers[2].id, "3 distinct offers")
 	check(offers.all(func(o): return Upgrades.RARITIES.has(o.rarity)), "offers have a rarity")
 	var seen := {}
+	var multiplied := 0
 	for i in 200:
 		for o in Upgrades.offers(s, 1.0, {}, rng):
 			seen[o.rarity] = true
 			seen[o.id] = true
+			multiplied += int(o.id == "count")
+	check(multiplied < 20, "multiplication is rarely offered")  # ~35 without its chance, ~3.5 with it
 	check(seen.has("epic") and seen.has("common") and seen.has("toughness"), "rarities and hero augments rolled")
 	check(not Upgrades.applies(s, "fleetness", 1.0, Stats.total([{"speed": 1e4}])), "maxed stat not offered")
 	check(Upgrades.applies(s, "ward", 1.0, Stats.total([])), "stat below its bound offered")

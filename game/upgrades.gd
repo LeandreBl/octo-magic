@@ -2,7 +2,8 @@ class_name Upgrades
 ## Level-up augments, each rolled with a rarity that multiplies its strength.
 ## Spell augments edit the equipped spell's JSON (Spell.sanitize clamps it
 ## again; "mana" is kept outside the spell, see Run.mana_mult); hero augments
-## ("stat") are Stats bonuses on the mage (Run.bonuses, see game/stats.gd). "desc" formats the value: "step" times the tier.
+## ("stat") are Stats bonuses on the mage (Run.bonuses, see game/stats.gd). "desc" formats the value: "step" times the tier
+## ("flat": the same at every rarity). "chance": how often the augment enters the offer pool (default always).
 
 const SLOTS := ["primary"]  # the spell equipped from the profile
 const RUN_SLOTS := ["primary", "secondary"]  # secondary: an active augment (Profile.AUGMENTS)
@@ -15,7 +16,7 @@ const RARITIES := {
 const LIST := {
 	"damage": {"name": "Power", "desc": "+%d%% damage", "step": 20},
 	"cooldown": {"name": "Haste", "desc": "-%d%% cooldown", "step": 10},
-	"count": {"name": "Multiplication", "desc": "+%d projectile(s)", "step": 1},
+	"count": {"name": "Multiplication", "desc": "+%d projectile(s)", "step": 1, "flat": true, "chance": 0.1},
 	"speed": {"name": "Velocity", "desc": "+%d%% projectile speed", "step": 15},
 	"mana": {"name": "Thrift", "desc": "-%d%% mana cost", "step": 10},
 	"area": {"name": "Amplitude", "desc": "+%d%% size and area", "step": 15},
@@ -36,7 +37,7 @@ const MANA_FLOOR := 0.4  # "mana" augments stop at 40 % of the cost
 
 ## The augment's text at `rarity`, translated.
 static func describe(id: String, rarity: String) -> String:
-	return TranslationServer.translate(LIST[id].desc) % (LIST[id].step * RARITIES[rarity].tier)
+	return TranslationServer.translate(LIST[id].desc) % (LIST[id].step * (1 if LIST[id].get("flat") else RARITIES[rarity].tier))
 
 
 ## The augment's raw amount at `tier`: a fraction for "%" ones.
@@ -77,7 +78,7 @@ static func apply(spell: Dictionary, id: String, tier := 1) -> Dictionary:
 		"damage": return scale_damage(s, 1.0 + a)
 		"cooldown": s.cooldown *= 1.0 - a
 		"count":
-			e.count += tier
+			e.count += 1  # flat: +1 at every rarity
 			if e.pattern != "radial":
 				e.spread = maxf(e.spread, 12.0 * (e.count - 1))
 		"speed": e.body.speed *= 1.0 + a
@@ -108,7 +109,7 @@ static func _each_effect(emit: Dictionary, fn: Callable) -> void:
 ## Up to `n` distinct {id, rarity} offers among the augments that still apply
 ## to the equipped spell or the stats, each with its own rarity roll.
 static func offers(spell: Dictionary, mana_mult: float, stats: Dictionary, rng: RandomNumberGenerator, n := 3) -> Array:
-	var pool := LIST.keys().filter(func(id): return applies(spell, id, mana_mult, stats))
+	var pool := LIST.keys().filter(func(id): return applies(spell, id, mana_mult, stats) and rng.randf() < LIST[id].get("chance", 1.0))
 	for i in range(pool.size() - 1, 0, -1):  # Fisher-Yates with the run's rng
 		var j := rng.randi_range(0, i)
 		var t = pool[i]
