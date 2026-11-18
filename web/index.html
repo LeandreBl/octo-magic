@@ -16,105 +16,167 @@
 <link rel="stylesheet" href="/style.css">
 </head>
 <body class="landing">
-<header>
-  <a class="brand" href="/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
-  <nav><a href="#sorts">Tes sorts</a><a href="#features">Le jeu</a><a href="/account" data-who>Connexion</a><a class="lang" href="/en/" hreflang="en" lang="en" title="English" data-lang="en">EN</a><a class="button small" href="/game">Jouer</a></nav>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
+    <nav><a class="hide-sm" href="#sorts">Tes sorts</a><a class="hide-sm" href="#boucle">Le jeu</a><a class="hide-sm" href="#coop">Coop</a><a class="hide-sm" href="/account" data-who>Connexion</a><a class="lang" href="/en/" hreflang="en" lang="en" title="English" data-lang="en">EN</a><a class="btn btn-gold btn-sm" href="/game">Jouer</a></nav>
+  </div>
 </header>
 
 <section class="hero">
   <div class="sky" aria-hidden="true"></div>
-  <div class="hero-text">
-    <p class="eyebrow">Roguelite · Coop · Des sorts uniques</p>
-    <h1>Octo Magic</h1>
-    <p class="tagline">Crée tes sorts. Combine-les.<br>Survis aux vagues. Conquiers le donjon.</p>
-    <div class="actions">
-      <a class="button big" href="/game">▶ Jouer gratuitement</a>
-      <a class="button ghost big" href="/account">Créer un compte</a>
+  <div class="wrap">
+    <div class="hero-text">
+      <p class="eyebrow">Roguelite · Coop jusqu'à 8 · Des sorts uniques</p>
+      <h1>Écris un mot. <em>Déchaîne un sort</em> que personne n'a jamais lancé.</h1>
+      <p class="tagline">Arrache des parchemins aux boss, grave-y un mot de pouvoir en latin, en grec ancien ou en vieux norrois, et regarde-le prendre vie. Puis combine-les, et tiens bon, seul ou à huit.</p>
+      <div class="actions">
+        <a class="btn btn-gold btn-lg" href="/game"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 2 L15 9 L4 16 Z" fill="currentColor"/></svg>Jouer gratuitement</a>
+        <a class="btn btn-ghost btn-lg" href="#sorts">Découvrir tes sorts</a>
+      </div>
+      <ul class="checks"><li>Gratuit, pour de vrai</li><li>Rien à installer</li><li>Clavier, souris ou manette</li></ul>
     </div>
-    <p class="note">Dans le navigateur, sans installation. Bientôt sur mobile :</p>
-    <div class="stores">
-      <a class="store soon" aria-disabled="true" title="Bientôt"><img src="/img/app-store.svg" alt="Télécharger dans l'App Store"></a>
-      <a class="store soon play" aria-disabled="true" title="Bientôt"><img src="/img/google-play.png" alt="Disponible sur Google Play"></a>
+    <div class="orbit" aria-hidden="true">
+      <img class="pixel core" src="/assets/icon.png" alt="">
+      <span class="slot o1"><img class="pixel" src="/assets/icons/fire_nova.png" alt=""></span>
+      <span class="slot o2"><img class="pixel" src="/assets/icons/thunder_chain.png" alt=""></span>
+      <span class="slot o3"><img class="pixel" src="/assets/icons/frost_shard.png" alt=""></span>
+      <span class="slot o4"><img class="pixel" src="/assets/icons/plague.png" alt=""></span>
+      <span class="slot o5"><img class="pixel" src="/assets/icons/black_hole.png" alt=""></span>
+      <span class="slot o6"><img class="pixel" src="/assets/icons/arcane_missiles.png" alt=""></span>
     </div>
-  </div>
-  <div class="orbit" aria-hidden="true">
-    <img class="pixel core" src="/assets/icon.png" alt="">
-    <img class="pixel o1" src="/assets/icons/fire_nova.png" alt="">
-    <img class="pixel o2" src="/assets/icons/thunder_chain.png" alt="">
-    <img class="pixel o3" src="/assets/icons/frost_shard.png" alt="">
-    <img class="pixel o4" src="/assets/icons/plague.png" alt="">
-    <img class="pixel o5" src="/assets/icons/black_hole.png" alt="">
-    <img class="pixel o6" src="/assets/icons/arcane_missiles.png" alt="">
   </div>
 </section>
 
-<main>
+<section class="factbar" aria-label="En bref">
+  <div class="wrap">
+    <div><b>Gratuit</b><span>pas un centime pour jouer</span></div>
+    <div><b>8 mages</b><span>dans la même mêlée</span></div>
+    <div><b>15 monstres</b><span>dont 3 boss affamés</span></div>
+    <div><b>4+ langues</b><span>mortes, à réveiller</span></div>
+  </div>
+</section>
+
+<main class="wrap landing-main">
   <section id="sorts" class="forge">
-    <div>
+    <div class="forge-text">
       <p class="eyebrow">Tes sorts</p>
-      <h2>Un mot. Un sort que personne d'autre n'a.</h2>
-      <p>Arrache des parchemins vierges aux boss du donjon. Inscris sur chacun un mot de pouvoir — en <b>latin</b>, en <b>grec ancien</b>, en <b>vieux norrois</b>, en <b>sanskrit</b>… et il prend vie : sa forme, sa trajectoire, son élément, ses effets.</p>
-      <p>Combine tes parchemins et ton sort se transforme : la glace qui ralentit devient une tempête qui gèle tout sur son passage, le feu se met à rebondir, l'éclair à poursuivre ses proies. Chaque combinaison donne un sort qui n'existe nulle part ailleurs.</p>
+      <h2>Ton sort n'existe nulle part ailleurs.</h2>
+      <p>Chaque boss abattu lâche un parchemin vierge. Grave-y un mot de pouvoir et il prend vie : sa forme, sa trajectoire, son élément, ses effets, jusqu'à ses sprites en pixel art.</p>
+      <div class="chips"><span class="chip">Latin</span><span class="chip">Grec ancien</span><span class="chip">Vieux norrois</span><span class="chip">Sanskrit</span><span class="chip outline">et d'autres…</span></div>
+      <div class="promise panel">
+        <img class="pixel" src="/assets/icons/blizzard.png" alt="" width="28" height="28">
+        <p><b>Combine tes parchemins</b> et ton sort mute : la glace qui ralentit devient une tempête qui gèle tout sur son passage, le feu se met à rebondir, l'éclair à traquer ses proies.</p>
+      </div>
     </div>
-    <div class="scroll" aria-label="Exemple de parchemin">
-      <span class="word">fulgur</span>
-      <span class="arrow">↓</span>
-      <span class="spell"><img class="pixel" src="/assets/icons/storm.png" alt=""><span><b>Fulgur Caeli</b><small>Un éclair tombe du ciel et rebondit entre les ennemis proches.</small></span></span>
+    <div class="forge-demo">
+      <div class="scroll parchment" aria-label="Exemple de parchemin">
+        <span class="kicker">Parchemin vierge</span>
+        <span class="word">fulgur</span>
+        <span class="gloss">latin · « l'éclair »</span>
+        <svg width="24" height="32" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 2 V26 M4 18 L12 26 L20 18" fill="none" stroke="#7a5a2a" stroke-width="3"/></svg>
+        <div class="spell-card">
+          <span class="slot"><img class="pixel" src="/assets/icons/storm.png" alt=""></span>
+          <span><b>Fulgur Caeli</b><small>Un éclair tombe du ciel et rebondit entre les ennemis proches.</small></span>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section class="steps">
-    <div><span>1</span><h3>Survis</h3><p>Des vagues d'ennemis toujours plus fortes, et un boss qui guette.</p></div>
-    <div><span>2</span><h3>Évolue</h3><p>Chaque niveau t'offre une amélioration : plus de projectiles, plus de dégâts, plus de chaos.</p></div>
-    <div><span>3</span><h3>Crée</h3><p>Inscris tes parchemins entre les runs et découvre le sort qu'ils font naître.</p></div>
-    <div><span>4</span><h3>Recommence</h3><p>La mort est permanente, l'or reste : bâtons, robes, anneaux et bonus.</p></div>
+  <section id="boucle">
+    <div class="section-head">
+      <p class="eyebrow">La boucle</p>
+      <h2>Encore une run. Juste une.</h2>
+    </div>
+    <div class="steps">
+      <div class="step panel">
+        <div class="step-top"><span>1</span><img class="pixel" src="/assets/icons/meteor_rain.png" alt=""></div>
+        <h3>Survis</h3>
+        <p>Les vagues grossissent, 15 espèces de monstres se ruent sur toi, et un boss attend son heure.</p>
+      </div>
+      <div class="step panel">
+        <div class="step-top"><span>2</span><img class="pixel" src="/assets/icons/spark.png" alt=""></div>
+        <h3>Évolue</h3>
+        <p>À chaque niveau, un choix : plus de projectiles, plus de dégâts, plus de chaos à l'écran.</p>
+      </div>
+      <div class="step panel">
+        <div class="step-top"><span>3</span><img class="pixel" src="/assets/icons/scroll.png" alt=""></div>
+        <h3>Crée</h3>
+        <p>Entre deux runs, grave tes parchemins et découvre le sort qu'ils font naître.</p>
+      </div>
+      <div class="step panel">
+        <div class="step-top"><span>4</span><img class="pixel" src="/assets/icons/gold.png" alt=""></div>
+        <h3>Recommence</h3>
+        <p>La mort est définitive. L'or, lui, reste : bâtons, robes, anneaux et bonus t'attendent.</p>
+      </div>
+    </div>
   </section>
 
-  <section id="features" class="cards">
-    <div class="card">
-      <img class="pixel" src="/assets/icons/arcane_orbit.png" alt="">
-      <h3>Jusqu'à 8 mages</h3>
-      <p>Crée une partie, partage son code, et affrontez le donjon ensemble en pair à pair.</p>
+  <section id="coop" class="features">
+    <div class="coop plate">
+      <div class="coop-text">
+        <p class="eyebrow">Coop</p>
+        <h2>Huit mages. Un donjon. Zéro pitié.</h2>
+        <p>Lance une partie, balance le code à tes potes, et faites pleuvoir vos sorts sur la même horde. En pair à pair : rien à louer, rien à payer.</p>
+      </div>
+      <div class="party" aria-hidden="true">
+        <div class="mages"><img class="pixel" src="/assets/icon.png" alt=""><img class="pixel" src="/assets/icon.png" alt=""><img class="pixel" src="/assets/icon.png" alt=""><img class="pixel" src="/assets/icon.png" alt=""><img class="pixel" src="/assets/icon.png" alt=""><img class="pixel" src="/assets/icon.png" alt=""><img class="pixel" src="/assets/icon.png" alt=""><img class="pixel" src="/assets/icon.png" alt=""></div>
+        <span>Partie pleine : 8 / 8</span>
+      </div>
     </div>
-    <div class="card">
-      <img class="pixel" src="/assets/icons/meteor_rain.png" alt="">
-      <h3>Un sort, le tien</h3>
-      <p>Parchemin après parchemin, ton sort évolue jusqu'à devenir ta signature : aucun autre mage ne joue comme toi.</p>
+    <div class="feature panel">
+      <span class="slot"><img class="pixel" src="/assets/icons/meteor_rain.png" alt=""></span>
+      <div><h3>Un sort, le tien</h3><p>Parchemin après parchemin, ton sort évolue jusqu'à devenir ta signature : aucun autre mage ne joue comme toi.</p></div>
     </div>
-    <div class="card">
-      <img class="pixel" src="/assets/icons/staff_crystal.png" alt="">
-      <h3>Ton mage, ta progression</h3>
-      <p>Personnalise ton mage, débloque des succès et retrouve tes sorts sur tous tes appareils.</p>
+    <div class="feature panel">
+      <span class="slot"><img class="pixel" src="/assets/icons/staff_crystal.png" alt=""></span>
+      <div><h3>Ta progression, partout</h3><p>Ton mage, tes succès et tes sorts te suivent sur le web et sur tous tes appareils.</p></div>
     </div>
-    <div class="card">
-      <img class="pixel" src="/assets/icons/gold.png" alt="">
-      <h3>Gratuit</h3>
-      <p>Joue tout de suite dans ton navigateur, sans installation et sans payer.</p>
+    <div class="feature panel">
+      <span class="slot"><img class="pixel" src="/assets/icons/gold.png" alt=""></span>
+      <div><h3>La boutique de run</h3><p>Claque l'or de la run : un Anneau de feu en sort secondaire, ou un bouclier pour tenir une vague de plus.</p></div>
     </div>
   </section>
 
   <section class="spellbook" aria-label="Quelques sorts">
-    <img class="pixel" src="/assets/icons/fire_nova.png" alt="Nova de feu">
-    <img class="pixel" src="/assets/icons/blizzard.png" alt="Blizzard">
-    <img class="pixel" src="/assets/icons/storm.png" alt="Tempête">
-    <img class="pixel" src="/assets/icons/toxic_cloud.png" alt="Nuage toxique">
-    <img class="pixel" src="/assets/icons/frost_ring.png" alt="Anneau de givre">
-    <img class="pixel" src="/assets/icons/venom_dart.png" alt="Dard venimeux">
-    <img class="pixel" src="/assets/icons/black_hole.png" alt="Trou noir">
-    <img class="pixel" src="/assets/icons/spark.png" alt="Étincelle">
-    <img class="pixel" src="/assets/icons/meteor_rain.png" alt="Pluie de météores">
-    <img class="pixel" src="/assets/icons/arcane_missiles.png" alt="Missiles arcaniques">
+    <h2>Quelques pages du grimoire</h2>
+    <div class="spells">
+      <span class="slot" title="Nova de feu"><img class="pixel" src="/assets/icons/fire_nova.png" alt="Nova de feu"></span>
+      <span class="slot" title="Blizzard"><img class="pixel" src="/assets/icons/blizzard.png" alt="Blizzard"></span>
+      <span class="slot" title="Tempête"><img class="pixel" src="/assets/icons/storm.png" alt="Tempête"></span>
+      <span class="slot" title="Nuage toxique"><img class="pixel" src="/assets/icons/toxic_cloud.png" alt="Nuage toxique"></span>
+      <span class="slot" title="Anneau de givre"><img class="pixel" src="/assets/icons/frost_ring.png" alt="Anneau de givre"></span>
+      <span class="slot" title="Dard venimeux"><img class="pixel" src="/assets/icons/venom_dart.png" alt="Dard venimeux"></span>
+      <span class="slot" title="Trou noir"><img class="pixel" src="/assets/icons/black_hole.png" alt="Trou noir"></span>
+      <span class="slot" title="Étincelle"><img class="pixel" src="/assets/icons/spark.png" alt="Étincelle"></span>
+      <span class="slot" title="Pluie de météores"><img class="pixel" src="/assets/icons/meteor_rain.png" alt="Pluie de météores"></span>
+      <span class="slot" title="Missiles arcaniques"><img class="pixel" src="/assets/icons/arcane_missiles.png" alt="Missiles arcaniques"></span>
+    </div>
+    <p>Ça, ce sont les sorts de base. Les meilleurs, c'est toi qui vas les écrire.</p>
   </section>
 
-  <section class="cta">
+  <section class="cta panel">
+    <img class="pixel" src="/assets/icon.png" alt="">
     <h2>Le donjon t'attend.</h2>
-    <p>Ton premier sort n'attend qu'un parchemin.</p>
-    <a class="button big" href="/game">▶ Lancer le jeu</a>
+    <p>Ton premier sort n'attend qu'un parchemin. Une run dure quelques minutes… en théorie.</p>
+    <div class="actions">
+      <a class="btn btn-gold btn-lg" href="/game"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 2 L15 9 L4 16 Z" fill="currentColor"/></svg>Lancer le jeu</a>
+      <a class="btn btn-lg" href="/account">Créer mon compte</a>
+    </div>
+    <div class="stores">
+      <span>Bientôt sur mobile</span>
+      <a class="store soon" aria-disabled="true" title="Bientôt" data-soon="Bientôt"><img src="/img/app-store.svg" alt="Télécharger dans l'App Store"></a>
+      <a class="store soon play" aria-disabled="true" title="Bientôt" data-soon="Bientôt"><img src="/img/google-play.png" alt="Disponible sur Google Play"></a>
+    </div>
   </section>
 </main>
-<footer>
-  <a href="/account">Mon compte</a><a href="/privacy">Confidentialité</a><a href="/terms">Conditions d'utilisation</a>
-  <p><small>App Store est une marque d'Apple Inc. Google Play est une marque de Google LLC.</small></p>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <a class="brand" href="/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
+    <a href="/account">Mon compte</a><a href="/privacy">Confidentialité</a><a href="/terms">Conditions d'utilisation</a>
+    <small>App Store est une marque d'Apple Inc. Google Play est une marque de Google LLC.</small>
+  </div>
 </footer>
 <script type="module" src="/site.js"></script>
 </body>

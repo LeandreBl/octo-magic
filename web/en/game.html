@@ -15,14 +15,17 @@
 <link rel="alternate" hreflang="fr" href="https://octo-magic.notdotio.com/game">
 <link rel="alternate" hreflang="en" href="https://octo-magic.notdotio.com/en/game">
 <link rel="alternate" hreflang="x-default" href="https://octo-magic.notdotio.com/en/game">
+<meta name="theme-color" content="#120d24">
 <link rel="icon" href="/assets/icon.png">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body class="game">
-<header>
-  <a class="brand" href="/en/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
-  <h1>Play</h1>
-  <nav><a href="#" id="fullscreen">Fullscreen</a><a href="/en/account" data-who>Log in</a><a class="lang" href="/game" hreflang="fr" lang="fr" title="Français" data-lang="fr">FR</a></nav>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/en/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
+    <h1>Play</h1>
+    <nav><a href="#" id="fullscreen">Fullscreen</a><a class="hide-sm" href="/en/account" data-who>Log in</a><a class="lang" href="/game" hreflang="fr" lang="fr" title="Français" data-lang="fr">FR</a></nav>
+  </div>
 </header>
 <!-- The game's web export (Godot), same origin: it shares the site's login (site.js). -->
 <iframe id="game" src="/godot/index.html" title="Octo Magic" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>

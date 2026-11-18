@@ -7,80 +7,163 @@
 <link rel="alternate" hreflang="fr" href="https://octo-magic.notdotio.com/account">
 <link rel="alternate" hreflang="en" href="https://octo-magic.notdotio.com/en/account">
 <link rel="alternate" hreflang="x-default" href="https://octo-magic.notdotio.com/en/account">
+<meta name="theme-color" content="#120d24">
 <link rel="icon" href="/assets/icon.png">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<header>
-  <a class="brand" href="/en/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
-  <nav><a href="/en/game">Play</a><a href="/en/account" data-who>Log in</a><a class="lang" href="/account" hreflang="fr" lang="fr" title="Français" data-lang="fr">FR</a></nav>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/en/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
+    <nav><span class="gold-pill" id="gold-pill" hidden><img class="pixel" src="/assets/icons/gold.png" alt="Gold"><span id="gold"></span></span><a class="lang" href="/account" hreflang="fr" lang="fr" title="Français" data-lang="fr">FR</a><a class="btn btn-gold btn-sm" href="/en/game">Play</a></nav>
+  </div>
 </header>
-<main>
-  <section id="out" class="auth" hidden>
-    <div class="sky"></div>
-    <div class="auth-card">
-      <img class="pixel auth-octo" src="/assets/icon.png" alt="">
-      <h1>Enter the dungeon</h1>
-      <p class="muted">Your progress and spells follow you, on the site as in the game.</p>
-      <button id="google" class="google" type="button"><img class="pixel" src="/img/google.png" alt="">Continue with Google</button>
-      <p class="or"><span>or with your email</span></p>
+
+<!-- Logged out -->
+<main id="out" class="wrap" hidden>
+  <div class="auth">
+    <section class="auth-pitch plate">
+      <p class="eyebrow">Your grimoire</p>
+      <h1>One account, and your magic follows you everywhere.</h1>
+      <ul class="perks">
+        <li><span class="slot"><img class="pixel" src="/assets/icons/scroll.png" alt=""></span><span><b>Create your own spells</b> with the scrolls you wrest from bosses.</span></li>
+        <li><span class="slot"><img class="pixel" src="/assets/icons/staff_crystal.png" alt=""></span><span><b>Keep your loot</b>: gold, gear, achievements, records.</span></li>
+        <li><span class="slot"><img class="pixel" src="/assets/icons/arcane_orbit.png" alt=""></span><span><b>One account</b> on the site, in the game and on all your devices.</span></li>
+      </ul>
+      <p class="foot">Free, and it's your key to the dungeon.</p>
+    </section>
+
+    <section class="auth-form panel">
+      <div class="tabs" role="tablist" aria-label="Log in or sign up" id="tabs">
+        <button type="button" role="tab" data-mode="signin" aria-selected="true">Log in</button>
+        <button type="button" role="tab" data-mode="signup" aria-selected="false">Create an account</button>
+      </div>
+      <div id="reset-head" hidden>
+        <button type="button" class="linkbtn" data-mode="signin">← Back to log in</button>
+        <h2>Forgot your password</h2>
+        <p class="lead">Enter your email: we'll send you a magic link to pick a new one.</p>
+      </div>
+      <div id="google-block">
+        <button id="google" type="button" class="btn-light btn-block"><img class="pixel" src="/img/google.png" alt="" width="22" height="22">Continue with Google</button>
+        <p class="or" style="margin: 1.25rem 0 0">or with your email</p>
+      </div>
       <form id="login">
-        <label>Email<input name="email" type="email" autocomplete="email" required></label>
-        <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
-        <button name="signin">Log in</button>
-        <div class="links">
-          <button name="signup" class="link">Create an account</button>
-          <button name="reset" class="link" formnovalidate>Forgot password?</button>
+        <div class="field">
+          <label for="login-email">Email</label>
+          <input id="login-email" name="email" type="email" placeholder="mage@dungeon.com" autocomplete="email" required>
         </div>
+        <div class="field" id="pw-field">
+          <div class="field-head">
+            <label for="login-password">Password</label>
+            <button type="button" class="linkbtn" data-mode="reset" id="forgot">Forgot?</button>
+          </div>
+          <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+          <span class="hint" id="pw-hint" hidden>6 characters minimum.</span>
+        </div>
+        <button class="btn-gold btn-block btn-lg" name="signin" id="submit">Enter the dungeon</button>
         <p class="msg" aria-live="polite"></p>
       </form>
-      <p class="legal">By creating an account, you accept the <a href="/en/terms">terms of use</a> and the <a href="/en/privacy">privacy policy</a>.</p>
+      <p class="legal" id="legal" hidden>By creating an account, you accept the <a href="/en/terms">terms of use</a> and the <a href="/en/privacy">privacy policy</a>.</p>
+    </section>
+  </div>
+</main>
+
+<!-- Logged in -->
+<main id="in" class="wrap account-main" hidden>
+  <section class="profile plate">
+    <span class="avatar"><img class="pixel" src="/assets/icon.png" alt=""></span>
+    <div class="profile-text">
+      <p class="eyebrow">Active mage</p>
+      <h1 id="mage">Your mage</h1>
+      <span class="who">Logged in as <b id="email"></b></span>
+      <div class="progress">
+        <span class="progress-head"><span>Achievements unlocked</span><span id="done-count">0 / 13</span></span>
+        <span class="bar"><span id="done-bar" style="width: 0%"></span></span>
+      </div>
+    </div>
+    <div class="profile-actions">
+      <a class="btn btn-gold btn-lg" href="/en/game"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 2 L15 9 L4 16 Z" fill="currentColor"/></svg>Back to the dungeon</a>
+      <a class="btn" href="#grimoire">My grimoire</a>
     </div>
   </section>
 
-  <section id="in" hidden>
-    <h1>My account</h1>
-    <p class="who"><img class="pixel" src="/assets/icon.png" alt=""><span>Logged in as <b id="email"></b></span><a class="button" href="/en/game">Launch the game</a></p>
+  <nav class="subnav" aria-label="Account sections">
+    <a href="#progression">Progress</a><a href="#succes">Achievements</a><a href="#grimoire">Grimoire</a><a href="#compte">Account</a>
+  </nav>
 
-    <h2>Stats</h2>
-    <p id="empty" hidden>No online progress yet: play a game while logged in and it will show up here.</p>
-    <div class="stats" id="stats"></div>
-
-    <h2>Best scores</h2>
-    <table>
-      <thead><tr><th>Score</th><th>Wave</th><th>Level</th><th>Enemies</th><th>Date</th></tr></thead>
-      <tbody id="scores"></tbody>
-    </table>
-
-    <h2>Achievements</h2>
-    <ul class="achievements" id="achievements"></ul>
-
-    <h2>My spells</h2>
-    <ul id="forged"></ul>
-
-    <h2>Manage the account</h2>
-    <div class="cards">
-      <form id="password" class="card">
-        <h3>Change password</h3>
-        <input name="current" type="password" placeholder="Current password" autocomplete="current-password" required>
-        <input name="password" type="password" placeholder="New password" autocomplete="new-password" minlength="6" required>
-        <button>Change</button>
-        <p class="msg" aria-live="polite"></p>
-      </form>
-      <form id="delete" class="card">
-        <h3>Delete the account</h3>
-        <p>Permanently erases your account, your online progress and your spells.</p>
-        <input name="password" type="password" placeholder="Password" autocomplete="current-password" required>
-        <button class="danger">Delete</button>
-        <small data-google hidden>Google will ask you to log in again before the deletion.</small>
-        <p class="msg" aria-live="polite"></p>
-      </form>
+  <section id="progression" class="account-section">
+    <h2>Progress</h2>
+    <div class="empty dashed" id="empty" hidden>
+      <img class="pixel" src="/assets/icons/meteor_rain.png" alt="">
+      <p id="empty-text">Your grimoire is still blank. Play a game: your exploits will be written here.</p>
+      <a class="btn btn-gold" href="/en/game">Start a game</a>
     </div>
-    <p><button id="logout" class="ghost">Log out</button></p>
+    <div class="stats" id="stats"></div>
+    <div class="table-card panel">
+      <header><h3>Best scores</h3><span>Your finest runs</span></header>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>#</th><th>Score</th><th>Wave</th><th>Level</th><th>Enemies</th><th>Date</th></tr></thead>
+          <tbody id="scores"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="succes" class="account-section">
+    <div class="section-row"><h2>Achievements</h2><span id="done-label"></span></div>
+    <ul class="achievements" id="achievements"></ul>
+  </section>
+
+  <section id="grimoire" class="account-section">
+    <div class="section-row"><h2>Grimoire</h2><span>The spells born from your quill</span></div>
+    <ul class="grimoire" id="forged"></ul>
+  </section>
+
+  <section id="compte" class="account-section">
+    <h2>Account</h2>
+    <div class="settings">
+      <form id="password" class="panel">
+        <h3>Change password</h3>
+        <div class="field">
+          <label for="pw-current">Current password</label>
+          <input id="pw-current" name="current" type="password" autocomplete="current-password" required>
+        </div>
+        <div class="field">
+          <label for="pw-new">New password</label>
+          <input id="pw-new" name="password" type="password" autocomplete="new-password" minlength="6" required>
+          <span class="hint">6 characters minimum.</span>
+        </div>
+        <button>Change password</button>
+        <p class="msg" aria-live="polite"></p>
+      </form>
+      <div>
+        <div class="session panel">
+          <div><h3>Session</h3><p>Logged in on this browser and in the web game.</p></div>
+          <button id="logout" class="ghost" type="button">Log out</button>
+        </div>
+        <form id="delete" class="danger-zone">
+          <p class="eyebrow">Danger zone</p>
+          <h3>Delete the account</h3>
+          <p>Erases your account, online progress and spells forever. No resurrection spell will bring them back.</p>
+          <div class="field" id="delete-pw">
+            <label for="del-pw">Confirm with your password</label>
+            <input id="del-pw" name="password" type="password" autocomplete="current-password" required>
+          </div>
+          <small class="hint" data-google hidden>Google will ask you to log in again before the deletion.</small>
+          <button class="danger">Delete for good</button>
+          <p class="msg" aria-live="polite"></p>
+        </form>
+      </div>
+    </div>
   </section>
 </main>
-<footer>
-  <a href="/en/privacy">Privacy</a><a href="/en/terms">Terms of use</a>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <a class="brand" href="/en/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
+    <a href="/en/privacy">Privacy</a><a href="/en/terms">Terms of use</a>
+  </div>
 </footer>
 <script type="module" src="/account.js"></script>
 </body>

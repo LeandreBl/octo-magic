@@ -16,105 +16,167 @@
 <link rel="stylesheet" href="/style.css">
 </head>
 <body class="landing">
-<header>
-  <a class="brand" href="/en/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
-  <nav><a href="#spells">Your spells</a><a href="#features">The game</a><a href="/en/account" data-who>Log in</a><a class="lang" href="/" hreflang="fr" lang="fr" title="Français" data-lang="fr">FR</a><a class="button small" href="/en/game">Play</a></nav>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/en/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
+    <nav><a class="hide-sm" href="#spells">Your spells</a><a class="hide-sm" href="#loop">The game</a><a class="hide-sm" href="#coop">Co-op</a><a class="hide-sm" href="/en/account" data-who>Log in</a><a class="lang" href="/" hreflang="fr" lang="fr" title="Français" data-lang="fr">FR</a><a class="btn btn-gold btn-sm" href="/en/game">Play</a></nav>
+  </div>
 </header>
 
 <section class="hero">
   <div class="sky" aria-hidden="true"></div>
-  <div class="hero-text">
-    <p class="eyebrow">Roguelite · Co-op · One-of-a-kind spells</p>
-    <h1>Octo Magic</h1>
-    <p class="tagline">Create your spells. Combine them.<br>Survive the waves. Conquer the dungeon.</p>
-    <div class="actions">
-      <a class="button big" href="/en/game">▶ Play for free</a>
-      <a class="button ghost big" href="/en/account">Create an account</a>
+  <div class="wrap">
+    <div class="hero-text">
+      <p class="eyebrow">Roguelite · Co-op up to 8 · One-of-a-kind spells</p>
+      <h1>Write a word. <em>Unleash a spell</em> nobody has ever cast.</h1>
+      <p class="tagline">Wrest scrolls from the bosses, carve a word of power on them in Latin, Ancient Greek or Old Norse, and watch it come to life. Then combine them, and hold the line, alone or eight strong.</p>
+      <div class="actions">
+        <a class="btn btn-gold btn-lg" href="/en/game"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 2 L15 9 L4 16 Z" fill="currentColor"/></svg>Play for free</a>
+        <a class="btn btn-ghost btn-lg" href="#spells">Discover your spells</a>
+      </div>
+      <ul class="checks"><li>Free, for real</li><li>Nothing to install</li><li>Keyboard, mouse or gamepad</li></ul>
     </div>
-    <p class="note">In your browser, nothing to install. Coming soon to mobile:</p>
-    <div class="stores">
-      <a class="store soon" aria-disabled="true" title="Coming soon"><img src="/img/app-store.svg" alt="Download on the App Store"></a>
-      <a class="store soon play" aria-disabled="true" title="Coming soon"><img src="/img/google-play.png" alt="Get it on Google Play"></a>
+    <div class="orbit" aria-hidden="true">
+      <img class="pixel core" src="/assets/icon.png" alt="">
+      <span class="slot o1"><img class="pixel" src="/assets/icons/fire_nova.png" alt=""></span>
+      <span class="slot o2"><img class="pixel" src="/assets/icons/thunder_chain.png" alt=""></span>
+      <span class="slot o3"><img class="pixel" src="/assets/icons/frost_shard.png" alt=""></span>
+      <span class="slot o4"><img class="pixel" src="/assets/icons/plague.png" alt=""></span>
+      <span class="slot o5"><img class="pixel" src="/assets/icons/black_hole.png" alt=""></span>
+      <span class="slot o6"><img class="pixel" src="/assets/icons/arcane_missiles.png" alt=""></span>
     </div>
-  </div>
-  <div class="orbit" aria-hidden="true">
-    <img class="pixel core" src="/assets/icon.png" alt="">
-    <img class="pixel o1" src="/assets/icons/fire_nova.png" alt="">
-    <img class="pixel o2" src="/assets/icons/thunder_chain.png" alt="">
-    <img class="pixel o3" src="/assets/icons/frost_shard.png" alt="">
-    <img class="pixel o4" src="/assets/icons/plague.png" alt="">
-    <img class="pixel o5" src="/assets/icons/black_hole.png" alt="">
-    <img class="pixel o6" src="/assets/icons/arcane_missiles.png" alt="">
   </div>
 </section>
 
-<main>
+<section class="factbar" aria-label="At a glance">
+  <div class="wrap">
+    <div><b>Free</b><span>not a penny to play</span></div>
+    <div><b>8 mages</b><span>in the same brawl</span></div>
+    <div><b>15 monsters</b><span>including 3 hungry bosses</span></div>
+    <div><b>4+ languages</b><span>long dead, ready to wake</span></div>
+  </div>
+</section>
+
+<main class="wrap landing-main">
   <section id="spells" class="forge">
-    <div>
+    <div class="forge-text">
       <p class="eyebrow">Your spells</p>
-      <h2>One word. A spell nobody else has.</h2>
-      <p>Wrest blank scrolls from the dungeon's bosses. Inscribe a word of power on each one — in <b>Latin</b>, <b>Ancient Greek</b>, <b>Old Norse</b>, <b>Sanskrit</b>… and it comes to life: its shape, its path, its element, its effects.</p>
-      <p>Combine your scrolls and your spell transforms: the slowing frost becomes a storm that freezes everything in its path, fire starts to bounce, lightning hunts down its prey. Every combination makes a spell that exists nowhere else.</p>
+      <h2>Your spell exists nowhere else.</h2>
+      <p>Every boss you slay drops a blank scroll. Carve a word of power on it and it comes to life: its shape, its path, its element, its effects, down to its pixel-art sprites.</p>
+      <div class="chips"><span class="chip">Latin</span><span class="chip">Ancient Greek</span><span class="chip">Old Norse</span><span class="chip">Sanskrit</span><span class="chip outline">and more…</span></div>
+      <div class="promise panel">
+        <img class="pixel" src="/assets/icons/blizzard.png" alt="" width="28" height="28">
+        <p><b>Combine your scrolls</b> and your spell mutates: the slowing frost becomes a storm that freezes everything in its path, fire starts to bounce, lightning hunts down its prey.</p>
+      </div>
     </div>
-    <div class="scroll" aria-label="Example scroll">
-      <span class="word">fulgur</span>
-      <span class="arrow">↓</span>
-      <span class="spell"><img class="pixel" src="/assets/icons/storm.png" alt=""><span><b>Fulgur Caeli</b><small>A bolt falls from the sky and bounces between nearby enemies.</small></span></span>
+    <div class="forge-demo">
+      <div class="scroll parchment" aria-label="Example scroll">
+        <span class="kicker">Blank scroll</span>
+        <span class="word">fulgur</span>
+        <span class="gloss">Latin · “lightning”</span>
+        <svg width="24" height="32" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 2 V26 M4 18 L12 26 L20 18" fill="none" stroke="#7a5a2a" stroke-width="3"/></svg>
+        <div class="spell-card">
+          <span class="slot"><img class="pixel" src="/assets/icons/storm.png" alt=""></span>
+          <span><b>Fulgur Caeli</b><small>A bolt falls from the sky and bounces between nearby enemies.</small></span>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section class="steps">
-    <div><span>1</span><h3>Survive</h3><p>Ever stronger waves of enemies, and a boss lying in wait.</p></div>
-    <div><span>2</span><h3>Evolve</h3><p>Every level brings an upgrade: more projectiles, more damage, more chaos.</p></div>
-    <div><span>3</span><h3>Create</h3><p>Inscribe your scrolls between runs and discover the spell they give birth to.</p></div>
-    <div><span>4</span><h3>Start over</h3><p>Death is permanent, gold stays: staves, robes, rings and perks.</p></div>
+  <section id="loop">
+    <div class="section-head">
+      <p class="eyebrow">The loop</p>
+      <h2>One more run. Just one.</h2>
+    </div>
+    <div class="steps">
+      <div class="step panel">
+        <div class="step-top"><span>1</span><img class="pixel" src="/assets/icons/meteor_rain.png" alt=""></div>
+        <h3>Survive</h3>
+        <p>The waves keep growing, 15 kinds of monsters rush at you, and a boss bides its time.</p>
+      </div>
+      <div class="step panel">
+        <div class="step-top"><span>2</span><img class="pixel" src="/assets/icons/spark.png" alt=""></div>
+        <h3>Evolve</h3>
+        <p>Every level, a choice: more projectiles, more damage, more chaos on screen.</p>
+      </div>
+      <div class="step panel">
+        <div class="step-top"><span>3</span><img class="pixel" src="/assets/icons/scroll.png" alt=""></div>
+        <h3>Create</h3>
+        <p>Between runs, carve your scrolls and discover the spell they give birth to.</p>
+      </div>
+      <div class="step panel">
+        <div class="step-top"><span>4</span><img class="pixel" src="/assets/icons/gold.png" alt=""></div>
+        <h3>Start over</h3>
+        <p>Death is final. Gold stays: staves, robes, rings and perks are waiting.</p>
+      </div>
+    </div>
   </section>
 
-  <section id="features" class="cards">
-    <div class="card">
-      <img class="pixel" src="/assets/icons/arcane_orbit.png" alt="">
-      <h3>Up to 8 mages</h3>
-      <p>Create a game, share its code, and face the dungeon together, peer to peer.</p>
+  <section id="coop" class="features">
+    <div class="coop plate">
+      <div class="coop-text">
+        <p class="eyebrow">Co-op</p>
+        <h2>Eight mages. One dungeon. No mercy.</h2>
+        <p>Start a game, toss the code to your friends, and rain your spells on the same horde. Peer to peer: nothing to rent, nothing to pay.</p>
+      </div>
+      <div class="party" aria-hidden="true">
+        <div class="mages"><img class="pixel" src="/assets/icon.png" alt=""><img class="pixel" src="/assets/icon.png" alt=""><img class="pixel" src="/assets/icon.png" alt=""><img class="pixel" src="/assets/icon.png" alt=""><img class="pixel" src="/assets/icon.png" alt=""><img class="pixel" src="/assets/icon.png" alt=""><img class="pixel" src="/assets/icon.png" alt=""><img class="pixel" src="/assets/icon.png" alt=""></div>
+        <span>Party full: 8 / 8</span>
+      </div>
     </div>
-    <div class="card">
-      <img class="pixel" src="/assets/icons/meteor_rain.png" alt="">
-      <h3>One spell, yours</h3>
-      <p>Scroll after scroll, your spell evolves into your signature: no other mage plays like you.</p>
+    <div class="feature panel">
+      <span class="slot"><img class="pixel" src="/assets/icons/meteor_rain.png" alt=""></span>
+      <div><h3>One spell, yours</h3><p>Scroll after scroll, your spell evolves into your signature: no other mage plays like you.</p></div>
     </div>
-    <div class="card">
-      <img class="pixel" src="/assets/icons/staff_crystal.png" alt="">
-      <h3>Your mage, your progress</h3>
-      <p>Customize your mage, unlock achievements and find your spells on all your devices.</p>
+    <div class="feature panel">
+      <span class="slot"><img class="pixel" src="/assets/icons/staff_crystal.png" alt=""></span>
+      <div><h3>Your progress, everywhere</h3><p>Your mage, achievements and spells follow you on the web and on all your devices.</p></div>
     </div>
-    <div class="card">
-      <img class="pixel" src="/assets/icons/gold.png" alt="">
-      <h3>Free</h3>
-      <p>Play right away in your browser, nothing to install and nothing to pay.</p>
+    <div class="feature panel">
+      <span class="slot"><img class="pixel" src="/assets/icons/gold.png" alt=""></span>
+      <div><h3>The run shop</h3><p>Blow the run's gold: a Ring of fire as a secondary spell, or a shield to last one more wave.</p></div>
     </div>
   </section>
 
   <section class="spellbook" aria-label="A few spells">
-    <img class="pixel" src="/assets/icons/fire_nova.png" alt="Fire nova">
-    <img class="pixel" src="/assets/icons/blizzard.png" alt="Blizzard">
-    <img class="pixel" src="/assets/icons/storm.png" alt="Storm">
-    <img class="pixel" src="/assets/icons/toxic_cloud.png" alt="Toxic cloud">
-    <img class="pixel" src="/assets/icons/frost_ring.png" alt="Frost ring">
-    <img class="pixel" src="/assets/icons/venom_dart.png" alt="Venom dart">
-    <img class="pixel" src="/assets/icons/black_hole.png" alt="Black hole">
-    <img class="pixel" src="/assets/icons/spark.png" alt="Spark">
-    <img class="pixel" src="/assets/icons/meteor_rain.png" alt="Meteor rain">
-    <img class="pixel" src="/assets/icons/arcane_missiles.png" alt="Arcane missiles">
+    <h2>A few pages of the grimoire</h2>
+    <div class="spells">
+      <span class="slot" title="Fire nova"><img class="pixel" src="/assets/icons/fire_nova.png" alt="Fire nova"></span>
+      <span class="slot" title="Blizzard"><img class="pixel" src="/assets/icons/blizzard.png" alt="Blizzard"></span>
+      <span class="slot" title="Storm"><img class="pixel" src="/assets/icons/storm.png" alt="Storm"></span>
+      <span class="slot" title="Toxic cloud"><img class="pixel" src="/assets/icons/toxic_cloud.png" alt="Toxic cloud"></span>
+      <span class="slot" title="Frost ring"><img class="pixel" src="/assets/icons/frost_ring.png" alt="Frost ring"></span>
+      <span class="slot" title="Venom dart"><img class="pixel" src="/assets/icons/venom_dart.png" alt="Venom dart"></span>
+      <span class="slot" title="Black hole"><img class="pixel" src="/assets/icons/black_hole.png" alt="Black hole"></span>
+      <span class="slot" title="Spark"><img class="pixel" src="/assets/icons/spark.png" alt="Spark"></span>
+      <span class="slot" title="Meteor rain"><img class="pixel" src="/assets/icons/meteor_rain.png" alt="Meteor rain"></span>
+      <span class="slot" title="Arcane missiles"><img class="pixel" src="/assets/icons/arcane_missiles.png" alt="Arcane missiles"></span>
+    </div>
+    <p>Those are the base spells. The best ones, you'll write yourself.</p>
   </section>
 
-  <section class="cta">
+  <section class="cta panel">
+    <img class="pixel" src="/assets/icon.png" alt="">
     <h2>The dungeon awaits.</h2>
-    <p>Your first spell is just a scroll away.</p>
-    <a class="button big" href="/en/game">▶ Launch the game</a>
+    <p>Your first spell is just a scroll away. A run lasts a few minutes… in theory.</p>
+    <div class="actions">
+      <a class="btn btn-gold btn-lg" href="/en/game"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 2 L15 9 L4 16 Z" fill="currentColor"/></svg>Launch the game</a>
+      <a class="btn btn-lg" href="/en/account">Create my account</a>
+    </div>
+    <div class="stores">
+      <span>Coming soon to mobile</span>
+      <a class="store soon" aria-disabled="true" title="Coming soon" data-soon="Coming soon"><img src="/img/app-store.svg" alt="Download on the App Store"></a>
+      <a class="store soon play" aria-disabled="true" title="Coming soon" data-soon="Coming soon"><img src="/img/google-play.png" alt="Get it on Google Play"></a>
+    </div>
   </section>
 </main>
-<footer>
-  <a href="/en/account">My account</a><a href="/en/privacy">Privacy</a><a href="/en/terms">Terms of use</a>
-  <p><small>App Store is a trademark of Apple Inc. Google Play is a trademark of Google LLC.</small></p>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <a class="brand" href="/en/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
+    <a href="/en/account">My account</a><a href="/en/privacy">Privacy</a><a href="/en/terms">Terms of use</a>
+    <small>App Store is a trademark of Apple Inc. Google Play is a trademark of Google LLC.</small>
+  </div>
 </footer>
 <script type="module" src="/site.js"></script>
 </body>

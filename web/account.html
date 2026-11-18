@@ -7,80 +7,163 @@
 <link rel="alternate" hreflang="fr" href="https://octo-magic.notdotio.com/account">
 <link rel="alternate" hreflang="en" href="https://octo-magic.notdotio.com/en/account">
 <link rel="alternate" hreflang="x-default" href="https://octo-magic.notdotio.com/en/account">
+<meta name="theme-color" content="#120d24">
 <link rel="icon" href="/assets/icon.png">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<header>
-  <a class="brand" href="/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
-  <nav><a href="/game">Jouer</a><a href="/account" data-who>Connexion</a><a class="lang" href="/en/account" hreflang="en" lang="en" title="English" data-lang="en">EN</a></nav>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
+    <nav><span class="gold-pill" id="gold-pill" hidden><img class="pixel" src="/assets/icons/gold.png" alt="Or"><span id="gold"></span></span><a class="lang" href="/en/account" hreflang="en" lang="en" title="English" data-lang="en">EN</a><a class="btn btn-gold btn-sm" href="/game">Jouer</a></nav>
+  </div>
 </header>
-<main>
-  <section id="out" class="auth" hidden>
-    <div class="sky"></div>
-    <div class="auth-card">
-      <img class="pixel auth-octo" src="/assets/icon.png" alt="">
-      <h1>Entre dans le donjon</h1>
-      <p class="muted">Ta progression et tes sorts te suivent, sur le site comme dans le jeu.</p>
-      <button id="google" class="google" type="button"><img class="pixel" src="/img/google.png" alt="">Continuer avec Google</button>
-      <p class="or"><span>ou avec ton e-mail</span></p>
+
+<!-- Logged out -->
+<main id="out" class="wrap" hidden>
+  <div class="auth">
+    <section class="auth-pitch plate">
+      <p class="eyebrow">Ton grimoire</p>
+      <h1>Un compte, et ta magie te suit partout.</h1>
+      <ul class="perks">
+        <li><span class="slot"><img class="pixel" src="/assets/icons/scroll.png" alt=""></span><span><b>Crée tes propres sorts</b> avec les parchemins arrachés aux boss.</span></li>
+        <li><span class="slot"><img class="pixel" src="/assets/icons/staff_crystal.png" alt=""></span><span><b>Garde ton butin</b> : or, équipement, succès, records.</span></li>
+        <li><span class="slot"><img class="pixel" src="/assets/icons/arcane_orbit.png" alt=""></span><span><b>Un seul compte</b> sur le site, dans le jeu et sur tous tes appareils.</span></li>
+      </ul>
+      <p class="foot">Gratuit, et c'est ta clé du donjon.</p>
+    </section>
+
+    <section class="auth-form panel">
+      <div class="tabs" role="tablist" aria-label="Connexion ou inscription" id="tabs">
+        <button type="button" role="tab" data-mode="signin" aria-selected="true">Connexion</button>
+        <button type="button" role="tab" data-mode="signup" aria-selected="false">Créer un compte</button>
+      </div>
+      <div id="reset-head" hidden>
+        <button type="button" class="linkbtn" data-mode="signin">← Retour à la connexion</button>
+        <h2>Mot de passe oublié</h2>
+        <p class="lead">Indique ton adresse : on t'envoie un lien magique pour en choisir un nouveau.</p>
+      </div>
+      <div id="google-block">
+        <button id="google" type="button" class="btn-light btn-block"><img class="pixel" src="/img/google.png" alt="" width="22" height="22">Continuer avec Google</button>
+        <p class="or" style="margin: 1.25rem 0 0">ou par e-mail</p>
+      </div>
       <form id="login">
-        <label>Adresse e-mail<input name="email" type="email" autocomplete="email" required></label>
-        <label>Mot de passe<input name="password" type="password" autocomplete="current-password" required></label>
-        <button name="signin">Se connecter</button>
-        <div class="links">
-          <button name="signup" class="link">Créer un compte</button>
-          <button name="reset" class="link" formnovalidate>Mot de passe oublié ?</button>
+        <div class="field">
+          <label for="login-email">Adresse e-mail</label>
+          <input id="login-email" name="email" type="email" placeholder="mage@donjon.fr" autocomplete="email" required>
         </div>
+        <div class="field" id="pw-field">
+          <div class="field-head">
+            <label for="login-password">Mot de passe</label>
+            <button type="button" class="linkbtn" data-mode="reset" id="forgot">Oublié ?</button>
+          </div>
+          <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+          <span class="hint" id="pw-hint" hidden>6 caractères minimum.</span>
+        </div>
+        <button class="btn-gold btn-block btn-lg" name="signin" id="submit">Entrer dans le donjon</button>
         <p class="msg" aria-live="polite"></p>
       </form>
-      <p class="legal">En créant un compte, tu acceptes les <a href="/terms">conditions d'utilisation</a> et la <a href="/privacy">politique de confidentialité</a>.</p>
+      <p class="legal" id="legal" hidden>En créant un compte, tu acceptes les <a href="/terms">conditions d'utilisation</a> et la <a href="/privacy">politique de confidentialité</a>.</p>
+    </section>
+  </div>
+</main>
+
+<!-- Logged in -->
+<main id="in" class="wrap account-main" hidden>
+  <section class="profile plate">
+    <span class="avatar"><img class="pixel" src="/assets/icon.png" alt=""></span>
+    <div class="profile-text">
+      <p class="eyebrow">Mage actif</p>
+      <h1 id="mage">Ton mage</h1>
+      <span class="who">Connecté avec <b id="email"></b></span>
+      <div class="progress">
+        <span class="progress-head"><span>Succès débloqués</span><span id="done-count">0 / 13</span></span>
+        <span class="bar"><span id="done-bar" style="width: 0%"></span></span>
+      </div>
+    </div>
+    <div class="profile-actions">
+      <a class="btn btn-gold btn-lg" href="/game"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 2 L15 9 L4 16 Z" fill="currentColor"/></svg>Reprendre le donjon</a>
+      <a class="btn" href="#grimoire">Mon grimoire</a>
     </div>
   </section>
 
-  <section id="in" hidden>
-    <h1>Mon compte</h1>
-    <p class="who"><img class="pixel" src="/assets/icon.png" alt=""><span>Connecté en tant que <b id="email"></b></span><a class="button" href="/game">Lancer le jeu</a></p>
+  <nav class="subnav" aria-label="Sections du compte">
+    <a href="#progression">Progression</a><a href="#succes">Succès</a><a href="#grimoire">Grimoire</a><a href="#compte">Compte</a>
+  </nav>
 
-    <h2>Statistiques</h2>
-    <p id="empty" hidden>Pas encore de progression en ligne : joue une partie connecté, elle apparaîtra ici.</p>
-    <div class="stats" id="stats"></div>
-
-    <h2>Meilleurs scores</h2>
-    <table>
-      <thead><tr><th>Score</th><th>Vague</th><th>Niveau</th><th>Ennemis</th><th>Date</th></tr></thead>
-      <tbody id="scores"></tbody>
-    </table>
-
-    <h2>Succès</h2>
-    <ul class="achievements" id="achievements"></ul>
-
-    <h2>Mes sorts</h2>
-    <ul id="forged"></ul>
-
-    <h2>Gérer le compte</h2>
-    <div class="cards">
-      <form id="password" class="card">
-        <h3>Changer de mot de passe</h3>
-        <input name="current" type="password" placeholder="Mot de passe actuel" autocomplete="current-password" required>
-        <input name="password" type="password" placeholder="Nouveau mot de passe" autocomplete="new-password" minlength="6" required>
-        <button>Changer</button>
-        <p class="msg" aria-live="polite"></p>
-      </form>
-      <form id="delete" class="card">
-        <h3>Supprimer le compte</h3>
-        <p>Efface définitivement ton compte, ta progression en ligne et tes sorts.</p>
-        <input name="password" type="password" placeholder="Mot de passe" autocomplete="current-password" required>
-        <button class="danger">Supprimer</button>
-        <small data-google hidden>Google te redemandera de te connecter avant la suppression.</small>
-        <p class="msg" aria-live="polite"></p>
-      </form>
+  <section id="progression" class="account-section">
+    <h2>Progression</h2>
+    <div class="empty dashed" id="empty" hidden>
+      <img class="pixel" src="/assets/icons/meteor_rain.png" alt="">
+      <p id="empty-text">Ton grimoire est encore vierge. Lance une partie : tes exploits s'inscriront ici.</p>
+      <a class="btn btn-gold" href="/game">Lancer une partie</a>
     </div>
-    <p><button id="logout" class="ghost">Déconnexion</button></p>
+    <div class="stats" id="stats"></div>
+    <div class="table-card panel">
+      <header><h3>Meilleurs scores</h3><span>Tes plus belles runs</span></header>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>#</th><th>Score</th><th>Vague</th><th>Niveau</th><th>Ennemis</th><th>Date</th></tr></thead>
+          <tbody id="scores"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="succes" class="account-section">
+    <div class="section-row"><h2>Succès</h2><span id="done-label"></span></div>
+    <ul class="achievements" id="achievements"></ul>
+  </section>
+
+  <section id="grimoire" class="account-section">
+    <div class="section-row"><h2>Grimoire</h2><span>Les sorts nés de ta plume</span></div>
+    <ul class="grimoire" id="forged"></ul>
+  </section>
+
+  <section id="compte" class="account-section">
+    <h2>Compte</h2>
+    <div class="settings">
+      <form id="password" class="panel">
+        <h3>Changer de mot de passe</h3>
+        <div class="field">
+          <label for="pw-current">Mot de passe actuel</label>
+          <input id="pw-current" name="current" type="password" autocomplete="current-password" required>
+        </div>
+        <div class="field">
+          <label for="pw-new">Nouveau mot de passe</label>
+          <input id="pw-new" name="password" type="password" autocomplete="new-password" minlength="6" required>
+          <span class="hint">6 caractères minimum.</span>
+        </div>
+        <button>Changer le mot de passe</button>
+        <p class="msg" aria-live="polite"></p>
+      </form>
+      <div>
+        <div class="session panel">
+          <div><h3>Session</h3><p>Connecté sur ce navigateur et dans le jeu web.</p></div>
+          <button id="logout" class="ghost" type="button">Déconnexion</button>
+        </div>
+        <form id="delete" class="danger-zone">
+          <p class="eyebrow">Zone dangereuse</p>
+          <h3>Supprimer le compte</h3>
+          <p>Efface pour toujours ton compte, ta progression en ligne et tes sorts. Aucun sort de résurrection ne pourra les ramener.</p>
+          <div class="field" id="delete-pw">
+            <label for="del-pw">Confirme avec ton mot de passe</label>
+            <input id="del-pw" name="password" type="password" autocomplete="current-password" required>
+          </div>
+          <small class="hint" data-google hidden>Google te redemandera de te connecter avant la suppression.</small>
+          <button class="danger">Supprimer définitivement</button>
+          <p class="msg" aria-live="polite"></p>
+        </form>
+      </div>
+    </div>
   </section>
 </main>
-<footer>
-  <a href="/privacy">Confidentialité</a><a href="/terms">Conditions d'utilisation</a>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <a class="brand" href="/"><img class="pixel" src="/assets/icon.png" alt="">Octo Magic</a>
+    <a href="/privacy">Confidentialité</a><a href="/terms">Conditions d'utilisation</a>
+  </div>
 </footer>
 <script type="module" src="/account.js"></script>
 </body>
