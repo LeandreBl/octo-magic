@@ -197,8 +197,14 @@ static func power(s: Dictionary) -> float:
 	return _emit_power(s.emit)
 
 
+## A channeled spell (beam, cone) pays CHANNEL_TAX times more per tick: held
+## down, it must drain faster than the base mana regen, not loop forever.
+const CHANNEL_TAX := 2.5
+
+
 static func mana_cost(s: Dictionary) -> int:
-	return maxi(roundi(power(s) * 0.4), 1)
+	var tax := CHANNEL_TAX if s.emit.body.shape in ["beam", "cone"] else 1.0
+	return maxi(roundi(power(s) * 0.4 * tax), 1)
 
 
 ## A cost as shown: per second for a channeled spell (beam, cone: one cast per
