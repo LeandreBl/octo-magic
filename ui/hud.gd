@@ -67,11 +67,13 @@ func _ready() -> void:
 	var gauges := _box(HBoxContainer.new(), GAP)
 	gauges.alignment = BoxContainer.ALIGNMENT_CENTER
 	top.add_child(gauges)
-	_hp = _bar(gauges, UITheme.HP, 28)
+	# HP and mana each in a side as wide as the wider of the two, so the XP
+	# stays at the screen's center whatever their max.
+	_hp = _bar(_side(gauges, BoxContainer.ALIGNMENT_END), UITheme.HP, 28)
 	_hp.fill_mode = ProgressBar.FILL_END_TO_BEGIN  # empties from the left
 	_xp = _bar(gauges, UITheme.XP, 28)
 	_xp.fill_mode = ProgressBar.FILL_BOTTOM_TO_TOP
-	_mana = _bar(gauges, UITheme.MANA, 28)
+	_mana = _bar(_side(gauges, BoxContainer.ALIGNMENT_BEGIN), UITheme.MANA, 28)
 	_mana.fill_mode = ProgressBar.FILL_END_TO_BEGIN
 	_boss = _box(VBoxContainer.new(), 2)
 	top.add_child(_boss)
@@ -128,6 +130,13 @@ func _plate(parent: Control, h_flags: int, v_flags: int) -> PanelContainer:
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(p)
 	return p
+
+
+func _side(parent: Control, align: int) -> HBoxContainer:
+	var side := _box(HBoxContainer.new(), 0)
+	side.alignment = align
+	parent.add_child(side)
+	return side
 
 
 func _bar(parent: Control, color: Color, height: int) -> ProgressBar:
@@ -252,7 +261,7 @@ func _process(_delta: float) -> void:
 
 
 ## HP and mana as wide as their max (XP a quarter of HP): SHARE of the screen
-## at the base max, up to MAX_SHARE; the boss bar spans the three.
+## at the base max, up to MAX_SHARE; XP centered, the boss bar as wide as the three.
 func _size_gauges(hp_max: float, mana_max: float) -> void:
 	var screen := get_viewport_rect().size.x
 	var total := hp_max * 1.25 + mana_max
@@ -261,6 +270,9 @@ func _size_gauges(hp_max: float, mana_max: float) -> void:
 	_hp.custom_minimum_size.x = roundf(hp_max * per)
 	_xp.custom_minimum_size.x = roundf(hp_max * per / 4.0)
 	_mana.custom_minimum_size.x = roundf(mana_max * per)
+	var side := maxf(_hp.custom_minimum_size.x, _mana.custom_minimum_size.x)
+	_hp.get_parent().custom_minimum_size.x = side
+	_mana.get_parent().custom_minimum_size.x = side
 	_boss.get_child(1).custom_minimum_size.x = roundf(total * per) + GAP * 2
 
 
