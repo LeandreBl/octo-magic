@@ -25,6 +25,8 @@ var _prompt: Label  # gamepad button prompts, while a gamepad is in use
 var _forge_from := "title"  # the screen the forge returns to (not back_to: options... keep theirs)
 var _forge_corner: Button  # the way to the forge from every screen between runs
 var _on_fullscreen: JavaScriptObject  # kept alive: the browser calls it on fullscreenchange
+var _halo: TextureRect  # light bloom behind the level-up cards
+var _time_tween: Tween  # time back to normal after a level-up
 
 
 func _ready() -> void:
@@ -47,6 +49,7 @@ func _ready() -> void:
 	_dim = ColorRect.new()
 	_dim.color = Color(UITheme.INK, 0.82)
 	add_screen(_dim)
+	_halo = _make_halo()
 	screens.title = add_screen(_title())
 	screens.pause = add_screen(_pause_screen())
 	Run.changed.connect(_refresh_pause)
@@ -170,7 +173,10 @@ func show_screen(name: String) -> void:
 	_forge_corner.visible = not Run.active and Online.logged_in() and not Online.character.is_empty() \
 		and name not in ["", "pause", "levelup", "forge", "title", "end", "account"]
 	_dim.color.a = 0.82 if Run.active else 1.0  # out of a run, only the idle mage would show: hide it
-	get_tree().paused = not Run.active or (name != "" and main.solo())
+	if name == "levelup":
+		_dim.color.a = 0.45  # the slowed world shows through
+	get_tree().paused = not Run.active or (name not in ["", "levelup"] and main.solo())
+	_slow_time(name)
 	if name == "title":
 		_refresh_title()
 	elif name == "pause":
@@ -199,7 +205,7 @@ func _focus_screen() -> void:
 func _appear(screen: Control) -> void:
 	if screen == hud:
 		return
-	var tw := screen.create_tween().set_parallel()
+	var tw := screen.create_tween().set_parallel().set_ignore_time_scale()  # level-up slow motion
 	screen.modulate.a = 0.0
 	tw.tween_property(screen, "modulate:a", 1.0, 0.12)
 	var panel: Control = screen.get_child(0) if screen is CenterContainer and screen.get_child_count() else null
@@ -586,6 +592,9 @@ func _refresh_pause() -> void:
 
 # --- level up ----------------------------------------------------------------
 
+const LEVEL_UP_TIME_SCALE := 0.05  # solo: the world crawls while the player picks
+const LEVEL_UP_RECOVER := 1.5  # seconds (real time) back to full speed after the pick
+
 var _level_box: HBoxContainer
 var _level_title: Label
 var _level_more: Label
@@ -667,6 +676,53 @@ func _show_level_up(offers: Array) -> void:
 	screens.levelup.set_meta("focus", _level_box.get_child(0))
 	show_screen("levelup")
 	Sfx.play("level_up")
+
+
+## Solo level-up: time almost stops while the halo blooms, then eases back to
+## normal once the last upgrade is picked. Coop keeps the shared clock.
+func _slow_time(name: String) -> void:
+	if _time_tween:
+		_time_tween.kill()
+	if name not in ["", "levelup"] or (name == "" and not _halo.visible):
+		Engine.time_scale = 1.0
+		_halo.hide()
+		return
+	var tw := create_tween().set_ignore_time_scale().set_parallel()
+	_time_tween = tw
+	if name == "levelup":
+		_halo.show()
+		_halo.scale = Vector2(0.3, 0.3)
+		_halo.modulate.a = 0.0
+		tw.tween_property(_halo, "scale", Vector2.ONE, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(_halo, "modulate:a", 1.0, 0.3)
+		if main.solo():
+			tw.tween_property(Engine, "time_scale", LEVEL_UP_TIME_SCALE, 0.3).set_ease(Tween.EASE_OUT)
+	else:  # the last pick made
+		tw.tween_property(_halo, "modulate:a", 0.0, 0.4)
+		tw.tween_property(Engine, "time_scale", 1.0, LEVEL_UP_RECOVER).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		tw.chain().tween_callback(_halo.hide)
+
+
+## A warm radial glow, centred on the screen (the camera follows the mage).
+func _make_halo() -> TextureRect:
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.5, 0.9])
+	g.colors = PackedColorArray([Color(UITheme.GOLD_LIGHT, 0.9), Color(UITheme.GOLD, 0.55), Color(UITheme.GOLD, 0.0)])
+	var tex := GradientTexture2D.new()
+	tex.gradient = g
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(0.5, 0.0)
+	var h := TextureRect.new()
+	h.texture = tex
+	h.stretch_mode = TextureRect.STRETCH_SCALE
+	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	h.material = mat
+	add_screen(h)
+	h.resized.connect(func(): h.pivot_offset = h.size / 2)
+	return h
 
 
 # --- end of run --------------------------------------------------------------
