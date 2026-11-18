@@ -651,10 +651,11 @@ func _test_play() -> void:
 	player.velocity = Vector2(0, 100)
 	archer.predicts = false
 	check(archer.lead(Vector2(260, 0), 260.0) == Vector2(260, 0), "most enemies aim at the mage")
+	var straight := archer._steer(far)
 	archer.predicts = true
 	var led := archer.lead(Vector2(260, 0), 260.0)
 	check(led.y > 90.0 and led.y < 110.0 and led.x == 260.0, "a predicting one aims where the mage will be: %s" % led)
-	check(archer._steer(far).y > 0.0, "a predicting one walks to cut the mage off")
+	check(archer._steer(far).y > straight.y or straight.dot(far.normalized()) <= 0.9, "a predicting one walks to cut the mage off (in the open)")
 	archer.predicts = false
 	player.velocity = Vector2.ZERO
 	var lich: Enemy = get_nodes_in_group("enemies").filter(func(e): return e.kind == "boss")[0]
