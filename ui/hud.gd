@@ -3,7 +3,7 @@ extends Control
 ## pause menu); HP, XP and mana gauges (no text), each as wide as its max
 ## and hollow when empty, with the bosses' health under them (top center: the
 ## other enemies show none); the spell slots, primary then secondary, with
-## mana cost and cooldown (top right: touch a slot to cast it), then the
+## cooldown (top right: touch a slot to cast it), then the
 ## passive (shield, time until it is back).
 
 signal paused
@@ -25,7 +25,7 @@ var _score: Label
 var _passive: Control
 var _shield: Label
 var _shield_wait: ColorRect  # covers the passive while a broken shield comes back
-var _slots := {}  # slot -> [icon, cooldown ColorRect, spell shown, cost Label, name Label, panel, seconds Label]
+var _slots := {}  # slot -> [icon, cooldown ColorRect, spell shown, unused, name Label, panel, seconds Label]
 var _ready_box: StyleBox
 var _busy_box: StyleBox
 var _milestone: Label  # "Wave 10!", faded in and out every MILESTONE waves
@@ -242,20 +242,12 @@ func _slot(slot: String) -> Control:
 	secs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	secs.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	panel.add_child(secs)
-	var cost := UITheme.label("", "", 14, UITheme.MANA.lightened(0.5))
-	cost.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
-	cost.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-	cost.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	cost.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	cost.offset_right = -6
-	cost.offset_bottom = -2
-	panel.add_child(cost)
 	var under := _box(HBoxContainer.new(), 6)
 	under.alignment = BoxContainer.ALIGNMENT_CENTER
 	var label := UITheme.label("", "", 14)
 	under.add_child(label)
 	box.add_child(under)
-	_slots[slot] = [icon, cd, null, cost, label, panel, secs]
+	_slots[slot] = [icon, cd, null, null, label, panel, secs]
 	return box
 
 
@@ -287,7 +279,6 @@ func _process(_delta: float) -> void:
 		if not is_same(sp, ui[2]):
 			ui[2] = sp
 			ui[0].texture = _icon(sp)
-		ui[3].text = Spell.cost_text(sp, cost)
 		ui[4].text = Spell.label(sp)  # follows a language change
 		var left: float = p.cooldowns.get(slot, 0.0)
 		ui[1].offset_top = -ui[5].size.y * clampf(left / sp.cooldown, 0.0, 1.0)
