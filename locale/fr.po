@@ -1197,3 +1197,9 @@ msgstr "+%d choix par grimoire"
 
 msgid "+%d max HP"
 msgstr "+%d PV max"
+
+msgid "Channeling"
+msgstr "Canalisation"
+
+msgid "+%d%% mana regen standing still"
+msgstr "+%d%% régén. de mana à l'arrêt"

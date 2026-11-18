@@ -63,6 +63,7 @@ UPGRADES = {
     "precision": "a red bullseye target pierced dead center by a glowing arrow",
     "thrift": "a small blue mana crystal on a cracked open coin purse, a few blue mana drops saved inside",
     "inspiration": "a fan of four glowing magic cards held open, the fourth one shining gold",
+    "channeling": "a glowing blue mana rune circle on the ground with blue mana streams spiraling up into its center",
 }
 
 

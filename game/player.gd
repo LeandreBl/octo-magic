@@ -19,6 +19,7 @@ signal died
 const ZOOM := 4.0 / 3.0  # on the mage: an art pixel (Arena.SCALE 1.5) is 2 screen pixels, the arena (Arena.RECT) about 2.4x2.8 screens
 const SIZE := 1.2  # the mage drawn this much bigger than its art (sprite, tentacles, gem); the hitbox `radius` stays
 const STICK_RANGE := 80.0
+const STILL_TIME := 0.2  # s without moving before the mage channels
 const SHIELD_HP := 40.0
 const SHIELD_WAIT := 8.0
 const PASSIVES := ["shield", "potions", "blaze_of_glory", "weird_eye"]
@@ -71,6 +72,7 @@ var look := {"hat": "#3a2a99", "robe": "#6a4cff", "staff": "#8d6e63", "ring": ""
 
 var _angle := 0.0  # where the sprite heads: its move, else its aim (turned smoothly)
 var _moving := false
+var _still := 0.0  # s since the mage last moved: past STILL_TIME it channels (Channeling skill)
 var _cast_t := 0.0  # s left of the cast animation
 var _channel_t := 0.0  # s left of the channel animation: renewed by each tick of a beam or cone
 var _last_pos := Vector2.ZERO
@@ -269,6 +271,7 @@ func _physics_process(delta: float) -> void:
 	var step := position - _last_pos  # from the synced position: the same on every peer
 	_last_pos = position
 	_moving = step.length() > 0.5
+	_still = 0.0 if _moving else _still + delta
 	_cast_t -= delta
 	_channel_t -= delta
 	var heading := aim if _cast_t > 0.0 or _channel_t > 0.0 or not _moving else step  # casting: faces its aim
@@ -297,7 +300,7 @@ func _physics_process(delta: float) -> void:
 			hurt(statuses[st][0] * delta * stats.poison)
 		if statuses[st][1] <= 0.0:
 			statuses.erase(st)
-	mana = minf(stats.mana, mana + stats.mana_regen * delta)
+	mana = minf(stats.mana, mana + stats.mana_regen * (stats.still_regen if channeling() else 1.0) * delta)
 	hp = minf(stats.hp, hp + stats.hp_regen * delta)
 	if shield_wait > 0.0:
 		shield_wait -= delta
@@ -396,8 +399,18 @@ func gem() -> Vector2:
 	return global_position + SIZE * GEM.rotated(_angle + PI / 2.0)
 
 
+## Standing still with the Channeling skill: mana regen times stats.still_regen.
+## A short wait so a frame without a synced position is not a stop.
+func channeling() -> bool:
+	return stats.still_regen > 1.0 and _still > STILL_TIME
+
+
 func _draw() -> void:
 	modulate.a = 1.0 if hp > 0.0 else 0.3  # down until the next run
+	if channeling() and hp > 0.0:  # mana spirals in
+		for i in 3:
+			var a := Arena.clock * 3.0 + i * TAU / 3.0
+			draw_arc(Vector2.ZERO, radius + 4.0 + 2.0 * sin(Arena.clock * 4.0), a, a + 1.2, 8, Color(0.4, 0.7, 1.0, 0.6), 2.0)
 	var size := float(SPRITE.get_height())
 	var f := int(Arena.clock * 8.0) % (SPRITE.get_width() / SPRITE.get_height())
 	draw_set_transform(Vector2.ZERO, _angle + PI / 2.0)  # the sprite's head is up

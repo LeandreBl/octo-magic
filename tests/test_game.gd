@@ -106,6 +106,15 @@ func _test_upgrades() -> void:
 	check(Upgrades.describe(Upgrades.LIST.toughness) == "+25 max HP" and Upgrades.LIST.toughness.max == 4, "toughness described")
 	check(Stats.total([Upgrades.bonus(Upgrades.LIST.toughness, 4)]).hp == 200.0, "toughness: +25 max HP a level, up to IV")
 	check(Upgrades.describe(Upgrades.LIST.reservoir) == "+50 max mana" and Stats.total([Upgrades.bonus(Upgrades.LIST.reservoir, 4)]).mana == 300.0, "reservoir: +50 max mana a level, up to IV")
+	check(Upgrades.describe(Upgrades.LIST.channeling) == "+300% mana regen standing still" and Upgrades.LIST.channeling.max == 1, "channeling described")
+	check(Stats.total([Upgrades.bonus(Upgrades.LIST.channeling, 1)]).still_regen == 4.0 and Stats.BASE.still_regen == 1.0, "channeling: mana regen x4 standing still")
+	var mage := Player.new()
+	mage.stats = Stats.total([Upgrades.bonus(Upgrades.LIST.channeling, 1)])
+	mage._still = Player.STILL_TIME + 0.1
+	var still: bool = mage.channeling()
+	mage._still = 0.0
+	check(still and not mage.channeling(), "channeling only standing still")
+	mage.free()
 	check(Upgrades.bonus(SKILLS.tough, 3) == {"hp": 75.0} and Upgrades.bonus(SKILLS.quick, 1) == {"speed%": 0.1}, "skills are Stats bonuses")
 	var rng := RandomNumberGenerator.new()
 	var offers := Upgrades.offers({}, rng, "", 3, SKILLS)
