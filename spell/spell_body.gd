@@ -24,6 +24,8 @@ var depth := 0  # 0 = cast by the player, n = sub-cast n levels deep
 var anchor := Vector2.ZERO  # beam / cone: offset from the caster, kept while it moves
 var struck := false  # beam / cone: strike once, when cast
 var target: Node2D  # beam: the enemy the arc grips
+var index := 0  # beam / cone: which body of its emit (count > 1: one arc / cone each)
+var turn := 0.0  # beam / cone: its angle off the caster's aim (spread, radial...)
 
 const ABOVE_DECOR := 11  # over the map's trees, roofs and statues (Arena.above, z 10)
 const GROUND := -1  # zones and sub-casts (a hit's effects): under the mages, enemies and obstacles, over the floor
@@ -32,16 +34,18 @@ const GROUND := -1  # zones and sub-casts (a hit's effects): under the mages, en
 ## Emit an "emit" dict from pos toward dir. Bursts are spread over time.
 static func cast(emit: Dictionary, pos: Vector2, aim: Vector2, owner_node: Node2D, spell: Dictionary, world: Node, depth := 0) -> void:
 	var dirs := _directions(emit, pos, aim, world)
+	var base := aim.normalized() if aim != Vector2.ZERO else Vector2.RIGHT
 	for i in dirs.size():
 		if i > 0 and emit.burst_delay > 0.0:
 			await world.get_tree().create_timer(emit.burst_delay).timeout
 			if not is_instance_valid(world):
 				return
-		var b := _channeled(emit.body, owner_node, depth, world)
+		var b := _channeled(emit.body, owner_node, depth, i, world)
 		if b:  # a channel tick renews the live arc / cone: one on screen, not a stack
 			b.age = 0.0
 			b.struck = false
 			b.dir = dirs[i]
+			b.turn = base.angle_to(dirs[i])
 			b.position = pos
 			SpellSound.play(spell, emit.body, depth, b, world)
 			continue
@@ -50,6 +54,8 @@ static func cast(emit: Dictionary, pos: Vector2, aim: Vector2, owner_node: Node2
 		b.caster = owner_node
 		b.spell = spell
 		b.dir = dirs[i]
+		b.turn = base.angle_to(dirs[i])
+		b.index = i
 		b.position = pos
 		b.depth = depth
 		world.add_child(b)
@@ -58,12 +64,12 @@ static func cast(emit: Dictionary, pos: Vector2, aim: Vector2, owner_node: Node2
 			SpellSound.play(spell, emit.body, depth, b, world)
 
 
-static func _channeled(body: Dictionary, owner_node: Node2D, depth: int, world: Node) -> SpellBody:
+static func _channeled(body: Dictionary, owner_node: Node2D, depth: int, index: int, world: Node) -> SpellBody:
 	if body.shape not in ["beam", "cone"]:
 		return null
 	for n in world.get_children():
 		if n is SpellBody and is_same(n.body, body) and n.caster == owner_node \
-				and n.depth == depth and not n.is_queued_for_deletion():
+				and n.depth == depth and n.index == index and not n.is_queued_for_deletion():
 			return n
 	return null
 
@@ -202,7 +208,7 @@ func _channel() -> void:
 	if is_instance_valid(caster):
 		var aim: Variant = caster.get("aim")
 		if depth == 0 and aim is Vector2 and aim != Vector2.ZERO:
-			dir = aim.normalized()
+			dir = aim.normalized().rotated(turn)
 			anchor = dir * anchor.length()
 		global_position = caster.gem() if depth == 0 and caster.has_method("gem") else caster.global_position + anchor
 	if struck:

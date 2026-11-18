@@ -276,6 +276,17 @@ func _check_channel() -> void:
 	mage.firing = {"primary": false}
 	await physics_frame
 	check(not is_instance_valid(arc) or arc.is_queued_for_deletion(),"released beam stops at once")
+	var twin: Dictionary = spells.lightning.duplicate(true)
+	twin.emit.merge({"count": 2, "pattern": "spread", "spread": 40.0}, true)
+	mage.firing = {"primary": true}
+	mage.aim = Vector2.RIGHT
+	for i in 2:
+		SpellBody.cast(twin.emit, Vector2(110, 100), Vector2.RIGHT, mage, twin, world)
+		await physics_frame
+	arcs = world.get_children().filter(func(n): return n is SpellBody and n.caster == mage and not n.is_queued_for_deletion())
+	check(arcs.size() == 2 and arcs[0].dir.is_equal_approx(Vector2.RIGHT.rotated(deg_to_rad(-20)))
+		and arcs[1].dir.is_equal_approx(Vector2.RIGHT.rotated(deg_to_rad(20))),
+		"a count 2 beam keeps two arcs, each at its own spread angle")
 	mage.free()
 	check(Spell.mana_cost(spells.fireball) > 3 * Spell.mana_cost(spells.magic_missile), "fireball costs far more than a missile")
 	check(Spell.cost_text(spells.lightning, 2) == "%d/s" % roundi(2 / spells.lightning.cooldown), "a channeled cost is shown per second")
