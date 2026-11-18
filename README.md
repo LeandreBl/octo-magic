@@ -46,7 +46,9 @@ stick); there is only one. Pause: Escape / Start. Keys can be rebound in Options
 
 Game state: autoloads `Profile` (`game/profile.gd`: gold, shop, bonuses, augments,
 look, achievements, scores, spells; saved in `user://profile.json`) and
-`Run` (`game/run.gd`: XP, level-ups, upgrades, waves). Base spells:
+`Run` (`game/run.gd`: XP, level-ups, upgrades, waves). A solo run is saved
+at the start of every wave in `Profile.run` (so in the cloud with the
+character): pause → Save and quit, then Play continues it, on any device. Base spells:
 `game/spells.json`; level-up upgrades: `game/upgrades.gd`.
 
 Screens (menus, HUD, level-up, shop, spell forge, options, theme) are in `ui/`, entry

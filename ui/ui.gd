@@ -348,6 +348,7 @@ func _margin(left: int, top: int, right: int, bottom: int) -> MarginContainer:
 # --- title -------------------------------------------------------------------
 
 var _title_gold: Label
+var _title_play: Button  # "Play", or "Continue" a saved run (Profile.run)
 var _title_scrolls: Label
 var _title_glow: Panel  # a gold aura around the forge button while blank scrolls wait
 var _title_spell: Label
@@ -432,6 +433,8 @@ func _title() -> Control:
 	left.add_child(gap)
 
 	var play := _button("Play", _play, "Primary")
+	play.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # _refresh_title translates it
+	_title_play = play
 	play.custom_minimum_size.y = 76
 	play.add_theme_font_size_override("font_size", 32)
 	play.icon = UITheme.glyph("play", UITheme.ON_GOLD)
@@ -519,6 +522,8 @@ func _refresh_title() -> void:
 	if not _title_gold:
 		return
 	_title_gold.text = str(Profile.gold)
+	var w := int(Profile.run.get("wave", -1)) + 1
+	_title_play.text = tr("Continue · wave %d") % w if w > 0 else tr("Play")
 	var spell: Dictionary = Profile.equipped_spells().primary
 	_title_spell.text = Spell.label(spell)
 	_title_name.text = Online.character_name()
@@ -588,6 +593,7 @@ func _scores_text() -> String:
 var _pause_rows := {}  # "wave", "level", "kills", "gold", "scrolls" -> value Label
 var _pause_note: Label  # forge news
 var _pause_picks: HFlowContainer
+var _pause_quit: Button  # solo only
 
 
 ## Pause: menu and run summary (nothing is bought in a run: the shop is
@@ -604,6 +610,8 @@ func _pause_screen() -> Control:
 	left.add_child(resume_b)
 	center.set_meta("focus", resume_b)
 	left.add_child(_button("Options", open.bind("options")))
+	_pause_quit = _button("Save and quit", _quit_run)
+	left.add_child(_pause_quit)
 	left.add_child(_button("Abandon run", main.abandon_run, "Danger"))
 	var well := PanelContainer.new()
 	well.theme_type_variation = "Well"
@@ -626,6 +634,7 @@ func _pause_screen() -> Control:
 
 
 func _refresh_pause() -> void:
+	_pause_quit.visible = main.solo()
 	_pause_rows.wave.text = str(Run.wave)
 	_pause_rows.level.text = str(Run.level)
 	_pause_rows.kills.text = str(Run.kills)
@@ -955,7 +964,16 @@ func _play() -> void:
 	if not Online.logged_in() or Online.character.is_empty():
 		show_screen("title")
 		return
-	main.start_run()
+	if Profile.run.is_empty():
+		main.start_run()
+	else:
+		main.resume_run()
+
+
+## Solo: the run is kept as it was at the start of the wave, Play continues it.
+func _quit_run() -> void:
+	main.quit_run()
+	show_screen("title")
 
 
 func _to_title() -> void:

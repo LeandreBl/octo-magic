@@ -72,6 +72,48 @@ func start(equipped: Dictionary, bonus_list := [], augments := []) -> void:
 	changed.emit()
 
 
+## The run between two waves, as JSON-safe data (Profile.run, saved in the cloud
+## with the character): restore() takes it back, the next wave starts afresh.
+func to_dict() -> Dictionary:
+	return {"wave": wave, "level": level, "xp": xp, "kills": kills, "bosses": bosses, "gold": gold,
+		"scrolls": scrolls, "spells": spells, "mana_mult": mana_mult, "ups": ups, "picked": picked,
+		"pending": pending, "bonuses": bonuses, "passives": passives, "choices": choices}
+
+
+## Back to a to_dict() snapshot (a JSON copy: numbers come back as floats).
+## False when it does not hold a run.
+func restore(d: Dictionary) -> bool:
+	var s: Variant = d.get("spells")
+	if not s is Dictionary or not s.get("primary") is Dictionary:
+		return false
+	start({})
+	for k in ["wave", "level", "xp", "kills", "bosses", "gold", "scrolls", "choices"]:
+		set(k, maxi(0, int(d.get(k, get(k)))))
+	level = maxi(level, 1)
+	for slot in s:
+		if slot in ["primary", "secondary"] and s[slot] is Dictionary:
+			spells[slot] = Spell.sanitize(s[slot])
+			mana_mult[slot] = clampf(float(_dict(d.get("mana_mult")).get(slot, 1.0)), Upgrades.MANA_FLOOR, 1.0)
+			ups[slot] = maxi(0, int(_dict(d.get("ups")).get(slot, 0)))
+	picked = _arr(d.get("picked")).map(str).filter(func(k): return Upgrades.LIST.has(k))
+	pending = _arr(d.get("pending")).map(str).filter(func(k): return k in Upgrades.KINDS)
+	passives = _arr(d.get("passives")).map(str)
+	bonuses = _arr(d.get("bonuses")).filter(func(b): return b is Dictionary and b.values().all(func(v): return v is float or v is int))
+	stats = Stats.total(bonuses)
+	if not pending.is_empty():
+		_offer.call_deferred()
+	changed.emit()
+	return true
+
+
+static func _dict(v: Variant) -> Dictionary:
+	return v if v is Dictionary else {}
+
+
+static func _arr(v: Variant) -> Array:
+	return v if v is Array else []
+
+
 static func xp_to_next(lvl: int) -> int:
 	return 5 + (lvl - 1) * 4
 

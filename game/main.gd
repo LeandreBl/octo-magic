@@ -114,15 +114,36 @@ func start_run() -> void:
 		_next_wave()
 
 
-## Every peer starts its own Run (progression, spells) on the host's map.
+## Solo: the run saved between two waves (Profile.run, in the cloud with the
+## character) goes on at the wave it was left on.
+func resume_run() -> void:
+	var saved: Dictionary = Profile.run
+	if solo() and str(saved.get("map")) in Arena.MAPS:
+		_run_started(saved.map, saved)
+		_next_wave()
+	else:
+		Profile.run = {}
+		start_run()
+
+
+## Solo, pause menu: the run stays saved as it was at the start of this wave.
+func quit_run() -> void:
+	Run.finish()
+	leave()
+
+
+## Every peer starts its own Run (progression, spells) on the host's map;
+## `saved`: a Profile.run to go on with (solo).
 @rpc("authority", "call_local", "reliable")
-func _run_started(map: String) -> void:
+func _run_started(map: String, saved := {}) -> void:
 	map_name = map
 	Sfx.music(map)
 	for n in get_children():
 		if n is Node2D and not n.is_in_group("players"):
 			n.free()
-	Run.start(Profile.equipped_spells(), Profile.bonus_list(), Profile.slotted_augments())
+	if saved.is_empty() or not Run.restore(saved):
+		saved = {}
+		Run.start(Profile.equipped_spells(), Profile.bonus_list(), Profile.slotted_augments())
 	var p := local_player()
 	if p:
 		p.position = Arena.START
@@ -130,6 +151,10 @@ func _run_started(map: String) -> void:
 	forge_status = ""
 	get_tree().paused = false
 	send_loadout(true)
+	if p and not saved.is_empty():
+		p.hp = clampf(float(saved.get("hp", p.hp)), 1.0, p.stats.hp)
+		p.mana = clampf(float(saved.get("mana", p.mana)), 0.0, p.stats.mana)
+		p.potions = mini(int(saved.get("potions", p.potions)), p.potions)
 	run_started.emit()
 
 
@@ -168,7 +193,12 @@ func _level_blast() -> void:
 
 
 ## The wave's monsters come out one by one (_process), the first at once.
+## Solo, the run is saved first (Profile.run): quit, it goes on from this wave.
 func _next_wave() -> void:
+	var p := local_player()
+	if solo() and p:
+		Profile.run = Run.to_dict().merged({"map": map_name, "hp": p.hp, "mana": p.mana, "potions": p.potions})
+		Profile.save()
 	_wave_started.rpc(Run.wave + 1)
 	to_spawn = Run.wave_plan(Run.wave)
 	_spawn_in = 0.0
@@ -276,6 +306,8 @@ func _end_run() -> void:
 	if not Run.active:
 		return
 	last_run = Run.finish()
+	if solo():
+		Profile.run = {}  # saved by record_run
 	last_run.reached = Profile.record_run(last_run)
 	last_run.unlocked = Profile.unlocked_by(last_run.reached)
 	get_tree().paused = true

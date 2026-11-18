@@ -13,6 +13,12 @@ msgstr "Reprendre"
 msgid "Abandon run"
 msgstr "Abandonner la run"
 
+msgid "Save and quit"
+msgstr "Sauvegarder et quitter"
+
+msgid "Continue · wave %d"
+msgstr "Continuer · vague %d"
+
 msgid "Achievements"
 msgstr "Succès"
 

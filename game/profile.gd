@@ -11,7 +11,7 @@ const PATH := "user://profile.json"
 const MAX_SCORES := 10
 ## What is saved, locally and on the server.
 const FIELDS := ["gold", "blank_scrolls", "owned", "equipped", "bonuses", "look", "stats",
-	"achievements", "scores", "spells", "forged", "augments", "slotted"]
+	"achievements", "scores", "spells", "forged", "augments", "slotted", "run"]
 
 ## Items and permanent bonuses carry Stats bonuses (see game/stats.gd).
 ## Names and descriptions are English, translated where shown (locale/fr.po).
@@ -115,6 +115,7 @@ var spells := {}  # slot -> spell id equipped
 var forged := []  # spells from the forge: {id, slot, file, spell}
 var augments := {}  # AUGMENTS id -> true, bought
 var slotted := []  # AUGMENTS ids in the slots, SLOTS at most
+var run := {}  # the solo run left between two waves (Run.to_dict() + map, hp, mana, potions), {} if none
 var base_spells := []  # game/spells.json: {id, slot, unlock, spell}
 
 
@@ -184,6 +185,7 @@ func apply(d: Dictionary) -> void:
 	for slot in _dict(d.get("spells")):
 		if slot in Upgrades.SLOTS and _entry(str(d.spells[slot]), slot):
 			spells[slot] = str(d.spells[slot])
+	run = _dict(d.get("run"))  # checked by Run.restore
 	changed.emit()
 
 

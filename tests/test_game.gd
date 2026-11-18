@@ -170,6 +170,21 @@ func _test_run() -> void:
 	var kills := run.kills
 	run.killed("grave_maw")
 	check(run.kills == kills + 401, "a boss monster adds its kills")
+	run.pending = ["spell"]
+	var snap: Dictionary = JSON.parse_string(JSON.stringify(run.to_dict()))  # as saved in the profile
+	var back := RunState.new()
+	check(back.restore(snap) and back.wave == 6 and back.kills == run.kills and back.level == run.level
+		and back.spells.primary == run.spells.primary and back.stats == run.stats and back.picked == run.picked
+		and back.pending == ["spell"] and is_equal_approx(back.mana_cost("primary"), run.mana_cost("primary")),
+		"a saved run comes back as it was")
+	check(not back.restore({}) and not back.restore({"spells": "x"}), "no run in a broken save")
+	back.free()
+	p.run = snap
+	var p2 := ProfileState.new()
+	p2.apply(p.to_dict())
+	check(p2.run.wave == 6, "the saved run is part of the profile (and its cloud copy)")
+	p2.free()
+	p.run = {}
 	var r := run.finish()
 	check(not run.active and r.bosses == 2 and r.score == run.score(), "run result")
 	run.free()
