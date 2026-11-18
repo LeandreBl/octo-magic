@@ -171,7 +171,7 @@ func show_screen(name: String) -> void:
 	_dim.visible = name not in ["", "title", "shop", "forge", "end"]
 	# Between runs, the forge is one click away (title and end of run have their own button).
 	_forge_corner.visible = not Run.active and Online.logged_in() and not Online.character.is_empty() \
-		and name not in ["", "pause", "levelup", "forge", "title", "end", "account"]
+		and name not in ["", "pause", "levelup", "forge", "title", "end", "account", "characters"]
 	_dim.color.a = 0.82 if Run.active else 1.0  # out of a run, only the idle mage would show: hide it
 	if name == "levelup":
 		_dim.color.a = 0.45  # the slowed world shows through

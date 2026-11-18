@@ -135,6 +135,9 @@ func _spell_card(e: Dictionary) -> Button:
 	card.add_theme_constant_override("separation", 6)
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(card)
+	# A Button ignores its children's size: grow with a long description instead of spilling out.
+	card.minimum_size_changed.connect(func():
+		b.custom_minimum_size.y = maxf(300, card.get_combined_minimum_size().y + 24))
 	var pic := UITheme.icon_rect(HUD._icon(e.spell), 72)
 	pic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	card.add_child(pic)
