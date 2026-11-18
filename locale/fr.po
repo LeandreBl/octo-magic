@@ -621,6 +621,9 @@ msgstr "Niveau"
 msgid "Enemies defeated"
 msgstr "Ennemis vaincus"
 
+msgid "Bosses defeated"
+msgstr "Boss vaincus"
+
 msgid "Upgrades taken"
 msgstr "Améliorations prises"
 

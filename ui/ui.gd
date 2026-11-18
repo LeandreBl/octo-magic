@@ -758,47 +758,49 @@ var _end_score_name: Label
 var _end_gold: Label
 var _end_scrolls: Label
 var _end_news: VBoxContainer
+var _end_picks: HFlowContainer
 var _end_again: Button
 
 
-## End of run: what the run was worth, then the way to the forge for the scrolls.
+## End of run, full screen: what the run was worth, then the way back (again,
+## the forge for the scrolls, the main menu).
 func _end_screen() -> Control:
 	var bg := ColorRect.new()
 	bg.color = UITheme.INK
-	var m := _margin(64, 48, 64, 48)
+	var m := _margin(64, 40, 64, 40)
 	m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.add_child(m)
-	var cols := _hbox(64)
-	m.add_child(cols)
-
-	var left := _vbox(16)
-	left.custom_minimum_size.x = 520
-	cols.add_child(left)
-	left.add_child(UITheme.label("End of run", "Header"))
-	_end_sub = UITheme.label("", "", 20, UITheme.TEXT_DIM)
-	left.add_child(_end_sub)
-	var grid := GridContainer.new()
-	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 14)
-	grid.add_theme_constant_override("v_separation", 14)
-	left.add_child(grid)
-	for k in [["wave", "Wave reached"], ["level", "Level"], ["kills", "Enemies defeated"], ["score", "Score"]]:
+	var col := _vbox(18)
+	m.add_child(col)
+	var head := UITheme.label("End of run", "Header")
+	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	head.add_theme_font_size_override("font_size", 56)
+	col.add_child(head)
+	_end_sub = UITheme.label("", "", 22, UITheme.TEXT_DIM)
+	_end_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(_end_sub)
+	var tiles := _hbox(14)
+	col.add_child(tiles)
+	for k in [["wave", "Wave reached"], ["level", "Level"], ["kills", "Enemies defeated"], ["bosses", "Bosses defeated"], ["score", "Score"]]:
 		var tile := PanelContainer.new()
 		tile.theme_type_variation = "Tile"
 		tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var v := _vbox(0)
 		tile.add_child(v)
 		var name := UITheme.label(k[1], "Caption")
+		name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		v.add_child(name)
 		var value := UITheme.label("", "Big")
+		value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		v.add_child(value)
 		_end_tiles[k[0]] = value
 		if k[0] == "score":
 			_end_score_name = name
-		grid.add_child(tile)
+		tiles.add_child(tile)
 	var gains := PanelContainer.new()
 	gains.theme_type_variation = "Tile"
-	var g_row := _hbox(24)
+	var g_row := _hbox(48)
+	g_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	gains.add_child(g_row)
 	for g in [["gold", true], ["scroll", false]]:
 		var r := _hbox(8)
@@ -810,24 +812,37 @@ func _end_screen() -> Control:
 			_end_gold = l
 		else:
 			_end_scrolls = l
-	left.add_child(gains)
+	col.add_child(gains)
+	var cap := UITheme.label("Upgrades taken", "Caption")
+	cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(cap)
+	_end_picks = HFlowContainer.new()
+	_end_picks.alignment = FlowContainer.ALIGNMENT_CENTER
+	_end_picks.add_theme_constant_override("h_separation", 6)
+	_end_picks.add_theme_constant_override("v_separation", 6)
+	col.add_child(_end_picks)
 	_end_news = _vbox(8)
-	left.add_child(_end_news)
-	left.add_child(_spacer())
-	var buttons := _hbox(16)
+	_end_news.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_child(_end_news)
+	col.add_child(_spacer())
+	var buttons := _hbox(24)
+	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	_end_again = _button("Play again", _play, "Primary")
-	_end_again.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_end_again.custom_minimum_size.x = 240
 	buttons.add_child(_end_again)
 	buttons.add_child(_forge_button())
-	buttons.add_child(_button("Main menu", _to_title))
-	left.add_child(buttons)
+	var menu := _button("Main menu", _to_title)
+	buttons.add_child(menu)
+	for b in [_end_again, menu]:
+		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.custom_minimum_size.x = 240
+	col.add_child(buttons)
 	bg.set_meta("focus", _end_again)
 	return bg
 
 
 func _news(color: Color, head: String, text: String) -> void:
 	var row := _hbox(10)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	var dot := ColorRect.new()
 	dot.color = color
 	dot.custom_minimum_size = Vector2(12, 12)
@@ -844,6 +859,7 @@ func _on_run_ended() -> void:
 	_end_tiles.wave.text = str(r.wave)
 	_end_tiles.level.text = str(r.level)
 	_end_tiles.kills.text = str(r.kills)
+	_end_tiles.bosses.text = str(r.bosses)
 	_end_tiles.score.text = str(r.score)
 	var best: bool = not Profile.scores.is_empty() and r.score > 0 and r.score >= Profile.scores[0].score
 	_end_score_name.text = tr("Score · record!") if best else "Score"
@@ -852,6 +868,13 @@ func _on_run_ended() -> void:
 	_end_scrolls.text = tr("+%d scroll(s)") % r.scrolls
 	for c in _end_news.get_children():
 		c.queue_free()
+	for c in _end_picks.get_children():
+		c.queue_free()
+	for id in Run.picked:
+		var box := UITheme.icon_box(UITheme.icon("up_" + id), 48, UITheme.RIM)
+		box.tooltip_text = tr(Upgrades.LIST[id].name)
+		box.mouse_filter = Control.MOUSE_FILTER_PASS
+		_end_picks.add_child(box)
 	for id in r.reached:
 		_news(UITheme.GOLD, tr("Achievement:"), tr(Profile.ACHIEVEMENTS[id].name))
 	for e in r.unlocked:
