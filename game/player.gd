@@ -26,6 +26,10 @@ const PASSIVES := ["shield", "potions", "blaze_of_glory", "weird_eye"]
 const POTIONS := 3
 const POTION_AT := 0.3
 const POTION_HEAL := 0.5
+## A status's filter on the mage (rgb, a: strength), the first one it has wins.
+const STATUS_FILTERS := {"quad": Color(0.7, 0.4, 1.0, 0.5), "freeze": Color(0.45, 0.8, 1.0, 0.6),
+	"stun": Color(1.0, 0.95, 0.4, 0.45), "burn": Color(1.0, 0.45, 0.15, 0.55), "poison": Color(0.4, 0.9, 0.3, 0.55)}
+const BURN_TIME := 0.6  # s: the burn filter after the last fire damage
 const BLAZE := {"name": "Blaze of glory", "element": "fire", "color": "#ff7a1f", "cooldown": 1.0,
 	"emit": {"pattern": "radial", "count": 24, "body": {"shape": "bolt", "speed": 380, "size": 10, "lifetime": 0.9,
 		"on_hit": [{"type": "damage", "amount": 80}, {"type": "status", "status": "burn", "power": 5, "duration": 2}]}}}
@@ -221,6 +225,8 @@ func hurt(amount: float, fire := false, poison := false) -> void:
 		amount -= absorbed
 		if shield <= 0.0:
 			shield_wait = SHIELD_WAIT
+	if fire and amount > 0.0:  # burnt: only a filter (STATUS_FILTERS), fire hurts no longer
+		afflict("burn", 0.0, BURN_TIME)
 	if poison:  # poison never kills: it leaves the mage at 1 hp at worst
 		amount = maxf(0.0, minf(amount, hp - 1.0))
 	hp -= amount
@@ -421,9 +427,14 @@ func _draw() -> void:
 	var size := float(SPRITE.get_height())
 	var f := int(Arena.clock * 8.0) % (SPRITE.get_width() / SPRITE.get_height())
 	draw_set_transform(Vector2.ZERO, _angle + PI / 2.0)  # the sprite's head is up
-	var tint := Color("#b388ff") if statuses.has("quad") else Color("#9be7ff") if statuses.has("freeze") else Color("#fff59d") if statuses.has("stun") \
-		else Color("#b9f6ca") if statuses.has("poison") else Color.WHITE
-	draw_texture_rect_region(SPRITE, Rect2(Vector2(-size, -size) / 2.0, Vector2(size, size)), Rect2(f * size, 0, size, size), tint)
+	var filter := Color.TRANSPARENT  # on the body and the tentacles (game/dye.gdshader)
+	for st in STATUS_FILTERS:
+		if statuses.has(st):
+			filter = STATUS_FILTERS[st]
+			break
+	for m in _dye:
+		m.set_shader_parameter("status", filter)
+	draw_texture_rect_region(SPRITE, Rect2(Vector2(-size, -size) / 2.0, Vector2(size, size)), Rect2(f * size, 0, size, size))
 	# The gem's glow: a flash fading over a cast, a steady flicker while channeling.
 	var glow := 0.7 + 0.3 * sin(Arena.clock * 25.0) if _channel_t > 0.0 else maxf(0.0, _cast_t / CAST_TIME)
 	if glow > 0.0:

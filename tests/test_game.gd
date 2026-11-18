@@ -660,6 +660,12 @@ func _test_play() -> void:
 	player._steer(0.5)
 	check(player.position == at, "a stunned mage does not move")
 	player.statuses = {}
+	player.hp = player.stats.hp
+	player.hurt(1.0, true)
+	await process_frame
+	check(player.statuses.has("burn") and player._dye[1].get_shader_parameter("status") == Player.STATUS_FILTERS.burn,
+		"fire damage burns the mage: its tentacles take the burn filter")
+	player.statuses = {}
 	zombie.take_damage(1e9)
 	check(root.find_children("*", "Node2D", true, false).any(func(n): return n is Enemy.Zone and n.fx == "poison" and n.dps > 0.0),
 		"rotting zombie leaves gunk")

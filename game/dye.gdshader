@@ -9,6 +9,7 @@ uniform bool on = false;  // off: the art's own colors
 uniform bool body = false;
 uniform float frames = 8.0;  // the body strip's frames, side by side
 uniform float staff_x = 0.6;  // in a frame's width: the staff's gold is right of it, the ribbon left
+uniform vec4 status = vec4(0.0);  // a status filter (frozen, poisoned, burnt...): rgb its color, a its strength
 
 varying vec4 tint;  // the vertex color (a status tint, modulate), applied after the dye
 
@@ -43,5 +44,7 @@ void fragment() {
 		vec3 d = rgb2hsv(dye.rgb);
 		c.rgb = hsv2rgb(vec3(d.x, min(hsv.y, d.y), hsv.z));
 	}
+	// The status filter: every pixel toward its color, keeping the art's shading.
+	c.rgb = mix(c.rgb, status.rgb * (0.35 + 0.9 * rgb2hsv(c.rgb).z), status.a);
 	COLOR = c * tint;
 }
