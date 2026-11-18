@@ -423,9 +423,11 @@ func _draw_circle() -> void:
 			while fs > 10 and font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > seal * 0.7:
 				fs -= 1
 			var w := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-			var red := RED_CHALK.lerp(EMBER, lit)
-			red.a *= _drawn
-			_circle.draw_string(font, at + Vector2(-w / 2, fs * 0.35), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, red)
+			var pos := at + Vector2(-w / 2, fs * 0.35)
+			var gold := Color(UITheme.GOLD, _drawn)
+			# a 1px gold rim (the outline size is its full width, both sides)
+			_circle.draw_string_outline(font, pos, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 2, gold)
+			_circle.draw_string(font, pos, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(RED_CHALK, _drawn))
 
 
 ## A job's circle: the spell's icon in it, its glyphs lit one after the other,
