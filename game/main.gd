@@ -61,6 +61,7 @@ func _ready() -> void:
 	net.joined.connect(_on_net_joined)
 	net.lost.connect(_go_solo)
 	add_child(net)
+	Run.level_gained.connect(send_loadout.bind(false, true))
 	_reset_world()
 	var ui := preload("res://ui/ui.gd").new()
 	ui.name = "UI"
@@ -125,10 +126,11 @@ func _run_started(map: String) -> void:
 
 
 ## This peer's spells, stats and look, to the host (see Player.clean_loadout).
-func send_loadout(fresh: bool) -> void:
+## `refill`: a level-up, health and mana back to full.
+func send_loadout(fresh: bool, refill := false) -> void:
 	if multiplayer.multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
 		return
-	_offer_loadout.rpc_id(1, JSON.stringify({"fresh": fresh, "spells": Run.spells, "mult": Run.spells.keys().reduce(func(m, k): m[k] = Run.cost_mult(k); return m, {}), "passive": Run.passive,
+	_offer_loadout.rpc_id(1, JSON.stringify({"fresh": fresh, "refill": refill, "spells": Run.spells, "mult": Run.spells.keys().reduce(func(m, k): m[k] = Run.cost_mult(k); return m, {}), "passive": Run.passive,
 		"stats": Run.stats, "look": Profile.look.merged({
 			"robe": Profile.ITEMS[Profile.equipped.robe].color,
 			"staff": Profile.ITEMS[Profile.equipped.staff].color,

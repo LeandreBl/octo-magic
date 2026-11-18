@@ -5,6 +5,7 @@ extends Node
 
 signal changed
 signal leveled_up(offers: Array)  # pause and let the player pick one
+signal level_gained  # one or more levels: health and mana back to full
 
 const BOSS_EVERY := 5
 const UPGRADE_TAX := 1.1  # an upgraded spell costs 10 % more mana per upgrade
@@ -69,10 +70,13 @@ static func xp_to_next(lvl: int) -> int:
 
 func add_xp(amount: int) -> void:
 	xp += amount
+	var before := level
 	while xp >= xp_to_next(level):
 		xp -= xp_to_next(level)
 		level += 1
 		pending += 1
+	if level > before:
+		level_gained.emit()
 	if offers.is_empty() and pending > 0:
 		_offer()
 	changed.emit()

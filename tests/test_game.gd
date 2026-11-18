@@ -119,10 +119,13 @@ func _test_run() -> void:
 	check(is_equal_approx(_damage(run.spells.primary), _damage(p.equipped_spells().primary) * 1.5), "damage bonus applied")
 	var got := []
 	run.leveled_up.connect(func(o): got.append(o))
+	var gained := [0]
+	run.level_gained.connect(func(): gained[0] += 1)
 	run.add_xp(RunState.xp_to_next(1) - 1)
 	check(run.level == 1 and got.is_empty(), "no level-up before the threshold")
 	run.add_xp(1 + RunState.xp_to_next(2))  # two level-ups at once
 	check(run.level == 3 and run.pending == 2 and got.size() == 1 and run.offers.size() == 3, "level-ups queue")
+	check(gained[0] == 1, "one refill for the levels gained at once")
 	var o: Dictionary = run.offers[0]
 	var before: Dictionary = run.spells.primary
 	var cost := run.mana_cost("primary")
@@ -197,6 +200,11 @@ func _test_augments(run: Object, p: Object) -> void:
 	orb.kind = "life"
 	orb.give(me)
 	check(me.hp == me.stats.hp, "life orb heals, capped")
+	me.hurt(30.0)
+	me.mana = 0.0
+	l.refill = true
+	me.loadout_json = JSON.stringify(Player.clean_loadout(JSON.parse_string(JSON.stringify(l))))
+	check(me.hp == me.stats.hp and me.mana == me.stats.mana, "a level-up refills health and mana")
 	orb.kind = "gold"
 	var floor := Node2D.new()
 	floor.add_child(orb)

@@ -129,6 +129,7 @@ static func clean_loadout(raw: Variant) -> Dictionary:
 	for k in ["hat", "robe", "staff", "ring"]:
 		out_look[k] = Spell._color(look_in.get(k)) if look_in.get(k) else ""
 	return {"spells": spells, "costs": costs, "look": out_look, "fresh": l.get("fresh") == true,
+		"refill": l.get("refill") == true,
 		"passive": l.get("passive") if l.get("passive") in ["shield"] else "",
 		"stats": stats}
 
@@ -170,6 +171,9 @@ func _apply(l: Dictionary) -> void:
 		hp += maxf(0.0, l.stats.hp - stats.hp)
 		mana += maxf(0.0, l.stats.mana - stats.mana)
 		stats = l.stats
+	if l.refill:  # a level-up
+		hp = stats.hp
+		mana = stats.mana
 	if l.passive != passive:  # a new run
 		passive = l.passive
 		shield = SHIELD_HP if passive == "shield" else 0.0
