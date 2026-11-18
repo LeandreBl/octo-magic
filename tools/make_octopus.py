@@ -9,13 +9,9 @@ Every animation starts from BODY (tools/octo_body.png): the still
 tools/octo_still.png (a PixelLab pixen still: high top-down, seed 3, LOOK,
 edited by PixelLab so one tentacle grips the staff) edited by pixen with
 NO_TENTACLES, seed 3: the body, the hat and the staff in a short tentacle.
-Each animation is a PixMiniMax one, written to assets/octo/<anim>.png: a strip
-of FRAMES square frames of SIZE pixels, read by game/player.gd. Each run draws
-new ones.
-
-PixMiniMax strikes toward the bottom of the image whatever the prompt: the
-strike and the channel are drawn on the still turned 180 degrees, then turned
-back so they strike forward (up).
+The animation is a PixMiniMax one, written to assets/octo/idle.png: a strip
+of FRAMES square frames of SIZE pixels, read by game/player.gd (which draws the
+gem's flash on a cast itself). Each run draws new ones.
 
 Run: python3 tools/make_octopus.py  (the body; --tentacle: 64 tentacles to
 tools/tentacle_choices/, then --pick <n> copies one to assets/octo/tentacle.png)
@@ -45,15 +41,6 @@ NO_TENTACLES = ("remove all the ground tentacles: keep only the round purple bod
                 " body")
 IDLE = ("octopus body resting in place seen from directly above: it breathes gently, the hat sways a little, the"
         " crystal of the staff glows softly, seamless loop")
-CAST = ("the tentacle coiled around the staff keeps gripping it and strikes with it: it swings the staff forward so"
-        " it tilts and leans out ahead toward the bottom of the image, like a club blow at an enemy in front, a small"
-        " blue spark at the crystal on impact, then it brings the staff back to its starting position. The staff"
-        " never leaves the tentacle")
-# Channeling starts from the cast's frame CHANNEL_FROM: the staff leaning forward.
-CHANNEL = ("the tentacle keeps gripping the staff and holds it leaning forward toward the bottom of the image without"
-           " moving it, the crystal at its tip pulses and crackles with a continuous stream of blue magic sparks,, the"
-           " body breathes gently, seamless loop")
-CHANNEL_FROM = 4
 # One tentacle in the style of the still's own (a 32-pixel crop of its left
 # tentacles as the style reference), drawn 1:1 by game/tentacle.gd along its
 # chain. PixelLab draws 64 of them, the tip curled on the left and the base cut
@@ -62,12 +49,6 @@ CHANNEL_FROM = 4
 TENTACLE = ("one single straight octopus tentacle lying horizontally across the whole image, thick on the left, thin"
             " pointed tip on the right, purple with a light pink highlight line, black outline")
 TENTACLE_STYLE = "the chunky purple tentacle of the reference, same thickness and colors"
-
-
-def _turn(px: bytes) -> bytes:
-    """A SIZE x SIZE RGBA frame turned 180 degrees."""
-    pixels = [px[i:i + 4] for i in range(0, len(px), 4)]
-    return b"".join(reversed(pixels))
 
 
 def _b64(png: bytes) -> dict:
@@ -127,9 +108,6 @@ def main() -> None:
         return
     body = bytes(sheet.read_png(BODY.read_bytes())[2])
     _write("idle", animate(body, IDLE))
-    cast = animate(_turn(body), CAST)  # turned: see the docstring
-    _write("cast", [_turn(f) for f in cast])
-    _write("channel", [_turn(f) for f in animate(cast[CHANNEL_FROM], CHANNEL)])
 
 
 if __name__ == "__main__":
