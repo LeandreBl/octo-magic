@@ -1,6 +1,6 @@
 class_name Upgrades
 ## Grimoire skills, with levels: each pick raises the skill one level (shown
-## Skill I, II, III...), up to its "max"; a maxed skill is no longer offered.
+## Skill I, II, III..., no numeral for a single-level skill), up to its "max"; a maxed skill is no longer offered.
 ## Every skill is a Stats bonus on the mage (Run.bonuses, see game/stats.gd):
 ## "step" of "stat" per level ("pct": a percentage, step 10 = +10 %). "desc"
 ## formats the per-level value. "kind": the grimoire that offers it, "hero"
@@ -35,6 +35,13 @@ static func roman(n: int) -> String:
 			out += r[1]
 			n -= r[0]
 	return out
+
+
+## Skill `u`'s name at `level`, translated: "Haste III"; a single-level skill
+## has no numeral.
+static func title(u: Dictionary, level: int) -> String:
+	var name := TranslationServer.translate(u.name)
+	return name if u.max == 1 else "%s %s" % [name, roman(level)]
 
 
 ## Skill `u`'s text: its value per level, translated.

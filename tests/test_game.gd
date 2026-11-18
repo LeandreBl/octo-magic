@@ -99,6 +99,7 @@ func _test_upgrades() -> void:
 	check(Upgrades.scale_damage(boom, 2.0).emit.body.on_expire[0].emit.body.on_hit[0].amount == 20.0, "nested damage scaled")
 	check(is_equal_approx(_damage(Upgrades.scale_damage(s, 1.5)), _damage(s) * 1.5), "damage scaled")
 	check(["I", "II", "III", "IV", "V", "IX", "XI"] == [1, 2, 3, 4, 5, 9, 11].map(Upgrades.roman), "levels in roman numerals")
+	check(Upgrades.title(Upgrades.LIST.haste, 3) == "Haste III" and Upgrades.title(Upgrades.LIST.channeling, 1) == "Channeling", "single-level skill has no numeral")
 	check(Upgrades.describe(Upgrades.LIST.thrift) == "-15% mana cost", "thrift described")
 	var free := Stats.total([Upgrades.bonus(Upgrades.LIST.thrift, 11)])
 	check(is_equal_approx(Stats.total([Upgrades.bonus(Upgrades.LIST.thrift, 2)]).mana_cost, 0.7) and free.mana_cost == 0.0, "thrift: -15% a level, down to free")

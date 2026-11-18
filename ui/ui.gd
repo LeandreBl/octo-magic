@@ -654,7 +654,7 @@ func _refresh_pause() -> void:
 func _skill_icons(box: Control, size: int) -> void:
 	for id in Run.levels:
 		var icon := UITheme.icon_box(UITheme.icon("up_" + id), size, UITheme.RIM)
-		icon.tooltip_text = "%s %s" % [tr(Run.list[id].name), Upgrades.roman(Run.levels[id])]
+		icon.tooltip_text = Upgrades.title(Run.list[id], Run.levels[id])
 		icon.mouse_filter = Control.MOUSE_FILTER_PASS
 		box.add_child(icon)
 
@@ -756,7 +756,7 @@ func _show_level_up(offers: Array) -> void:
 		card.add_child(UITheme.icon_box(UITheme.icon("up_" + o.id), 112))
 		b.self_modulate = g[1].lerp(Color.WHITE, 0.4)  # the card's frame takes the grimoire's hue
 		var maxed: bool = o.level == u.max
-		for line in [["%s %s" % [tr(u.name), Upgrades.roman(o.level)], 28, g[1].lerp(Color.WHITE, 0.3), true],
+		for line in [[Upgrades.title(u, o.level), 28, g[1].lerp(Color.WHITE, 0.3), true],
 				[Upgrades.describe(u), 19, UITheme.TEXT, false],
 				[tr("Max level") if maxed else tr("Level %d / %d") % [o.level, u.max], 14, UITheme.GOLD if maxed else UITheme.TEXT_DIM, false]]:
 			var l := UITheme.label(line[0], "", line[1], line[2])
