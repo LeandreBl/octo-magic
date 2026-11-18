@@ -41,7 +41,7 @@ SPELLS = {
 }
 
 
-# Level-up upgrades (game/upgrades.gd LIST), as up_<id>.
+# Grimoire skill icons (game/upgrades.gd LIST), as up_<id>; old ones kept for the shop perks.
 UPGRADES = {
     "damage": "a glowing red fist-shaped rune of raw power with sparks",
     "cooldown": "a small golden hourglass with glowing blue sand",

@@ -138,8 +138,7 @@ static func clean_loadout(raw: Variant) -> Dictionary:
 		var s: Variant = l.get("spells", {}).get(slot) if l.get("spells") is Dictionary else null
 		if s is Dictionary:
 			spells[slot] = Spell.sanitize(s)
-			var mult: Variant = l.get("mult", {}).get(slot, 1.0) if l.get("mult") is Dictionary else 1.0
-			costs[slot] = maxi(roundi(Spell.mana_cost(spells[slot]) * clampf(float(mult) if mult is float else 1.0, 0.2, 100.0) * stats.mana_cost), 1)
+			costs[slot] = maxi(roundi(Spell.mana_cost(spells[slot]) * stats.mana_cost), 1)
 	var look_in: Dictionary = l.get("look") if l.get("look") is Dictionary else {}
 	var out_look := {}
 	for k in ["hat", "robe", "staff", "ring"]:
@@ -183,7 +182,7 @@ func _apply(l: Dictionary) -> void:
 		dye(m, look.hat)
 	if l.fresh:
 		setup(l.stats)
-	else:  # a hero augment: the extra health and mana come filled
+	else:  # a skill: the extra health and mana come filled
 		hp += maxf(0.0, l.stats.hp - stats.hp)
 		mana += maxf(0.0, l.stats.mana - stats.mana)
 		stats = l.stats

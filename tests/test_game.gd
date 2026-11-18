@@ -56,7 +56,6 @@ func _test_french() -> void:
 					texts.append(m.get_string(1).c_unescape())
 	texts += Upgrades.SLOT_NAMES.values()
 	texts += Run.ENEMIES.values().filter(func(e): return e.has("name")).map(func(e): return e.name)
-	texts += Upgrades.RARITIES.values().map(func(r): return r.name)
 	for d in [Upgrades.LIST, ProfileState.AUGMENTS, ProfileState.ITEMS, ProfileState.BONUSES, ProfileState.ACHIEVEMENTS]:
 		for v in d.values():
 			texts.append(v.name)
@@ -69,7 +68,7 @@ func _test_french() -> void:
 	for m in RegEx.create_from_string("\"[A-Z_]+\": \"([^\"]+)\"").search_all(FileAccess.get_file_as_string("res://game/online.gd")):
 		texts.append(m.get_string(1))  # Online.ERRORS (the autoload needs Profile)
 	texts += Settings.REBINDABLE.values().filter(func(t): return t != "Pause")
-	var same := ["Multiplication", "Scribe", "Rare", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Pila Ignea", "Telum Magicum", "Fragmen Glaciei", "Arcus Fulguris", "Spiculum Veneni", "Tela Arcana", "Poison", "Zone", "Projectiles", "Abomination"]
+	var same := ["Scribe", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Pila Ignea", "Telum Magicum", "Fragmen Glaciei", "Arcus Fulguris", "Spiculum Veneni", "Tela Arcana", "Poison", "Zone", "Projectiles", "Abomination"]
 	for t in texts:
 		check(t in same or TranslationServer.translate(t) != t, "French for: " + t)
 	check(Spell.describe({"description": "x", "description_fr": "y"}) == "y", "forged spell described in French")
@@ -81,43 +80,33 @@ func _damage(s: Dictionary) -> float:
 	return s.emit.body.on_hit.filter(func(f): return f.type == "damage")[0].amount
 
 
+## Skills for the tests (Upgrades.LIST is filled skill by skill).
+const SKILLS := {
+	"tough": {"name": "Tough", "desc": "+%d max health", "step": 25, "max": 4, "kind": "hero", "stat": "hp"},
+	"quick": {"name": "Quick", "desc": "+%d%% move speed", "step": 10, "max": 1, "kind": "hero", "stat": "speed%", "pct": true},
+	"vigor": {"name": "Vigor", "desc": "+%d max mana", "step": 50, "max": 4, "kind": "hero", "stat": "mana"},
+	"magnet": {"name": "Magnet", "desc": "+%d%% pickup radius", "step": 30, "max": 5, "kind": "hero", "stat": "pickup%", "pct": true},
+	"swift": {"name": "Swift", "desc": "-%d%% cooldown", "step": -10, "max": 9, "kind": "spell", "stat": "cooldown%", "pct": true},
+	"thrift": {"name": "Thrift", "desc": "-%d%% mana cost", "step": -15, "max": 11, "kind": "spell", "stat": "mana_cost%", "pct": true},
+}
+
+
 func _test_upgrades() -> void:
 	var s := Spell.base()
-	var up := Upgrades.apply(s, "damage")
-	check(is_equal_approx(_damage(up), _damage(s) * 1.2), "damage upgrade")
-	check(is_equal_approx(_damage(Upgrades.apply(s, "damage", 3)), _damage(s) * 1.6), "an epic is three commons")
-	check(Upgrades.apply(s, "count").emit.count == s.emit.count + 1, "count upgrade")
-	check(Upgrades.apply(s, "count", 2).emit.count == s.emit.count + 1, "count upgrade is +1 at every rarity")
-	check(Upgrades.apply(s, "cooldown").cooldown < s.cooldown, "cooldown upgrade")
-	check(Upgrades.apply(s, "pierce").emit.body.pierce == s.emit.body.pierce + 1, "pierce upgrade")
-	check(Upgrades.apply(up, "damage") == Spell.sanitize(Upgrades.apply(up, "damage")), "upgraded spell is sanitized")
-	var maxed := s.duplicate(true)
-	maxed.emit.count = 16
-	check(Upgrades.apply(maxed, "count").emit.count == 16, "upgrades stay clamped")
-	check(not Upgrades.applies(maxed, "count"), "maxed upgrade not offered")
-	check(not Upgrades.applies(s, "mana", Upgrades.MANA_FLOOR), "mana floor")
 	# Nested casts are scaled too.
 	var boom := Spell.sanitize({"emit": {"body": {"on_expire": [{"type": "cast", "emit": {"body": {
 		"on_hit": [{"type": "damage", "amount": 10}]}}}]}}})
 	check(Upgrades.scale_damage(boom, 2.0).emit.body.on_expire[0].emit.body.on_hit[0].amount == 20.0, "nested damage scaled")
+	check(is_equal_approx(_damage(Upgrades.scale_damage(s, 1.5)), _damage(s) * 1.5), "damage scaled")
+	check(["I", "II", "III", "IV", "V", "IX", "XI"] == [1, 2, 3, 4, 5, 9, 11].map(Upgrades.roman), "levels in roman numerals")
+	check(Upgrades.bonus(SKILLS.tough, 3) == {"hp": 75.0} and Upgrades.bonus(SKILLS.quick, 1) == {"speed%": 0.1}, "skills are Stats bonuses")
 	var rng := RandomNumberGenerator.new()
-	var offers := Upgrades.offers(s, 1.0, {}, rng)
-	check(offers.size() == 3 and offers[0].id != offers[1].id and offers[1].id != offers[2].id, "3 distinct offers")
-	check(offers.all(func(o): return Upgrades.RARITIES.has(o.rarity)), "offers have a rarity")
-	var seen := {}
-	var multiplied := 0
-	for i in 200:
-		for o in Upgrades.offers(s, 1.0, {}, rng):
-			seen[o.rarity] = true
-			seen[o.id] = true
-			multiplied += int(o.id == "count")
-	check(multiplied < 20, "multiplication is rarely offered")  # ~35 without its chance, ~3.5 with it
-	check(seen.has("epic") and seen.has("common") and seen.has("toughness"), "rarities and hero augments rolled")
-	check(not Upgrades.applies(s, "fleetness", 1.0, Stats.total([{"speed": 1e4}])), "maxed stat not offered")
-	check(Upgrades.applies(s, "ward", 1.0, Stats.total([])), "stat below its bound offered")
-	check(Upgrades.bonus("ward", 3) == {"armor": 0.12} and Upgrades.bonus("fleetness", 1) == {"speed%": 0.08}, "hero augments are Stats bonuses")
-	TranslationServer.set_locale("en")
-	check(Upgrades.describe("damage", "rare") == "+40% damage", "rare described with its value")
+	var offers := Upgrades.offers({}, rng, "", 3, SKILLS)
+	check(offers.size() == 3 and offers.all(func(o): return o.level == 1), "3 offers, at level I")
+	check(offers.map(func(o): return o.id).reduce(func(seen, id): seen[id] = 1; return seen, {}).size() == 3, "distinct offers")
+	check(Upgrades.offers({}, rng, "spell", 3, SKILLS).size() == 2, "a kind offers its own skills")
+	check(Upgrades.offers({"tough": 2}, rng, "hero", 3, SKILLS).any(func(o): return o == {"id": "tough", "level": 3}), "the next level offered")
+	check(Upgrades.offers({"tough": 4, "quick": 1, "vigor": 4, "magnet": 5}, rng, "hero", 3, SKILLS).is_empty(), "maxed skills not offered")
 
 
 func _test_run() -> void:
@@ -136,30 +125,28 @@ func _test_run() -> void:
 	check(run.level == 3 and gained[0] == 1, "one refill for the levels gained at once")
 	check(got.is_empty() and run.offers.is_empty(), "a level-up offers no upgrade")
 	run.collect("grimoire_hero", 1)
+	check(run.pending.is_empty() and run.offers.is_empty(), "a grimoire with no skill to offer is lost")
+	run.list = SKILLS
+	run.collect("grimoire_hero", 1)
 	run.collect("grimoire_spell", 1)  # two grimoires queue
 	check(run.pending == ["hero", "spell"] and got.size() == 1 and run.offers.size() == 3, "grimoires queue")
-	check(run.offers.all(func(o): return Upgrades.LIST[o.id].has("stat")), "a red grimoire offers hero stats")
-	var stats: Dictionary = run.stats.duplicate()
-	check(run.choose(0), "a second choice waits")
-	check(run.stats != stats, "hero choice applied")
-	check(run.offers.all(func(o): return not Upgrades.LIST[o.id].has("stat")), "a blue grimoire offers spell stats")
-	var o: Dictionary = run.offers[0]
-	var before: Dictionary = run.spells.primary
-	var cost := run.mana_cost("primary")
-	check(not run.choose(0) and run.pending.is_empty() and run.offers.is_empty(), "all choices made")
-	check(run.spells.primary != before or run.mana_cost("primary") < cost, "spell choice applied")
-	check(run.picked.size() == 2, "picks recorded")
-	run.offers = [{"id": "toughness", "rarity": "epic"}]
-	run.pending = ["hero"]
+	check(run.offers.all(func(o): return SKILLS[o.id].kind == "hero"), "a red grimoire offers hero skills")
+	run.offers = [{"id": "tough", "level": 1}]
 	var hp: float = run.stats.hp
+	check(run.choose(0), "a second choice waits")
+	check(run.stats.hp == hp + 25.0 and run.levels == {"tough": 1}, "skill taken at level I")
+	check(run.offers.all(func(o): return SKILLS[o.id].kind == "spell"), "a blue grimoire offers spell skills")
+	var cost := run.mana_cost("primary")
+	run.offers = [{"id": "thrift", "level": 1}]
+	check(not run.choose(0) and run.pending.is_empty() and run.offers.is_empty(), "all choices made")
+	check(run.mana_cost("primary") < cost, "spell skill applied")
+	run.pending = ["hero"]
+	run.offers = [{"id": "tough", "level": 2}]
 	run.choose(0)
-	check(run.stats.hp == hp + 60.0, "hero augment raises the run stat")
+	check(run.stats.hp == hp + 50.0 and run.levels.tough == 2, "taken again: level II")
 	run.start(p.equipped_spells())
-	cost = run.mana_cost("primary")
-	run.offers = [{"id": "cooldown", "rarity": "common"}]
-	run.pending = ["spell"]
-	run.choose(0)
-	check(run.mana_cost("primary") > cost, "an upgrade raises the mana cost")
+	check(run.levels.is_empty() and run.stats.hp == Stats.BASE.hp, "a new run starts with no skill")
+	run.list = Upgrades.LIST
 	run.start(p.equipped_spells(), [{"gold%": 0.5}, {"mana_cost%": -0.5}])
 	check(run.mana_cost("primary") == maxi(1, roundi(Spell.mana_cost(run.spells.primary) * 0.5)), "mana cost stat")
 	run.collect("gold", 10)
@@ -281,8 +268,10 @@ func _test_perks(run: Object, p: Object) -> void:
 	check(s.hp == Stats.BASE.hp + 25.0 and s.armor == -1.0 and s.damage == 2.0, "perk bonuses in the stats")
 	run.start(p.equipped_spells(), p.bonus_list(), p.slotted_augments())
 	check(run.choices == 4 and run.pending == Upgrades.KINDS, "4 choices, a red and a blue grimoire to open")
+	run.list = SKILLS
 	run._offer()
 	check(run.offers.size() == 4, "a grimoire offers 4 cards")
+	run.list = Upgrades.LIST
 	var me := Player.new()
 	me.loadout_json = JSON.stringify(Player.clean_loadout({"stats": run.stats, "fresh": true}))
 	me.hurt(10.0)

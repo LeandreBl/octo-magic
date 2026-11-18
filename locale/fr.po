@@ -824,14 +824,11 @@ msgstr "Croix"
 msgid "Circle"
 msgstr "Rond"
 
-msgid "Common"
-msgstr "Commun"
+msgid "Max level"
+msgstr "Niveau max"
 
-msgid "Rare"
-msgstr "Rare"
-
-msgid "Epic"
-msgstr "Épique"
+msgid "Level %d / %d"
+msgstr "Niveau %d / %d"
 
 msgid "Toughness"
 msgstr "Robustesse"

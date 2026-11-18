@@ -8,7 +8,7 @@
 
 ## Boucle de jeu
 - Vue de dessus, vagues d'ennemis croissantes, boss toutes les N vagues.
-- XP en run → level up → choix d'une amélioration.
+- XP en run → level up (+100 PV et mana) ; les grimoires lâchés par les monstres donnent le choix d'un skill.
 - Mort permanente : la run est perdue, l'or est conservé.
 - Or → boutique entre les runs (bâtons, robes, anneaux) + bonus permanents.
 - Succès, déblocages, scores, classement (local d'abord).
@@ -34,7 +34,7 @@
 - **Rien ne s'achète pendant une run** : la boutique est entre les runs (tâche #195, remplace la boutique de run de #123).
 - **Augments** (`Profile.AUGMENTS`, onglet de la boutique) : achetés une fois avec l'or du profil, gardés pour toutes les runs, chers (anneau de feu 1500, bouclier 1000). **3 emplacements** (`Profile.SLOTS`) : chaque run commence avec les augments placés, un actif (sort secondaire : clic droit / Espace / RB) au plus, le reste en passifs ou futurs bonus ; ça force à choisir. Anneau de feu (boules de feu à 360°), bouclier (absorbe 40 dégâts, revient 8 s après s'être brisé).
 - **Perks** (tâche #295, d'après la liste du propriétaire, adaptée à une seule carte) : augments passifs du même onglet. Bonus de stats (vie +25, mana +50, vitesse +10 %, -15 % de coût, -10 % de recharge, ramassage x4, +50 % d'or, -10 % de poison, orbes x2, grimoires et parchemins x2, Extrême : dégâts infligés et subis x2), règles de run (4 cartes par grimoire ; 1 ou 2 grimoires rouges et bleus ouverts au départ), et côté mage (3 fioles bues seules sous 30 % des PV, explosion de feu à la mort, flèches vers grimoires et parchemins). Bonus permanent « En forme » : +1 emplacement, deux fois (2500 puis 20000). Écartés : anneaux trouvés en run (pas d'anneaux en run), sorts secondaires multiples (déjà les emplacements), acheter son amélioration (rien ne s'achète en run), autres cimetières (une carte), boss (déjà là).
-- Améliorations par sort : vitesse du projectile (si pertinent), nombre de projectiles, coût en mana, dégâts, cadence, zone…
+- **Skills en run** (tâche #308, `Upgrades.LIST`) : chaque grimoire propose 3 skills de sa couleur (rouge : héros, bleu : sort) ; prendre un skill monte son niveau (Skill I, II, III…) jusqu'à son max, un skill au max n'est plus proposé. Chaque skill est un bonus de stats par niveau. Plus de raretés ni d'améliorations qui modifient le sort (projectiles, zone, perforation…). Les skills, un par tâche (#309 à #320) : coût en mana -15 %/niv (niv 11), régén de mana +35 %/niv (9), un choix de plus par grimoire (une fois), cadence +10 %/niv (9), vie +25/niv (4), mana +50/niv (4), canaliser à l'arrêt pour un mana x4 (une fois), résistance au poison et au feu +10 %/niv (9), vitesse +10 %/niv (8), ramassage +30 %/niv (5), dégâts +25 %/niv (9).
 - Inspiration : sorts de base et augments de Solomon's Boneyard, **avec nos noms, nos valeurs et nos visuels** (on reprend la mécanique, pas le contenu).
 
 ## Parchemins (cœur du jeu)

@@ -594,6 +594,7 @@ var _pause_rows := {}  # "wave", "level", "kills", "gold", "scrolls" -> value La
 var _pause_note: Label  # forge news
 var _pause_picks: HFlowContainer
 var _pause_quit: Button  # solo only
+var _pause_levels := {}  # Run.levels shown in _pause_picks
 
 
 ## Pause: menu and run summary (nothing is bought in a run: the shop is
@@ -642,14 +643,20 @@ func _refresh_pause() -> void:
 	_pause_rows.scrolls.text = str(Run.scrolls)
 	_pause_note.text = main.forge_note
 	_pause_note.visible = main.forge_note != ""
-	if _pause_picks.get_child_count() != Run.picked.size():
+	if _pause_levels != Run.levels:  # Run.changed fires on every kill
+		_pause_levels = Run.levels.duplicate()
 		for c in _pause_picks.get_children():
 			c.queue_free()
-		for id in Run.picked:
-			var box := UITheme.icon_box(UITheme.icon("up_" + id), 40, UITheme.RIM)
-			box.tooltip_text = tr(Upgrades.LIST[id].name)
-			box.mouse_filter = Control.MOUSE_FILTER_PASS
-			_pause_picks.add_child(box)
+		_skill_icons(_pause_picks, 40)
+
+
+## The run's skills in `box`, icons of `size` px, their level as a tooltip.
+func _skill_icons(box: Control, size: int) -> void:
+	for id in Run.levels:
+		var icon := UITheme.icon_box(UITheme.icon("up_" + id), size, UITheme.RIM)
+		icon.tooltip_text = "%s %s" % [tr(Run.list[id].name), Upgrades.roman(Run.levels[id])]
+		icon.mouse_filter = Control.MOUSE_FILTER_PASS
+		box.add_child(icon)
 
 
 # --- level up ----------------------------------------------------------------
@@ -705,7 +712,7 @@ func _show_level_up(offers: Array) -> void:
 	_cards_ready = false
 	for i in offers.size():
 		var o: Dictionary = offers[i]
-		var u: Dictionary = Upgrades.LIST[o.id]
+		var u: Dictionary = Run.list[o.id]
 		var b := _button("", func():
 			if not _cards_ready:  # gamepad/keyboard accept on the focused card
 				return
@@ -747,10 +754,11 @@ func _show_level_up(offers: Array) -> void:
 		num.add_child(n)
 		card.add_child(num)
 		card.add_child(UITheme.icon_box(UITheme.icon("up_" + o.id), 112))
-		var rarity: Dictionary = Upgrades.RARITIES[o.rarity]
-		b.self_modulate = Color(rarity.color).lerp(Color.WHITE, 0.4)  # the card's frame takes the rarity's hue
-		for line in [[tr(rarity.name), 14, Color(rarity.color), false], [tr(u.name), 28, Color(rarity.color), true],
-				[Upgrades.describe(o.id, o.rarity), 19, UITheme.TEXT, false]]:
+		b.self_modulate = g[1].lerp(Color.WHITE, 0.4)  # the card's frame takes the grimoire's hue
+		var maxed: bool = o.level == u.max
+		for line in [["%s %s" % [tr(u.name), Upgrades.roman(o.level)], 28, g[1].lerp(Color.WHITE, 0.3), true],
+				[Upgrades.describe(u), 19, UITheme.TEXT, false],
+				[tr("Max level") if maxed else tr("Level %d / %d") % [o.level, u.max], 14, UITheme.GOLD if maxed else UITheme.TEXT_DIM, false]]:
 			var l := UITheme.label(line[0], "", line[1], line[2])
 			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			l.autowrap_mode = TextServer.AUTOWRAP_WORD
@@ -944,11 +952,7 @@ func _on_run_ended() -> void:
 		c.queue_free()
 	for c in _end_picks.get_children():
 		c.queue_free()
-	for id in Run.picked:
-		var box := UITheme.icon_box(UITheme.icon("up_" + id), 48, UITheme.RIM)
-		box.tooltip_text = tr(Upgrades.LIST[id].name)
-		box.mouse_filter = Control.MOUSE_FILTER_PASS
-		_end_picks.add_child(box)
+	_skill_icons(_end_picks, 48)
 	for id in r.reached:
 		_news(UITheme.GOLD, tr("Achievement:"), tr(Profile.ACHIEVEMENTS[id].name))
 	for e in r.unlocked:

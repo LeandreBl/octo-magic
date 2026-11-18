@@ -9,7 +9,6 @@ signal offered(offers: Array)  # a grimoire opened: let the player pick one
 signal level_gained  # one or more levels: health and mana back to full
 
 const BOSS_EVERY := 5
-const UPGRADE_TAX := 1.1  # an upgraded spell costs 10 % more mana per upgrade
 var active := false
 var wave := 0
 var level := 1
@@ -18,15 +17,14 @@ var kills := 0
 var bosses := 0
 var gold := 0
 var scrolls := 0
-var spells := {}  # slot -> spell, upgraded copies of the profile's spells
-var mana_mult := {}  # slot -> mana cost multiplier ("mana" upgrades)
-var ups := {}  # slot -> upgrades taken on it, each one taxes the cost (UPGRADE_TAX)
-var picked := []  # augment ids taken, in order
+var spells := {}  # slot -> spell, the profile's spells (damage stat applied)
+var levels := {}  # skill id -> level taken, in the order first taken
+var list := Upgrades.LIST  # the skills offered (tests swap in their own)
 var offers := []  # current grimoire choice, [] when none
 var pending := []  # grimoires picked up, not chosen yet: Upgrades.KINDS ("hero" red, "spell" blue)
 var rng := RandomNumberGenerator.new()
-var bonuses := []  # Stats bonuses: the profile's, then the hero augments
-var stats := Stats.total([])  # Stats.total(bonuses)
+var bonuses := []  # the profile's Stats bonuses
+var stats := Stats.total([])  # Stats.total(bonuses and the skills')
 var passives := []  # the slotted Profile.AUGMENTS passive ids
 var choices := 3  # cards a grimoire offers
 
@@ -45,22 +43,17 @@ func start(equipped: Dictionary, bonus_list := [], augments := []) -> void:
 	bosses = 0
 	gold = 0
 	scrolls = 0
-	picked = []
+	levels = {}
 	offers = []
 	pending = []
 	spells = {}
-	mana_mult = {}
-	ups = {}
 	passives = []
 	choices = 3
 	for slot in equipped:
 		spells[slot] = Upgrades.scale_damage(equipped[slot], stats.damage)
-		mana_mult[slot] = 1.0
-		ups[slot] = 0
 	for a in augments:
 		if a.kind == "active":
 			spells.secondary = Upgrades.scale_damage(Spell.sanitize(a.spell), stats.damage)
-			mana_mult.secondary = 1.0
 		else:
 			passives.append(a.id)
 			choices = maxi(choices, a.get("choices", 0))
@@ -129,10 +122,10 @@ func add_xp(amount: int) -> void:
 	changed.emit()
 
 
-## Opens the next grimoire: its kind's offers; one with nothing left to improve is lost.
+## Opens the next grimoire: its kind's offers; one with every skill maxed is lost.
 func _offer() -> void:
 	while offers.is_empty() and not pending.is_empty():
-		offers = Upgrades.offers(spells.primary, mana_mult.primary, stats, rng, pending[0], choices)
+		offers = Upgrades.offers(levels, rng, pending[0], choices, list)
 		if offers.is_empty():
 			pending.pop_front()
 	if not offers.is_empty():
@@ -143,18 +136,8 @@ func _offer() -> void:
 func choose(i: int) -> bool:
 	if i < 0 or i >= offers.size():
 		return not offers.is_empty()
-	var o: Dictionary = offers[i]
-	var tier: int = Upgrades.RARITIES[o.rarity].tier
-	var u: Dictionary = Upgrades.LIST[o.id]
-	if u.has("stat"):
-		bonuses.append(Upgrades.bonus(o.id, tier))
-		stats = Stats.total(bonuses)
-	elif o.id == "mana":
-		mana_mult.primary = maxf(Upgrades.MANA_FLOOR, mana_mult.primary * (1.0 - Upgrades.amount(o.id, tier)))
-	else:
-		spells.primary = Upgrades.apply(spells.primary, o.id, tier)
-		ups.primary += 1
-	picked.append(o.id)
+	levels[offers[i].id] = offers[i].level
+	stats = Stats.total(bonuses + levels.keys().map(func(id): return Upgrades.bonus(list[id], levels[id])))
 	pending.pop_front()
 	offers = []
 	_offer()
@@ -162,13 +145,8 @@ func choose(i: int) -> bool:
 	return not offers.is_empty()
 
 
-## Mana cost multiplier of `slot`: thrift lowers it, every other upgrade raises it.
-func cost_mult(slot: String) -> float:
-	return mana_mult[slot] * pow(UPGRADE_TAX, ups.get(slot, 0))
-
-
 func mana_cost(slot: String) -> int:
-	return maxi(roundi(Spell.mana_cost(spells[slot]) * cost_mult(slot) * stats.mana_cost), 1)
+	return maxi(roundi(Spell.mana_cost(spells[slot]) * stats.mana_cost), 1)
 
 
 func collect(kind: String, value: int) -> void:

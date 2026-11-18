@@ -163,7 +163,7 @@ func _run_started(map: String, saved := {}) -> void:
 func send_loadout(fresh: bool, refill := false) -> void:
 	if multiplayer.multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
 		return
-	_offer_loadout.rpc_id(1, JSON.stringify({"fresh": fresh, "refill": refill, "spells": Run.spells, "mult": Run.spells.keys().reduce(func(m, k): m[k] = Run.cost_mult(k); return m, {}), "passives": Run.passives,
+	_offer_loadout.rpc_id(1, JSON.stringify({"fresh": fresh, "refill": refill, "spells": Run.spells, "passives": Run.passives,
 		"stats": Run.stats, "look": Profile.look.merged({
 			"robe": Profile.ITEMS[Profile.equipped.robe].color,
 			"staff": Profile.ITEMS[Profile.equipped.staff].color,
