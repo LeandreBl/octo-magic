@@ -16,6 +16,7 @@ const SEE := 140.0  # the mage's halo, in the world: what is above turns see-thr
 const FADED := 0.5
 const BODY := 20.0  # how far from its middle the mage's body is under something (world)
 
+static var clock := 0.0  # s of game time, scaled by Engine.time_scale: animations run on it
 static var _map: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ART + "map.json"))
 ## Solid polygons, circles [x, y, r], spawns [x, y] and the mages' start,
 ## scaled. Static: movers slide without a reference.
@@ -66,6 +67,7 @@ void fragment() {
 
 
 func _process(delta: float) -> void:
+	clock += delta
 	var cam := get_viewport().get_camera_2d()
 	var mage: Vector2 = cam.get_parent().global_position if cam else Vector2(-1e4, -1e4)
 	above.material.set_shader_parameter("mage", mage / RECT.size)

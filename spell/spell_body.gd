@@ -320,7 +320,7 @@ func _draw_arc() -> void:
 	var cos_a := maxf(0.3, cos(angle_difference(dir.angle(), end.angle())))
 	var ctrl := dir * end.length() / (2.0 * cos_a)
 	var side := end.orthogonal().normalized()
-	var t := Time.get_ticks_msec() / 1000.0
+	var t := Arena.clock
 	var n := maxi(8, int(end.length() / 12.0))
 	var pts := PackedVector2Array()
 	for i in n + 1:

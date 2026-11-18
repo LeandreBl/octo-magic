@@ -285,7 +285,7 @@ func _draw() -> void:
 	if tex:
 		var n := tex.get_width() / tex.get_height()
 		# still ones loop their walk strip (an idle) all the time
-		var f := int(Time.get_ticks_msec() / 1000.0 * FPS) if _moving or data.get("ai") == "still" else 0
+		var f := int(Arena.clock * FPS) if _moving or data.get("ai") == "still" else 0
 		if anim != "walk":  # the move plays once over its duration
 			f = mini(int((1.0 - _act_time / _act_len) * n), n - 1)
 		draw_frame(self, tex, f, size, _flip, tint)

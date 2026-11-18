@@ -216,7 +216,7 @@ func _physics_process(delta: float) -> void:
 	_channel_t -= delta
 	var heading := aim if _cast_t > 0.0 or _channel_t > 0.0 or not _moving else step  # casting: faces its aim
 	_angle = lerp_angle(_angle, heading.angle(), minf(1.0, 12.0 * delta))
-	var t := Time.get_ticks_msec() / 1000.0
+	var t := Arena.clock
 	var near := []  # the enemies within a tentacle's reach: its obstacles
 	for e in get_tree().get_nodes_in_group("enemies"):
 		if e.global_position.distance_to(global_position) < (Tentacle.ROOT + Tentacle.LENGTH) * SIZE + e.radius:
@@ -326,13 +326,13 @@ func gem() -> Vector2:
 func _draw() -> void:
 	modulate.a = 1.0 if hp > 0.0 else 0.3  # down until the next run
 	var size := float(SPRITE.get_height())
-	var f := int(Time.get_ticks_msec() / 1000.0 * 8.0) % (SPRITE.get_width() / SPRITE.get_height())
+	var f := int(Arena.clock * 8.0) % (SPRITE.get_width() / SPRITE.get_height())
 	draw_set_transform(Vector2.ZERO, _angle + PI / 2.0)  # the sprite's head is up
 	var tint := Color("#9be7ff") if statuses.has("freeze") else Color("#fff59d") if statuses.has("stun") \
 		else Color("#b9f6ca") if statuses.has("poison") else Color.WHITE
 	draw_texture_rect_region(SPRITE, Rect2(Vector2(-size, -size) / 2.0, Vector2(size, size)), Rect2(f * size, 0, size, size), tint)
 	# The gem's glow: a flash fading over a cast, a steady flicker while channeling.
-	var glow := 0.7 + 0.3 * sin(Time.get_ticks_msec() / 40.0) if _channel_t > 0.0 else maxf(0.0, _cast_t / CAST_TIME)
+	var glow := 0.7 + 0.3 * sin(Arena.clock * 25.0) if _channel_t > 0.0 else maxf(0.0, _cast_t / CAST_TIME)
 	if glow > 0.0:
 		draw_circle(GEM, 6.0 * glow, Color(GEM_GLOW, 0.35 * glow))
 		draw_circle(GEM, 3.5 * glow, Color(GEM_GLOW, 0.7 * glow))

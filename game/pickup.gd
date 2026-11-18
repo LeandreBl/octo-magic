@@ -52,7 +52,7 @@ func _hop() -> Vector2:
 
 ## A soft shimmer: brightness drifts around white, each drop on its own phase.
 func _shimmer() -> void:
-	var v := 1.0 + 0.15 * sin(Time.get_ticks_msec() * 0.004 + get_instance_id() % 628 * 0.01)
+	var v := 1.0 + 0.15 * sin(Arena.clock * 4.0 + get_instance_id() % 628 * 0.01)
 	modulate = Color(v, v, v)
 
 
