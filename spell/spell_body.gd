@@ -24,9 +24,11 @@ var depth := 0  # 0 = cast by the player, n = sub-cast n levels deep
 var anchor := Vector2.ZERO  # beam / cone: offset from the caster, kept while it moves
 var struck := false  # beam / cone: strike once, when cast
 var target: Node2D  # beam: the enemy the arc grips
+var links: Array = []  # beam: the enemies the arc jumps on to from its target (the caster's "chain" stat)
 var index := 0  # beam / cone: which body of its emit (count > 1: one arc / cone each)
 var turn := 0.0  # beam / cone: its angle off the caster's aim (spread, radial...)
 
+const CHAIN_REACH := 140.0  # px: how far a chained arc jumps from one enemy to the next
 const ABOVE_DECOR := 11  # over the map's trees, roofs and statues (Arena.above, z 10)
 const GROUND := -1  # zones and sub-casts (a hit's effects): under the mages, enemies and obstacles, over the floor
 
@@ -214,12 +216,14 @@ func _channel() -> void:
 	if struck:
 		if body.shape == "beam":
 			target = _beam_target()
+			links = _chain()
 		return
 	struck = true
 	if body.shape == "beam":
 		target = _beam_target()
-		if target:
-			apply_effects(body.on_hit, global_position, target)
+		links = _chain()
+		for e in ([target] if target else []) + links:
+			apply_effects(body.on_hit, e.global_position if e != target else global_position, e)
 	else:
 		for e in get_tree().get_nodes_in_group("enemies"):
 			if _in_reach(e):
@@ -246,6 +250,25 @@ func _beam_target() -> Node2D:
 			best_score = score
 			best = e
 	return best
+
+
+## The Catena skill (Upgrades "chaining"): from its target the arc jumps on to
+## the nearest enemy within CHAIN_REACH not yet struck, once per "chain" of
+## its caster's stats. An engine stat, not spell data: no forged spell has it.
+func _chain() -> Array:
+	var st: Variant = caster.get("stats") if is_instance_valid(caster) else null
+	var n := int(st.get("chain", 0.0)) if st is Dictionary else 0
+	var out := []
+	var hit := {}
+	var from := target
+	while from and out.size() < n:
+		hit[from.get_instance_id()] = true
+		var next := nearest_enemy(get_parent(), from.global_position, hit)
+		if not next or from.global_position.distance_to(next.global_position) > CHAIN_REACH + next.radius:
+			break
+		out.append(next)
+		from = next
+	return out
 
 
 func _check_hits() -> void:
@@ -357,6 +380,12 @@ func _draw() -> void:
 ## shimmer is a smooth function of time, so successive casts line up.
 func _draw_arc() -> void:
 	var end: Vector2 = target.global_position - global_position if is_instance_valid(target) else dir * body.speed
+	var from := end
+	for e in links:  # Catena: straight jagged arcs from enemy to enemy
+		if is_instance_valid(e):
+			var to: Vector2 = e.global_position - global_position
+			_bolt(PackedVector2Array([from, (from + to) / 2.0 + (to - from).orthogonal().normalized() * 6.0 * sin(Arena.clock * 40.0), to]))
+			from = to
 	# Quadratic Bezier whose control point sits where the aim meets the end
 	# tangent of a circle arc: tangent to the aim at the staff.
 	var cos_a := maxf(0.3, cos(angle_difference(dir.angle(), end.angle())))
@@ -369,6 +398,10 @@ func _draw_arc() -> void:
 		var u := float(i) / n
 		var p := ctrl * 2.0 * u * (1.0 - u) + end * u * u
 		pts.append(p + side * sin(u * PI) * 3.0 * sin(u * 23.0 - t * 30.0))
+	_bolt(pts)
+
+
+func _bolt(pts: PackedVector2Array) -> void:
 	draw_polyline(pts, Color(color, 0.3), 7.0, true)
 	draw_polyline(pts, color, 3.0, true)
 	draw_polyline(pts, Color.WHITE, 1.0, true)

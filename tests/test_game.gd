@@ -67,7 +67,7 @@ func _test_french() -> void:
 	for m in RegEx.create_from_string("\"[A-Z_]+\": \"([^\"]+)\"").search_all(FileAccess.get_file_as_string("res://game/online.gd")):
 		texts.append(m.get_string(1))  # Online.ERRORS (the autoload needs Profile)
 	texts += Settings.REBINDABLE.values().filter(func(t): return t != "Pause")
-	var same := ["Scribe", "Robur", "Parsimonia", "Inspiratio", "Celeritas", "Tutela Ignis", "Fluxus", "Receptaculum", "Meditatio", "Antidotum", "Pernicitas", "Magnes", "Potentia", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Pila Ignea", "Telum Magicum", "Fragmen Glaciei", "Arcus Fulguris", "Spiculum Veneni", "Tela Arcana", "Poison", "Zone", "Projectiles", "Abomination"]
+	var same := ["Scribe", "Robur", "Parsimonia", "Inspiratio", "Celeritas", "Tutela Ignis", "Fluxus", "Receptaculum", "Meditatio", "Antidotum", "Pernicitas", "Magnes", "Potentia", "Catena", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Pila Ignea", "Telum Magicum", "Fragmen Glaciei", "Arcus Fulguris", "Spiculum Veneni", "Tela Arcana", "Poison", "Zone", "Projectiles", "Abomination"]
 	for t in texts:
 		check(t in same or TranslationServer.translate(t) != t, "French for: " + t)
 	check(Spell.describe({"description": "x", "description_fr": "y"}) == "y", "forged spell described in French")
@@ -122,6 +122,11 @@ func _test_upgrades() -> void:
 	check(offers.size() == 3 and offers.all(func(o): return o.level == 1), "3 offers, at level I")
 	check(offers.map(func(o): return o.id).reduce(func(seen, id): seen[id] = 1; return seen, {}).size() == 3, "distinct offers")
 	check(Upgrades.offers({}, rng, "spell", 3, SKILLS).size() == 2, "a kind offers its own skills")
+	var catena: Dictionary = Upgrades.LIST.chaining
+	check(catena.max == 5 and Upgrades.title(catena, 5) == "Catena V" and Stats.total([Upgrades.bonus(catena, 5)]).chain == 5.0, "Catena: +1 chained enemy a level, up to V")
+	var sub := {"chaining": catena}
+	check(Upgrades.offers({}, rng, "spell", 3, sub).is_empty() and Upgrades.offers({}, rng, "spell", 3, sub, "fireball").is_empty()
+		and Upgrades.offers({}, rng, "spell", 3, sub, "lightning").size() == 1, "a sub-skill only for its base spell (Fulmen), never a forged one")
 	check(Upgrades.offers({"tough": 2}, rng, "hero", 4, SKILLS).any(func(o): return o == {"id": "tough", "level": 3}), "the next level offered")
 	check(Upgrades.offers({"tough": 4, "quick": 1, "vigor": 4, "magnet": 5}, rng, "hero", 3, SKILLS).is_empty(), "maxed skills not offered")
 	var haste: Dictionary = Upgrades.LIST.haste
@@ -199,13 +204,14 @@ func _test_run() -> void:
 	run.pending = ["spell"]
 	run.list = SKILLS
 	run.levels = {"tough": 2}
+	run.base = "lightning"
 	run._restat()
 	var snap: Dictionary = JSON.parse_string(JSON.stringify(run.to_dict()))  # as saved in the profile
 	var back := RunState.new()
 	back.list = SKILLS
 	check(back.restore(snap) and back.wave == 6 and back.kills == run.kills and back.level == run.level
 		and back.spells.primary == run.spells.primary and back.stats == run.stats and back.levels == run.levels
-		and back.pending == ["spell"] and is_equal_approx(back.mana_cost("primary"), run.mana_cost("primary")),
+		and back.pending == ["spell"] and back.base == "lightning" and is_equal_approx(back.mana_cost("primary"), run.mana_cost("primary")),
 		"a saved run comes back as it was")
 	check(not back.restore({}) and not back.restore({"spells": "x"}), "no run in a broken save")
 	run.list = Upgrades.LIST

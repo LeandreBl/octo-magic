@@ -18,6 +18,7 @@ var bosses := 0
 var gold := 0
 var scrolls := 0
 var spells := {}  # slot -> spell, the profile's spells (damage stat applied)
+var base := ""  # the primary spell's game/spells.json id, "" for a forged one: its sub-skills (Upgrades)
 var levels := {}  # skill id -> level taken, in the order first taken
 var list := Upgrades.LIST  # the skills offered (tests swap in their own)
 var offers := []  # current grimoire choice, [] when none
@@ -30,8 +31,9 @@ var passives := []  # the slotted Profile.AUGMENTS passive ids
 
 ## `equipped`: slot -> spell; `bonus_list`: Profile.bonus_list(); `augments`:
 ## Profile.slotted_augments(), an active one is the secondary spell. The
-## damage stat is applied to the spells, once, here.
-func start(equipped: Dictionary, bonus_list := [], augments := []) -> void:
+## damage stat is applied to the spells, once, here. `base_id`: Run.base.
+func start(equipped: Dictionary, bonus_list := [], augments := [], base_id := "") -> void:
+	base = base_id
 	bonuses = bonus_list.duplicate()
 	stats = Stats.total(bonuses)
 	active = true
@@ -66,7 +68,7 @@ func start(equipped: Dictionary, bonus_list := [], augments := []) -> void:
 ## with the character): restore() takes it back, the next wave starts afresh.
 func to_dict() -> Dictionary:
 	return {"wave": wave, "level": level, "xp": xp, "kills": kills, "bosses": bosses, "gold": gold,
-		"scrolls": scrolls, "spells": spells, "levels": levels,
+		"scrolls": scrolls, "spells": spells, "levels": levels, "base": base,
 		"pending": pending, "bonuses": bonuses, "passives": passives}
 
 
@@ -76,7 +78,7 @@ func restore(d: Dictionary) -> bool:
 	var s: Variant = d.get("spells")
 	if not s is Dictionary or not s.get("primary") is Dictionary:
 		return false
-	start({})
+	start({}, [], [], str(d.get("base", "")))
 	for k in ["wave", "level", "xp", "kills", "bosses", "gold", "scrolls"]:
 		set(k, maxi(0, int(d.get(k, get(k)))))
 	level = maxi(level, 1)
@@ -131,7 +133,7 @@ func _offer() -> void:
 	# A dead pick at the cap: Inspiration counted as taken.
 	var lv := levels if n < Stats.BOUNDS.choices[1] else levels.merged({"inspiration": 1})
 	while offers.is_empty() and not pending.is_empty():
-		offers = Upgrades.offers(lv, rng, pending[0], n, list)
+		offers = Upgrades.offers(lv, rng, pending[0], n, list, base)
 		if offers.is_empty():
 			pending.pop_front()
 	if not offers.is_empty():

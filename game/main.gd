@@ -143,7 +143,9 @@ func _run_started(map: String, saved := {}) -> void:
 			n.free()
 	if saved.is_empty() or not Run.restore(saved):
 		saved = {}
-		Run.start(Profile.equipped_spells(), Profile.bonus_list(), Profile.slotted_augments())
+		var id: String = Profile.spells.primary
+		Run.start(Profile.equipped_spells(), Profile.bonus_list(), Profile.slotted_augments(),
+			id if Profile.base_spells.any(func(e): return e.id == id) else "")
 	var p := local_player()
 	if p:
 		p.position = Arena.START

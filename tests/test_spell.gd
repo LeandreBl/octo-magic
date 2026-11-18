@@ -270,6 +270,42 @@ func _check_channel() -> void:
 	mage.position = Vector2(100, 100)
 	world.add_child(mage)
 	mage.set_physics_process(false)  # aim set by hand, not by the mouse
+	# Catena II: the arc jumps from its target to the 2 next ones within reach, never back.
+	for e in [near_behind, wide, far]:
+		e.position = Vector2(-900, -900)
+	aimed.position = Vector2(200, 100)
+	var hops: Array = [at.call(Vector2(300, 100)), at.call(Vector2(400, 100)), at.call(Vector2(500, 100))]
+	var hops_hp: Array = hops.map(func(e): return e.hp)
+	hp = aimed.hp
+	SpellBody.cast(spells.lightning.emit, Vector2(100, 100), Vector2.RIGHT, mage, spells.lightning, world)
+	for i in 3:
+		await physics_frame
+	check(aimed.hp < hp and hops[0].hp == hops_hp[0] and hops[1].hp == hops_hp[1], "no Catena: the arc strikes its target only")
+	for n in world.get_children():
+		if n is SpellBody:
+			n.free()
+	mage.stats = Stats.total([Upgrades.bonus(Upgrades.LIST.chaining, 2)])
+	hp = aimed.hp
+	SpellBody.cast(spells.lightning.emit, Vector2(100, 100), Vector2.RIGHT, mage, spells.lightning, world)
+	for i in 3:
+		await physics_frame
+	check(aimed.hp < hp and hops[0].hp < hops_hp[0] and hops[1].hp < hops_hp[1] and hops[2].hp == hops_hp[2],
+		"Catena II: the arc chains on to 2 more enemies")
+	hops[1].position = Vector2(300 + SpellBody.CHAIN_REACH + 40, 300)
+	for n in world.get_children():
+		if n is SpellBody:
+			n.free()
+	hops_hp = hops.map(func(e): return e.hp)
+	SpellBody.cast(spells.lightning.emit, Vector2(100, 100), Vector2.RIGHT, mage, spells.lightning, world)
+	for i in 3:
+		await physics_frame
+	check(hops[0].hp < hops_hp[0] and hops[1].hp == hops_hp[1], "a chained arc only jumps within reach")
+	for e in hops:
+		e.free()
+	for n in world.get_children():
+		if n is SpellBody:
+			n.free()
+	mage.stats = Stats.total([])
 	mage.aim = Vector2.RIGHT
 	mage.firing = {"primary": true}
 	SpellBody.cast(spells.lightning.emit, Vector2(110, 100), Vector2.RIGHT, mage, spells.lightning, world)

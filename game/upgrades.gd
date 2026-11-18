@@ -5,6 +5,10 @@ class_name Upgrades
 ## "step" of "stat" per level ("pct": a percentage, step 10 = +10 %). "desc"
 ## formats the per-level value. "kind": the grimoire that offers it, "hero"
 ## (red) or "spell" (blue). One entry per skill (tasks #309 to #320).
+## "spell": a sub-skill, an augment of that base spell (game/spells.json id),
+## offered only when the run's primary spell is it (Run.base). Its stat is
+## read by the engine only, never part of the spell format: the forge cannot
+## write it on a spell (tasks #369 and on).
 
 const LIST := {
 	"toughness": {"name": "Robur", "desc": "+%d max HP", "step": 25, "max": 4, "kind": "hero", "stat": "hp"},
@@ -19,6 +23,7 @@ const LIST := {
 	"fleetness": {"name": "Pernicitas", "desc": "+%d%% move speed", "step": 10, "max": 8, "kind": "hero", "stat": "speed%", "pct": true},
 	"magnetism": {"name": "Magnes", "desc": "+%d%% pickup radius", "step": 30, "max": 5, "kind": "hero", "stat": "pickup%", "pct": true},
 	"damage": {"name": "Potentia", "desc": "+%d%% damage", "step": 25, "max": 9, "kind": "spell", "stat": "damage%", "pct": true},
+	"chaining": {"name": "Catena", "desc": "Fulmen's arc jumps on to +%d enemy", "step": 1, "max": 5, "kind": "spell", "stat": "chain", "spell": "lightning"},
 }
 const KINDS := ["hero", "spell"]
 const ROMAN := [[10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]]
@@ -53,9 +58,9 @@ static func bonus(u: Dictionary, level: int) -> Dictionary:
 
 ## Up to `n` distinct {id, level} offers (level: the one it would reach) among
 ## the skills of `list` of `kind` (KINDS, "" for both) below their max at
-## `levels` (id -> level taken).
-static func offers(levels: Dictionary, rng: RandomNumberGenerator, kind := "", n := 3, list := LIST) -> Array:
-	var pool := list.keys().filter(func(id): return kind in ["", list[id].kind] and levels.get(id, 0) < list[id].max)
+## `levels` (id -> level taken); a sub-skill only for its `base` spell.
+static func offers(levels: Dictionary, rng: RandomNumberGenerator, kind := "", n := 3, list := LIST, base := "") -> Array:
+	var pool := list.keys().filter(func(id): return kind in ["", list[id].kind] and levels.get(id, 0) < list[id].max and list[id].get("spell", base) == base)
 	for i in range(pool.size() - 1, 0, -1):  # Fisher-Yates with the run's rng
 		var j := rng.randi_range(0, i)
 		var t = pool[i]

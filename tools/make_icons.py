@@ -64,6 +64,7 @@ UPGRADES = {
     "inspiration": "a fan of four glowing magic cards held open, the fourth one shining gold",
     "channeling": "a glowing blue mana rune circle on the ground with blue mana streams spiraling up into its center",
     "antidote": "a small round glass vial of bright golden antidote liquid with a cork, a crossed-out green poison drop rune on it",
+    "chaining": "a crackling blue-white lightning arc linking three small glowing orbs in a zigzag chain",
     "fireproof": "a round red and gold shield deflecting orange flames, a glowing protective rune in its center",
 }
 
