@@ -42,13 +42,16 @@ func _ready() -> void:
 		button.text = b[0]
 		if b[0] == "Log in":
 			button.theme_type_variation = "Primary"
-		if b[0] == "Log in with Google":  # the pixel art logo, the text as tooltip
-			button.text = ""
-			button.tooltip_text = b[0]
+		if b[0] == "Log in with Google":  # the pixel art logo and its text
 			button.icon = UITheme.icon("google")
 		button.pressed.connect(b[1])
 		row.add_child(button)
 		buttons[b[0]] = button
+	# Google first and full width, above the e-mail form, as on the website.
+	var google: Button = buttons["Log in with Google"]
+	row.remove_child(google)
+	box.add_child(google)
+	box.move_child(google, mail.get_index())
 	set_meta("focus", mail)
 	Online.changed.connect(_refresh)
 	_refresh()

@@ -605,8 +605,8 @@ msgstr "Score %d"
 msgid "Scrolls found"
 msgstr "Parchemins trouvés"
 
-msgid "Letters, ' and - only. A meaningless word gives its scroll back."
-msgstr "Lettres, ' et - seulement. Un mot vide de sens rend son parchemin."
+msgid "One word per scroll, in a dead language. Letters, ' and - only; a meaningless word gives its scroll back."
+msgstr "Un mot par parchemin, en langue morte. Lettres, ' et - seulement ; un mot vide de sens rend son parchemin."
 
 msgid "The forge turns them into a new spell, equipped at your next run."
 msgstr "La forge en fait un nouveau sort, équipé à ta prochaine run."
