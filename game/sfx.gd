@@ -11,11 +11,12 @@ const RATE := 22050
 ## length (s), noise mix, sparkle (random high chimes per second), echo
 ## (repeats of a resonant tail), volume (dB), bus. Magic flavour: glassy
 ## bells, sparkles and echoes; enemy hits and hurts stay short and dry.
-## Spells cast at -8 dB: the swarm (hits, shots, pickups) stays well under them.
+## Spells cast at -8 dB: the swarm (hits, pickups) stays well under them; enemy shots
+## (cast from up to a screen away, faded by the distance) just under.
 const RECIPES := {
 	"hit": {"wave": "bell", "f": [880, 620], "len": 0.06, "noise": 0.3, "db": -22.0},
 	"die": {"wave": "bell", "f": [700, 180], "len": 0.25, "noise": 0.2, "sparkle": 30.0, "echo": 1, "db": -16.0},
-	"shot": {"wave": "sine", "f": [1100, 420], "len": 0.1, "sparkle": 40.0, "db": -24.0},
+	"shot": {"wave": "bell", "f": [1100, 380], "len": 0.18, "noise": 0.2, "sparkle": 30.0, "db": -12.0},  # heard from afar (ranged enemies)
 	"boss": {"wave": "saw", "f": [55, 85, 50], "len": 1.6, "noise": 0.3, "sparkle": 6.0, "echo": 2, "db": -6.0},
 	"boss_die": {"wave": "bell", "f": [300, 40], "len": 1.4, "noise": 0.35, "sparkle": 25.0, "echo": 3, "db": -4.0},
 	"blast": {"wave": "saw", "f": [110, 35], "len": 0.45, "noise": 0.75, "echo": 1, "db": -10.0},
