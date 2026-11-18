@@ -188,6 +188,21 @@ func _check_homing_lifetime() -> void:
 	await physics_frame
 	await physics_frame
 	check(not is_instance_valid(bolt), "far homing bolt freed once no enemy is left")
+
+	# A fast bolt passing beside its target turns tight enough to reach it.
+	var fast := Spell.sanitize({"emit": {"body": {"speed": 900,
+		"motion": [{"type": "homing", "strength": 1}]}}})
+	SpellBody.cast(fast.emit, Vector2(0, 0), Vector2.RIGHT, null, fast, world)
+	var fb: SpellBody = world.get_child(world.get_child_count() - 1)
+	fb.set_physics_process(false)
+	var target := Enemy.new()
+	target.position = Vector2(0, 120)
+	world.add_child(target)
+	var closest := INF
+	for i in 120:
+		fb._move(1.0 / 60.0)
+		closest = minf(closest, fb.global_position.distance_to(target.global_position))
+	check(closest < 20.0, "fast homing bolt reaches a target beside it (closest %.0f)" % closest)
 	world.free()
 
 
