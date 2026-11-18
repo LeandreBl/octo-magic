@@ -348,6 +348,20 @@ func _test_tentacle() -> void:
 			check(walls.grow(-Tentacle.THICK + 0.01).has_point(p), "tentacle inside the walls: %s" % p)
 			check(p.distance_to(enemy[0]) >= enemy[1] + Tentacle.THICK - 0.01, "tentacle out of the enemy: %s" % p)
 		w.free()
+	# Walking into the map's walls (as the body does, sliding): no point ends in one.
+	var inside := 0
+	for d in 8:
+		var w := Tentacle.new(d * TAU / 8, d % 2)
+		var body := Arena.START
+		var go := Vector2.from_angle(d * TAU / 8)
+		for i in 400:
+			body = Arena.slide(body, go * 3.0, 12.0)  # the mage's radius
+			w.follow(body, go.angle(), 1.0 / 60.0, i / 60.0, Arena.RECT, [], true)
+			for p in w.chain.slice(1):
+				if Arena.polygons.any(func(poly): return Geometry2D.is_point_in_polygon(p, poly)):
+					inside += 1
+		w.free()
+	check(inside == 0, "tentacles stay out of the map's walls: %d points in" % inside)
 
 
 func _test_sfx() -> void:

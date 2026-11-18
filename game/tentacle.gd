@@ -42,9 +42,12 @@ func _init(direction := 0.0, step_group := 0) -> void:
 
 
 ## One physics step, the body at `center` heading `heading` (rad), `t` the clock (s),
-## inside the walls `walls`, among `obstacles`: [position, radius] circles.
+## inside the walls `walls`, among `obstacles`: [position, radius] circles;
+## `map`: also out of the arena's solid zones (Arena.slide), as the body is.
 func follow(center: Vector2, heading: float, delta: float, t: float,
-		walls := Rect2(-1e9, -1e9, 2e9, 2e9), obstacles: Array = []) -> void:
+		walls := Rect2(-1e9, -1e9, 2e9, 2e9), obstacles: Array = [], map := false) -> void:
+	var reach := ROOT + LENGTH * 1.5 + THICK
+	map = map and Arena.boxes.any(func(b: Rect2): return b.grow(reach).has_point(center))  # none near: skip it
 	var a := heading + dir
 	var base := center + Vector2.from_angle(a) * ROOT
 	var rest := base + Vector2.from_angle(a + 0.2 * sin(t * 1.3 + dir * 3.0)) * LENGTH * REACH
@@ -63,7 +66,7 @@ func follow(center: Vector2, heading: float, delta: float, t: float,
 		if far > LENGTH * STEP and turn or far > LENGTH * 0.7:  # too far: it steps anyway
 			_from = foot
 			var lead := (center - _center) / maxf(delta, 0.001) * (GAIT + STEP_TIME)  # lands where the body is going
-			_to = _free(rest + lead.limit_length(LENGTH * 0.5), walls, obstacles)
+			_to = _free(rest + lead.limit_length(LENGTH * 0.5), walls, obstacles, map)
 			_step_t = STEP_TIME
 	_center = center
 	var seg := LENGTH / (POINTS - 1)
@@ -72,7 +75,7 @@ func follow(center: Vector2, heading: float, delta: float, t: float,
 		var v := (chain[i] - _old[i]) * DAMP
 		_old[i] = chain[i]
 		chain[i] += v + side * SWAY * sin(t * 3.0 + i * 0.9 + dir * 5.0) * float(i) / POINTS
-	for _k in 6:
+	for k in 6:
 		chain[0] = base
 		chain[POINTS - 1] = chain[POINTS - 1].lerp(foot, 0.5)
 		for i in POINTS - 1:
@@ -84,14 +87,14 @@ func follow(center: Vector2, heading: float, delta: float, t: float,
 				chain[i] += fix / 2.0
 				chain[i + 1] -= fix / 2.0
 		for i in range(1, POINTS):
-			chain[i] = _free(chain[i], walls, obstacles)
+			chain[i] = _free(chain[i], walls, obstacles, map and k == 5)  # the map's zones on the last pass: slide is costly
 	for i in range(1, POINTS):  # a bounce off the walls: the speed into one flips, damped
 		var inner := walls.grow(-THICK)
 		if chain[i].x <= inner.position.x or chain[i].x >= inner.end.x:
 			_old[i].x = chain[i].x + (chain[i].x - _old[i].x) * BOUNCE
 		if chain[i].y <= inner.position.y or chain[i].y >= inner.end.y:
 			_old[i].y = chain[i].y + (chain[i].y - _old[i].y) * BOUNCE
-	foot = _free(foot, walls, obstacles)
+	foot = _free(foot, walls, obstacles, map)
 	chain[0] = base
 	var local := get_global_transform().affine_inverse() * chain if is_inside_tree() else chain.duplicate()
 	for i in POINTS:
@@ -99,11 +102,13 @@ func follow(center: Vector2, heading: float, delta: float, t: float,
 	points = local
 
 
-## `p` pushed out of the obstacles' circles, then inside the walls.
-static func _free(p: Vector2, walls: Rect2, obstacles: Array) -> Vector2:
+## `p` pushed out of the obstacles' circles, then of the map's zones (`map`), then inside the walls.
+static func _free(p: Vector2, walls: Rect2, obstacles: Array, map := false) -> Vector2:
 	for o in obstacles:
 		var d: Vector2 = p - o[0]
 		var r: float = o[1] + THICK
 		if d.length_squared() < r * r:
 			p = o[0] + (d if d != Vector2.ZERO else Vector2.RIGHT).normalized() * r
+	if map:
+		p = Arena.slide(p, Vector2.ZERO, THICK)
 	return p.clamp(walls.position + Vector2(THICK, THICK), walls.end - Vector2(THICK, THICK))

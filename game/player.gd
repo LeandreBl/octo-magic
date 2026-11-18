@@ -221,7 +221,7 @@ func _physics_process(delta: float) -> void:
 			near.append([e.global_position, e.radius])
 	for c in get_children():
 		if c is Tentacle:
-			c.follow(global_position, _angle, delta, t, Arena.RECT, near)
+			c.follow(global_position, _angle, delta, t, Arena.RECT, near, true)
 	if hp < _heard_hp - 0.5:
 		if hp <= 0.0:
 			Sfx.play("death")
