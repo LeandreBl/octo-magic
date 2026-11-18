@@ -532,9 +532,6 @@ msgstr "Boule de feu"
 msgid "A heavy fireball that explodes on impact. High damage, high mana cost."
 msgstr "Une lourde boule de feu qui explose à l'impact. Gros dégâts, gros coût en mana."
 
-msgid "Lightning"
-msgstr "Foudre"
-
 msgid "Held, an electric arc latches onto the nearest aimed enemy and strikes it constantly, for mana."
 msgstr "Maintenu, un arc électrique s'agrippe à l'ennemi visé le plus proche et le frappe à chaque instant, contre du mana."
 
@@ -543,9 +540,6 @@ msgstr "Missile magique"
 
 msgid "A projectile that aims by itself. Low damage, low mana."
 msgstr "Un projectile qui vise tout seul. Peu de dégâts, peu de mana."
-
-msgid "Frost jet"
-msgstr "Jet de givre"
 
 msgid "Held, a very short-range cone of frost hurts and slows every enemy it touches."
 msgstr "Maintenu, un cône de givre à très courte portée blesse et ralentit tous les ennemis qu'il touche."
