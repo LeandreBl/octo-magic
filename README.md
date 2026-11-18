@@ -53,8 +53,8 @@ and the spells are words you write on scrolls, forged by an AI.
   damage, gold, XP, poison and fire resistance, orbs, luck, grimoire choices.
   Every source (equipment, bonuses, perks, skills) is a bonus on them.
 - One spell (left click), plus an active augment as secondary spell (right
-  click / Space / RB). A spell costing more than the max mana still casts,
-  weakened.
+  click / Space / RB). Short of mana, a spell still casts,
+  weakened to the share of mana left.
 
 ### Spells (`spell/`, format in `docs/spells.md`)
 - A spell is data: bodies (bolt, zone, beam, cone), patterns, motions (homing,
