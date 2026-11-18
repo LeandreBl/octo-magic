@@ -14,6 +14,7 @@ extends Node2D
 signal died
 
 const ZOOM := 4.0 / 3.0  # on the mage: an art pixel (Arena.SCALE 1.5) is 2 screen pixels, the arena (Arena.RECT) about 2.4x2.8 screens
+const SIZE := 1.2  # the mage drawn this much bigger than its art (sprite, tentacles, gem); the hitbox `radius` stays
 const STICK_RANGE := 80.0
 const SHIELD_HP := 40.0
 const SHIELD_WAIT := 8.0
@@ -76,8 +77,11 @@ func setup(s: Dictionary) -> void:
 
 func _ready() -> void:
 	add_to_group("players")
+	scale = Vector2.ONE * SIZE
 	for i in TENTACLES:
-		add_child(Tentacle.new((i + 0.5) * TAU / TENTACLES, i % 2))
+		var t := Tentacle.new((i + 0.5) * TAU / TENTACLES, i % 2)
+		t.size = SIZE
+		add_child(t)
 	if peer_id == multiplayer.get_unique_id():  # this peer's mage stays mid-screen, the map scrolls
 		var cam := Camera2D.new()  # stops at the arena's edges: near one, the mage leaves mid-screen
 		cam.zoom = Vector2.ONE * ZOOM
@@ -215,7 +219,7 @@ func _physics_process(delta: float) -> void:
 	var t := Time.get_ticks_msec() / 1000.0
 	var near := []  # the enemies within a tentacle's reach: its obstacles
 	for e in get_tree().get_nodes_in_group("enemies"):
-		if e.global_position.distance_to(global_position) < Tentacle.ROOT + Tentacle.LENGTH + e.radius:
+		if e.global_position.distance_to(global_position) < (Tentacle.ROOT + Tentacle.LENGTH) * SIZE + e.radius:
 			near.append([e.global_position, e.radius])
 	for c in get_children():
 		if c is Tentacle:
@@ -316,7 +320,7 @@ func _animate_cast(s: Dictionary) -> void:
 
 ## The staff's crystal, in global coordinates.
 func gem() -> Vector2:
-	return global_position + GEM.rotated(_angle + PI / 2.0)
+	return global_position + SIZE * GEM.rotated(_angle + PI / 2.0)
 
 
 func _draw() -> void:

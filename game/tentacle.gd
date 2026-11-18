@@ -36,6 +36,7 @@ const THICK := 3.0  # px: a point's radius against walls and enemies
 const BOUNCE := 0.4  # of a point's speed into a wall sent back out
 
 var dir := 0.0  # rad from the heading
+var size := 1.0  # ROOT and LENGTH in the body's scale (game/player.gd SIZE)
 var group := 0  # 0 or 1: groups step in turn, like legs
 var foot := Vector2.ZERO  # where the tip is planted
 var chain := PackedVector2Array()  # its points in world space: it trails behind the body
@@ -66,11 +67,13 @@ func _init(direction := 0.0, step_group := 0) -> void:
 ## `map`: also out of the arena's solid zones (Arena.slide), as the body is.
 func follow(center: Vector2, heading: float, delta: float, t: float,
 		walls := Rect2(-1e9, -1e9, 2e9, 2e9), obstacles: Array = [], map := false) -> void:
-	var reach := ROOT + LENGTH * 1.5 + THICK
+	var length := LENGTH * size
+	var root_r := ROOT * size
+	var reach := root_r + length * 1.5 + THICK
 	map = map and Arena.boxes.any(func(b: Rect2): return b.grow(reach).has_point(center))  # none near: skip it
 	var a := heading + dir
-	var base := center + Vector2.from_angle(a) * ROOT
-	var rest := base + Vector2.from_angle(a + 0.2 * sin(t * 1.3 + dir * 3.0)) * LENGTH * REACH
+	var base := center + Vector2.from_angle(a) * root_r
+	var rest := base + Vector2.from_angle(a + 0.2 * sin(t * 1.3 + dir * 3.0)) * length * REACH
 	if chain.is_empty():
 		_center = center
 		foot = rest
@@ -98,12 +101,12 @@ func follow(center: Vector2, heading: float, delta: float, t: float,
 		var turn := int(t / GAIT) % 2 == group
 		_fidget -= delta
 		var shift := _fidget <= 0.0 and _speed < 5.0
-		if far > LENGTH * STEP and turn or far > LENGTH * 0.7 or shift and turn:  # too far: it steps anyway
+		if far > length * STEP and turn or far > length * 0.7 or shift and turn:  # too far: it steps anyway
 			_from = foot
 			var lead := vel * (GAIT + STEP_TIME)  # lands where the body is going
-			var spot := rest + lead.limit_length(LENGTH * 0.5)
+			var spot := rest + lead.limit_length(length * 0.5)
 			if shift:
-				spot = rest + Vector2.from_angle(randf() * TAU) * LENGTH * 0.15
+				spot = rest + Vector2.from_angle(randf() * TAU) * length * 0.15
 			_to = _free(spot, walls, obstacles, map)
 			_step_len = FIDGET_TIME if shift else STEP_TIME
 			_step_t = _step_len
@@ -124,7 +127,7 @@ func follow(center: Vector2, heading: float, delta: float, t: float,
 		var v := (chain[i] - _old[i]) * DAMP
 		_old[i] = chain[i]
 		chain[i] += v
-	var seg := LENGTH / (POINTS - 1)
+	var seg := length / (POINTS - 1)
 	for k in 6:
 		chain[0] = base
 		chain[1] = chain[1].lerp(base + Vector2.from_angle(root) * seg, ROOT_STIFF)
