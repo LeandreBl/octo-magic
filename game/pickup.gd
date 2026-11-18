@@ -23,6 +23,7 @@ const GOLD_TIERS := [
 	[10, preload("res://assets/icons/drop_gold_hoard.png"), 36.0],
 ]
 const SIZES := {"gold": 24.0, "mana": 20.0, "life": 22.0, "scroll": 24.0, "grimoire_hero": 26.0, "grimoire_spell": 26.0, "quad": 26.0}  # px on the floor
+const RADIUS := 6.0  # px: its body against the obstacles as it flies
 const REFILL := 0.25  # a mana or life orb gives back this share of the max
 const QUAD := 4.0
 const QUAD_TIME := 10.0  # s
@@ -85,7 +86,8 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 	elif to.length() < maxf(magnet, target.stats.pickup):
 		speed = minf(speed + 1200.0 * delta, 700.0)
-		position += to.normalized() * minf(speed * delta, to.length())
+		# Around the obstacles, as a monster walks: down the flow field, sliding along them.
+		position = Arena.slide(position, Arena.way(position, target.position) * minf(speed * delta, to.length()), RADIUS)
 
 
 ## A mana or life orb stays on the floor for a mage whose gauge is full.
