@@ -128,13 +128,13 @@ func _test_upgrades() -> void:
 	check(haste.max == 9 and is_equal_approx(Stats.total([Upgrades.bonus(haste, 3)]).cast_rate, 1.3), "Haste: +10 % cast rate per level, 9 levels")
 	var fireproof: Dictionary = Upgrades.LIST.fireproof
 	check(fireproof.max == 9 and is_equal_approx(Stats.total([Upgrades.bonus(fireproof, 3)]).fire, 0.7), "Fireproof: +10 % fire resistance per level, 9 levels")
-	var mage := Player.new()
-	mage.stats = Stats.total([Upgrades.bonus(fireproof, 5)])
-	mage.hp = 100.0
-	mage.hurt(10.0, true)
-	mage.hurt(10.0)
-	check(is_equal_approx(mage.hp, 85.0), "Fireproof cuts fire damage only")
-	mage.free()
+	var burnt := Player.new()
+	burnt.stats = Stats.total([Upgrades.bonus(fireproof, 5)])
+	burnt.hp = 100.0
+	burnt.hurt(10.0, true)
+	burnt.hurt(10.0)
+	check(is_equal_approx(burnt.hp, 85.0), "Fireproof cuts fire damage only")
+	burnt.free()
 	check(RunState.ENEMIES.fire_mage.get("fire") and RunState.ENEMIES.burning_archer.get("fire") and not RunState.ENEMIES.archer.has("fire"), "fire enemies marked")
 	var flow: Dictionary = Upgrades.LIST.flow
 	check(flow.max == 9 and is_equal_approx(Stats.total([Upgrades.bonus(flow, 2)]).mana_regen, Stats.BASE.mana_regen * 1.7), "Flow: +35 % mana regeneration per level, 9 levels")
