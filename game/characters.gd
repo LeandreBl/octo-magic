@@ -146,6 +146,11 @@ func _spell_card(e: Dictionary) -> Button:
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD
 		l.add_theme_font_size_override("font_size", line[1])
 		l.add_theme_color_override("font_color", line[2])
+		if line[2] == UITheme.TEXT_DIM:  # the cost sits at the bottom of the card
+			var spacer := Control.new()
+			spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			card.add_child(spacer)
 		card.add_child(l)
 	return b
 
