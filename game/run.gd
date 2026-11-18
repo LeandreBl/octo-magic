@@ -289,6 +289,7 @@ const BITE := {"type": "teleport", "every": 7.0, "dmg": 2.5}
 ## waves, its fireballs hatching more imps each time (enemy_stats).
 const BOSSES := {5: "boss", 10: "bone_herald", 15: "pyre_lord", 20: "blight_eye", 25: "grave_maw", 30: "archfiend"}
 const IMPS_PER_FIGHT := 2  # more imps per fireball each time the last boss comes back
+const BOSS_HASTE := 0.6  # a boss's spells come this much sooner than their "every"
 
 
 static func is_boss(kind: String) -> bool:
@@ -321,6 +322,8 @@ static func enemy_stats(kind: String, w: int) -> Dictionary:
 	s.damage *= 1.0 + (w - 1) * 0.05
 	s.gold = s.gold + w / BOSS_EVERY
 	for sp in s.get("spells", []):
+		if s.get("boss", false):
+			sp.every *= BOSS_HASTE
 		if sp.has("imps"):
 			sp.imps += maxi(w - BOSSES.keys().max(), 0) / BOSS_EVERY * IMPS_PER_FIGHT
 	var v: Array = s.get("variant", [])

@@ -398,6 +398,7 @@ func _test_waves() -> void:
 		check(types.slice(0, attacks.size()) == attacks and types.size() == attacks.size() + 1, "%s stacks the attacks" % k)
 		attacks = types
 	var imps := func(w): return RunState.enemy_stats("archfiend", w).spells.filter(func(sp): return sp.has("imps"))[0].imps
+	check(RunState.enemy_stats("grave_maw", 25).spells[0].every < RunState.ENEMIES.grave_maw.spells[0].every, "bosses cast faster")
 	check(imps.call(35) > imps.call(30) and imps.call(40) > imps.call(35), "more imps every time the last boss comes back")
 	for k in RunState.ENEMIES:
 		for sp in RunState.ENEMIES[k].get("spells", []):
