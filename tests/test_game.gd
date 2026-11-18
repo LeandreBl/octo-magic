@@ -115,6 +115,7 @@ func _test_upgrades() -> void:
 	mage._still = 0.0
 	check(still and not mage.channeling(), "channeling only standing still")
 	mage.free()
+	check(Upgrades.LIST.fleetness.max == 8 and is_equal_approx(Stats.total([Upgrades.bonus(Upgrades.LIST.fleetness, 3)]).speed, 286.0), "fleetness: +10 % move speed a level, up to VIII")
 	check(Upgrades.bonus(SKILLS.tough, 3) == {"hp": 75.0} and Upgrades.bonus(SKILLS.quick, 1) == {"speed%": 0.1}, "skills are Stats bonuses")
 	var rng := RandomNumberGenerator.new()
 	var offers := Upgrades.offers({}, rng, "", 3, SKILLS)
