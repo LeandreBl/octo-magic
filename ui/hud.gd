@@ -14,6 +14,7 @@ const RIM := 6  # its rim, top and bottom (7 at the end caps)
 const GAP := 6  # between the gauges
 const SHARE := 1.0 / 3.0  # of the screen width the gauges take at base max HP and mana
 const MAX_SHARE := 0.45  # their cap, however high the max HP and mana go
+const MILESTONE := 5  # every this many waves, a message fades in and out
 
 var main: Node
 var _hp: ProgressBar
@@ -27,6 +28,8 @@ var _shield_wait: ColorRect  # covers the passive while a broken shield comes ba
 var _slots := {}  # slot -> [icon, cooldown ColorRect, spell shown, cost Label, name Label, panel, seconds Label]
 var _ready_box: StyleBox
 var _busy_box: StyleBox
+var _milestone: Label  # "Wave 10!", faded in and out every MILESTONE waves
+var _wave_seen := 0
 
 
 func _ready() -> void:
@@ -112,6 +115,32 @@ func _ready() -> void:
 	_passive.add_child(_shield)
 	right.add_child(_passive)
 
+	# Upper third: every MILESTONE waves, a message fades in and out (clicks go through).
+	_milestone = UITheme.label("", "Header", 56, UITheme.GOLD)
+	_milestone.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
+	_milestone.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_milestone.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_milestone.anchor_top = 0.28
+	_milestone.anchor_bottom = 0.28
+	_milestone.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_milestone.modulate.a = 0.0
+	add_child(_milestone)
+	Run.changed.connect(_on_run_changed)
+
+
+## Wave MILESTONE, 2 x MILESTONE...: the message fades in, stays, fades out.
+func _on_run_changed() -> void:
+	if Run.wave == _wave_seen:
+		return
+	_wave_seen = Run.wave
+	if Run.wave <= 0 or Run.wave % MILESTONE:
+		return
+	_milestone.text = tr("Wave %d!") % Run.wave
+	var t := _milestone.create_tween()
+	_milestone.modulate.a = 0.0
+	t.tween_property(_milestone, "modulate:a", 1.0, 0.6)
+	t.tween_interval(1.8)
+	t.tween_property(_milestone, "modulate:a", 0.0, 0.8)
 
 
 
