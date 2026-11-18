@@ -92,8 +92,8 @@ def jobs() -> dict[str, str]:
 
 
 def icon(desc: str) -> bytes:
-    """32x32 PNG, the drawing centered (server/sheet.py)."""
-    return sheet.normalize_icon(art.icon(desc))
+    """ICON x ICON PNG, the drawing centered (server/sheet.py)."""
+    return sheet.normalize_icon(art.icon(desc, sheet.ICON))
 
 
 def main() -> None:

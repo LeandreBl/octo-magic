@@ -13,7 +13,7 @@ import struct
 import zlib
 
 FPS = 12
-ICON = 32
+ICON = 64
 
 
 class SheetError(ValueError):

@@ -63,10 +63,10 @@ This file is also sent to the AI as the format reference: keep it accurate.
 The forge returns a `.spell` bundle, a zip:
 
 - `manifest.json`: this spell, plus `"format": 1`.
-- `icon.png`: 32x32 RGBA, drawing centered. Named by the spell's `icon_file`.
+- `icon.png`: 64x64 RGBA, drawing centered. Named by the spell's `icon_file`.
 - One PNG per animated **sheet**, named by a body's `sheet` (its looping
   animation) or `burst_sheet` (its one-shot impact, played where it expires):
-  `{file, size, frames, fps, loop}`.
+  `{file, size, frames, fps, loop, scale}`.
 
 Every sheet follows the same convention, so the engine loads and plays them
 all the same way:
@@ -76,7 +76,8 @@ all the same way:
 - the drawing centered in each frame: the engine anchors sheets on the body's
   position; bolt sheets face right and are rotated to the body's direction;
 - 12 frames per second, at least 2 different frames;
-- drawn at the art scale (one art pixel = 3 screen pixels), never resized,
+- drawn at `scale` screen pixels per sheet pixel (default 3, the art scale;
+  the forge asks PixelLab for twice the pixels and sets 1.5), never resized,
   except a zone's looping sheet: stretched over the zone (`size * 2` wide),
   so what burns is what is drawn.
 

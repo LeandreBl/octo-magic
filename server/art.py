@@ -72,9 +72,9 @@ def vfx(description: str, name: str, timeout: float = 300) -> tuple[bytes, dict]
     return png, {"w": w, "h": h, "frames": len(frames), "fps": fps, "cols": sheet_w // w}
 
 
-def icon(description: str) -> bytes:
+def icon(description: str, size: int = 32) -> bytes:
     res = _request("POST", "/create-image-pixen", {
-        "description": description, "image_size": {"width": 32, "height": 32},
+        "description": description, "image_size": {"width": size, "height": size},
         "no_background": True, "view": "side",
         "outline": "single color black outline", "detail": "medium detail",
     })

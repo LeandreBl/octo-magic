@@ -159,7 +159,7 @@ class FakeArt:
             raise RuntimeError("no credits")
         return grid_png(still=name in self.still)
 
-    def icon(self, description):
+    def icon(self, description, size=32):
         self.calls.append("icon")
         return grid_png(1)[0]
 
@@ -181,10 +181,10 @@ class BundleTest(unittest.TestCase):
         self.assertEqual(m["icon_file"], "icon.png")
         body = m["emit"]["body"]
         # 4 frames at 24 fps -> 2 frames at 12 fps; drawing 4 px wide -> 8 px square frames
-        self.assertEqual(body["sheet"], {"file": "body0.png", "size": 8, "frames": 2, "fps": 12, "loop": True})
+        self.assertEqual(body["sheet"], {"file": "body0.png", "size": 8, "frames": 2, "fps": 12, "loop": True, "scale": 1.5})
         self.assertNotIn("burst_sheet", body)  # failed drawing skipped
         self.assertEqual(sheet.read_png(z.read("body1.png"))[:2], (16, 8))
-        self.assertEqual(sheet.read_png(z.read("icon.png"))[:2], (32, 32))
+        self.assertEqual(sheet.read_png(z.read("icon.png"))[:2], (64, 64))
         self.assertEqual(m["format"], 1)
         deepest = body["on_expire"][0]["emit"]["body"]["on_tick"][0]["emit"]["body"]
         self.assertNotIn("sheet", deepest)  # past ART_BODIES: pixel grids
