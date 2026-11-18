@@ -17,7 +17,7 @@ const BASE := {
 	"crit": 0.05,  # chance a cast deals CRIT_MULT times its damage
 	"damage": 1.0,  # multiplier on spell damage
 	"gold": 1.0,  # multiplier on gold picked up
-	"xp": 1.0,  # multiplier on XP picked up
+	"xp": 1.0,  # multiplier on XP from kills
 }
 const BOUNDS := {
 	"hp": [1.0, 1000.0], "hp_regen": [0.0, 50.0], "mana": [10.0, 1000.0],

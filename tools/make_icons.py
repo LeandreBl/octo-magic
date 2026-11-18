@@ -83,7 +83,6 @@ def jobs() -> dict[str, str]:
     # Floor drops (game/pickup.gd), as drop_<kind>.
     drop = "pixel art game pickup lying on the ground, seen from above at an angle, transparent background, centered"
     out["drop_gold"] = f"{STYLE}: a small heap of gold coins, yellow shiny metal discs, treasure loot"
-    out["drop_xp"] = f"{drop}: a small glowing emerald green experience crystal gem orb, soft green glow"
     out["drop_mana"] = f"{drop}: a glowing round deep blue mana orb with swirling arcane light inside, blue glow"
     out["drop_life"] = f"{drop}: a smooth round glowing crimson red health orb sphere, a soft pink heart shape shining inside, plain dark red outline, no white, no rays"
     out["scroll"] = f"{STYLE}: a blank rolled parchment scroll with a red wax seal"

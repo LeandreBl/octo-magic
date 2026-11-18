@@ -1,21 +1,21 @@
 extends Node2D
-## A drop: XP crystal, gold heap, mana or life orb, or blank scroll. Flies to the player once within
+## A drop: gold heap, mana or life orb, or blank scroll. Flies to the player once within
 ## its pickup stat (or `magnet`, raised at the end of a wave), then reports itself.
 ## Coop: simulated on the host, flies to the nearest mage; peers get its position.
 
 signal collected(kind: String, value: int)
 
 const TEXTURES := {  # PixelLab, tools/make_icons.py
-	"xp": preload("res://assets/icons/drop_xp.png"), "gold": preload("res://assets/icons/drop_gold.png"),
+	"gold": preload("res://assets/icons/drop_gold.png"),
 	"mana": preload("res://assets/icons/drop_mana.png"), "life": preload("res://assets/icons/drop_life.png"),
 	"scroll": preload("res://assets/icons/scroll.png"),
 }
-const SIZES := {"xp": 16.0, "gold": 24.0, "mana": 20.0, "life": 22.0, "scroll": 24.0}  # px on the floor
+const SIZES := {"gold": 24.0, "mana": 20.0, "life": 22.0, "scroll": 24.0}  # px on the floor
 const REFILL := 0.25  # a mana or life orb gives back this share of the max
 const HOPS := [[0.32, 26.0], [0.18, 7.0]]  # gold pops out of the enemy: (duration s, height px) per hop
 const SHINE := {"size": 24, "frames": 7, "fps": 12, "loop": false}  # assets/icons/drop_gold_shine.png
 
-var kind := "xp"
+var kind := "gold"
 var value := 1
 var target: Node2D
 var magnet := 0.0
