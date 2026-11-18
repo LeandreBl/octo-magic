@@ -237,11 +237,19 @@ func _channel() -> void:
 				_harden(e)
 
 
-## Within `speed` px and `angle` degrees (full width) around the aim.
+## Within `speed` px and `angle` degrees (full width) around the aim; a cone
+## scaled by its caster's "cone" stat.
 func _in_reach(e: Node2D) -> bool:
 	var to := e.global_position - global_position
-	return to.length() <= body.speed + e.radius \
-		and absf(angle_difference(dir.angle(), to.angle())) <= deg_to_rad(body.angle) / 2.0
+	var k := _cone_scale()
+	return to.length() <= body.speed * k + e.radius \
+		and absf(angle_difference(dir.angle(), to.angle())) <= deg_to_rad(body.angle) * k / 2.0
+
+
+## The Conus Glaciei skill (Upgrades "cone_of_ice"): a cone's reach and width
+## times its caster's "cone" stat. An engine stat, not spell data: no forged spell has it.
+func _cone_scale() -> float:
+	return maxf(_stat("cone"), 1.0) if body.shape == "cone" else 1.0  # no stats: 0, as 1
 
 
 ## Each cast (tick) the arc grips the enemy in reach that is both nearest and
@@ -440,20 +448,22 @@ func _bolt(pts: PackedVector2Array) -> void:
 ## The cone's sheet (apex on its left edge) stretched over the area it hurts;
 ## no sheet: a flickering polygon.
 func _draw_cone() -> void:
-	var half := deg_to_rad(maxf(body.angle, 4.0)) / 2.0
+	var k := _cone_scale()
+	var reach: float = body.speed * k
+	var half := deg_to_rad(maxf(body.angle * k, 4.0)) / 2.0
 	if anim:
 		var s: Dictionary = anim[1]
 		var i := int(Arena.clock * s.fps) % int(s.frames)  # the clock: ticks renew age, not the animation
-		var h: float = 2.0 * body.speed * tan(minf(half, 1.4))
+		var h: float = 2.0 * reach * tan(minf(half, 1.4))
 		draw_set_transform(Vector2.ZERO, dir.angle())
-		draw_texture_rect_region(anim[0], Rect2(0, -h / 2.0, body.speed, h), Rect2(i * s.size, 0, s.size, s.size))
+		draw_texture_rect_region(anim[0], Rect2(0, -h / 2.0, reach, h), Rect2(i * s.size, 0, s.size, s.size))
 		return
 	var pts := PackedVector2Array([Vector2.ZERO])
 	for i in 9:
-		pts.append(dir.rotated(lerpf(-half, half, i / 8.0)) * body.speed * randf_range(0.85, 1.0))
+		pts.append(dir.rotated(lerpf(-half, half, i / 8.0)) * reach * randf_range(0.85, 1.0))
 	draw_colored_polygon(pts, Color(color, 0.35))
 	for i in 12:
-		draw_circle(dir.rotated(randf_range(-half, half)) * body.speed * randf(), 2.0, Color(Color.WHITE, 0.8))
+		draw_circle(dir.rotated(randf_range(-half, half)) * reach * randf(), 2.0, Color(Color.WHITE, 0.8))
 
 
 ## One-shot impact animation from the bundle.

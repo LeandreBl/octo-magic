@@ -70,6 +70,7 @@ UPGRADES = {
     "chaining": "a crackling blue-white lightning arc linking three small glowing orbs in a zigzag chain",
     "hurricane": "a swirling pale cyan whirlwind of icy wind gusts and snowflakes, spiraling outward",
     "chill_wind": "a small frozen hourglass covered in frost and icicles, its pale blue sand slowed to a trickle, snowflakes around it",
+    "cone_of_ice": "a pale blue and white triangular cone of sharp ice crystals fanning out to the right, cold frosty colors only, blue cyan white, no fire, no orange",
     "fireproof": "a round red and gold shield deflecting orange flames, a glowing protective rune in its center",
 }
 

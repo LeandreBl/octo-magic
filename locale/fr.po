@@ -1092,6 +1092,9 @@ msgstr "-%d%% de coût en mana de Fulmen"
 msgid "Flatus Gelidus slows its targets by %d%%"
 msgstr "Flatus Gelidus ralentit ses cibles de %d%%"
 
+msgid "+%d%% Flatus Gelidus cone size"
+msgstr "+%d%% de taille du cône de Flatus Gelidus"
+
 msgid "Records"
 msgstr "Palmarès"
 
