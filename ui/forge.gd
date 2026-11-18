@@ -21,12 +21,15 @@ const PARCHMENT: Texture2D = preload("res://assets/forge/parchment.png")
 const CANDLE: Texture2D = preload("res://assets/forge/candle.png")  # 8 frames of 64 px
 const QUILL: Texture2D = preload("res://assets/forge/quill.png")
 const RUNES: Texture2D = preload("res://assets/forge/runes.png")  # glowing gold runes of 32 px
+const CANDLE_GAP := 64 * PX + 24  # between the parchment and the view: a candle
 const RUNE_INK := Color(0.42, 0.2, 0.1)  # a cooled rune: the gold darkened to ink
 
 var main: Node
 var _parchment: PanelContainer
 var _page: VBoxContainer  # what is written, dimmed under the runes (not the status)
 var _runes: Control
+var _view: PanelContainer  # the chosen spell: icon, name, description, stats
+var _rows: VBoxContainer  # its stats, a name and a value per row
 var _spell: Label  # the chosen spell's description
 var _pick := ""  # id of the owned spell to improve; empty: the equipped main spell
 var _shown := ""  # id of the spell drawn in the picker
@@ -84,13 +87,18 @@ func _ready() -> void:
 	p_row.add_child(_counter)
 	head.add_child(plate)
 
-	var center := CenterContainer.new()
-	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	box.add_child(center)
+	# The parchment on the left, lifted off the screen's bottom edge; a candle,
+	# then the view of the spell to improve on the right.
+	var body := HBoxContainer.new()
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.alignment = BoxContainer.ALIGNMENT_CENTER
+	body.add_theme_constant_override("separation", CANDLE_GAP)
+	box.add_child(body)
 	_parchment = PanelContainer.new()
 	_parchment.add_theme_stylebox_override("panel", _sheet())
-	_parchment.custom_minimum_size = Vector2(900, 620)
-	center.add_child(_parchment)
+	_parchment.custom_minimum_size.x = 600
+	_parchment.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	body.add_child(_parchment)
 	_page = _vbox(14)
 	_parchment.add_child(_page)
 	_runes = Control.new()
@@ -98,58 +106,59 @@ func _ready() -> void:
 	_runes.draw.connect(_draw_runes)
 	_parchment.add_child(_runes)
 
-	var heading := _ink(Label.new(), 34, UITheme.PARCH_RED)
+	var heading := _ink(Label.new(), 30, UITheme.PARCH_RED)
+	heading.autowrap_mode = TextServer.AUTOWRAP_WORD
 	heading.text = "Write the words of the spell"
 	heading.add_theme_font_override("font", UITheme.PARCHMENT)
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_page.add_child(heading)
 
-	# The spell to improve, picked among the owned ones with the arrows.
+	# The spell to improve, picked among the owned ones with the arrows: its
+	# icon, name, description and stats.
+	_view = PanelContainer.new()
+	_view.custom_minimum_size.x = 400
+	_view.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	body.add_child(_view)
+	var card := _vbox(12)
+	_view.add_child(card)
 	var picker := HBoxContainer.new()
 	picker.alignment = BoxContainer.ALIGNMENT_CENTER
-	picker.add_theme_constant_override("separation", 14)
-	_page.add_child(picker)
-	_icon = UITheme.icon_rect(null, 56)
-	var who := _vbox(0)
-	who.custom_minimum_size.x = 320
-	_name = _ink(Label.new(), 24, UITheme.PARCH_RED)
-	_name.add_theme_font_override("font", UITheme.PARCHMENT)
-	_element = _ink(Label.new(), 15, UITheme.PARCH_BROWN)
-	for l in [_name, _element]:
-		l.clip_text = true
-		who.add_child(l)
+	picker.add_theme_constant_override("separation", 20)
+	card.add_child(picker)
+	_icon = UITheme.icon_rect(null, 96)
 	for side in [["back", -1, "Previous spell"], ["next", 1, "Next spell"]]:
 		var arrow := Button.new()
-		arrow.icon = UITheme.glyph(side[0], UITheme.PARCH_BROWN)
+		arrow.icon = UITheme.glyph(side[0], UITheme.TEXT)
 		arrow.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		arrow.custom_minimum_size = Vector2(48, 48)
+		arrow.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		arrow.tooltip_text = side[2]
-		for st in ["normal", "hover", "pressed", "disabled", "focus"]:
-			arrow.add_theme_stylebox_override(st, UITheme.flat(UITheme.PARCH_LIGHT,
-				UITheme.PARCH_RED if st == "hover" else UITheme.PARCH_BROWN, 3, 2, 0))
 		arrow.pressed.connect(func(): _pick = step(Profile.owned_spells(), _chosen().id, side[1]))
 		_arrows.append(arrow)
 	picker.add_child(_arrows[0])
 	picker.add_child(_icon)
-	picker.add_child(who)
 	picker.add_child(_arrows[1])
-	_spell = _ink(Label.new(), 19, UITheme.PARCH_INK)
+	_name = UITheme.label("", "Header", 28, UITheme.GOLD)
+	_element = UITheme.label("", "", 16, UITheme.TEXT_DIM)
+	_spell = UITheme.label("", "", 17)
 	_spell.autowrap_mode = TextServer.AUTOWRAP_WORD
-	_spell.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_spell.add_theme_font_override("font", UITheme.GREEK)
-	_page.add_child(_spell)
+	for l in [_name, _element, _spell]:
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		card.add_child(l)
+	_name.clip_text = true
+	_rows = _vbox(4)
+	card.add_child(_rows)
 
-	var blanks_row := HBoxContainer.new()
-	blanks_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	blanks_row.add_theme_constant_override("separation", 10)
+	var blanks_row := _vbox(6)
 	_page.add_child(blanks_row)
 	_blanks = HBoxContainer.new()
+	_blanks.alignment = BoxContainer.ALIGNMENT_CENTER
 	_blanks.add_theme_constant_override("separation", 8)
 	blanks_row.add_child(_blanks)
 	for i in MAX_SHOWN:
 		var blank := PanelContainer.new()
 		blank.add_theme_stylebox_override("panel", UITheme.flat(UITheme.PARCH_LIGHT, UITheme.PARCH_BROWN, 3, 2, 0))
-		blank.custom_minimum_size = Vector2(64, 64)
+		blank.custom_minimum_size = Vector2(44, 44)
 		var word := _ink(Label.new(), 14, UITheme.PARCH_RED)
 		word.add_theme_font_override("font", UITheme.PARCHMENT)
 		word.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -158,6 +167,7 @@ func _ready() -> void:
 		blank.add_child(word)
 		_blanks.add_child(blank)
 	_count = _ink(Label.new(), 16, UITheme.PARCH_BROWN)
+	_count.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	blanks_row.add_child(_count)
 
 	# The words are inked on a line of the parchment.
@@ -273,6 +283,40 @@ static func step(owned: Array, id: String, by: int) -> String:
 	return owned[posmod(i + by, owned.size())].id
 
 
+## The spell's stats, a [name, value] per row (the base spell, before any
+## bonus of the mage or the run).
+func stats(s: Dictionary) -> Array:
+	var b: Dictionary = s.emit.body
+	var rows := [[tr("Mana cost"), Spell.cost_text(s, Spell.mana_cost(s))]]
+	var dmg := 0.0
+	var effects := []
+	for f in b.on_hit + b.on_expire + b.on_tick:
+		match f.type:
+			"damage": dmg += f.amount
+			"status": effects.append({"burn": tr("Burn"), "poison": tr("Poison"), "slow": tr("Slow"),
+				"freeze": tr("Freeze"), "stun": tr("Stun")}[f.status])
+			"knockback": effects.append(tr("Knockback"))
+			"heal": effects.append(tr("Heal"))
+			"cast": effects.append(tr("Splits"))
+	if dmg > 0.0:
+		rows.append([tr("Damage"), "%d × %d" % [roundi(dmg), s.emit.count] if s.emit.count > 1 else str(roundi(dmg))])
+	if not b.on_tick.is_empty():
+		rows.append([tr("Ticks"), tr("every %.1f s") % b.tick_interval])
+	rows.append([tr("Cooldown"), "%.2f s" % s.cooldown])
+	rows.append([tr("Shape"), {"bolt": tr("Bolt"), "zone": tr("Zone"), "beam": tr("Beam"), "cone": tr("Cone")}[b.shape]])
+	if s.emit.count > 1:
+		rows.append([tr("Projectiles"), str(s.emit.count)])
+	if b.shape == "bolt" and b.speed > 0.0:
+		rows.append([tr("Speed"), str(roundi(b.speed))])
+	if b.pierce > 0:
+		rows.append([tr("Pierce"), str(b.pierce)])
+	if b.bounce > 0:
+		rows.append([tr("Bounces"), str(b.bounce)])
+	if not effects.is_empty():
+		rows.append([tr("Effects"), ", ".join(effects)])
+	return rows
+
+
 ## The job ended: forged, the runes fill the parchment, flare up and fade away
 ## (the spell is written); failed, they fade at once.
 func _on_forged(ok: bool) -> void:
@@ -322,6 +366,15 @@ func _process(delta: float) -> void:
 		_element.text = tr("%s · spell %d of %d") % [tr(str(e.spell.get("element", "")).capitalize()),
 			Profile.owned_spells().find(e) + 1, Profile.owned_spells().size()]
 		_spell.text = Spell.describe(e.spell)
+		for c in _rows.get_children():
+			c.queue_free()
+		for r in stats(e.spell):
+			var row := HBoxContainer.new()
+			var n := UITheme.label(r[0], "", 17, UITheme.TEXT_DIM)
+			n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_child(n)
+			row.add_child(UITheme.label(r[1], "", 17, UITheme.MANA if r[0] == tr("Mana cost") else UITheme.TEXT))
+			_rows.add_child(row)
 	var can: bool = main.can_write()
 	for a in _arrows:
 		a.disabled = _busy or Profile.owned_spells().size() < 2
@@ -349,7 +402,7 @@ func _process(delta: float) -> void:
 	_status.text = main.forge_status + "\n" + state if main.forge_status and not _busy else state
 
 
-## The room: a dark wall, the wooden table, two candles beside the parchment.
+## The room: a dark wall, the wooden table, a candle beside the parchment.
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), UITheme.INK)
 	var top := size.y * 0.38
@@ -362,11 +415,10 @@ func _draw() -> void:
 	var flicker := 0.85 + 0.15 * sin(_time * 9.0) * sin(_time * 3.7)
 	var frame := int(_time * 8.0) % 8
 	var side := 64.0 * PX
-	for x in [r.position.x - side - 8, r.end.x + 8]:
-		var at := Vector2(x, minf(r.end.y, size.y - 16) - side)
-		for g in [[170.0, 0.05], [100.0, 0.07], [50.0, 0.1]]:  # its light on the table
-			draw_circle(at + Vector2(side / 2, side * 0.2), g[0] * flicker, Color(FLAME, g[1]))
-		draw_texture_rect_region(CANDLE, Rect2(at, Vector2(side, side)), Rect2(frame * 64, 0, 64, 64))
+	var at := Vector2(r.end.x + (CANDLE_GAP - side) / 2, r.end.y - side)
+	for g in [[150.0, 0.05], [90.0, 0.07], [45.0, 0.1]]:  # its light on the table
+		draw_circle(at + Vector2(side / 2, side * 0.2), g[0] * flicker, Color(FLAME, g[1]))
+	draw_texture_rect_region(CANDLE, Rect2(at, Vector2(side, side)), Rect2(frame * 64, 0, 64, 64))
 
 
 ## Runes engraved line by line, the newest glowing as if still hot.

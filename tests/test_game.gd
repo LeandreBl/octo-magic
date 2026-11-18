@@ -60,7 +60,7 @@ func _test_french() -> void:
 	for m in RegEx.create_from_string("\"[A-Z_]+\": \"([^\"]+)\"").search_all(FileAccess.get_file_as_string("res://game/online.gd")):
 		texts.append(m.get_string(1))  # Online.ERRORS (the autoload needs Profile)
 	texts += Settings.REBINDABLE.values().filter(func(t): return t != "Pause")
-	var same := ["Multiplication", "Scribe", "Rare", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus"]
+	var same := ["Multiplication", "Scribe", "Rare", "Fortune", "Endurance", "Attraction", "Fulmen", "Flatus Gelidus", "Poison", "Zone", "Projectiles"]
 	for t in texts:
 		check(t in same or TranslationServer.translate(t) != t, "French for: " + t)
 	check(Spell.describe({"description": "x", "description_fr": "y"}) == "y", "forged spell described in French")
@@ -305,6 +305,11 @@ func _test_profile() -> void:
 	var Forge: GDScript = load("res://ui/forge.gd")
 	check(Forge.step(owned, "forged_1", 1) == owned[0].id and Forge.step(owned, owned[0].id, -1) == "forged_1",
 		"forge spell picker wraps around")
+	var forge: Control = Forge.new()
+	var rows: Array = forge.stats(Spell.base())
+	check(rows[0] == ["Mana cost", Spell.cost_text(Spell.base(), Spell.mana_cost(Spell.base()))]
+		and rows.any(func(r): return r[0] == "Damage" and r[1] != "0"), "forge spell view shows the cost and damage")
+	forge.free()
 	p.set_look("hat", "#123456")
 	p.set_look("hat", "not a color")
 	# Save -> load round trip.

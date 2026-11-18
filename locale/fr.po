@@ -1021,3 +1021,48 @@ msgstr "Arcane"
 
 msgid "Physical"
 msgstr "Physique"
+
+msgid "Burn"
+msgstr "Brûlure"
+
+msgid "Slow"
+msgstr "Ralentissement"
+
+msgid "Freeze"
+msgstr "Gel"
+
+msgid "Stun"
+msgstr "Étourdissement"
+
+msgid "Knockback"
+msgstr "Recul"
+
+msgid "Heal"
+msgstr "Soin"
+
+msgid "Splits"
+msgstr "Se divise"
+
+msgid "Ticks"
+msgstr "Impulsions"
+
+msgid "every %.1f s"
+msgstr "toutes les %.1f s"
+
+msgid "Shape"
+msgstr "Forme"
+
+msgid "Bolt"
+msgstr "Projectile"
+
+msgid "Beam"
+msgstr "Rayon"
+
+msgid "Cone"
+msgstr "Cône"
+
+msgid "Pierce"
+msgstr "Perforation"
+
+msgid "Bounces"
+msgstr "Rebonds"
