@@ -189,14 +189,14 @@ func _afflict(p: Node2D) -> void:
 func _steer(to: Vector2) -> Vector2:
 	var ai: String = data.get("ai", "chase")
 	if ai != "chase" and not in_view(to):  # too far to cast: walks in
-		return Arena.way(position, position + to)
+		return Arena.way(position, position + to, radius)
 	match ai:
 		"still":
 			return Vector2.ZERO
 		"weave":
-			var w := Arena.way(position, position + to)
+			var w := Arena.way(position, position + to, radius)
 			return w.rotated(sin(age * 5.0) * 0.8) if w.dot(to.normalized()) > 0.9 else w  # weaves only in the open
-	return Arena.way(position, position + to)
+	return Arena.way(position, position + to, radius)
 
 
 ## Its walking speed toward its mage (`to`): a boss out of cast range

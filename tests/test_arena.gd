@@ -34,8 +34,29 @@ func _initialize() -> void:
 	if _walk(s, s + Vector2(200, 0)) > 40.0:
 		failures += 1
 		printerr("FAIL: a monster walks around a wall")
+	# A gap narrower than a boss in a long wall: the boss walks around the wall, a skeleton through the gap.
+	Arena.polygons = [PackedVector2Array([s + Vector2(60, -400), s + Vector2(90, -400), s + Vector2(90, -30), s + Vector2(60, -30)]),
+		PackedVector2Array([s + Vector2(60, 30), s + Vector2(90, 30), s + Vector2(90, 400), s + Vector2(60, 400)])]
+	if _walk(s, s + Vector2(250, 0), 58.0) > 70.0:
+		failures += 1
+		printerr("FAIL: a boss walks around a gap too narrow for it")
+	if Arena.way(s, s + Vector2(250, 0), 58.0).x > 0.5:
+		failures += 1
+		printerr("FAIL: a boss does not head into a gap too narrow for it")
 	Arena.polygons = keep
 	Arena.solids = circles
+	var t := Time.get_ticks_msec()
+	Arena.walk_all()
+	print("grids walked in %d ms" % (Time.get_ticks_msec() - t))
+	# On the graveyard: every size spawns where it walks to the start (zombies and bosses got stuck).
+	for r in [22.0, 58.0]:
+		for i in 12:
+			var at := Arena.spawn_point(Arena.views([Arena.START], Vector2(640, 360)), r)
+			var left := _walk(at, Arena.START, r)
+			if left > 40.0 + r:
+				failures += 1
+				printerr("FAIL: a monster of radius %d from %s stops %d px from the start" % [r, at, left])
+				break
 	# On the graveyard: from every grave, a monster reaches the start.
 	for g in Arena.spawns:
 		var left := _walk(Vector2(g[0], g[1]), Arena.START)
@@ -69,11 +90,11 @@ func _initialize() -> void:
 	quit(1 if failures else 0)
 
 
-## How far from `to` a monster (radius 12, 80 px/s) walking from `from` ends after 60 s.
-func _walk(from: Vector2, to: Vector2) -> float:
+## How far from `to` a monster (radius r, 80 px/s) walking from `from` ends after 90 s.
+func _walk(from: Vector2, to: Vector2, r := 12.0) -> float:
 	var p := from
-	for i in 3600:
-		if p.distance_to(to) < 24.0:
+	for i in 5400:
+		if p.distance_to(to) < 12.0 + r:
 			break
-		p = Arena.slide(p, Arena.way(p, to) * 80.0 / 60.0, 12.0)
+		p = Arena.slide(p, Arena.way(p, to, r) * 80.0 / 60.0, r)
 	return p.distance_to(to)

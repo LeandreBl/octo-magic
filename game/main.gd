@@ -212,9 +212,10 @@ func _spawn_enemy(kind: String) -> void:
 	var view := get_viewport_rect().size / Player.ZOOM
 	view = Vector2(maxf(view.x, view.y * 21.0 / 9.0), maxf(view.y, view.x * 3.0 / 4.0))
 	var seen := Arena.views(get_tree().get_nodes_in_group("players").map(func(p): return p.position), view)
+	var stats := Run.enemy_stats(kind, Run.wave)
 	spawned += 1
 	spawner.spawn({"kind": "enemy", "name": "E%d" % spawned, "type": kind,
-		"stats": Run.enemy_stats(kind, Run.wave), "pos": Arena.spawn_point(seen)})
+		"stats": stats, "pos": Arena.spawn_point(seen, stats.radius)})
 
 
 @rpc("authority", "call_local", "reliable")

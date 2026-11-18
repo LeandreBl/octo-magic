@@ -62,7 +62,7 @@ void fragment() {
 	above.material.set_shader_parameter("faded", FADED)
 	add_child(above)
 	above_img = above.texture.get_image()
-	walkable()  # walked now (about a second) rather than at the first wave's spawn
+	walk_all()  # walked now rather than at the first wave's spawn
 
 
 func _process(delta: float) -> void:
@@ -94,92 +94,131 @@ static func views(mages: Array, view: Vector2) -> Array:
 	return mages.map(func(m): return Rect2((m - view / 2.0).clamp(RECT.position, RECT.end - view), view))
 
 
-## Where a monster comes out: never in a mage's view (views, grown by a
-## monster's size). A random open grave off every view, else a random spot of
-## the ground the mages walk (walkable) off every view, else the open grave
-## farthest from them.
-static func spawn_point(seen: Array) -> Vector2:
-	var hidden := func(v: Vector2): return not seen.any(func(r): return r.grow(48.0).has_point(v))
-	var graves: Array = spawns.map(func(s): return Vector2(s[0], s[1])).filter(hidden)
-	if graves:
-		return graves.pick_random() + Vector2(randf_range(-8, 8), randf_range(-8, 8))
-	var free: Array = walkable().filter(hidden)
+## Where a monster of radius r comes out: never in a mage's view (views,
+## grown by a monster's size), and only where it fits a way to the mages (its
+## size's walkable grid). A random open grave off every view, else a random
+## spot of that ground off every view, else the spot of it farthest from them.
+static func spawn_point(seen: Array, r := 16.0) -> Vector2:
+	var hidden := func(v: Vector2): return not seen.any(func(rect): return rect.grow(48.0).has_point(v))
+	var grid: Dictionary = _grid(r)
+	var snap := func(v: Vector2):  # a grave on its grid, or the grid's nearest cell to it (a boss beside a narrow grave)
+		var c: Variant = _on_grid(v, r)
+		return null if c == null else v if grid.links.has(Vector2i((v / CELL).floor())) else (Vector2(c) + Vector2(0.5, 0.5)) * CELL
+	var graves: Array = spawns.map(func(s): return snap.call(Vector2(s[0], s[1]))).filter(func(v): return v != null)
+	var shown: Array = graves.filter(hidden)
+	if shown:
+		return shown.pick_random() + Vector2(randf_range(-8, 8), randf_range(-8, 8))
+	var free: Array = grid.ground.filter(hidden)
 	if free:
 		return free.pick_random()
-	var away := func(v: Vector2): return seen.map(func(r): return r.get_center().distance_to(v)).min()
-	var all: Array = spawns.map(func(s): return Vector2(s[0], s[1]))
+	var away := func(v: Vector2): return seen.map(func(rect): return rect.get_center().distance_to(v)).min() if seen else 0.0
+	var all: Array = graves + grid.ground
 	all.sort_custom(func(a, b): return away.call(a) > away.call(b))
-	return all[0] if all else RECT.get_center()
+	return all[0] if all else START
 
 
 const CELL := 24.0  # the walkable grid's step
-static var _ground: Array = []
-static var _ground_of: Array = []  # the polygons it was walked on
-static var _links := {}  # walkable cell -> its free neighbours (Vector2i)
-static var _fields := {}  # target cell -> {cell: steps to it}, see way
+## The movers' sizes a grid is walked for: a mover uses the first at least its
+## radius (pickups and mages 16, monsters 24, bosses 60).
+const SIZES := [16.0, 24.0, 60.0]
+static var _grids := {}  # size -> {ground: [Vector2], links: {cell: [Vector2i]}, fields: {target cell: {cell: steps}}}
+static var _grids_of: Array = []  # the polygons they were walked on
 
 
-## The ground reachable from the start, one point every CELL: a monster put
-## anywhere else (out of bounds, a closed pen) would be stuck there. Walked
-## once per map (a flood fill, a step free only when its middle is too).
-static func walkable() -> Array:
-	const R := 16.0
-	if _ground_of == polygons:
-		return _ground
-	_ground_of = polygons
-	_fields = {}
+## The ground a mover of radius r reaches from the start, one point every
+## CELL: a monster put anywhere else (out of bounds, a closed pen, a gap
+## narrower than it) would be stuck there.
+static func walkable(r := 16.0) -> Array:
+	return _grid(r).ground
+
+
+## Every size's grid, walked now (about a second each).
+static func walk_all() -> void:
+	for r in SIZES:
+		_grid(r)
+
+
+## The size class of radius r.
+static func _size(r: float) -> float:
+	for s in SIZES:
+		if r <= s:
+			return s
+	return SIZES[-1]
+
+
+## The walkable grid for a mover of radius r: walked once per map and size (a
+## flood fill from the start, a step free only when its middle and the way
+## to it fit the mover).
+static func _grid(r: float) -> Dictionary:
+	var R := _size(r)
+	if _grids_of != polygons:
+		_grids_of = polygons
+		_grids = {}
+	if _grids.has(R):
+		return _grids[R]
 	var size := Vector2i((RECT.size / CELL).ceil())
 	var center := func(c: Vector2i): return (Vector2(c) + Vector2(0.5, 0.5)) * CELL
 	var memo := {}
-	var free := func(v: Vector2): return RECT.has_point(v) and slide(v, Vector2.ZERO, R) == v
+	var free := func(v: Vector2): return RECT.grow(-R).has_point(v) and slide(v, Vector2.ZERO, R) == v
 	var free_cell := func(c: Vector2i):
 		if not memo.has(c):
 			memo[c] = c.x >= 0 and c.y >= 0 and c.x < size.x and c.y < size.y and free.call(center.call(c))
 		return memo[c]
-	var todo := [Vector2i((START / CELL).floor())]
-	_links = {todo[0]: []}
-	_ground = []
+	var first := Vector2i((START / CELL).floor())
+	var ring := 0
+	while not free_cell.call(first) and ring < 8:  # a big mover may not fit right at the start: the nearest cell it does
+		ring += 1
+		for dx in range(-ring, ring + 1):
+			for dy in range(-ring, ring + 1):
+				if not free_cell.call(first) and free_cell.call(first + Vector2i(dx, dy)):
+					first += Vector2i(dx, dy)
+	var links := {first: []}
+	var ground := []
+	var todo := [first]
 	while todo:
 		var c: Vector2i = todo.pop_back()
 		if free_cell.call(c):
-			_ground.append(center.call(c))
+			ground.append(center.call(c))
 		for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
 			var n: Vector2i = c + d
-			if n in _links.get(c, []) or not free_cell.call(n) or not free.call((center.call(c) + center.call(n)) / 2.0):
+			if n in links.get(c, []) or not free_cell.call(n) or not free.call((center.call(c) + center.call(n)) / 2.0):
 				continue
-			if not _links.has(n):
-				_links[n] = []
+			if not links.has(n):
+				links[n] = []
 				todo.append(n)
-			_links[c].append(n)
-			_links[n].append(c)
-	return _ground
+			links[c].append(n)
+			links[n].append(c)
+	_grids[R] = {"ground": ground, "links": links, "fields": {}}
+	return _grids[R]
 
 
-## Which way a monster at `from` walks to reach `to` around the walls: straight
-## at it when the grid between them is open, else down a flow field (steps to
-## to's cell over the walkable grid, walked once per cell the target stands in).
-## Off the grid (out of bounds, an unreachable spot): straight.
-static func way(from: Vector2, to: Vector2) -> Vector2:
-	walkable()
-	var goal: Variant = _on_grid(to)
-	var at: Variant = _on_grid(from)
-	if goal == null or at == null or _open(from, to):
+## Which way a mover of radius r at `from` walks to reach `to` around the
+## walls: straight at it when its size's grid between them is open, else down
+## a flow field (steps to to's cell over that grid, walked once per cell the
+## target stands in). Off the grid (out of bounds, an unreachable spot): straight.
+static func way(from: Vector2, to: Vector2, r := 16.0) -> Vector2:
+	var grid: Dictionary = _grid(r)
+	var links: Dictionary = grid.links
+	var fields: Dictionary = grid.fields
+	var goal: Variant = _on_grid(to, r)
+	var at: Variant = _on_grid(from, r)
+	if goal == null or at == null or _open(from, to, links):
 		return (to - from).normalized()
-	if not _fields.has(goal):
-		if _fields.size() > 16:  # ponytail: drops every field at once, an LRU if mages hop cells faster than that
-			_fields = {}
+	if not fields.has(goal):
+		if fields.size() > 16:  # ponytail: drops every field at once, an LRU if mages hop cells faster than that
+			fields.clear()
 		var dist := {goal: 0}
 		var todo := [goal]
 		var i := 0
 		while i < todo.size():  # a BFS: every link is one step
 			var c: Vector2i = todo[i]
 			i += 1
-			for n in _links[c]:
+			for n in links[c]:
 				if not dist.has(n):
 					dist[n] = dist[c] + 1
 					todo.append(n)
-		_fields[goal] = dist
-	var field: Dictionary = _fields[goal]
+		fields[goal] = dist
+	var field: Dictionary = fields[goal]
 	if not field.has(at):
 		return (to - from).normalized()
 	# Down the field: toward the farthest cell of its path still in the open, so it cuts diagonals.
@@ -187,13 +226,13 @@ static func way(from: Vector2, to: Vector2) -> Vector2:
 	var c: Vector2i = at
 	for k in 6:
 		var next := c
-		for n in _links[c]:
+		for n in links[c]:
 			if field.get(n, 1 << 30) < field.get(next, 1 << 30):
 				next = n
 		if next == c:
 			break
 		c = next
-		if not _open(from, (Vector2(c) + Vector2(0.5, 0.5)) * CELL):
+		if not _open(from, (Vector2(c) + Vector2(0.5, 0.5)) * CELL, links):
 			break
 		aim = c
 	if aim == at:  # its next cell is round a corner: to it
@@ -202,26 +241,29 @@ static func way(from: Vector2, to: Vector2) -> Vector2:
 	return dir.normalized() if dir.length() > 1.0 else (to - from).normalized()
 
 
-## The walkable cell at pos, or the nearest one around it (a mover against a
-## wall stands where the grid is not), or null.
-static func _on_grid(pos: Vector2) -> Variant:
+## The cell of radius r's grid at pos, or the nearest one around it (a mover
+## against a wall, a mage in a gap too narrow for a boss, stands where the
+## grid is not), or null.
+static func _on_grid(pos: Vector2, r := 16.0) -> Variant:
+	var links: Dictionary = _grid(r).links
 	var c := Vector2i((pos / CELL).floor())
-	if _links.has(c):
+	if links.has(c):
 		return c
+	var reach := ceili(_size(r) / CELL)  # a bigger mover's grid stops farther from the walls
 	var best: Variant = null
-	for dx in [-1, 0, 1]:
-		for dy in [-1, 0, 1]:
+	for dx in range(-reach, reach + 1):
+		for dy in range(-reach, reach + 1):
 			var n := c + Vector2i(dx, dy)
-			if _links.has(n) and (best == null or pos.distance_to((Vector2(n) + Vector2(0.5, 0.5)) * CELL) < pos.distance_to((Vector2(best) + Vector2(0.5, 0.5)) * CELL)):
+			if links.has(n) and (best == null or pos.distance_to((Vector2(n) + Vector2(0.5, 0.5)) * CELL) < pos.distance_to((Vector2(best) + Vector2(0.5, 0.5)) * CELL)):
 				best = n
 	return best
 
 
-## Whether the straight line from a to b crosses only walkable cells.
-static func _open(a: Vector2, b: Vector2) -> bool:
+## Whether the straight line from a to b crosses only cells of the grid (links).
+static func _open(a: Vector2, b: Vector2, links: Dictionary) -> bool:
 	var n := ceili(a.distance_to(b) / (CELL / 3.0))
 	for k in range(1, n):
-		if not _links.has(Vector2i((a.lerp(b, float(k) / n) / CELL).floor())):
+		if not links.has(Vector2i((a.lerp(b, float(k) / n) / CELL).floor())):
 			return false
 	return true
 
