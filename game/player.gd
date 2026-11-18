@@ -209,10 +209,11 @@ func heal(amount: float) -> void:
 	hp = minf(stats.hp, hp + amount)
 
 
-func hurt(amount: float) -> void:
+## `fire`: fire damage (fire mages and archers, burning skeletons, fire pools), under the "fire" stat.
+func hurt(amount: float, fire := false) -> void:
 	if hp <= 0.0:
 		return
-	amount *= 1.0 - stats.armor
+	amount *= (1.0 - stats.armor) * (stats.fire if fire else 1.0)
 	var absorbed := minf(shield, amount)
 	if absorbed > 0.0:
 		shield -= absorbed

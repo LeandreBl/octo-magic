@@ -176,7 +176,7 @@ func _physics_process(delta: float) -> void:
 	hit_cooldown -= delta
 	if to.length() < radius + target.radius and hit_cooldown <= 0.0:
 		hit_cooldown = 0.6
-		target.hurt(touch_damage)
+		target.hurt(touch_damage, data.get("fire", false))
 		_afflict(target)
 		if _act_time <= 0.0:
 			_play.rpc("attack", 0.4)
@@ -314,6 +314,7 @@ func _spawn_shot(pos: Vector2, velocity: Vector2, dmg: float, fx: String) -> voi
 	s.velocity = velocity
 	s.damage = dmg
 	s.fx = fx
+	s.fire = data.get("fire", false)
 	get_parent().add_child(s)
 
 
@@ -469,9 +470,9 @@ class Zone extends Node2D:
 			for p in get_tree().get_nodes_in_group("players"):
 				if p.hp > 0.0 and position.distance_to(p.position) < radius + p.radius:
 					if was < delay and damage > 0.0:
-						p.hurt(damage)
+						p.hurt(damage, fx == "fire_pool")
 					if dps > 0.0:
-						p.hurt(dps * delta)
+						p.hurt(dps * delta, fx == "fire_pool")
 		if age > delay + maxf(linger, _fx_len()):
 			queue_free()
 
@@ -500,6 +501,7 @@ class Shot extends Node2D:
 	var velocity := Vector2.ZERO
 	var damage := 5.0
 	var fx := "bolt"
+	var fire := false  # fire damage (Player.hurt)
 	var from: Node2D  # its enemy, for its effect (may be dead by the hit)
 	var age := 0.0
 
@@ -515,7 +517,7 @@ class Shot extends Node2D:
 				hit = p
 		if hit:
 			if multiplayer.is_server():
-				hit.hurt(damage)
+				hit.hurt(damage, fire)
 				if is_instance_valid(from):
 					from._afflict(hit)
 			queue_free()

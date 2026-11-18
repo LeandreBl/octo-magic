@@ -376,6 +376,12 @@ msgstr "Antidote"
 msgid "+%d%% poison resistance"
 msgstr "+%d %% de résistance au poison"
 
+msgid "Fireproof"
+msgstr "Ignifuge"
+
+msgid "+%d%% fire resistance"
+msgstr "+%d %% de résistance au feu"
+
 msgid "-%d%% cooldown"
 msgstr "-%d %% de temps de recharge"
 

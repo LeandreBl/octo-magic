@@ -204,6 +204,7 @@ func finish() -> Dictionary:
 ## "dmg" scales its "damage". "shot": the effect its shots fly as
 ## (assets/monsters/fx/). "effect": [status, power, seconds] put on the mage
 ## by its touch and its shots (Player.afflict; poison: power x damage per s).
+## "fire": its touch and shots deal fire damage (Stats "fire"; the fire pools always do).
 ## "gunk": [radius, seconds] of poison pool left where it dies.
 ## "variant": [name, chance, {stat: factor}]: some wear it (helmet, shield...),
 ## drawn from assets/monsters/<kind>_<name>/.
@@ -238,7 +239,7 @@ const ENEMIES := {
 		"from": 6, "weight": 1.0, "ai": "chase", "heavy": 0.6, "color": "#827717",
 		"effect": ["poison", 0.3, 3.0], "gunk": [50.0, 5.0]},
 	"burning_skeleton": {"hp": 16.0, "speed": 115.0, "radius": 19.0, "damage": 13.0, "xp": 2, "gold": 2,
-		"from": 6, "weight": 1.2, "ai": "chase", "color": "#ff7043"},
+		"from": 6, "weight": 1.2, "ai": "chase", "color": "#ff7043", "fire": true},
 	"frost_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 5.0, "xp": 3, "gold": 3,
 		"from": 6, "weight": 0.8, "ai": "still", "color": "#4fc3f7", "shot": "frost_orb",
 		"effect": ["freeze", 1.0, 2.0], "variant": ["shield", 0.35, {"hp": 2.0}],
@@ -247,10 +248,10 @@ const ENEMIES := {
 		"from": 7, "weight": 1.0, "ai": "still", "color": "#689f38", "shot": "poison_arrow",
 		"effect": ["poison", 0.4, 3.0], "spells": [{"type": "bolt", "every": 2.0}]},
 	"fire_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 20.0, "xp": 3, "gold": 3,
-		"from": 7, "weight": 0.8, "ai": "still", "color": "#ff5722", "shot": "fireball",
+		"from": 7, "weight": 0.8, "ai": "still", "color": "#ff5722", "shot": "fireball", "fire": true,
 		"variant": ["shield", 0.35, {"hp": 2.0}], "spells": [{"type": "bolt", "every": 2.6, "dmg": 1.0}]},
 	"burning_archer": {"hp": 12.0, "speed": 60.0, "radius": 18.0, "damage": 16.0, "xp": 3, "gold": 2,
-		"from": 8, "weight": 0.8, "ai": "still", "color": "#ff9800", "shot": "fire_arrow",
+		"from": 8, "weight": 0.8, "ai": "still", "color": "#ff9800", "shot": "fire_arrow", "fire": true,
 		"spells": [{"type": "bolt", "every": 2.4, "dmg": 1.0}]},
 	"lightning_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 11.0, "xp": 3, "gold": 3,
 		"from": 8, "weight": 0.8, "ai": "still", "color": "#e3f2fd", "shot": "spark",

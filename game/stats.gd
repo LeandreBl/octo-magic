@@ -20,6 +20,7 @@ const BASE := {
 	"gold": 1.0,  # multiplier on gold picked up
 	"xp": 1.0,  # multiplier on XP from kills
 	"poison": 1.0,  # multiplier on poison damage taken
+	"fire": 1.0,  # multiplier on fire damage taken (Player.hurt)
 	"orbs": 1.0,  # multiplier on what mana and life orbs refill
 	"luck": 1.0,  # multiplier on grimoire and scroll drop chances (the best mage's, on the host)
 	"choices": 3.0,  # cards a grimoire offers
@@ -30,7 +31,7 @@ const BOUNDS := {
 	"mana_regen": [0.0, 200.0], "mana_cost": [0.0, 3.0], "cooldown": [0.4, 3.0], "cast_rate": [0.2, 5.0],
 	"speed": [80.0, 660.0], "pickup": [30.0, 600.0], "armor": [-1.0, 0.75],
 	"crit": [0.0, 1.0], "damage": [0.1, 20.0], "gold": [0.0, 6.0], "xp": [0.0, 6.0],
-	"poison": [0.0, 1.0], "orbs": [0.0, 4.0], "luck": [0.0, 4.0],
+	"poison": [0.0, 1.0], "fire": [0.0, 1.0], "orbs": [0.0, 4.0], "luck": [0.0, 4.0],
 	"choices": [3.0, 4.0], "still_regen": [1.0, 4.0],
 }
 const CRIT_MULT := 2.0
