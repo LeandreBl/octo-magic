@@ -227,6 +227,8 @@ func _test_augments(run: Object, p: Object) -> void:
 	check(orb._hop() == Vector2.ZERO and floor.get_child_count() == 2, "gold lands and glints once")
 	orb._process(1.0)
 	check(floor.get_child_count() == 2, "a single glint")
+	check(orb.gold_tier(1)[1] != orb.gold_tier(2)[1] and orb.gold_tier(3)[1] == orb.gold_tier(9)[1]
+		and orb.gold_tier(40)[2] > orb.gold_tier(1)[2], "a gold heap looks as rich as it is")
 	floor.free()
 	me.free()
 	run.start({}, [])

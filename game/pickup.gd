@@ -13,7 +13,14 @@ const TEXTURES := {  # PixelLab, tools/make_icons.py
 	"grimoire_hero": preload("res://assets/icons/drop_grimoire_hero.png"),
 	"grimoire_spell": preload("res://assets/icons/drop_grimoire_spell.png"),
 }
-const SIZES := {"gold": 24.0, "mana": 20.0, "life": 22.0, "scroll": 24.0, "grimoire_hero": 26.0, "grimoire_spell": 26.0}  # px on the floor
+## A gold heap looks as rich as it is: (min value, texture, px), the last one reached wins.
+const GOLD_TIERS := [
+	[1, preload("res://assets/icons/drop_gold_1.png"), 18.0],
+	[2, preload("res://assets/icons/drop_gold_2.png"), 22.0],
+	[3, preload("res://assets/icons/drop_gold.png"), 24.0],
+	[10, preload("res://assets/icons/drop_gold_hoard.png"), 36.0],
+]
+const SIZES := {"gold": 24.0,"mana": 20.0, "life": 22.0, "scroll": 24.0, "grimoire_hero": 26.0, "grimoire_spell": 26.0}  # px on the floor
 const REFILL := 0.25  # a mana or life orb gives back this share of the max
 const HOPS := [[0.32, 26.0], [0.18, 7.0]]  # gold pops out of the enemy: (duration s, height px) per hop
 const HALO := 1.8  # the gold glow under a drop, to spot it on the floor: its size, x the drop's
@@ -94,14 +101,28 @@ func give(p: Node2D) -> void:
 		p.mana = minf(p.stats.mana, p.mana + p.stats.mana * REFILL)
 
 
+## The gold tier for `value` (see GOLD_TIERS).
+static func gold_tier(v: int) -> Array:
+	var tier: Array = GOLD_TIERS[0]
+	for t in GOLD_TIERS:
+		if v >= t[0]:
+			tier = t
+	return tier
+
+
 func _draw() -> void:
 	var sz: float = SIZES[kind]
+	var tex: Texture2D = TEXTURES[kind]
+	if kind == "gold":
+		var tier := gold_tier(value)
+		tex = tier[1]
+		sz = tier[2]
 	var hop := _hop()
 	if hop.x > 0.0:  # squashed as it touches the floor
 		draw_set_transform(Vector2(0, -hop.x + hop.y * sz * 0.1), 0.0, Vector2(1.0 + hop.y * 0.2, 1.0 - hop.y * 0.2))
 	var h := sz * HALO
 	draw_texture_rect(_halo, Rect2(-h / 2.0, -h / 2.0, h, h), false)
-	draw_texture_rect(TEXTURES[kind], Rect2(-sz / 2.0, -sz / 2.0, sz, sz), false)
+	draw_texture_rect(tex, Rect2(-sz / 2.0, -sz / 2.0, sz, sz), false)
 
 
 static func _make_halo() -> GradientTexture2D:

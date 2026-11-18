@@ -82,7 +82,11 @@ def jobs() -> dict[str, str]:
                      " blue right bar, red top, yellow bottom left, green bottom, on transparent background")
     # Floor drops (game/pickup.gd), as drop_<kind>.
     drop = "pixel art game pickup lying on the ground, seen from above at an angle, transparent background, centered"
+    # Gold heaps grow with the gold they hold (game/pickup.gd GOLD_TIERS).
+    out["drop_gold_1"] = f"{STYLE}: one single shiny gold coin lying flat, yellow metal disc"
+    out["drop_gold_2"] = f"{STYLE}: two or three shiny gold coins slightly overlapping, yellow metal discs"
     out["drop_gold"] = f"{STYLE}: a small heap of gold coins, yellow shiny metal discs, treasure loot"
+    out["drop_gold_hoard"] = f"{STYLE}: a big overflowing treasure pile of many gold coins with a few red and blue gems, shiny loot hoard"
     orb = ("pixel art game pickup, a single perfectly round glossy magic glass orb sphere, transparent background, centered,"
            " no frame, no ring, no base, no outline ring")
     out["drop_mana"] = f"{orb}: beautiful glowing sapphire blue mana orb, bright cyan core light inside, deep blue edges, small white specular highlight top-left, soft blue aura"
