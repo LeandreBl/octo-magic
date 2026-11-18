@@ -20,6 +20,7 @@ const LEVEL_BLAST_RADIUS := 220.0  # px around the mage leveling up
 const LEVEL_BLAST_FORCE := 900.0  # knock speed: about 270 px of slide (enemy knock decays 1500/s)
 const BOSS_COINS := 30  # gold pieces a boss scatters
 const GRIMOIRE_CHANCE := 0.04  # a kill drops a grimoire (red or blue); a boss always does
+const QUAD_CHANCE := 0.03  # an Archfiend's imp drops Quad Damage
 const Enemy := preload("res://game/enemy.gd")
 const Pickup := preload("res://game/pickup.gd")
 const Player := preload("res://game/player.gd")
@@ -205,16 +206,19 @@ func _on_summoned(kind: String, pos: Vector2) -> void:
 
 func _on_killed(e: Node2D) -> void:
 	_killed.rpc(e.kind, e.xp, e.data.get("look", e.kind), e.position, e.radius, e._angle)
+	var loot: bool = e.data.get("loot", false)  # the Archfiend's imps
 	if Run.is_boss(e.kind):  # a shower of coins around it, its gold split among them
 		var n := mini(e.gold, BOSS_COINS)
 		for i in n:
 			_drop("gold", e.gold / n + int(i < e.gold % n), e.position + Vector2.from_angle(randf() * TAU) * randf_range(10, e.radius + 30))
-	elif randf() < 0.5:
+	elif loot or randf() < 0.5:
 		_drop("gold", e.gold, e.position + Vector2(randf_range(-8, 8), randf_range(-8, 8)))
-	if randf() < 0.04:
+	if randf() < (0.15 if loot else 0.04):
 		_drop("mana", 1, e.position + Vector2(randf_range(-10, 10), -10))
-	if randf() < 0.01:  # rarer than the rest
+	if randf() < (0.1 if loot else 0.01):  # rarer than the rest
 		_drop("life", 1, e.position + Vector2(randf_range(-10, 10), 10))
+	if loot and randf() < QUAD_CHANCE:
+		_drop("quad", 1, e.position + Vector2(randf_range(-12, 12), 16))
 	if Run.is_boss(e.kind) or randf() < GRIMOIRE_CHANCE:
 		_drop("grimoire_" + Upgrades.KINDS.pick_random(), 1, e.position + Vector2(randf_range(-12, 12), -16))
 	if randf() < (0.05 if Run.is_boss(e.kind) else 0.0025):  # rare: ~1 boss in 20

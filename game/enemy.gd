@@ -22,7 +22,10 @@ const Self := preload("res://game/enemy.gd")  # its static art for the inner cla
 ## The move each spell type plays (assets/monsters/<look>/<anim>.png, skipped
 ## when not drawn), and for how long; "attack" also plays on a touch.
 const SPELL_ANIM := {"charge": ["windup", 0.6], "summon": ["summon", 0.7], "ring": ["summon", 0.7], "nova": ["slam", 0.8],
-	"bolt": ["attack", 0.5], "spread": ["attack", 0.5], "puddle": ["attack", 0.5]}
+	"bolt": ["attack", 0.5], "spread": ["attack", 0.5], "puddle": ["attack", 0.5], "burst": ["attack", 0.5],
+	"laser": ["attack", 0.6], "teleport": ["vanish", 0.5]}
+const LASER_WARN := 0.7  # s: the laser's line shows before it burns
+const BITE_WARN := 0.5  # s: vanished, about to bite where the mage stood
 
 var kind := "skeleton"
 var data := {}  # its Run.ENEMIES entry, scaled to the wave
@@ -43,6 +46,7 @@ var dash := Vector2.ZERO  # charge: velocity while dashing
 var dash_time := 0.0
 var age := 0.0
 var side := 1.0  # kite: which way it strafes
+var _later := []  # [s left, Callable]: the delayed parts of its spells (host)
 var _heard_hp := 0.0  # hp at the last hit sound: hosts and peers hear hits on the synced hp
 var _last_pos := Vector2.ZERO
 var _angle := PI / 2.0  # its heading: from the synced position (or the nearest mage), the same on every peer
@@ -149,6 +153,11 @@ func _physics_process(delta: float) -> void:
 			statuses.erase(s)
 	if hp <= 0.0 or not is_instance_valid(target) or target.hp <= 0.0:
 		return
+	for l in _later.duplicate():
+		l[0] -= delta
+		if l[0] <= 0.0:
+			_later.erase(l)
+			l[1].call()
 	var to := target.global_position - global_position
 	var motion := _steer(to) * speed * slow
 	windup -= delta
@@ -230,7 +239,20 @@ func cast(sp: Dictionary, to: Vector2) -> bool:
 		"puddle":  # a poison pool where the mage stands
 			if d > 550.0:
 				return false
-			_zone.rpc(target.position, sp.radius, 1.0, 0.0, dmg, Color(data.color), 4.0, "poison")
+			_zone.rpc(target.position, sp.radius, 1.0, 0.0, dmg, Color(data.color), sp.get("linger", 4.0), sp.get("fx", "poison"))
+			if sp.get("imps", 0) > 0:  # hatching from the fire once it lands
+				_later.append([1.0, _hatch.bind(target.position, sp.imps)])
+		"burst":  # volleys of missiles at the mage
+			for b in sp.bursts:
+				_later.append([b * 0.3, _volley.bind(sp.count, dmg)])
+		"laser":  # stands still, a line warns, then it burns along it
+			windup = LASER_WARN + sp.time
+			_beam.rpc(position, to.angle(), sp.length, LASER_WARN, sp.time, dmg)
+		"teleport":  # vanishes, then bites where the mage stood
+			windup = BITE_WARN
+			_zone.rpc(position, radius, 0.0, 0.0, 0.0, Color(data.color), 0.0, "shadow")
+			_zone.rpc(target.position, radius, BITE_WARN, 0.0, 0.0, Color(data.color), 0.0, "")
+			_later.append([BITE_WARN, _bite.bind(target.position, touch_damage * sp.dmg)])
 		"charge":  # stops, then dashes at the mage
 			if d > sp.range:
 				return false
@@ -245,6 +267,32 @@ func cast(sp: Dictionary, to: Vector2) -> bool:
 				_zone.rpc(at, 24.0, 0.0, 0.0, 0.0, Color(data.color), 0.0, "summon")
 				summoned.emit(sp.kind, at)
 	return true
+
+
+## A volley of `count` missiles side by side at its mage.
+func _volley(count: int, dmg: float) -> void:
+	var dir := (target.position - position).normalized()
+	for i in count:
+		_shot(dir.rotated((i - (count - 1) / 2.0) * 0.2), 300.0, dmg)
+
+
+## Appears at `at` and bites the mages there.
+func _bite(at: Vector2, dmg: float) -> void:
+	position = Arena.slide(at, Vector2.ZERO, radius)
+	_zone.rpc(position, radius, 0.0, 0.0, 0.0, Color(data.color), 0.0, "shadow")
+	_play.rpc("attack", 0.4)
+	for p in get_tree().get_nodes_in_group("players"):
+		if p.hp > 0.0 and position.distance_to(p.position) < radius + p.radius + 10.0:
+			p.hurt(dmg)
+	hit_cooldown = 0.6  # the bite is its touch
+
+
+## `n` imps out of a landed fireball at `at`.
+func _hatch(at: Vector2, n: int) -> void:
+	for i in n:
+		if get_tree().get_nodes_in_group("enemies").size() >= CROWD:
+			return
+		summoned.emit("hell_imp", at + Vector2.from_angle(randf() * TAU) * randf_range(10.0, 40.0))
 
 
 ## Whether its mage (`to`: from it to the mage) would see all of it on a
@@ -345,6 +393,56 @@ class Corpse extends Node2D:
 		draw_set_transform(Vector2.ZERO, angle - PI / 2.0)  # the art faces down
 		Self.draw_frame(self, _tex, mini(int(age * FPS), n - 1), radius * 2.5,
 			Color(1, 1, 1, clampf((_len() + FADE - age) / FADE, 0.0, 1.0)))
+
+
+@rpc("authority", "call_local", "reliable")
+func _beam(pos: Vector2, angle: float, length: float, delay: float, time: float, dps: float) -> void:
+	var b := Beam.new()
+	b.position = pos
+	b.rotation = angle
+	b.length = length
+	b.delay = delay
+	b.time = time
+	b.dps = dps
+	get_parent().add_child(b)
+
+
+## A laser cast by an enemy (see _beam): a line warns for `delay` s, then it
+## burns the mages on it (`dps`) for `time` s; hurts on the host only.
+class Beam extends Node2D:
+	const WIDTH := 28.0
+	var length := 500.0
+	var delay := 0.7
+	var time := 1.5
+	var dps := 30.0
+	var age := 0.0
+	var _tex: Texture2D
+
+	func _ready() -> void:
+		_tex = Self.art("fx/green_laser")
+
+	func _physics_process(delta: float) -> void:
+		age += delta
+		queue_redraw()
+		if age >= delay and multiplayer.is_server():
+			var dir := Vector2.from_angle(rotation)
+			for p in get_tree().get_nodes_in_group("players"):
+				var q := Geometry2D.get_closest_point_to_segment(p.position, position, position + dir * length)
+				if p.hp > 0.0 and p.position.distance_to(q) < WIDTH / 2.0 + p.radius:
+					p.hurt(dps * delta)
+		if age > delay + time:
+			queue_free()
+
+	func _draw() -> void:
+		if age < delay:  # the warning: a thin line
+			draw_line(Vector2.ZERO, Vector2(length, 0), Color(0.46, 1.0, 0.0, 0.3 + 0.5 * age / delay), 2.0)
+		elif _tex:  # its sheet stretched along the line, fading out at the end
+			var n := _tex.get_height()
+			var f := wrapi(int((age - delay) * FPS), 0, _tex.get_width() / n)
+			draw_texture_rect_region(_tex, Rect2(0, -WIDTH, length, WIDTH * 2.0), Rect2(f * n, 0, n, n),
+				Color(1, 1, 1, clampf((delay + time - age) / 0.2, 0.0, 1.0)))
+		else:
+			draw_line(Vector2.ZERO, Vector2(length, 0), Color("#76ff03"), WIDTH)
 
 
 ## A ground zone cast by an enemy (see _zone); hurts mages on the host only.

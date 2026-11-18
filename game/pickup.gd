@@ -1,6 +1,7 @@
 extends Node2D
-## A drop: gold heap, mana or life orb, blank scroll, or grimoire (red: hero
-## stats, blue: spell stats; Run opens its upgrade choice). Flies to the player once within
+## A drop: gold heap, mana or life orb, blank scroll, grimoire (red: hero
+## stats, blue: spell stats; Run opens its upgrade choice), or Quad Damage
+## (the mage's spells hit QUAD times as hard for QUAD_TIME s). Flies to the player once within
 ## its pickup stat (or `magnet`, raised at the end of a wave), then reports itself.
 ## Coop: simulated on the host, flies to the nearest mage; peers get its position.
 
@@ -12,6 +13,7 @@ const TEXTURES := {  # PixelLab, tools/make_icons.py
 	"scroll": preload("res://assets/icons/scroll.png"),
 	"grimoire_hero": preload("res://assets/icons/drop_grimoire_hero.png"),
 	"grimoire_spell": preload("res://assets/icons/drop_grimoire_spell.png"),
+	"quad": preload("res://assets/icons/drop_quad.png"),
 }
 ## A gold heap looks as rich as it is: (min value, texture, px), the last one reached wins.
 const GOLD_TIERS := [
@@ -20,8 +22,10 @@ const GOLD_TIERS := [
 	[3, preload("res://assets/icons/drop_gold.png"), 24.0],
 	[10, preload("res://assets/icons/drop_gold_hoard.png"), 36.0],
 ]
-const SIZES := {"gold": 24.0,"mana": 20.0, "life": 22.0, "scroll": 24.0, "grimoire_hero": 26.0, "grimoire_spell": 26.0}  # px on the floor
+const SIZES := {"gold": 24.0, "mana": 20.0, "life": 22.0, "scroll": 24.0, "grimoire_hero": 26.0, "grimoire_spell": 26.0, "quad": 26.0}  # px on the floor
 const REFILL := 0.25  # a mana or life orb gives back this share of the max
+const QUAD := 4.0
+const QUAD_TIME := 10.0  # s
 const HOPS := [[0.32, 26.0], [0.18, 7.0]]  # gold pops out of the enemy: (duration s, height px) per hop
 const HALO := 1.8  # the gold glow under a drop, to spot it on the floor: its size, x the drop's
 static var _halo := _make_halo()
@@ -99,6 +103,8 @@ func give(p: Node2D) -> void:
 		p.heal(p.stats.hp * REFILL)
 	elif kind == "mana":
 		p.mana = minf(p.stats.mana, p.mana + p.stats.mana * REFILL)
+	elif kind == "quad":
+		p.afflict("quad", QUAD, QUAD_TIME)
 
 
 ## The gold tier for `value` (see GOLD_TIERS).

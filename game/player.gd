@@ -378,7 +378,7 @@ func _draw() -> void:
 	var size := float(SPRITE.get_height())
 	var f := int(Arena.clock * 8.0) % (SPRITE.get_width() / SPRITE.get_height())
 	draw_set_transform(Vector2.ZERO, _angle + PI / 2.0)  # the sprite's head is up
-	var tint := Color("#9be7ff") if statuses.has("freeze") else Color("#fff59d") if statuses.has("stun") \
+	var tint := Color("#b388ff") if statuses.has("quad") else Color("#9be7ff") if statuses.has("freeze") else Color("#fff59d") if statuses.has("stun") \
 		else Color("#b9f6ca") if statuses.has("poison") else Color.WHITE
 	draw_texture_rect_region(SPRITE, Rect2(Vector2(-size, -size) / 2.0, Vector2(size, size)), Rect2(f * size, 0, size, size), tint)
 	# The gem's glow: a flash fading over a cast, a steady flicker while channeling.

@@ -95,6 +95,7 @@ def jobs() -> dict[str, str]:
     # Grimoires (red: hero stats, blue: spell stats): picked up, they open the upgrade choice.
     out["drop_grimoire_hero"] = f"{drop}: a small closed spellbook grimoire with a crimson red leather cover, gold corners and a glowing gold rune on the cover"
     out["drop_grimoire_spell"] = f"{drop}: a small closed spellbook grimoire with a deep blue leather cover, silver corners and a glowing cyan rune on the cover"
+    out["drop_quad"] = f"{drop}: a glowing violet power-up rune stone carved with a big number 4, crackling purple energy"
     return out
 
 

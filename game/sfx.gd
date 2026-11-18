@@ -27,6 +27,7 @@ const RECIPES := {
 	"gold": {"wave": "bell", "f": [1319, 1976], "notes": true, "len": 0.16, "echo": 1, "db": -20.0},
 	"mana": {"wave": "bell", "f": [880, 1175, 1568], "notes": true, "len": 0.25, "sparkle": 15.0, "echo": 1, "db": -16.0},
 	"life": {"wave": "bell", "f": [523, 659, 784], "notes": true, "len": 0.35, "echo": 2, "db": -14.0},
+	"quad": {"wave": "saw", "f": [220, 330, 440, 660], "notes": true, "len": 0.6, "sparkle": 20.0, "echo": 2, "db": -10.0},
 	"scroll": {"wave": "bell", "f": [523, 659, 784, 1047, 1319], "notes": true, "len": 0.6, "sparkle": 20.0, "echo": 3, "db": -10.0},
 	"level_up": {"wave": "bell", "f": [392, 523, 659, 784, 1047, 1568], "notes": true, "len": 0.7, "sparkle": 25.0, "echo": 3, "db": -12.0},
 	"wave": {"wave": "bell", "f": [110, 104], "len": 1.2, "sparkle": 4.0, "echo": 2, "db": -8.0},

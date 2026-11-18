@@ -283,7 +283,7 @@ func apply_effects(list: Array, pos: Vector2, target: Node2D) -> void:
 			_:
 				for e in _targets(f.get("radius", 0.0), pos, target):
 					match f.type:
-						"damage": e.take_damage(f.amount)
+						"damage": e.take_damage(f.amount * _quad())
 						"status": e.add_status(f.status, f.power, f.duration)
 						"knockback": e.push((e.global_position - pos).normalized() * f.force)
 
@@ -299,6 +299,12 @@ func _repel_shots(radius: float, pos: Vector2, force: float) -> void:
 		var away: Vector2 = s.position - pos
 		if away.length() <= radius + s.RADIUS and s.velocity.dot(away) < 0.0:
 			s.velocity = away.normalized() * maxf(s.velocity.length(), force)
+
+
+## Its caster's Quad Damage (game/pickup.gd), 1 without one.
+func _quad() -> float:
+	var st: Variant = caster.get("statuses") if is_instance_valid(caster) else null
+	return st.quad[0] if st is Dictionary and st.has("quad") else 1.0
 
 
 func _targets(radius: float, pos: Vector2, target: Node2D) -> Array:

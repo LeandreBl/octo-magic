@@ -75,6 +75,8 @@ MONSTERS = {
                 "death": "dies: shrieks, its cloak unravels and it fades away into icy wisps, seen from directly above"}),
     "putrid_archer": (48, {"from": ("archer", "put a brown hood on its skull, dripping green poison" + KEEP)}, BOW),
     "burning_archer": (48, {"from": ("archer", "engulf it in orange flames" + KEEP)}, BOW),
+    "hell_imp": (48, {"from": ("imp", "engulf it in orange flames, embers trailing" + KEEP)},
+                 {"walk": "scampering fast toward the bottom of the image, flames flickering, seen from directly above, seamless loop"} | CLAW),
     "burning_skeleton": (48, {"from": ("skeleton", "engulf it in orange flames" + KEEP)}, CLAW),
     "fire_mage": (48, {"look": (MAGE + ", its two hands on fire", "dark pointed hood")}, CAST),
     "fire_mage_shield": (48, {"from": ("fire_mage", SHIELD)}, SHIELDED),
@@ -102,6 +104,33 @@ MONSTERS = {
         "attack": "rears back and spews a wide spray of green acid toward the bottom of the image, seen from directly above",
         "death": "swells up grotesquely, bloating bigger and bigger, glowing green light bursting through its seams, about to burst,"
                  " seen from directly above"}),
+    # the boss monsters (waves 10, 15, 20, 25, then 30 and every 5th): each one adds an attack to the last one's
+    "bone_herald": (96, {"look": (DARK + "a towering skeletal herald in black bone armor, a ribcage launcher of glowing bone"
+                                         " missiles on its back, huge imposing boss", "horned skull")}, {
+        "attack": "leans forward and launches glowing bone missiles from its back toward the bottom of the image, seen from directly above",
+        "death": "staggers, its bones cracking, blinding white light bursting through its armor, about to explode, seen from directly above"}),
+    "pyre_lord": (96, {"look": (DARK + "a huge burning skeleton lord wreathed in roaring flames, charred armor, hands of fire,"
+                                       " huge imposing boss", "flaming skull wearing a molten iron crown")}, {
+        "attack": "hurls a huge fireball with both burning hands toward the bottom of the image, seen from directly above",
+        "death": "staggers, its flames roaring out of control, blinding orange light bursting through its bones, about to explode,"
+                 " seen from directly above"}),
+    "blight_eye": (96, {"look": (DARK + "a giant floating undead eyeball horror, rotting green flesh, dangling veins and tendrils,"
+                                        " huge imposing boss", "huge glowing green eye")}, {
+        "walk": "floating toward the bottom of the image, tendrils swaying, seen from directly above, seamless loop",
+        "attack": "its huge eye glows brighter and fires a green laser beam toward the bottom of the image, seen from directly above",
+        "death": "its eye bulges and cracks, blinding green light bursting out of it, about to explode, seen from directly above"}),
+    "grave_maw": (96, {"look": (DARK + "a huge gaunt ghoul with long black claws, grey rotting skin and an enormous fanged maw,"
+                                       " huge imposing boss", "bald ghoul head with huge open jaws")}, {
+        "attack": "lunges and bites with its enormous fanged jaws toward the bottom of the image, seen from directly above",
+        "vanish": "dissolves into swirling black shadow smoke and vanishes, seen from directly above",
+        "death": "staggers and howls, blinding pale light bursting through its rotting skin, about to explode, seen from directly above"}),
+    "archfiend": (96, {"look": (DARK + "a giant horned demon lord with red burning skin, folded bat wings, clawed hands of fire,"
+                                       " huge imposing boss", "huge horned demon head")}, {
+        "attack": "hurls a huge fireball with its clawed hands toward the bottom of the image, seen from directly above",
+        "summon": "spreads its wings and roars, hellfire swirling around it, seen from directly above",
+        "vanish": "folds its wings around itself and vanishes in a burst of black smoke and embers, seen from directly above",
+        "death": "spreads its wings in agony, blinding hellfire bursting through cracks in its skin, about to explode,"
+                 " seen from directly above"}),
 }
 # Effects of the attacks (game/enemy.gd Shot and Zone, Run.ENEMIES "shot"), name -> brief.
 FX = {
@@ -117,12 +146,17 @@ FX = {
     "shockwave": "a ground slam shockwave, a ring of dust and cracked stone bursting outward, seen from above",
     "poison": "a bubbling toxic green poison puddle on the ground, seen from above, looping",
     "summon": "a dark purple summoning portal circle with runes opening on the ground, seen from above",
+    # the boss monsters' attacks
+    "bone_missile": "a glowing white bone missile projectile with a pale ghostly trail, flying right, looping",
+    "fire_pool": "a pool of roaring fire burning on the ground, flames and embers, seen from above, looping",
+    "green_laser": "a horizontal beam of intense green laser light crackling with energy, filling the frame from left to right, looping",
+    "shadow": "a burst of swirling black shadow smoke puffing outward, seen from above, one-shot",
     # a boss's death (game/boss_death.gd): blasts popping on its body, then the big one
     "boss_blast": "a fiery explosion burst, an orange and yellow fireball with a bright white core puffing into black smoke, one-shot",
     "boss_explosion": "a huge spectacular explosion, a massive fireball blast with a bright white core, a shockwave ring,"
                       " flying burning debris and sparks, billowing dark smoke, seen from above, one-shot",
 }
-LOOPING = {"bolt", "acid", "poison", "arrow", "poison_arrow", "fire_arrow", "fireball", "poison_orb", "frost_orb", "spark"}
+LOOPING = {"bone_missile", "fire_pool", "green_laser", "bolt", "acid", "poison", "arrow", "poison_arrow", "fire_arrow", "fireball", "poison_orb", "frost_orb", "spark"}
 
 
 def _strip(frames: list[bytes]) -> bytes:

@@ -1075,3 +1075,18 @@ msgstr "Roi-liche"
 
 msgid "Death Knight"
 msgstr "Chevalier de la mort"
+
+msgid "Bone Herald"
+msgstr "Héraut d'os"
+
+msgid "Pyre Lord"
+msgstr "Seigneur du bûcher"
+
+msgid "Blight Eye"
+msgstr "Œil de la peste"
+
+msgid "Grave Maw"
+msgstr "Gueule de la tombe"
+
+msgid "Archfiend"
+msgstr "Archidémon"

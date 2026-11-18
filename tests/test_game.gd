@@ -7,7 +7,7 @@ const ProfileState := preload("res://game/profile.gd")
 const Enemy := preload("res://game/enemy.gd")
 const Player := preload("res://game/player.gd")
 const Tentacle := preload("res://game/tentacle.gd")
-const SPELL_TYPES := ["bolt", "spread", "ring", "nova", "puddle", "charge", "summon"]
+const SPELL_TYPES := ["bolt", "spread", "ring", "nova", "puddle", "charge", "summon", "burst", "laser", "teleport"]
 
 var failures := 0
 
@@ -47,7 +47,7 @@ func _test_french() -> void:
 				for m in literal.search_all(FileAccess.get_file_as_string(dir + f)):
 					texts.append(m.get_string(1).c_unescape())
 	texts += Upgrades.SLOT_NAMES.values()
-	texts += Run.BOSSES.map(func(k): return Run.ENEMIES[k].name)
+	texts += Run.ENEMIES.values().filter(func(e): return e.has("name")).map(func(e): return e.name)
 	texts += Upgrades.RARITIES.values().map(func(r): return r.name)
 	for d in [Upgrades.LIST, ProfileState.AUGMENTS, ProfileState.ITEMS, ProfileState.BONUSES, ProfileState.ACHIEVEMENTS]:
 		for v in d.values():
@@ -159,8 +159,11 @@ func _test_run() -> void:
 	_test_augments(run, p)
 	run.wave = 6
 	run.killed("boss")
+	var kills := run.kills
+	run.killed("grave_maw")
+	check(run.kills == kills + 401, "a boss monster adds its kills")
 	var r := run.finish()
-	check(not run.active and r.bosses == 1 and r.score == run.score(), "run result")
+	check(not run.active and r.bosses == 2 and r.score == run.score(), "run result")
 	run.free()
 	p.free()
 
@@ -238,7 +241,7 @@ func _test_augments(run: Object, p: Object) -> void:
 
 ## Bosses die in a show of their own: art for each, blasts, then gone.
 func _test_boss_death() -> void:
-	for k in RunState.BOSSES:
+	for k in RunState.BOSSES.values():
 		check(Enemy.art(k + "/death") != null, "%s has a death animation" % k)
 	check(BossDeath.length("fx/boss_explosion") > 0.5, "the big explosion plays")
 	# every look plays a move for each of its spells, the melee ones a strike
@@ -279,12 +282,17 @@ func _test_waves() -> void:
 	for k in RunState.wave_plan(12):
 		w12[k] = true
 	check(w12.size() >= 6, "late waves mix many kinds (%d)" % w12.size())
-	var bosses := []
-	for i in RunState.BOSSES.size():
-		var plan := RunState.wave_plan(RunState.BOSS_EVERY * (i + 1))
+	for w in range(RunState.BOSS_EVERY, 50, RunState.BOSS_EVERY):
+		var plan := RunState.wave_plan(w)
 		check(RunState.is_boss(plan[0]) and plan.count(plan[0]) == 1, "boss wave")
-		bosses.append(plan[0])
-	check(bosses == RunState.BOSSES, "bosses in turn")
+		check(plan[0] == RunState.BOSSES[mini(w, 30)], "the boss of wave %d" % w)
+	var attacks := []
+	for k in ["bone_herald", "pyre_lord", "blight_eye", "grave_maw"]:  # each one adds an attack
+		var types: Array = RunState.ENEMIES[k].spells.map(func(sp): return sp.type)
+		check(types.slice(0, attacks.size()) == attacks and types.size() == attacks.size() + 1, "%s stacks the attacks" % k)
+		attacks = types
+	var imps := func(w): return RunState.enemy_stats("archfiend", w).spells.filter(func(sp): return sp.has("imps"))[0].imps
+	check(imps.call(35) > imps.call(30) and imps.call(40) > imps.call(35), "more imps every time the last boss comes back")
 	for k in RunState.ENEMIES:
 		for sp in RunState.ENEMIES[k].get("spells", []):
 			check(sp.type in SPELL_TYPES, "%s casts a known spell" % k)
@@ -488,7 +496,11 @@ func _test_play() -> void:
 	var far := Vector2(Enemy.VIEW.x + 100.0, 0.0)
 	check(not archer.cast(archer.data.spells[0], far), "no enemy spell from off screen")
 	check(archer._steer(far).x > 0.0 and archer._steer(Vector2(100, 0)) == Vector2.ZERO, "a still one walks in until on screen")
-	check("imp" in summons and "skeleton" in summons, "summons asked from main")
+	for i in 90:  # the delayed parts: missile volleys, bites, imps hatching (the mage kept standing)
+		player.hp = player.stats.hp
+		await physics_frame
+	check("imp" in summons and "skeleton" in summons and "hell_imp" in summons, "summons asked from main")
+	check(root.find_children("*", "Node2D", true, false).any(func(n): return n is Enemy.Beam), "the laser fires")
 	var zones := root.find_children("*", "Node2D", true, false).filter(func(n): return n is Enemy.Zone)
 	check(zones.size() > 5, "spells leave zones")
 	await physics_frame

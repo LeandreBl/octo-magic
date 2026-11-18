@@ -135,7 +135,7 @@ func collect(kind: String, value: int) -> void:
 
 
 func killed(kind: String) -> void:
-	kills += 1
+	kills += 1 + ENEMIES.get(kind, {}).get("kills", 0)  # a boss monster counts for many
 	if is_boss(kind):
 		bosses += 1
 	changed.emit()
@@ -171,6 +171,8 @@ func finish() -> Dictionary:
 ## "gunk": [radius, seconds] of poison pool left where it dies.
 ## "variant": [name, chance, {stat: factor}]: some wear it (helmet, shield...),
 ## drawn from assets/monsters/<kind>_<name>/.
+## "kills": added to the run's kills when it falls (the boss monsters).
+## "loot": richer drops (life and mana orbs, Quad Damage), see main.gd.
 const ENEMIES := {
 	"skeleton": {"hp": 18.0, "speed": 80.0, "radius": 19.0, "damage": 8.0, "xp": 1, "gold": 1,
 		"from": 1, "weight": 6.0, "ai": "chase", "color": "#e0dccb"},
@@ -218,7 +220,7 @@ const ENEMIES := {
 		"from": 8, "weight": 0.8, "ai": "still", "color": "#e3f2fd", "shot": "spark",
 		"effect": ["stun", 1.0, 0.6], "variant": ["shield", 0.35, {"hp": 2.0}],
 		"spells": [{"type": "bolt", "every": 2.8, "dmg": 1.0}]},
-	# bosses, one every BOSS_EVERY waves in turn
+	# bosses, one every BOSS_EVERY waves (BOSSES)
 	"boss": {"name": "Lich King", "hp": 400.0, "speed": 50.0, "radius": 58.0, "damage": 25.0, "xp": 20, "gold": 40,
 		"boss": true, "ai": "chase", "heavy": 0.3, "color": "#7e57c2",
 		"spells": [{"type": "ring", "every": 3.0, "count": 12}, {"type": "summon", "every": 8.0, "kind": "skeleton", "count": 3}]},
@@ -231,15 +233,45 @@ const ENEMIES := {
 		"spells": [{"type": "spread", "every": 2.5, "count": 7, "angle": 1.2},
 			{"type": "puddle", "every": 4.0, "radius": 70.0, "dmg": 0.6},
 			{"type": "summon", "every": 7.0, "kind": "imp", "count": 3}]},
+	# the boss monsters: each one adds an attack to the last one's
+	"bone_herald": {"name": "Bone Herald", "hp": 450.0, "speed": 55.0, "radius": 56.0, "damage": 24.0, "xp": 25, "gold": 40,
+		"boss": true, "kills": 100, "ai": "chase", "heavy": 0.3, "color": "#e0dccb", "shot": "bone_missile",
+		"spells": [BURST]},
+	"pyre_lord": {"name": "Pyre Lord", "hp": 500.0, "speed": 55.0, "radius": 56.0, "damage": 26.0, "xp": 30, "gold": 50,
+		"boss": true, "kills": 200, "ai": "chase", "heavy": 0.3, "color": "#ff7043", "shot": "bone_missile",
+		"spells": [BURST, FIREBALL]},
+	"blight_eye": {"name": "Blight Eye", "hp": 550.0, "speed": 50.0, "radius": 56.0, "damage": 26.0, "xp": 35, "gold": 60,
+		"boss": true, "kills": 300, "ai": "chase", "heavy": 0.3, "color": "#76ff03", "shot": "bone_missile",
+		"spells": [BURST, FIREBALL, LASER]},
+	"grave_maw": {"name": "Grave Maw", "hp": 600.0, "speed": 60.0, "radius": 56.0, "damage": 28.0, "xp": 40, "gold": 70,
+		"boss": true, "kills": 400, "ai": "chase", "heavy": 0.3, "color": "#78909c", "shot": "bone_missile",
+		"spells": [BURST, FIREBALL, LASER, BITE]},
+	"archfiend": {"name": "Archfiend", "hp": 650.0, "speed": 60.0, "radius": 60.0, "damage": 28.0, "xp": 50, "gold": 80,
+		"boss": true, "kills": 500, "ai": "chase", "heavy": 0.3, "color": "#d50000", "shot": "bone_missile",
+		"spells": [BURST, HELLFIRE, LASER, BITE]},
+	# hatched by the Archfiend's fireballs only
+	"hell_imp": {"hp": 9.0, "speed": 170.0, "radius": 14.0, "damage": 6.0, "xp": 1, "gold": 2,
+		"from": 1, "weight": 0.0, "ai": "weave", "color": "#ff6d00", "loot": true},
 }
-const BOSSES := ["boss", "death_knight", "abomination"]
+## The boss monsters' attacks, stacked: 3 bursts of 2 missiles; a fireball
+## leaving a fire pool that burns hard whoever stands in it; a green laser
+## burning along its line; a vanish, then a bite where the mage stood.
+const BURST := {"type": "burst", "every": 3.0, "bursts": 3, "count": 2, "dmg": 0.6}
+const FIREBALL := {"type": "puddle", "every": 4.5, "radius": 60.0, "dmg": 1.5, "fx": "fire_pool", "linger": 4.0}
+const HELLFIRE := {"type": "puddle", "every": 4.5, "radius": 60.0, "dmg": 1.5, "fx": "fire_pool", "linger": 4.0, "imps": 2}  # hatches imps
+const LASER := {"type": "laser", "every": 6.0, "length": 520.0, "time": 1.6, "dmg": 1.2}
+const BITE := {"type": "teleport", "every": 7.0, "dmg": 2.5}
+## Wave -> its boss; past the last one, the last one comes back every BOSS_EVERY
+## waves, its fireballs hatching more imps each time (enemy_stats).
+const BOSSES := {5: "boss", 10: "bone_herald", 15: "pyre_lord", 20: "blight_eye", 25: "grave_maw", 30: "archfiend"}
+const IMPS_PER_FIGHT := 2  # more imps per fireball each time the last boss comes back
 
 
 static func is_boss(kind: String) -> bool:
 	return ENEMIES.get(kind, {}).get("boss", false)
 
 
-## The enemy kinds of wave `w`: a boss every BOSS_EVERY waves (in turn) with
+## The enemy kinds of wave `w`: a boss every BOSS_EVERY waves (BOSSES) with
 ## a small escort, else a growing mix of the kinds unlocked so far. Seeded by
 ## `w`: the same plan on every peer.
 static func wave_plan(w: int) -> Array:
@@ -250,7 +282,7 @@ static func wave_plan(w: int) -> Array:
 	var out := []
 	var n := 4 + w * 2
 	if w % BOSS_EVERY == 0:
-		out.append(BOSSES[(w / BOSS_EVERY - 1) % BOSSES.size()])
+		out.append(BOSSES[mini(w, BOSSES.keys().max())])
 		n = w / BOSS_EVERY * 2
 	for i in n:
 		out.append(pool[rng.rand_weighted(weights)])
@@ -264,6 +296,9 @@ static func enemy_stats(kind: String, w: int) -> Dictionary:
 	s.speed *= 1.0 + minf(w - 1, 20) * 0.02
 	s.damage *= 1.0 + (w - 1) * 0.05
 	s.gold = s.gold + w / BOSS_EVERY
+	for sp in s.get("spells", []):
+		if sp.has("imps"):
+			sp.imps += maxi(w - BOSSES.keys().max(), 0) / BOSS_EVERY * IMPS_PER_FIGHT
 	var v: Array = s.get("variant", [])
 	s.look = kind
 	if v and randf() < v[1]:  # rolled on the host, sent to peers with the stats
