@@ -55,7 +55,7 @@ func _ready() -> void:
 	lv.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	b_col.add_child(lv)
 	_level = UITheme.label("", "", 28, UITheme.GOLD)
-	_level.add_theme_font_override("font", UITheme.PIXEL_BOLD)
+	_level.add_theme_font_override("font", UITheme.BODY_BOLD)
 	_level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	b_col.add_child(_level)
 	row.add_child(badge)
@@ -71,7 +71,7 @@ func _ready() -> void:
 	var w_col := _box(VBoxContainer.new(), 4)
 	wave.add_child(w_col)
 	_wave = UITheme.label("", "", 32, UITheme.GOLD)
-	_wave.add_theme_font_override("font", UITheme.PIXEL_BOLD)
+	_wave.add_theme_font_override("font", UITheme.BODY_BOLD)
 	_wave.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
 	_wave.add_theme_constant_override("shadow_offset_x", 3)
 	_wave.add_theme_constant_override("shadow_offset_y", 3)
@@ -234,7 +234,7 @@ func _slot(slot: String) -> Control:
 	cd.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(cd)
 	var secs := UITheme.label("", "", 22)
-	secs.add_theme_font_override("font", UITheme.PIXEL_BOLD)
+	secs.add_theme_font_override("font", UITheme.BODY_BOLD)
 	secs.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	secs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	secs.vertical_alignment = VERTICAL_ALIGNMENT_CENTER

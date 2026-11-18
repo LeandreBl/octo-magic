@@ -38,15 +38,15 @@ const PARCH_BROWN := Color("#6e5428")
 const PARCH_RED := Color("#5a2a12")
 const SHADOW := Color(0, 0, 0, 0.55)
 
-## Fonts (assets/fonts, SIL OFL): Pixelify Sans, a pixel font, for the whole
+## Fonts (assets/fonts, SIL OFL): Fredoka, a smooth rounded sans, for the whole
 ## game; Uncial Antiqua, an old manuscript hand, for titles and what is
 ## written on scrolls. Neither has Greek: EB Garamond fills in (πῦρ, ...).
 ## (Almendra stays for the website, web/style.css.)
 const GREEK: FontFile = preload("res://assets/fonts/EBGaramond.ttf")
-const PIXEL_FILE: FontFile = preload("res://assets/fonts/PixelifySans.ttf")
+const BODY_FILE: FontFile = preload("res://assets/fonts/Fredoka.ttf")
 const PARCHMENT: FontFile = preload("res://assets/fonts/UncialAntiqua-Regular.ttf")
-static var PIXEL := _weight(500)
-static var PIXEL_BOLD := _weight(700)
+static var BODY := _weight(500)
+static var BODY_BOLD := _weight(700)
 
 ## Small pixel glyphs ('#' = a pixel), drawn in code where no PixelLab icon exists.
 const GLYPHS := {
@@ -61,10 +61,10 @@ const GLYPHS := {
 
 
 static func make() -> Theme:
-	for f in [PIXEL_FILE, PARCHMENT]:
+	for f in [BODY_FILE, PARCHMENT]:
 		f.fallbacks = [GREEK]
 	var t := Theme.new()
-	t.default_font = PIXEL
+	t.default_font = BODY
 	t.default_font_size = 20
 
 	t.set_color("font_color", "Label", TEXT)
@@ -73,8 +73,8 @@ static func make() -> Theme:
 	t.set_constant("shadow_offset_y", "Label", 2)
 	_label(t, "Title", PARCHMENT, 84, GOLD, 5)
 	_label(t, "Header", PARCHMENT, 46, GOLD, 4)
-	_label(t, "Subheader", PIXEL_BOLD, 28, GOLD, 3)
-	_label(t, "Big", PIXEL_BOLD, 40, TEXT, 3)
+	_label(t, "Subheader", BODY_BOLD, 28, GOLD, 3)
+	_label(t, "Big", BODY_BOLD, 40, TEXT, 3)
 	t.set_type_variation("Caption", "Label")
 	t.set_font_size("font_size", "Caption", 16)
 	t.set_color("font_color", "Caption", TEXT_DIM)
@@ -118,7 +118,7 @@ static func make() -> Theme:
 
 	# Primary: the one gold button of a screen (Play, Resume, Start...).
 	t.set_type_variation("Primary", "Button")
-	t.set_font("font", "Primary", PIXEL_BOLD)
+	t.set_font("font", "Primary", BODY_BOLD)
 	var gold := {"rings": [[OUTLINE, 4]], "bg": GOLD, "top": GOLD_LIGHT, "bottom": GOLD_DIM, "bevel": 5, "drop": 5}
 	t.set_stylebox("normal", "Primary", frame(gold, 10))
 	t.set_stylebox("hover", "Primary", frame(gold.merged({"bg": Color("#ffd56e")}, true), 10))
@@ -384,10 +384,9 @@ static func _label(t: Theme, variation: String, font: Font, size: int, color: Co
 
 static func _weight(w: int) -> FontVariation:
 	var v := FontVariation.new()
-	v.base_font = PIXEL_FILE
+	v.base_font = BODY_FILE
 	var ts := TextServerManager.get_primary_interface()
 	v.variation_opentype = {ts.name_to_tag("wght"): w}
-	v.opentype_features = {ts.name_to_tag("liga"): 0}  # its "fi" ligature reads as "A"
 	return v
 
 

@@ -607,7 +607,7 @@ func _show_level_up(offers: Array) -> void:
 			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			l.autowrap_mode = TextServer.AUTOWRAP_WORD
 			if line[3]:
-				l.add_theme_font_override("font", UITheme.PIXEL_BOLD)
+				l.add_theme_font_override("font", UITheme.BODY_BOLD)
 			card.add_child(l)
 		_level_box.add_child(b)
 	screens.levelup.set_meta("focus", _level_box.get_child(0))

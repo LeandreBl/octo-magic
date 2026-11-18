@@ -56,7 +56,7 @@ func _ready() -> void:
 		ch.add_theme_stylebox_override("panel", UITheme.flat(UITheme.INK, UITheme.GOLD, 4, 0, 0))
 		ch.custom_minimum_size = Vector2(64, 76)
 		var l := UITheme.label("", "", 44, UITheme.GOLD)
-		l.add_theme_font_override("font", UITheme.PIXEL_BOLD)
+		l.add_theme_font_override("font", UITheme.BODY_BOLD)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		ch.add_child(l)

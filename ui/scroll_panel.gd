@@ -75,7 +75,7 @@ func _ready() -> void:
 	_write = Button.new()
 	_write.text = "Write the scrolls"
 	_write.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	_write.add_theme_font_override("font", UITheme.PIXEL_BOLD)
+	_write.add_theme_font_override("font", UITheme.BODY_BOLD)
 	var seal := {"rings": [[UITheme.OUTLINE, 4]], "bg": Color("#7a2f17"), "top": Color("#94401f"), "bottom": Color("#55200f"), "drop": 4}
 	_write.add_theme_stylebox_override("normal", UITheme.frame(seal, 10))
 	_write.add_theme_stylebox_override("hover", UITheme.frame(seal.merged({"bg": Color("#8e3a1d")}, true), 10))
