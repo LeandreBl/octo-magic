@@ -102,6 +102,12 @@ static func music(map: String) -> void:
 		m.play()
 
 
+## Holds the music where it is (pause menu), or lets it go on.
+static func pause_music(paused: bool) -> void:
+	if _node:
+		_node._music.stream_paused = paused
+
+
 static func stream(sound: String) -> AudioStreamWAV:
 	var r: Dictionary = RECIPES[sound]
 	var wav := AudioStreamWAV.new()

@@ -176,6 +176,7 @@ func show_screen(name: String) -> void:
 	if name == "levelup":
 		_dim.color.a = 0.45  # the slowed world shows through
 	get_tree().paused = not Run.active or (name not in ["", "levelup"] and main.solo())
+	Sfx.pause_music(Run.active and name not in ["", "levelup"])  # pause menu and its options
 	_slow_time(name)
 	if name == "title":
 		_refresh_title()
