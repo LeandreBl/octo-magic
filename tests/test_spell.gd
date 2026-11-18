@@ -305,6 +305,24 @@ func _check_channel() -> void:
 	for n in world.get_children():
 		if n is SpellBody:
 			n.free()
+	# Procella: the cone pushes the enemies it strikes away from the caster.
+	var x := aimed.position.x
+	SpellBody.cast(spells.frost_jet.emit, Vector2(100, 100), Vector2.RIGHT, mage, spells.frost_jet, world)
+	for i in 3:
+		await physics_frame
+	check(is_equal_approx(aimed.position.x, x), "no Procella: the cone does not push")
+	for n in world.get_children():
+		if n is SpellBody:
+			n.free()
+	mage.stats = Stats.total([Upgrades.bonus(Upgrades.LIST.hurricane, 5)])
+	SpellBody.cast(spells.frost_jet.emit, Vector2(100, 100), Vector2.RIGHT, mage, spells.frost_jet, world)
+	for i in 3:
+		await physics_frame
+	check(aimed.position.x > x + 1.0, "Procella V: the cone pushes the enemy back")
+	for n in world.get_children():
+		if n is SpellBody:
+			n.free()
+	aimed.position = Vector2(200, 100)
 	mage.stats = Stats.total([])
 	mage.aim = Vector2.RIGHT
 	mage.firing = {"primary": true}

@@ -1077,6 +1077,9 @@ msgstr "+%d%% régén. de mana à l'arrêt"
 msgid "Fulmen's arc jumps on to +%d enemy"
 msgstr "L'arc de Fulmen rebondit sur +%d ennemi"
 
+msgid "Flatus Gelidus pushes enemies back (+%d force)"
+msgstr "Flatus Gelidus repousse les ennemis (+%d de force)"
+
 msgid "Records"
 msgstr "Palmarès"
 

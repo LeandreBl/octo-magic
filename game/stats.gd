@@ -26,6 +26,7 @@ const BASE := {
 	"choices": 3.0,  # cards a grimoire offers
 	"still_regen": 1.0,  # multiplier on mana_regen while the mage stands still (channels)
 	"chain": 0.0,  # enemies a beam's arc jumps on to after its target (SpellBody, Catena)
+	"gust": 0.0,  # knockback force a cone pushes the enemies it strikes away with (SpellBody, Procella)
 }
 const BOUNDS := {
 	"hp": [1.0, 1000.0], "hp_regen": [0.0, 50.0], "mana": [10.0, 1000.0],
@@ -33,7 +34,7 @@ const BOUNDS := {
 	"speed": [80.0, 660.0], "pickup": [30.0, 600.0], "armor": [-1.0, 0.75],
 	"crit": [0.0, 1.0], "damage": [0.1, 20.0], "gold": [0.0, 6.0], "xp": [0.0, 6.0],
 	"poison": [0.0, 1.0], "fire": [0.0, 1.0], "orbs": [0.0, 4.0], "luck": [0.0, 4.0],
-	"choices": [3.0, 4.0], "still_regen": [1.0, 4.0], "chain": [0.0, 5.0],
+	"choices": [3.0, 4.0], "still_regen": [1.0, 4.0], "chain": [0.0, 5.0], "gust": [0.0, 300.0],
 }
 const CRIT_MULT := 2.0
 

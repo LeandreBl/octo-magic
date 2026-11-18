@@ -65,6 +65,7 @@ UPGRADES = {
     "channeling": "a glowing blue mana rune circle on the ground with blue mana streams spiraling up into its center",
     "antidote": "a small round glass vial of bright golden antidote liquid with a cork, a crossed-out green poison drop rune on it",
     "chaining": "a crackling blue-white lightning arc linking three small glowing orbs in a zigzag chain",
+    "hurricane": "a swirling pale cyan whirlwind of icy wind gusts and snowflakes, spiraling outward",
     "fireproof": "a round red and gold shield deflecting orange flames, a glowing protective rune in its center",
 }
 

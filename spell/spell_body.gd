@@ -225,9 +225,12 @@ func _channel() -> void:
 		for e in ([target] if target else []) + links:
 			apply_effects(body.on_hit, e.global_position if e != target else global_position, e)
 	else:
+		var gust := _stat("gust")  # Procella (Upgrades "hurricane"): an engine stat, not spell data
 		for e in get_tree().get_nodes_in_group("enemies"):
 			if _in_reach(e):
 				apply_effects(body.on_hit, global_position, e)
+				if gust > 0.0 and multiplayer.is_server():
+					e.push((e.global_position - global_position).normalized() * gust)
 
 
 ## Within `speed` px and `angle` degrees (full width) around the aim.
@@ -256,8 +259,7 @@ func _beam_target() -> Node2D:
 ## the nearest enemy within CHAIN_REACH not yet struck, once per "chain" of
 ## its caster's stats. An engine stat, not spell data: no forged spell has it.
 func _chain() -> Array:
-	var st: Variant = caster.get("stats") if is_instance_valid(caster) else null
-	var n := int(st.get("chain", 0.0)) if st is Dictionary else 0
+	var n := int(_stat("chain"))
 	var out := []
 	var hit := {}
 	var from := target
@@ -269,6 +271,12 @@ func _chain() -> Array:
 		out.append(next)
 		from = next
 	return out
+
+
+## Its caster's `key` stat (game/stats.gd), 0 without one.
+func _stat(key: String) -> float:
+	var st: Variant = caster.get("stats") if is_instance_valid(caster) else null
+	return float(st.get(key, 0.0)) if st is Dictionary else 0.0
 
 
 func _check_hits() -> void:
