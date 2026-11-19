@@ -576,16 +576,16 @@ func _test_tentacle() -> void:
 	check(far < Tentacle.LENGTH * 1.5, "tentacle steps after the body: %s" % far)
 	check(t.chain[0].distance_to(center) < Tentacle.ROOT + 1.0, "tentacle base on the body")
 	t.free()
-	# At running speed the arms let go of the ground and stream behind the body.
-	var behind := 0
+	# At running speed the arms keep walking around the body: the front ones reach ahead.
+	var ahead := 0
 	for d in 8:
-		var w := Tentacle.new(d * TAU / 8, d % 2)
-		for i in 120:  # 2 s at 210 px/s to the right
-			w.follow(Vector2(i * 3.5, 0.0), 0.0, 1.0 / 60.0, i / 60.0)
-		if w.chain[Tentacle.POINTS - 1].x < 119 * 3.5:
-			behind += 1
+		var w := Tentacle.new((d + 0.5) * TAU / 8, d % 2)
+		for i in 120:  # 2 s at 220 px/s to the right, the mage's base speed
+			w.follow(Vector2(i * 220.0 / 60.0, 0.0), 0.0, 1.0 / 60.0, i / 60.0)
+		if w.chain[Tentacle.POINTS - 1].x > 119 * 220.0 / 60.0:
+			ahead += 1
 		w.free()
-	check(behind == 8, "swimming tentacles trail behind: %d of 8" % behind)
+	check(ahead >= 2, "running tentacles reach ahead, not all trailing: %d of 8" % ahead)
 	# Against a wall and an enemy: no point goes through either.
 	var walls := Rect2(0, 0, 400, 400)
 	var enemy := [Vector2(40, 200), 12.0]
@@ -607,7 +607,8 @@ func _test_tentacle() -> void:
 			body = Arena.slide(body, go * 3.0, 12.0)  # the mage's radius
 			w.follow(body, go.angle(), 1.0 / 60.0, i / 60.0, Arena.RECT, [], true)
 			for p in w.chain.slice(1):
-				if Arena.polygons.any(func(poly): return Geometry2D.is_point_in_polygon(p, poly)):
+				if range(Arena.polygons.size()).any(func(j):  # in its box first: is_point_in_polygon misfires far out
+						return Arena.boxes[j].has_point(p) and Geometry2D.is_point_in_polygon(p, Arena.polygons[j])):
 					inside += 1
 		w.free()
 	check(inside == 0, "tentacles stay out of the map's walls: %d points in" % inside)

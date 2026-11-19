@@ -63,7 +63,7 @@ and the spells are words you write on scrolls, forged by an AI.
 
 ### The mage
 - An octopus seen from above (PixelLab sprites), with 8 physics tentacles that
-  crawl, swim behind it at full speed and bump into walls and monsters
+  walk around it, steps quickening with its speed, and bump into walls and monsters
   (`game/tentacle.gd`, visual only).
 - Stats as data (`game/stats.gd`): HP, HP and mana regen, mana, mana cost,
   cooldown, cast rate, speed, pickup radius, armor, crit (x2 per cast),
