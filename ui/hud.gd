@@ -84,6 +84,7 @@ func _ready() -> void:
 	_hp = _bar(HP_COLOR)
 	_hp.fill_mode = ProgressBar.FILL_END_TO_BEGIN  # empties from the left
 	_xp = _bar(XP_COLOR)
+	_xp.fill_mode = ProgressBar.FILL_BOTTOM_TO_TOP  # rises like a liquid
 	_mana = _bar(MANA_COLOR)
 	_gauge(top, [_hp, _xp, _mana])
 	_boss = _box(VBoxContainer.new(), 2)
@@ -213,7 +214,6 @@ func _bar(color: Color, height := SLOT) -> ProgressBar:
 	var fill := UITheme.fill(color)
 	fill.border_color = color.lightened(0.25)  # a soft top highlight
 	fill.border_width_top = 2
-	fill.set_corner_radius_all(height / 2)  # the slot's round ends
 	bar.add_theme_stylebox_override("fill", fill)
 	bar.add_theme_stylebox_override("background", StyleBoxEmpty.new())  # see-through when empty
 	var liquid := ShaderMaterial.new()  # the fill as a liquid: translucent, rippling
