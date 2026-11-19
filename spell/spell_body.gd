@@ -562,12 +562,17 @@ func _draw_arc() -> void:
 		pts.append(p + side * sin(u * PI) * 3.0 * sin(u * 23.0 - t * 30.0))
 	_bolt(pts)
 	lit.clear()
-	for i in range(0, pts.size(), 5):  # every ~60 px
+	for i in range(0, pts.size(), 2):  # every ~24 px: Arena's lights are full only within a third of their radius
 		lit.append(global_position + pts[i])
 	lit.append(global_position + end)
-	for e in links:
+	from = end
+	for e in links:  # along each link too, not just at its ends
 		if is_instance_valid(e):
-			lit.append(e.global_position)
+			var to: Vector2 = e.global_position - global_position
+			var k := maxi(1, int(from.distance_to(to) / 24.0))
+			for j in k:
+				lit.append(global_position + from.lerp(to, float(j + 1) / k))
+			from = to
 	if is_instance_valid(target):
 		_glow(end)
 	for e in links:
