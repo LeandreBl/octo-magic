@@ -122,7 +122,7 @@ func _ready() -> void:
 	_toasts.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	_toasts.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_toasts.offset_right = -24
-	_toasts.offset_top = 24
+	_toasts.offset_top = 96  # under the screens' header (the forge's scroll counter)
 	_toasts.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(_toasts)
 	main.toast.connect(toast)
