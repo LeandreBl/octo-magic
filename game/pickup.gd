@@ -29,11 +29,13 @@ const QUAD := 4.0
 const QUAD_TIME := 10.0  # s
 const HOPS := [[0.32, 26.0], [0.18, 7.0]]  # gold pops out of the enemy: (duration s, height px) per hop
 const HALO := 1.8  # the glow under a drop, to spot it on the floor: its size, x the drop's
+const AURA := {"scroll": 5.0}  # a rarer drop's halo is wider, to spot it from afar: x the drop's
 static var _halo := _make_halo(Color(1.0, 0.82, 0.25))
 ## A grimoire glows its own colour, and twinkles: red for the hero, blue for the spells.
 static var _halos := {
 	"grimoire_hero": _make_halo(Color(1.0, 0.2, 0.15), 0.8),
 	"grimoire_spell": _make_halo(Color(0.25, 0.55, 1.0), 0.8),
+	"scroll": _make_halo(Color(1.0, 0.8, 0.2), 0.9),  # a golden aura
 }
 const SHINE := {"size": 24, "frames": 7, "fps": 12, "loop": false}  # assets/icons/drop_gold_shine.png
 
@@ -135,7 +137,7 @@ func _draw() -> void:
 	var hop := _hop()
 	if hop.x > 0.0:  # squashed as it touches the floor
 		draw_set_transform(Vector2(0, -hop.x + hop.y * sz * 0.1), 0.0, Vector2(1.0 + hop.y * 0.2, 1.0 - hop.y * 0.2))
-	var h := sz * HALO
+	var h: float = sz * AURA.get(kind, HALO)
 	var halo: Texture2D = _halos.get(kind, _halo)
 	var glow := Color.WHITE
 	if kind in _halos:  # twinkle: a slow swell with a quick flicker on top, each grimoire on its own phase
