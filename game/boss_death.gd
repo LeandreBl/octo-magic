@@ -52,7 +52,9 @@ func _process(delta: float) -> void:
 	for b in _blasts:
 		if was < b[0] and age >= b[0]:
 			Sfx.play("blast", global_position)
+			Arena.flash(global_position + b[1], b[2] * 2.5, 0.5)
 	if was < AGONY and age >= AGONY:
+		Arena.flash(global_position, radius * 9.0, 1.6, Color(0.85, 0.65, 0.45))
 		Sfx.play("boom")
 		Sfx.play("boss_die")
 	var boom := age - AGONY

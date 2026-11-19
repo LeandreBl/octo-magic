@@ -219,6 +219,7 @@ func _halo_front(at: Vector2, r: float, hit: Dictionary) -> void:
 ## Game time: in solo it crawls with the world under the level-up cards.
 @rpc("authority", "call_local", "reliable")
 func _level_wave(at: Vector2) -> void:
+	Arena.flash(at, LEVEL_BLAST_RADIUS * 1.3, LEVEL_BLAST_TIME * 1.6, Color(0.8, 0.65, 0.3))
 	var tex := Enemy.art("fx/level_halo")
 	if not tex:
 		return

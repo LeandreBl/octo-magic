@@ -20,6 +20,7 @@ const NIGHT := 0.72
 const LAMP_LIGHT := 110.0  # world
 const MAGE_LIGHT := 190.0  # world
 const MAGES_LIT := 8  # the shader's room for mages
+const FLASHES := 16  # the shader's room for flashes (flash)
 const LAMPS := [[188, 228], [261, 203], [726, 173], [807, 176], [699, 252], [834, 254], [1199, 235], [1398, 428],
 		[398, 490], [673, 532], [864, 532], [1292, 781], [1362, 791], [677, 863], [862, 860]]
 
@@ -37,6 +38,7 @@ static var boxes: Array = _boxes(polygons)
 static var solids: Array = _map.circles.map(func(s): return [s[0] * SCALE, s[1] * SCALE, s[2] * SCALE])
 static var spawns: Array = _map.spawns.map(func(s): return [s[0] * SCALE, s[1] * SCALE])
 static var START := Vector2(_map.start[0], _map.start[1]) * SCALE
+static var flashes := []  # [at, radius, color, start clock, time s]: flash
 
 var ground: Texture2D = load(ART + "ground.png")
 var above := Sprite2D.new()
@@ -77,10 +79,14 @@ void fragment() {
 	var dark := Shader.new()
 	dark.code = """
 shader_type canvas_item;
+render_mode blend_premul_alpha;  // dark over the map, plus the flashes' light
 uniform vec2 lamps[%d];
 uniform vec2 mages[%d];
 uniform int lit;  // mages used
 uniform float night;
+uniform vec4 flash_at[%d];  // x, y, radius, strength
+uniform vec3 flash_color[%d];
+uniform int flashing;
 varying vec2 world;
 void vertex() { world = VERTEX; }
 float glow(vec2 at, float r) { return 1.0 - smoothstep(0.3 * r, r, distance(world, at)); }
@@ -89,9 +95,16 @@ void fragment() {
 	float flicker = 1.0 + 0.04 * sin(TIME * 9.0) * sin(TIME * 5.3);
 	for (int i = 0; i < %d; i++) l = max(l, glow(lamps[i], %f * flicker));
 	for (int i = 0; i < lit; i++) l = max(l, glow(mages[i], %f));
-	COLOR = vec4(0.01, 0.02, 0.06, night * (1.0 - l));
+	vec3 shine = vec3(0.0);
+	for (int i = 0; i < flashing; i++) {
+		float g = glow(flash_at[i].xy, flash_at[i].z) * flash_at[i].w;
+		l = max(l, g);
+		shine += flash_color[i] * g;
+	}
+	float a = night * (1.0 - l);
+	COLOR = vec4(vec3(0.01, 0.02, 0.06) * a + shine, a);
 }
-""" % [LAMPS.size(), MAGES_LIT, LAMPS.size(), LAMP_LIGHT, MAGE_LIGHT]
+""" % [LAMPS.size(), MAGES_LIT, FLASHES, FLASHES, LAMPS.size(), LAMP_LIGHT, MAGE_LIGHT]
 	night.material = ShaderMaterial.new()
 	night.material.shader = dark
 	night.material.set_shader_parameter("lamps", PackedVector2Array(LAMPS.map(func(l): return Vector2(l[0], l[1]) * SCALE)))
@@ -120,6 +133,25 @@ func _process(delta: float) -> void:
 	night.material.set_shader_parameter("lit", mages.size())
 	mages.resize(MAGES_LIT)
 	night.material.set_shader_parameter("mages", mages)
+	flashes = flashes.filter(func(f): return clock < f[3] + f[4]).slice(-FLASHES)
+	var at := PackedVector4Array()
+	var colors := PackedVector3Array()
+	for f in flashes:  # growing from a third of its radius, fading
+		var t: float = (clock - f[3]) / f[4]
+		at.append(Vector4(f[0].x, f[0].y, f[1] * (0.3 + 0.7 * sqrt(t)), (1.0 - t) * (1.0 - t)))
+		colors.append(Vector3(f[2].r, f[2].g, f[2].b))
+	night.material.set_shader_parameter("flashing", at.size())
+	at.resize(FLASHES)
+	colors.resize(FLASHES)
+	night.material.set_shader_parameter("flash_at", at)
+	night.material.set_shader_parameter("flash_color", colors)
+
+
+## A burst of light on the ground at `at` (an explosion, a level-up), over the
+## night: growing to radius, fading out over time s of game time; color is the
+## light it adds at its heart (darker, dimmer).
+static func flash(at: Vector2, radius: float, time: float, color := Color(1.0, 0.7, 0.3)) -> void:
+	flashes.append([at, radius, color, clock, time])
 
 
 ## Whether something above covers a mage at pos: its middle or its edge.
