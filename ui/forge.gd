@@ -504,5 +504,5 @@ func _glyphs(c: CanvasItem, job: Dictionary, mid: Vector2, radius: float, g: flo
 ## A job's progress shown, 0..1: a fake first 10% over its lead_in seconds, so
 ## it fills at once, then the forge's real 0..1 over the other 90%.
 static func _progress(job: Dictionary) -> float:
-	var t := (Time.get_ticks_msec() - job.started) / 1000.0
+	var t: float = (Time.get_ticks_msec() - job.started) / 1000.0
 	return 0.1 * clampf(t / job.get("lead_in", 3.0), 0.0, 1.0) + 0.9 * job.get("progress", 0.0)
