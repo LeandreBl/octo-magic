@@ -172,6 +172,9 @@ function chime(n, last) {
   try {
     audio ??= new AudioContext();
     if (audio.state === "suspended") audio.resume().catch(() => {});
+    // Still suspended (no click yet): skip. Scheduled now, the chimes would
+    // all ring at once on the first click, long after the gate is gone.
+    if (audio.state !== "running") return;
     const now = audio.currentTime;
     const out = audio.createGain();
     out.gain.value = 0.22;
