@@ -40,6 +40,9 @@ const STUN_TIME := 0.6  # s: how long a Stupor stun holds an enemy
 const CHAIN_REACH := 140.0  # px: how far a chained arc jumps from one enemy to the next
 const EMBER_EVERY := 0.12  # s: a cast bolt drops one ember this often (Embers)
 const BLAST := preload("res://assets/monsters/fx/boss_explosion.png")  # Displosio (_explode)
+const BLOOD := preload("res://assets/monsters/fx/blood.png")  # a hit's splash (_bleed)
+const BLOOD_SIZE := 14.0  # px: the splash's width on screen
+const BLOOD_TIME := 0.35  # s: its fade-out
 const ABOVE_DECOR := 11  # over the map's trees, roofs and statues (Arena.above, z 10)
 const GROUND := -1  # zones and sub-casts (a hit's effects): under the mages, enemies and obstacles, over the floor
 
@@ -236,9 +239,12 @@ func _channel() -> void:
 	if body.shape == "beam":
 		target = _beam_target()
 		links = _chain()
+		var from := global_position
 		for e in ([target] if target else []) + links:
 			apply_effects(body.on_hit, e.global_position if e != target else global_position, e)
 			_stun(e)
+			_bleed(e, from)
+			from = e.global_position
 	else:
 		var gust := _stat("gust")  # Procella (Upgrades "hurricane"): an engine stat, not spell data
 		for e in get_tree().get_nodes_in_group("enemies"):
@@ -248,6 +254,7 @@ func _channel() -> void:
 					e.push((e.global_position - global_position).normalized() * gust)
 				_chill(e)
 				_harden(e)
+				_bleed(e, global_position)
 		if gust > 0.0:  # Procella also turns the shots (archers' arrows...) in the cone away; every peer, as _repel_shots
 			var k := _cone_scale()
 			for s in get_tree().get_nodes_in_group("shots"):
@@ -399,6 +406,21 @@ func _explode(hit: Node2D) -> void:
 					e.take_damage(f.amount * _quad())
 
 
+## A tiny blood splash on the enemy's edge facing `from` (where the spell came
+## from), fading out. Every peer: hits are detected on each, effects host-side.
+func _bleed(e: Node2D, from: Vector2) -> void:
+	var fx := Sprite2D.new()
+	fx.texture = BLOOD
+	fx.position = e.global_position + (from - e.global_position).limit_length(e.radius * 0.7)
+	fx.rotation = randf() * TAU
+	fx.scale = Vector2.ONE * BLOOD_SIZE / BLOOD.get_width()
+	fx.z_index = ABOVE_DECOR
+	get_parent().add_child(fx)
+	var tw := fx.create_tween()
+	tw.tween_property(fx, "modulate:a", 0.0, BLOOD_TIME).set_ease(Tween.EASE_IN)
+	tw.tween_callback(fx.queue_free)
+
+
 func _check_hits() -> void:
 	for e in get_tree().get_nodes_in_group("enemies"):
 		if hit_ids.has(e.get_instance_id()):
@@ -407,6 +429,7 @@ func _check_hits() -> void:
 			continue
 		hit_ids[e.get_instance_id()] = true
 		apply_effects(body.on_hit, global_position, e)
+		_bleed(e, global_position - dir * body.size)
 		_immolate(e)
 		_explode(e)
 		if pierce_left > 0:
@@ -529,6 +552,19 @@ func _draw_arc() -> void:
 		var p := ctrl * 2.0 * u * (1.0 - u) + end * u * u
 		pts.append(p + side * sin(u * PI) * 3.0 * sin(u * 23.0 - t * 30.0))
 	_bolt(pts)
+	if is_instance_valid(target):
+		_glow(end)
+	for e in links:
+		if is_instance_valid(e):
+			_glow(e.global_position - global_position)
+
+
+## A small flickering round glow where the arc strikes, so it doesn't just stop.
+func _glow(at: Vector2) -> void:
+	var r := 7.0 + sin(Arena.clock * 37.0) * 1.5
+	draw_circle(at, r * 1.6, Color(color, 0.15))
+	draw_circle(at, r, Color(color, 0.35))
+	draw_circle(at, r * 0.45, Color(Color.WHITE, 0.8))
 
 
 func _bolt(pts: PackedVector2Array) -> void:
