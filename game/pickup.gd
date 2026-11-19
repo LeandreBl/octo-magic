@@ -2,7 +2,7 @@ extends Node2D
 ## A drop: gold heap, mana or life orb, blank scroll, grimoire (red: hero
 ## stats, blue: spell stats; Run opens its upgrade choice), or Quad Damage
 ## (the mage's spells hit QUAD times as hard for QUAD_TIME s). Flies to the player once within
-## its pickup stat (or `magnet`, raised at the end of a wave), then reports itself.
+## its pickup stat, then reports itself.
 ## Coop: simulated on the host, flies to the nearest mage; peers get its position.
 
 signal collected(kind: String, value: int)
@@ -51,7 +51,6 @@ const SHINE :={"size": 24, "frames": 7, "fps": 12, "loop": false}  # assets/icon
 var kind := "gold"
 var value := 1
 var target: Node2D
-var magnet := 0.0
 var speed := 0.0
 var age := 0.0  # drawn only: the synced position stays on the floor
 
@@ -119,7 +118,7 @@ func _physics_process(delta: float) -> void:
 		give(target)
 		collected.emit(kind, value)
 		queue_free()
-	elif to.length() < maxf(magnet, target.stats.pickup):
+	elif to.length() < target.stats.pickup:
 		speed = minf(speed + 1200.0 * delta, 700.0)
 		# Around the obstacles, as a monster walks: down the flow field, sliding along them.
 		position = Arena.slide(position, Arena.way(position, target.position) * minf(speed * delta, to.length()), RADIUS)

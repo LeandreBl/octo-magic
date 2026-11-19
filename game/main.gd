@@ -102,15 +102,7 @@ func _process(delta: float) -> void:
 			_spawn_in += _spawn_every
 			_spawn_enemy(to_spawn.pop_front())
 	elif get_tree().get_nodes_in_group("enemies").is_empty():
-		if Run.wave_type(Run.wave) != "boss":  # a boss's loot is walked to
-			_pull_drops()  # wave cleared
-		_next_wave()
-
-
-## Every drop on the map flies to the player (wave cleared, but a boss wave).
-func _pull_drops() -> void:
-	for p in get_tree().get_nodes_in_group("pickups"):
-		p.magnet = INF
+		_next_wave()  # the drops stay on the floor: walk to them
 
 
 # --- run (the host drives it, peers follow through RPCs) ----------------------
