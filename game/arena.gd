@@ -142,9 +142,12 @@ func _process(delta: float) -> void:
 	var spells := get_tree().get_nodes_in_group("spells")
 	if spells.size() > LIGHTS - at.size():
 		spells.sort_custom(func(a, b): return a.global_position.distance_squared_to(mage) < b.global_position.distance_squared_to(mage))
-	for b in spells.slice(0, LIGHTS - at.size()):  # their own color, dimmer, a zone's over its area
-		at.append(Vector4(b.global_position.x, b.global_position.y, maxf(b.body.size * (1.3 if b.body.shape == "zone" else 3.5), SPELL_LIGHT), b.modulate.a))
-		colors.append(Vector3(b.color.r, b.color.g, b.color.b) * 0.6)
+	for b in spells:  # their own color, dimmer, a zone's over its area, a beam's along its arc
+		var r := maxf(b.body.size * (1.3 if b.body.shape == "zone" else 3.5), SPELL_LIGHT)
+		for p in (b.lit if b.body.shape == "beam" and b.lit else [b.global_position]):
+			if at.size() < LIGHTS:
+				at.append(Vector4(p.x, p.y, r, b.modulate.a))
+				colors.append(Vector3(b.color.r, b.color.g, b.color.b) * 0.6)
 	night.material.set_shader_parameter("flashing", at.size())
 	at.resize(LIGHTS)
 	colors.resize(LIGHTS)

@@ -25,6 +25,7 @@ var anchor := Vector2.ZERO  # beam / cone: offset from the caster, kept while it
 var struck := false  # beam / cone: strike once, when cast
 var target: Node2D  # beam: the enemy the arc grips
 var links: Array = []  # beam: the enemies the arc jumps on to from its target (the caster's "chain" stat)
+var lit: PackedVector2Array = []  # beam: world points along its arc lighting the ground (Arena), set as drawn
 var index := 0  # beam / cone: which body of its emit (count > 1: one arc / cone each)
 var turn := 0.0  # beam / cone: its angle off the caster's aim (spread, radial...)
 var ember_timer := 0.0  # bolt: time since its last ember (the caster's "embers" stat)
@@ -560,6 +561,13 @@ func _draw_arc() -> void:
 		var p := ctrl * 2.0 * u * (1.0 - u) + end * u * u
 		pts.append(p + side * sin(u * PI) * 3.0 * sin(u * 23.0 - t * 30.0))
 	_bolt(pts)
+	lit.clear()
+	for i in range(0, pts.size(), 5):  # every ~60 px
+		lit.append(global_position + pts[i])
+	lit.append(global_position + end)
+	for e in links:
+		if is_instance_valid(e):
+			lit.append(e.global_position)
 	if is_instance_valid(target):
 		_glow(end)
 	for e in links:
