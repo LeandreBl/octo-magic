@@ -22,6 +22,9 @@ const SLOT := 18  # the slot's height: the bars'
 const HP_COLOR := Color("#b3141b")
 const MANA_COLOR := Color("#2346c8")
 const XP_COLOR := Color("#d9a520")
+const BOSS_COLOR := Color("#e0701a")  # the bosses' health: orange, apart from the player's blood
+const BOSS_SLOT := 10  # the boss bar's height: thinner than the player's
+const BOSS_WIDTH := 0.6  # the boss bar's width, of the player's gauge
 const SHARE := 1.0 / 3.0  # of the screen width the gauges take at base max HP and mana
 const MAX_SHARE := 0.45  # their cap, however high the max HP and mana go
 const MILESTONE := 5  # every this many waves, a message fades in and out
@@ -89,7 +92,7 @@ func _ready() -> void:
 	b_name.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
 	b_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_boss.add_child(b_name)
-	_boss_bar = _bar(HP_COLOR)
+	_boss_bar = _bar(BOSS_COLOR, BOSS_SLOT)
 	_boss_bar.fill_mode = ProgressBar.FILL_END_TO_BEGIN
 	_gauge(_boss, [_boss_bar])
 
@@ -201,22 +204,22 @@ func _gauge(parent: Control, bars: Array) -> void:
 	parent.add_child(frame)
 
 
-## A bar of `color` the slot's height, its fill a liquid.
-func _bar(color: Color) -> ProgressBar:
+## A bar of `color`, `height` tall (the slot's), its fill a liquid.
+func _bar(color: Color, height := SLOT) -> ProgressBar:
 	var bar := ProgressBar.new()
-	bar.custom_minimum_size = Vector2(250, SLOT)
+	bar.custom_minimum_size = Vector2(250, height)
 	bar.show_percentage = false
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var fill := UITheme.fill(color)
 	fill.border_color = color.lightened(0.25)  # a soft top highlight
 	fill.border_width_top = 2
-	fill.set_corner_radius_all(SLOT / 2)  # the slot's round ends
+	fill.set_corner_radius_all(height / 2)  # the slot's round ends
 	bar.add_theme_stylebox_override("fill", fill)
 	bar.add_theme_stylebox_override("background", StyleBoxEmpty.new())  # see-through when empty
 	var liquid := ShaderMaterial.new()  # the fill as a liquid: translucent, rippling
 	liquid.shader = LIQUID
 	liquid.set_shader_parameter("top", 0.0)
-	liquid.set_shader_parameter("height", SLOT)
+	liquid.set_shader_parameter("height", height)
 	bar.material = liquid
 	return bar
 
@@ -307,7 +310,7 @@ func _process(_delta: float) -> void:
 
 
 ## HP and mana as wide as their max (XP a quarter of HP): SHARE of the screen
-## at the base max, up to MAX_SHARE; the boss bar as wide as the three.
+## at the base max, up to MAX_SHARE; the boss bar BOSS_WIDTH of the three.
 func _size_gauges(hp_max: float, mana_max: float) -> void:
 	var screen := get_viewport_rect().size.x
 	var total := hp_max * 1.25 + mana_max
@@ -316,7 +319,7 @@ func _size_gauges(hp_max: float, mana_max: float) -> void:
 	_hp.custom_minimum_size.x = roundf(hp_max * per)
 	_xp.custom_minimum_size.x = roundf(hp_max * per / 4.0)
 	_mana.custom_minimum_size.x = roundf(mana_max * per)
-	_boss_bar.custom_minimum_size.x = roundf(total * per) + DIVIDER.get_width() * 2
+	_boss_bar.custom_minimum_size.x = roundf((total * per + DIVIDER.get_width() * 2) * BOSS_WIDTH)
 
 
 ## The spell's icon, else the first frame of its projectile, else a disc of its color.
