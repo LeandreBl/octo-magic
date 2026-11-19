@@ -16,6 +16,8 @@ const CHEVRONS = 9;
 const DOWNLOAD_CHEVRONS = 7; // the 8th when the engine runs, the 9th opens
 const RUNES = 24;
 const STEP = 360 / RUNES;
+// The game's version, shown small in a corner of the gate: bump it on a release.
+export const VERSION = "0.1.0";
 
 // Elder Futhark runes, drawn as strokes in a 12 x 20 box centered on 0, 0.
 const GLYPHS = [
@@ -137,6 +139,7 @@ const CSS = `
 .rg-pips i { width: 12px; height: 12px; border: 2px solid #0b0c10; border-radius: 3px; background: #2a2050; transition: background .2s, box-shadow .2s; }
 .rg-pips i.on { background: #ffc94a; box-shadow: 0 0 8px #ffc94a88; }
 .rg.failed .rg-pips i.on { background: #b3261e; box-shadow: none; }
+.rg-version { position: absolute; right: .8rem; bottom: .6rem; margin: 0; font: .75rem Fredoka, system-ui, sans-serif; color: #b3a8d6; opacity: .5; }
 .rg-error { margin: 0; max-width: 34rem; font: .95rem Fredoka, system-ui, sans-serif; color: #ff8a80; }
 .rg button {
   min-height: 48px; padding: 0 1.4rem; border: 3px solid #0b0c10; border-radius: 10px; background: #ffc94a; color: #1a1206;
@@ -271,7 +274,8 @@ export function runeGate(parent = document.body, { lang = language() } = {}) {
       gateSvg, html("div", { className: "rg-horizon" }, html("div", { className: "rg-ripple" }), html("img", { src: "/assets/icon.png", alt: "" }))),
     html("p", { className: "rg-title", textContent: "Octo Magic" }),
     msg,
-    html("div", { className: "rg-count" }, pips, count));
+    html("div", { className: "rg-count" }, pips, count),
+    html("p", { className: "rg-version", textContent: `v${VERSION}` }));
   root.setAttribute("aria-label", t.gate);
   root.setAttribute("aria-valuemin", "0");
   root.setAttribute("aria-valuemax", String(CHEVRONS));
