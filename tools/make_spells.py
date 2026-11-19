@@ -5,7 +5,8 @@ burst (one-shot), as strips following server/sheet.py.
 Writes assets/spells/<id>.png and <id>_burst.png and records them in
 game/spells.json (body.sheet / body.burst_sheet, bundle res://assets/spells).
 Existing files are kept (delete one to redo it). Beams are drawn by the
-engine (spell_body.gd); a cone's sheet is its whole spray, apex on the left.
+engine (spell_body.gd); a cone's sheet is one wave, sent out again and again by
+the engine (frost_jet.png: generated with ChatGPT, PixelLab out of credits).
 
 Run: python3 tools/make_spells.py [id ...]
 """
@@ -23,15 +24,15 @@ import sheet  # noqa: E402
 OUT = ROOT / "assets/spells"
 SPELLS_JSON = ROOT / "game/spells.json"
 BOLT = ". Top-down game projectile flying to the right, seamless loop, centered, fits within {n}x{n} pixels."
-CONE = (". Top-down game spell effect, seamless loop: a cone spray blowing to the right, its tip"
-        " a point at the left edge, widening to the right edge, about 60 degrees wide, fits within {n}x{n} pixels.")
+CONE = (". Top-down game spell effect, one still frame: a thin crescent wave bulging to the right, on the"
+        " right edge of the frame, spanning its full height, fits within {n}x{n} pixels.")
 BURST = ". Seen from above, one-shot burst, short, centered, fits within {n}x{n} pixels."
 # id -> (projectile look, size, impact look, size); no impact look = no burst
 SPELLS = {
     "fireball": ("a blazing orange and yellow fireball with a flickering flame tail", 32, None, 0),
     "magic_missile": ("a glowing violet arcane bolt with a short sparkling trail", 24,
                       "a small violet arcane spark burst", 32),
-    "frost_jet": ("a gust of freezing breath: wispy semi-transparent white and pale cyan frost mist puffs, swirling icy wind streaks, sparkling ice crystals and snowflakes, soft ragged edges fading out, no solid shape, no outline", 64,
+    "frost_jet": ("a wave of freezing wind: wispy pale cyan and white frost mist, tiny sparkling ice crystals, soft fading ends, no outline", 64,
                   None, 0),
     "frost_shard": ("a sharp pale blue ice shard spinning slightly, frosty glints", 24,
                     "pale blue ice shards shattering, frost sparkles", 32),

@@ -28,9 +28,12 @@ var links: Array = []  # beam: the enemies the arc jumps on to from its target (
 var index := 0  # beam / cone: which body of its emit (count > 1: one arc / cone each)
 var turn := 0.0  # beam / cone: its angle off the caster's aim (spread, radial...)
 var ember_timer := 0.0  # bolt: time since its last ember (the caster's "embers" stat)
+var born := 0.0  # Arena.clock when added: a cone sends its waves from then on
 
 const BURN_TIME := 3.0  # s: how long an immolated enemy burns after the bolt
-const CONE_ALPHA := 0.5  # a cone's sheet opacity: a cold wind, the enemies seen through it
+const CONE_ALPHA := 0.9  # a cone wave's peak opacity: a cold wind, the enemies seen through it
+const CONE_WAVES := 4  # cone waves in flight at once
+const CONE_TRAVEL := 0.4  # s: a cone wave's flight from the staff to the reach
 const CHILL_TIME := 1.0  # s: how long a chilled enemy stays slowed after the cone
 const FREEZE_TIME := 0.6  # s: how long a Rigor freeze holds an enemy
 const STUN_TIME := 0.6  # s: how long a Stupor stun holds an enemy
@@ -125,6 +128,7 @@ func _ready() -> void:
 	pierce_left = body.pierce
 	bounce_left = body.bounce
 	origin = position
+	born = Arena.clock
 	if is_instance_valid(caster):
 		anchor = position - caster.global_position
 	homing = body.motion.any(func(m): return m.type == "homing" and m.strength > 0.0)
@@ -533,21 +537,29 @@ func _bolt(pts: PackedVector2Array) -> void:
 	draw_polyline(pts, Color.WHITE, 1.0, true)
 
 
-## The cone's sheet (apex on its left edge), see-through like a cold wind and
-## kept inside the area it hurts (its far corners on the reach, not past it);
-## no sheet: a flickering polygon.
+## The cone's waves: its sheet (a crescent of cold wind on the right edge of
+## the frame) sent out from the apex every CONE_TRAVEL / CONE_WAVES s, each one
+## widening with the cone as it goes out to the reach, fading in then out, a
+## little tilted at random. Timed on the clock (ticks renew age, not the waves);
+## only the waves sent since the cast, none popping up mid-flight.
+## No sheet: a flickering polygon.
 func _draw_cone() -> void:
 	var k := _cone_scale()
 	var reach: float = body.speed * k
 	var half := deg_to_rad(maxf(body.angle * k, 4.0)) / 2.0
 	if anim:
 		var s: Dictionary = anim[1]
-		var i := int(Arena.clock * s.fps) % int(s.frames)  # the clock: ticks renew age, not the animation
 		var a := minf(half, 1.4)
-		var w := reach * cos(a)
-		var h := 2.0 * reach * sin(a)
-		draw_set_transform(Vector2.ZERO, dir.angle())
-		draw_texture_rect_region(anim[0], Rect2(0, -h / 2.0, w, h), Rect2(i * s.size, 0, s.size, s.size), Color(1, 1, 1, CONE_ALPHA))
+		for i in CONE_WAVES:
+			var t := Arena.clock / CONE_TRAVEL + float(i) / CONE_WAVES
+			var u := fposmod(t, 1.0)
+			if Arena.clock - u * CONE_TRAVEL < born:
+				continue
+			var r := reach * lerpf(0.15, 1.0, u)
+			var h := 2.0 * r * sin(a)
+			draw_set_transform(Vector2.ZERO, dir.angle() + sin(floorf(t) * 12.9898) * 0.15)
+			draw_texture_rect_region(anim[0], Rect2(r - h, -h / 2.0, h, h), Rect2(0, 0, s.size, s.size), Color(1, 1, 1, CONE_ALPHA * sin(u * PI)))
+		draw_set_transform(Vector2.ZERO)
 		return
 	var pts := PackedVector2Array([Vector2.ZERO])
 	for i in 9:
