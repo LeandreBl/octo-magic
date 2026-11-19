@@ -202,12 +202,12 @@ static func power(s: Dictionary) -> float:
 	return _emit_power(s.emit)
 
 
-## A cast costs CAST_BASE plus CAST_RATE per power (Pila Ignea 30, Telum
-## Magicum 15). A channeled spell (beam, cone) costs CHANNEL_RATE per power a
+## A cast costs CAST_BASE plus CAST_RATE per power (Pila Ignea, power 28: 15;
+## Telum Magicum, power 5: 10). A channeled spell (beam, cone) costs CHANNEL_RATE per power a
 ## second (Fulmen, Flatus Gelidus 10/s), paid per tick: held down, it still
 ## drains faster than the base mana regen.
-const CAST_BASE := 12.0
-const CAST_RATE := 0.65
+const CAST_RATE := 5.0 / 23.0
+const CAST_BASE := 10.0 - 5.0 * CAST_RATE
 const CHANNEL_RATE := 10.0 / 6.0
 
 
