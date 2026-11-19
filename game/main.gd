@@ -23,7 +23,8 @@ const LEVEL_BLAST_FORCE := 900.0  # knock speed: about 270 px of slide (enemy kn
 const LEVEL_BLAST_TIME := 0.6  # s of game time for the halo's front to reach LEVEL_BLAST_RADIUS
 const BOSS_COINS := 30  # gold pieces a boss scatters
 const GRIMOIRE_CHANCE := 0.02  # a kill drops a grimoire (red or blue)
-const BOSS_GRIMOIRES := 4  # a boss always drops that many
+const BOSS_GRIMOIRES := 2  # a boss rolls that many times (so at most that many grimoires)
+const BOSS_GRIMOIRE_CHANCE := 0.4  # chance per roll: 36% none, 48% one, 16% two
 const QUAD_CHANCE := 0.03  # an Archfiend's imp drops Quad Damage
 const Enemy := preload("res://game/enemy.gd")
 const Pickup := preload("res://game/pickup.gd")
@@ -301,7 +302,8 @@ func _on_killed(e: Node2D) -> void:
 		_drop("quad", 1, e.position + Vector2(randf_range(-12, 12), 16))
 	if Run.is_boss(e.kind):
 		for i in BOSS_GRIMOIRES:
-			_drop("grimoire_" + Upgrades.KINDS.pick_random(), 1, e.position + Vector2.from_angle(TAU * i / BOSS_GRIMOIRES) * (e.radius + 20))
+			if randf() < BOSS_GRIMOIRE_CHANCE * luck:
+				_drop("grimoire_" + Upgrades.KINDS.pick_random(), 1, e.position + Vector2.from_angle(TAU * i / BOSS_GRIMOIRES) * (e.radius + 20))
 	elif randf() < GRIMOIRE_CHANCE * luck:
 		_drop("grimoire_" + Upgrades.KINDS.pick_random(), 1, e.position + Vector2(randf_range(-12, 12), -16))
 	if randf() < (0.05 if Run.is_boss(e.kind) else 0.0025) * luck:  # rare: ~1 boss in 20
