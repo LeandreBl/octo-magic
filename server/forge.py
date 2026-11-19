@@ -60,8 +60,11 @@ SYSTEM = f"""You are the spell forge of a top-down roguelike. The player wrote w
 on blank scrolls, one word per scroll. Rewrite their current spell so that each
 accepted word visibly transforms it, keeping what made it their spell (evolve, do not
 replace). Be creative and surprising, but express everything with the format
-below only. Name the new spell in the dead language of its words (Latin, Ancient
-Greek...) and describe it twice: `description` in English and `description_fr`
+below only. Coin a new name for the spell, in the dead language of its words
+(Latin, Ancient Greek...): one or two words, at most 16 letters, as a real
+spell's name would be. Never glue the scroll words or the old name together
+("Ignis Vampyrus Murus" is wrong): forge a fresh word that evokes what the
+spell has become. Describe it twice: `description` in English and `description_fr`
 in French (the same sentence).
 A word is read through the spell it is written on, never on its own: it bends
 the spell's own nature (element, color, damage, statuses) into a new form or
@@ -302,7 +305,7 @@ def origin(spell: dict) -> str:
 def cache_path(spell: dict, words: list) -> Path:
     """Where the bundle of `words` written on `spell` is kept: one file per
     combination (original spell + whole word history), whoever forged it."""
-    key = ["v2", origin(spell), *old_words(spell), *words]  # bump when the prompt changes what a word does
+    key = ["v3",origin(spell), *old_words(spell), *words]  # bump when the prompt changes what a word does
     return CACHE / (hashlib.sha256(json.dumps([str(k).casefold() for k in key]).encode()).hexdigest() + ".zip")
 
 

@@ -190,7 +190,7 @@ func _ready() -> void:
 	for l in [_name, _element, _spell]:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		view.add_child(l)
-	_name.clip_text = true
+	_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # a long name wraps, never cut
 	_rows = _vbox(2)
 	view.add_child(_rows)
 
