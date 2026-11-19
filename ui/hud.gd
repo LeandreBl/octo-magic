@@ -18,6 +18,7 @@ const DIVIDER: Texture2D = preload("res://assets/ui/gauge_divider.png")
 const CAP := 36  # the frame's end caps: the slot starts there
 const RIM := 6  # the frame's rails, above and below the slot
 const SLOT := 18  # the slot's height: the bars'
+const TUCK := 4  # the fills run this far under the end caps and dividers: no gap at 100%
 # Diablo's liquids: blood red, deep blue; the XP gold.
 const HP_COLOR := Color("#b3141b")
 const MANA_COLOR := Color("#2346c8")
@@ -187,6 +188,7 @@ func _gauge(parent: Control, bars: Array) -> void:
 	frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var row := _box(HBoxContainer.new(), 0)
+	row.show_behind_parent = true  # the frame over the fills' tucked ends
 	frame.add_child(row)
 	for i in bars.size():
 		if i:
@@ -199,6 +201,7 @@ func _gauge(parent: Control, bars: Array) -> void:
 			ruby.offset_top = -RIM
 			ruby.offset_bottom = RIM
 			ruby.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			ruby.z_index = 1  # over the next bar's tucked end too
 			gap.add_child(ruby)
 			row.add_child(gap)
 		row.add_child(bars[i])
@@ -214,6 +217,8 @@ func _bar(color: Color, height := SLOT) -> ProgressBar:
 	var fill := UITheme.fill(color)
 	fill.border_color = color.lightened(0.25)  # a soft top highlight
 	fill.border_width_top = 2
+	fill.expand_margin_left = TUCK  # under the caps and dividers
+	fill.expand_margin_right = TUCK
 	bar.add_theme_stylebox_override("fill", fill)
 	bar.add_theme_stylebox_override("background", StyleBoxEmpty.new())  # see-through when empty
 	var liquid := ShaderMaterial.new()  # the fill as a liquid: translucent, rippling
