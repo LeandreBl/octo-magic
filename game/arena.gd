@@ -150,6 +150,12 @@ func _process(delta: float) -> void:
 			if at.size() < LIGHTS:
 				at.append(Vector4(p.x, p.y, r, b.modulate.a))
 				colors.append(Vector3.ZERO if beam else Vector3(b.color.r, b.color.g, b.color.b) * 0.6)
+	for d in get_tree().get_nodes_in_group("pickups"):  # scrolls and grimoires light the ground, breathing
+		var gl = d.GROUND_LIGHT.get(d.kind)
+		if gl and at.size() < LIGHTS:
+			var breath := 0.85 + 0.15 * sin(clock * 2.5 + d.get_instance_id() % 628 * 0.01)
+			at.append(Vector4(d.global_position.x, d.global_position.y, gl[0] * breath, 0.9))
+			colors.append(Vector3(gl[1].r, gl[1].g, gl[1].b) * breath)
 	night.material.set_shader_parameter("flashing", at.size())
 	at.resize(LIGHTS)
 	colors.resize(LIGHTS)

@@ -40,7 +40,13 @@ static var _halos := {
 	"grimoire_hero": _make_halo(Color(1.0, 0.2, 0.15), 0.8),
 	"grimoire_spell": _make_halo(Color(0.25, 0.55, 1.0), 0.8),
 }
-const SHINE := {"size": 24, "frames": 7, "fps": 12, "loop": false}  # assets/icons/drop_gold_shine.png
+## Drops that light the ground through the night (Arena): kind -> [radius world, color added].
+const GROUND_LIGHT := {
+	"scroll": [120.0, Color(0.6, 0.42, 0.12)],
+	"grimoire_hero": [110.0, Color(0.6, 0.12, 0.08)],
+	"grimoire_spell": [110.0, Color(0.12, 0.3, 0.6)],
+}
+const SHINE :={"size": 24, "frames": 7, "fps": 12, "loop": false}  # assets/icons/drop_gold_shine.png
 
 var kind := "gold"
 var value := 1
