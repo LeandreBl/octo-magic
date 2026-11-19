@@ -540,7 +540,7 @@ func _title() -> Control:
 ## A title menu section: a tall button with an icon, its name and what is in it.
 func _tile(name: String, sub: String, tex: Texture2D, action: Callable) -> Button:
 	var b := _button("", action)
-	b.custom_minimum_size = Vector2(0, 112)
+	b.custom_minimum_size = Vector2(0, 150)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	# Right and bottom also clear the button's drop shadow (5) and bottom bevel (4).
 	var m := _margin(14, 12, 19, 22)
