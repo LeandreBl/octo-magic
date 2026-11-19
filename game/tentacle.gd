@@ -8,7 +8,9 @@ extends Line2D
 ## right in turn: each reaches forward on its side, the tip grips the ground like a
 ## sucker, the arm sweeps back past its base as the body goes by, then lets go,
 ## curls up as it lifts and unrolls ahead again (the bend runs from the base to the
-## tip), out of phase (STAGGER); the others are dragged, trailing loose. Slow, it
+## tip), out of phase (STAGGER), the grip slipping a little (SLIP); the two rear
+## ones push, the same stroke the other way: tucked in at the side, they stretch
+## out behind; the others are dragged, trailing loose. Slow, it
 ## steps to its rest spot; still, the arms writhe slowly and now and then one shifts. It is a body of its own: its
 ## points bump into the arena's walls and are shoved out of the enemies around
 ## (circles), the tip never planted inside either. Visual only: the body is the
@@ -31,7 +33,7 @@ const SWING_BEND := 0.5  # rad: the bend that runs down a stepping arm
 const BEND_STIFF := 0.3  # how hard a joint is pulled to its target bend, per pass
 const ROOT_STIFF := 0.5  # how hard the first segment leaves the body along the arm's direction
 const PACE := 80.0  # px/s: up to it the gait keeps its times; faster, it quickens with the speed
-const MIN_PACE := 0.3  # the quickest gait, in its slow times: beyond, the strides lengthen
+const MIN_PACE := 0.5  # the quickest gait, in its slow times: beyond, the strides lengthen
 const LEAD := 0.7  # how far ahead of its rest spot a step lands at most, in LENGTH
 ## Moving, the two front arms pull: each reaches forward on its side, grips, pulls
 ## back past its base as the body goes by, then lets go and reaches again. A third,
@@ -42,6 +44,12 @@ const PULL := 0.1  # it lets go once its tip is that far behind its base, in LEN
 const STAGGER := 0.5  # in LENGTH: group 1 pulls that much longer, so the two groups never all pull at once
 const REACH_FRONT := 0.15  # rad from the heading: where the front arms reach
 const REACH_SPREAD := 0.25  # rad more for a side arm
+## The rear arms push, the front ones' stroke the other way: each tucks in at its
+## side, grips, stretches out behind as the body goes, then lets go and tucks in again.
+const PUSH_ANGLE := 2.0  # rad from the heading: where a rear arm tucks in
+const PUSH_NEAR := 0.45  # how far from its base, in LENGTH
+const PUSH_FAR := 1.1  # it lets go once its tip is that far, in LENGTH
+const SLIP := 0.4  # of the body's speed a gripping tip slips along with: the strokes slow down
 const SIDE_TURNS := 3  # GAIT turns a side arm pulls before the other side's takes over
 const DRAG := 0.35  # how far toward the rear a dragged arm trails
 const DRAG_HOLD := 0.15  # how hard a dragged arm is drawn to its trailing pose: loose, it sways
@@ -71,7 +79,7 @@ var _bend := PackedFloat32Array()  # the joints' target bends, eased (EASE)
 var _hold := 1.0  # the tip's grip, eased (EASE)
 var _reaching := false  # the current step reaches ahead to pull
 var _reach := 0.0  # rad from the heading, on its side: where it reaches
-var _pulls := 0  # moving: 2 a front arm, it pulls; 1 a side arm, it pulls in turn; 0 dragged
+var _pulls := 0  # moving: 3 a rear arm, it pushes; 2 a front arm, it pulls; 1 a side arm, it pulls in turn; 0 dragged
 var _gait := 0.0  # the gait's clock, in GAIT turns: the two groups take turns on its whole numbers
 
 
@@ -80,8 +88,8 @@ func _init(direction := 0.0, step_group := 0) -> void:
 	group = step_group
 	_side = 1.0 if sin(direction) >= 0.0 else -1.0
 	var k := absf(angle_difference(0.0, direction))  # from the front
-	_pulls = 2 if k < PI / 4.0 else 1 if k < PI / 2.0 else 0
-	_reach = REACH_FRONT + (REACH_SPREAD if _pulls == 1 else 0.0)
+	_pulls = 2 if k < PI / 4.0 else 1 if k < PI / 2.0 else 3 if k > PI * 0.75 else 0
+	_reach = [REACH_FRONT, REACH_FRONT + REACH_SPREAD, REACH_FRONT, PUSH_ANGLE][_pulls]
 	texture = TEX
 	texture_mode = Line2D.LINE_TEXTURE_STRETCH
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -124,7 +132,8 @@ func follow(center: Vector2, heading: float, delta: float, t: float,
 		s = 1.0 - maxf(_step_t, 0.0) / _step_len
 		var lift := sin(PI * s)
 		if _reaching:  # the spot ahead moves with the body: aimed at until the tip lands
-			_to = _free(base + Vector2.from_angle(heading + _side * _reach) * length * REACH_FAR, walls, obstacles, map)
+			_to = _free(base + Vector2.from_angle(heading + _side * _reach) * length * (PUSH_NEAR if _pulls == 3 else REACH_FAR),
+					walls, obstacles, map)
 		foot = _from.lerp(_to, ease(s, -2.0)).lerp(base, LIFT * lift)  # drawn back up, then laid down
 		hold = 0.3  # lifted: the muscle shapes it more than the path
 	else:
@@ -133,10 +142,13 @@ func follow(center: Vector2, heading: float, delta: float, t: float,
 		_fidget -= delta
 		var shift := _fidget <= 0.0 and _speed < 5.0
 		var moving := _speed > PULL_FROM
+		if moving and _reaching:
+			foot += vel * delta * SLIP  # the grip slips along: a slower stroke
 		var back := (foot - base).dot(Vector2.from_angle(heading)) / length  # how far ahead of its base the tip is
-		var step := (back < -PULL - STAGGER * group or foot.distance_to(base) > length * 1.2) if moving \
+		var pushed := foot.distance_to(base) > length * (PUSH_FAR - 0.3 * group)  # a rear arm stretched out: its push is over
+		var step := (pushed if _pulls == 3 else back < -PULL - STAGGER * group or foot.distance_to(base) > length * 1.2) if moving \
 				else (far > length * STEP and turn or far > length * 0.7 or shift and turn)  # too far: it steps anyway
-		var pulls := _pulls == 2 or _pulls == 1 and int(_gait / SIDE_TURNS) % 2 == group
+		var pulls := _pulls >= 2 or _pulls == 1 and int(_gait / SIDE_TURNS) % 2 == group
 		if step and moving and not pulls:
 			_reaching = false  # its pull over and not its turn: dragged
 			step = false
