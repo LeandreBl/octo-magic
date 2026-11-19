@@ -542,7 +542,8 @@ func _tile(name: String, sub: String, tex: Texture2D, action: Callable) -> Butto
 	var b := _button("", action)
 	b.custom_minimum_size = Vector2(0, 112)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var m := _margin(14, 12, 10, 12)
+	# Right and bottom also clear the button's drop shadow (5) and bottom bevel (4).
+	var m := _margin(14, 12, 19, 22)
 	m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	m.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(m)
