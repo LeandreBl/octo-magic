@@ -406,7 +406,7 @@ func _process(delta: float) -> void:
 	_counter.text = str(_blanks)
 	var state := tr("No blank scroll: bosses drop them.") if _blanks == 0 \
 		else tr("The forge turns them into a new spell, equipped at your next run.")
-	_status.text = main.forge_status + "\n" + state if main.forge_status else state
+	_status.text = state
 
 
 ## The job in the foreground, {} if none.

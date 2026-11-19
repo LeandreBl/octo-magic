@@ -27,6 +27,7 @@ var _forge_corner: Button  # the way to the forge from every screen between runs
 var _on_fullscreen: JavaScriptObject  # kept alive: the browser calls it on fullscreenchange
 var _halo: TextureRect  # light bloom behind the level-up cards
 var _time_tween: Tween  # time back to normal after a level-up
+var _toasts: VBoxContainer  # news top right, in the menus (main.toast)
 
 
 func _ready() -> void:
@@ -117,6 +118,14 @@ func _ready() -> void:
 	_prompt.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_prompt.position.y -= 30
 	root.add_child(_prompt)
+	_toasts = _vbox(8)
+	_toasts.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_toasts.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_toasts.offset_right = -24
+	_toasts.offset_top = 24
+	_toasts.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(_toasts)
+	main.toast.connect(toast)
 	main.run_started.connect(_fade_in)
 	get_viewport().size_changed.connect(_layout)
 	_layout()
@@ -174,6 +183,7 @@ func show_screen(name: String) -> void:
 	for k in screens:
 		screens[k].visible = k == name
 	sticks.visible = name == ""
+	_toasts.visible = name not in ["", "levelup"]  # in the menus only
 	_dim.visible = name not in ["", "title", "shop", "forge", "end"]
 	# Between runs, the forge is one click away (title and end of run have their own button).
 	_forge_corner.visible = not Run.active and Online.logged_in() and not Online.character.is_empty() \
@@ -255,6 +265,22 @@ func _input(e: InputEvent) -> void:
 
 
 ## Options and placeholders return to the screen that opened them.
+## A message top right, fading out after a few seconds.
+func toast(text: String) -> void:
+	var box := PanelContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_theme_stylebox_override("panel", UITheme.flat(Color(UITheme.PANEL, 0.95), UITheme.GOLD, 2, 14, 4))
+	var l := UITheme.label(text, "", 18)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD
+	l.custom_minimum_size.x = 360
+	box.add_child(l)
+	_toasts.add_child(box)
+	var t := box.create_tween()
+	t.tween_interval(6.0)
+	t.tween_property(box, "modulate:a", 0.0, 0.6)
+	t.tween_callback(box.queue_free)
+
+
 func open(name: String) -> void:
 	back_to = current
 	show_screen(name)

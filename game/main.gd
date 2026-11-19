@@ -33,6 +33,7 @@ signal run_ended  # last_run holds the result
 signal net_error(message: String)  # host lost or room closed: back to solo
 signal forge_started(job: Dictionary)  # the forge took the words: a job of forge_jobs
 signal forged(job: Dictionary, ok: bool)  # a forge job ended: the spell came back, or the scrolls did
+signal toast(text: String)  # news for the menus (ui/ui.gd shows it top right): the forge's errors and results
 
 var spawner: MultiplayerSpawner
 var net: Node  # game/net.gd
@@ -46,7 +47,6 @@ var map_name := "crypt"  # the run's first music track (Sfx.TRACKS), for players
 var forge_jobs: Array[Dictionary] = []
 var _forge_posting := false  # words sent, not taken yet: their scrolls are not counted off
 var forge_note := ""  # forge news, shown in the HUD and the forge (ui/forge.gd)
-var forge_status := ""  # result of the last write attempt, for the forge
 var last_run := {}  # Run.finish() + "reached" achievements + "unlocked" spells
 
 
@@ -151,7 +151,6 @@ func _run_started(map: String, saved := {}) -> void:
 	if p:
 		p.position = Arena.START
 	add_child(Arena.new())
-	forge_status = ""
 	get_tree().paused = false
 	send_loadout(true)
 	if p and not saved.is_empty():
@@ -518,16 +517,15 @@ func write_scroll(words: String, entry: Dictionary) -> void:
 	var auth := await Online.auth_headers()
 	if auth.is_empty():
 		_forge_posting = false
-		forge_status = tr("Log in (main menu → Account) to write the scrolls.")
+		toast.emit(tr("Log in (main menu → Account) to write the scrolls."))
 		return
-	forge_status = tr("Writing the scrolls…")
 	var job := {"slot": entry.slot, "spell": entry.spell, "who": Online.character_name(), "words": 0, "text": word}
 	var body := JSON.stringify({"spell": entry.spell, "words": word,
 		"scrolls": Profile.blank_scrolls, "lang": TranslationServer.get_locale()})
 	if not _forge_request("/api/forge", auth + PackedStringArray(["Content-Type: application/json"]),
 			_on_forge_reply.bind(job), HTTPClient.METHOD_POST, body):
 		_forge_posting = false
-		forge_status = tr("The scrolls cannot be written right now. Your scrolls are kept.")
+		toast.emit(tr("The scrolls cannot be written right now. Your scrolls are kept."))
 
 
 func _poll(job: Dictionary) -> void:
@@ -556,11 +554,11 @@ func _on_forge_reply(result: int, code: int, headers: PackedStringArray, data: P
 	if result != HTTPRequest.RESULT_SUCCESS or code != 200 or reply.has("error"):
 		var msg: String = tr(str(reply.get("error", tr("error %d") % code if result == HTTPRequest.RESULT_SUCCESS else tr("offline"))))
 		if not job.has("id"):  # words refused or forge unreachable: scrolls kept
-			forge_status = tr("The scrolls could not be written (%s). Your scrolls are kept.") % msg
+			toast.emit(tr("The scrolls could not be written (%s). Your scrolls are kept.") % msg)
 		else:
 			Profile.blank_scrolls += job.words  # the scrolls were not used up
 			forge_note = tr("Writing the scrolls failed (%s). Your scrolls are given back.") % msg
-			forge_status = forge_note
+			toast.emit(forge_note)
 			Profile.save()
 			_end_job(job, false)
 		return
@@ -574,7 +572,6 @@ func _on_forge_reply(result: int, code: int, headers: PackedStringArray, data: P
 		Profile.blank_scrolls -= job.words
 		Profile.save()
 		forge_note = tr("%d scroll(s) being written…") % job.words
-		forge_status = ""
 		forge_started.emit(job)
 	job.progress = clampf(float(reply.get("progress", job.get("progress", 0.0))), 0.0, 1.0)
 	get_tree().create_timer(POLL_SECONDS, true).timeout.connect(_poll.bind(job))
@@ -593,7 +590,7 @@ func _on_bundle(data: PackedByteArray, job: Dictionary, cancelled: int) -> void:
 		Profile.blank_scrolls += job.words
 		Profile.save()
 		forge_note = tr("The scroll is unreadable. Your scrolls are given back.")
-		forge_status = forge_note
+		toast.emit(forge_note)
 		_end_job(job, false)
 		return
 	Profile.blank_scrolls += cancelled
@@ -601,5 +598,5 @@ func _on_bundle(data: PackedByteArray, job: Dictionary, cancelled: int) -> void:
 	forge_note = tr("Scroll written: %s will be your main spell in the next run.") % s.name
 	if cancelled > 0:
 		forge_note += " " + tr("%d word(s) cancelled (meaningless, not in a dead language or cheating), scroll(s) given back.") % cancelled
-	forge_status = forge_note
+	toast.emit(forge_note)
 	_end_job(job, true)
