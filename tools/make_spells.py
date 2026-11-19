@@ -7,6 +7,8 @@ game/spells.json (body.sheet / body.burst_sheet, bundle res://assets/spells).
 Existing files are kept (delete one to redo it). Beams are drawn by the
 engine (spell_body.gd); a cone's sheet is one wave, sent out again and again by
 the engine (frost_jet.png: generated with ChatGPT, PixelLab out of credits).
+fireball.png and magic_missile(_burst).png: redrawn with ChatGPT at twice the
+pixels (PixelLab out of credits), their recorded "scale" 1.5 is kept.
 
 Run: python3 tools/make_spells.py [id ...]
 """
@@ -74,7 +76,9 @@ def main() -> None:
             if not job:
                 continue
             try:
-                d["emit"]["body"]["burst_sheet" if burst else "sheet"] = job.result()
+                key = "burst_sheet" if burst else "sheet"
+                kept = {k: v for k, v in d["emit"]["body"].get(key, {}).items() if k == "scale"}
+                d["emit"]["body"][key] = job.result() | kept
                 d["bundle"] = "res://assets/spells"
             except Exception as e:  # keep the others
                 print("FAILED", d["id"], burst, e)

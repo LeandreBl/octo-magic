@@ -33,10 +33,11 @@
     "on_tick": [],
     "sheet": {
      "file": "fireball.png",
-     "size": 32,
-     "frames": 12,
+     "size": 64,
+     "frames": 8,
      "fps": 12,
-     "loop": true
+     "loop": true,
+     "scale": 1.5
     }
    }
   },
@@ -119,17 +120,19 @@
     "on_tick": [],
     "sheet": {
      "file": "magic_missile.png",
-     "size": 24,
+     "size": 48,
      "frames": 8,
      "fps": 12,
-     "loop": true
+     "loop": true,
+     "scale": 1.5
     },
     "burst_sheet": {
      "file": "magic_missile_burst.png",
-     "size": 24,
+     "size": 48,
      "frames": 7,
      "fps": 12,
-     "loop": false
+     "loop": false,
+     "scale": 1.5
     }
    }
   },
