@@ -211,29 +211,27 @@ func _halo_front(at: Vector2, r: float, hit: Dictionary) -> void:
 			s.velocity = away.normalized() * maxf(s.velocity.length(), LEVEL_BLAST_FORCE * 0.5)
 
 
-## The level-up halo seen on every peer: the PixelLab burst of light
-## (fx/level_halo.png, the shockwave until it is drawn) spreading out to
-## LEVEL_BLAST_RADIUS with the push front. Game time: in solo it crawls with the
-## world under the level-up cards and spreads as time comes back.
+## The level-up halo seen on every peer: a ring of golden light (fx/level_halo.png,
+## generated with ChatGPT, its ring touching the image's edges) growing from the
+## mage to LEVEL_BLAST_RADIUS with the push front, additive, fading as it goes.
+## Game time: in solo it crawls with the world under the level-up cards.
 @rpc("authority", "call_local", "reliable")
 func _level_wave(at: Vector2) -> void:
-	var halo := Enemy.art("fx/level_halo")
-	var tex := halo if halo else Enemy.art("fx/shockwave")
+	var tex := Enemy.art("fx/level_halo")
 	if not tex:
 		return
-	var n := tex.get_width() / tex.get_height()
 	var s := Sprite2D.new()
 	s.texture = tex
-	s.hframes = n
 	s.position = at
 	s.z_index = SpellBody.ABOVE_DECOR
-	# the halo's light reaches the frame's edge, the shockwave's last ring 3/4 of it
-	s.scale = Vector2.ONE * LEVEL_BLAST_RADIUS / (tex.get_height() * (0.5 if halo else 0.375))
+	s.material = CanvasItemMaterial.new()
+	s.material.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD  # light, not paint
+	s.scale = Vector2.ZERO
 	add_child(s)
-	var tw := s.create_tween()
-	tw.tween_property(s, "frame", n - 1, LEVEL_BLAST_TIME)
-	tw.tween_property(s, "modulate:a", 0.0, 0.25)
-	tw.tween_callback(s.queue_free)
+	var tw := s.create_tween().set_parallel()
+	tw.tween_property(s, "scale", Vector2.ONE * LEVEL_BLAST_RADIUS * 2.0 / tex.get_height(), LEVEL_BLAST_TIME)
+	tw.tween_property(s, "modulate:a", 0.0, LEVEL_BLAST_TIME).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	tw.chain().tween_callback(s.queue_free)
 
 
 ## The wave's monsters come out one by one (_process), the first at once.
