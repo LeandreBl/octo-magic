@@ -1,5 +1,5 @@
 {
- "about": "Obstacles of ground.png, in its pixels (the game scales them by Arena.SCALE); edit them with tools/map_editor.py. polygons: [[x, y], ...] solid areas (buildings, walls, fences, out of bounds); circles: [x, y, r] solid, at the foot of tombs, trunks, statues, lanterns; spawns: [x, y] the open graves monsters come out of; start: [x, y] where the mages start. What is up in the air is above.png, drawn over the movers.",
+ "about": "Obstacles of ground.png, in its pixels (the game scales them by Arena.SCALE); edit them with tools/map_editor.py. polygons: [[x, y], ...] solid areas (buildings, walls, fences, out of bounds); circles: [x, y, r] solid, at the foot of tombs, trunks, statues, lanterns; spawns: [x, y] the open graves monsters come out of; start: [x, y] where the mages start; lamps: [x, y] the lights lit in the night. What is up in the air is above.png, drawn over the movers.",
  "polygons": [
   [[200, 192], [110, 227], [177, 289], [210, 278], [209, 264], [245, 250], [260, 264], [284, 254], [277, 237], [209, 189], [199, 193]],
   [[42, 322], [46, 339], [71, 337], [89, 341], [99, 332], [84, 318], [73, 314], [57, 315], [45, 319]],
@@ -87,5 +87,22 @@
  ],
  "circles": [],
  "spawns": [],
- "start": [765, 640]
+ "start": [765, 640],
+ "lamps": [
+  [188, 228],
+  [261, 203],
+  [726, 173],
+  [807, 176],
+  [699, 252],
+  [834, 254],
+  [1199, 235],
+  [1398, 428],
+  [398, 490],
+  [673, 532],
+  [864, 532],
+  [1292, 781],
+  [1362, 791],
+  [677, 863],
+  [862, 860]
+ ]
 }

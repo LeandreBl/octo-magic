@@ -1,5 +1,5 @@
 """Edit a map's zones in the browser: its solid polygons and circles, the open
-graves monsters come out of and the mages' start (assets/maps/<name>/map.json,
+graves monsters come out of, the mages' start and the lamps lit in the night (assets/maps/<name>/map.json,
 over its ground.png and above.png), with a test character walking as in the
 game.
 
@@ -34,7 +34,7 @@ def main():
 
         def do_GET(self):
             arena = (ROOT / "game/arena.gd").read_text()
-            config = {k: float(re.search(rf"const {k.upper()} := ([\d.]+)", arena).group(1)) for k in ("scale", "see", "faded", "body")}
+            config = {k: float(re.search(rf"const {k.upper()} := ([\d.]+)", arena).group(1)) for k in ("scale", "see", "faded", "body", "lamp_light")}
             files = {"/": (page.read_bytes(), "text/html; charset=utf-8"),
                      "/config": (json.dumps(config).encode(), "application/json"),
                      "/octo.png": ((ROOT / "assets/octo/idle.png").read_bytes(), "image/png"),
@@ -50,7 +50,7 @@ def main():
             if self.path != "/save":
                 return self._send(b"not found", "text/plain", 404)
             data = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
-            for key in ("polygons", "circles", "spawns", "start"):  # what the game reads (game/arena.gd)
+            for key in ("polygons", "circles", "spawns", "start", "lamps"):  # what the game reads (game/arena.gd)
                 if key not in data:
                     return self._send(f"missing {key}".encode(), "text/plain", 400)
             shutil.copy(folder / "map.json", folder / "map.json.bak")

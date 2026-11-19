@@ -14,16 +14,13 @@ const RECT := Rect2(0, 0, 1536 * SCALE, 1024 * SCALE)  # ground.png's size, scal
 const SEE := 140.0  # the mage's halo, in the world: what is above turns see-through inside it
 const FADED := 0.5
 const BODY := 20.0  # how far from its middle the mage's body is under something (world)
-## The night over the map: this much darker, but around its lamps (LAMPS, in
-## the pictures' pixels, the lit spots of above.png and ground.png) and every mage.
+## The night over the map: this much darker, but around its lamps (lamps) and every mage.
 const NIGHT := 0.72
 const LAMP_LIGHT := 110.0  # world
 const MAGE_LIGHT := 190.0  # world
 const MAGES_LIT := 8  # the shader's room for mages
 const LIGHTS := 48  # the shader's room for flashes (flash) and spells (the "spells" group, nearest the camera first)
 const SPELL_LIGHT := 90.0  # world: the least light around a spell
-const LAMPS := [[188, 228], [261, 203], [726, 173], [807, 176], [699, 252], [834, 254], [1199, 235], [1398, 428],
-		[398, 490], [673, 532], [864, 532], [1292, 781], [1362, 791], [677, 863], [862, 860]]
 
 static var clock := 0.0  # s of game time, scaled by Engine.time_scale: animations run on it
 static var _map: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ART + "map.json"))
@@ -39,6 +36,7 @@ static var boxes: Array = _boxes(polygons)
 static var solids: Array = _map.circles.map(func(s): return [s[0] * SCALE, s[1] * SCALE, s[2] * SCALE])
 static var spawns: Array = _map.spawns.map(func(s): return [s[0] * SCALE, s[1] * SCALE])
 static var START := Vector2(_map.start[0], _map.start[1]) * SCALE
+static var lamps: Array = _map.get("lamps", []).map(func(l): return Vector2(l[0], l[1]) * SCALE)  # lit in the night
 static var flashes := []  # [at, radius, color, start clock, time s]: flash
 
 var ground: Texture2D = load(ART + "ground.png")
@@ -105,10 +103,10 @@ void fragment() {
 	float a = night * (1.0 - l);
 	COLOR = vec4(vec3(0.01, 0.02, 0.06) * a + shine, a);
 }
-""" % [LAMPS.size(), MAGES_LIT, LIGHTS, LIGHTS, LAMPS.size(), LAMP_LIGHT, MAGE_LIGHT]
+""" % [maxi(lamps.size(), 1), MAGES_LIT, LIGHTS, LIGHTS, maxi(lamps.size(), 1), LAMP_LIGHT, MAGE_LIGHT]
 	night.material = ShaderMaterial.new()
 	night.material.shader = dark
-	night.material.set_shader_parameter("lamps", PackedVector2Array(LAMPS.map(func(l): return Vector2(l[0], l[1]) * SCALE)))
+	night.material.set_shader_parameter("lamps", PackedVector2Array(lamps if lamps else [Vector2(-1e5, -1e5)]))  # a GLSL array is never empty
 	night.material.set_shader_parameter("night", NIGHT)
 	add_child(night)
 	above_img = above.texture.get_image()
