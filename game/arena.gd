@@ -14,6 +14,14 @@ const RECT := Rect2(0, 0, 1536 * SCALE, 1024 * SCALE)  # ground.png's size, scal
 const SEE := 140.0  # the mage's halo, in the world: what is above turns see-through inside it
 const FADED := 0.5
 const BODY := 20.0  # how far from its middle the mage's body is under something (world)
+## The night over the map: this much darker, but around its lamps (LAMPS, in
+## the pictures' pixels, the lit spots of above.png and ground.png) and every mage.
+const NIGHT := 0.72
+const LAMP_LIGHT := 110.0  # world
+const MAGE_LIGHT := 190.0  # world
+const MAGES_LIT := 8  # the shader's room for mages
+const LAMPS := [[188, 228], [261, 203], [726, 173], [807, 176], [699, 252], [834, 254], [1199, 235], [1398, 428],
+		[398, 490], [673, 532], [864, 532], [1292, 781], [1362, 791], [677, 863], [862, 860]]
 
 static var clock := 0.0  # s of game time, scaled by Engine.time_scale: animations run on it
 static var _map: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ART + "map.json"))
@@ -34,6 +42,7 @@ var ground: Texture2D = load(ART + "ground.png")
 var above := Sprite2D.new()
 var above_img: Image  # to tell when the mage is under something
 var halo := 0.0  # 0 off .. 1 on: eased in and out
+var night := ColorRect.new()
 
 
 func _ready() -> void:
@@ -61,6 +70,33 @@ void fragment() {
 	above.material.set_shader_parameter("halo", Vector2.ONE * SEE / RECT.size)
 	above.material.set_shader_parameter("faded", FADED)
 	add_child(above)
+	night.size = RECT.size
+	night.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	night.z_as_relative = false
+	night.z_index = 10  # over the movers and above (drawn after it), under the spells (SpellBody.ABOVE_DECOR)
+	var dark := Shader.new()
+	dark.code = """
+shader_type canvas_item;
+uniform vec2 lamps[%d];
+uniform vec2 mages[%d];
+uniform int lit;  // mages used
+uniform float night;
+varying vec2 world;
+void vertex() { world = VERTEX; }
+float glow(vec2 at, float r) { return 1.0 - smoothstep(0.3 * r, r, distance(world, at)); }
+void fragment() {
+	float l = 0.0;
+	float flicker = 1.0 + 0.04 * sin(TIME * 9.0) * sin(TIME * 5.3);
+	for (int i = 0; i < %d; i++) l = max(l, glow(lamps[i], %f * flicker));
+	for (int i = 0; i < lit; i++) l = max(l, glow(mages[i], %f));
+	COLOR = vec4(0.01, 0.02, 0.06, night * (1.0 - l));
+}
+""" % [LAMPS.size(), MAGES_LIT, LAMPS.size(), LAMP_LIGHT, MAGE_LIGHT]
+	night.material = ShaderMaterial.new()
+	night.material.shader = dark
+	night.material.set_shader_parameter("lamps", PackedVector2Array(LAMPS.map(func(l): return Vector2(l[0], l[1]) * SCALE)))
+	night.material.set_shader_parameter("night", NIGHT)
+	add_child(night)
 	above_img = above.texture.get_image()
 	walk_all()  # walked now rather than at the first wave's spawn
 	# The mouse is a staff while the run's map is up: its gem, mirrored to the top left, points.
@@ -80,6 +116,10 @@ func _process(delta: float) -> void:
 	above.material.set_shader_parameter("mage", mage / RECT.size)
 	halo = move_toward(halo, 1.0 if under(mage) else 0.0, delta * 6.0)
 	above.material.set_shader_parameter("on", halo)
+	var mages := PackedVector2Array(get_tree().get_nodes_in_group("players").slice(0, MAGES_LIT).map(func(p): return p.global_position))
+	night.material.set_shader_parameter("lit", mages.size())
+	mages.resize(MAGES_LIT)
+	night.material.set_shader_parameter("mages", mages)
 
 
 ## Whether something above covers a mage at pos: its middle or its edge.
