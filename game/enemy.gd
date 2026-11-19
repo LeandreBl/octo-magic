@@ -23,6 +23,7 @@ const Self := preload("res://game/enemy.gd")  # its static art for the inner cla
 const SPELL_ANIM := {"summon": ["summon", 0.7], "ring": ["summon", 0.7],
 	"bolt": ["attack", 0.5], "puddle": ["attack", 0.5], "burst": ["attack", 0.5],
 	"laser": ["attack", 0.6], "teleport": ["vanish", 0.5]}
+const TOUCH_REACH := 4.0  # px: kept out of its mage, it still bites it from this close
 const LASER_WARN := 0.7  # s: the laser's line shows before it burns
 const BITE_WARN := 0.5  # s: vanished, about to bite where the mage stood
 const BOSS_CATCH_UP := 1.2  # out of cast range, a boss walks this much faster than its mage
@@ -163,10 +164,12 @@ func _physics_process(delta: float) -> void:
 	windup -= delta
 	if windup > 0.0:
 		motion = Vector2.ZERO
-	position = Arena.slide(position, (motion + knock) * delta + Arena.apart(self, get_tree().get_nodes_in_group("enemies")), radius)
+	# fully out of the mages (they are not pushed back), half out of each other enemy
+	var apart := Arena.apart(self, get_tree().get_nodes_in_group("enemies")) + 2.0 * Arena.apart(self, get_tree().get_nodes_in_group("players"))
+	position = Arena.slide(position, (motion + knock) * delta + apart, radius)
 	knock = knock.move_toward(Vector2.ZERO, 1500.0 * delta)
 	hit_cooldown -= delta
-	if to.length() < radius + target.radius and hit_cooldown <= 0.0:
+	if to.length() < radius + target.radius + TOUCH_REACH and hit_cooldown <= 0.0:
 		hit_cooldown = 0.6
 		target.hurt(touch_damage, data.get("fire", false))
 		_afflict(target)
