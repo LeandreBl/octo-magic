@@ -16,9 +16,9 @@ const RATE := 22050
 const RECIPES := {
 	"hit": {"wave": "bell", "f": [880, 620], "len": 0.06, "noise": 0.3, "db": -22.0},
 	"die": {"wave": "bell", "f": [700, 180], "len": 0.25, "noise": 0.2, "sparkle": 30.0, "echo": 1, "db": -16.0},
-	# Deaths by family (DEATHS): a crack and rattling bones, a burst of flesh splattering wet chunks, a fading wail, a squeal.
+	# Deaths by family (DEATHS): a crack and rattling bones, a burst of flesh slapping down in chunks, a fading wail, a squeal.
 	"die_bones": {"wave": "noise", "f": [1], "len": 0.35, "lp": 0.8, "clicks": 40.0, "db": -14.0},
-	"die_flesh": {"wave": "sine", "f": [220, 60, 30], "len": 0.5, "noise": 0.75, "lp": 0.12, "wobble": 18.0, "drops": 40.0, "db": -8.0},
+	"die_flesh": {"wave": "saw", "f": [180, 55, 30], "len": 0.5, "noise": 0.7, "lp": 0.07, "wobble": 14.0, "chunks": 22.0, "db": -8.0},
 	"die_ghost": {"wave": "sine", "f": [700, 1100, 250], "len": 0.7, "noise": 0.2, "lp": 0.6, "wobble": 7.0, "echo": 2, "db": -16.0},
 	"die_imp": {"wave": "saw", "f": [900, 1500, 300], "len": 0.22, "noise": 0.15, "db": -18.0},
 	"shot": {"wave": "bell", "f": [1100, 380], "len": 0.18, "noise": 0.2, "sparkle": 30.0, "db": -12.0},  # heard from afar (ranged enemies)
@@ -288,17 +288,19 @@ static func synth(r: Dictionary) -> PackedFloat32Array:
 		for i in mini(m, n - at):
 			var d := 1.0 - float(i) / m
 			out[at + i] += (sin(TAU * hz * i / RATE) * 0.6 + rng.randf_range(-0.4, 0.4)) * amp * d * d
-	# Drops: short rising plops (wet chunks of flesh splattering around).
-	for g in int(r.get("drops", 0.0) * length):
+	# Chunks: short dull thuds, a falling tone thick with dark noise (bits of flesh slapping down).
+	for g in int(r.get("chunks", 0.0) * length):
 		var at := rng.randi_range(0, n - 1)
-		var hz := rng.randf_range(250.0, 700.0)
+		var hz := rng.randf_range(90.0, 220.0)
 		var amp := rng.randf_range(0.3, 0.6) * (1.0 - 0.8 * float(at) / n)
-		var m := int(RATE * rng.randf_range(0.02, 0.04))
+		var m := int(RATE * rng.randf_range(0.03, 0.06))
 		var ph := 0.0
+		var dark := 0.0
 		for i in mini(m, n - at):
 			var d := 1.0 - float(i) / m
-			ph += TAU * hz * (1.0 + 2.0 * (1.0 - d)) / RATE  # the pitch rises as it fades: a water drop
-			out[at + i] += sin(ph) * amp * d * d
+			ph += TAU * hz * (0.5 + 0.5 * d) / RATE  # the pitch sags as it fades: a slap, not a drop
+			dark += (rng.randf_range(-1.0, 1.0) - dark) * 0.2
+			out[at + i] += (sin(ph) * 0.6 + dark * 1.2) * amp * d * d
 	# Echo: the sound repeats fainter, a resonant tail.
 	var repeats: int = r.get("echo", 0)
 	if repeats:
