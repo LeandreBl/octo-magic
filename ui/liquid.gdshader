@@ -22,7 +22,7 @@ void fragment() {
 	float y = clamp((pos.y - top) / height, 0.0, 1.0);  // 0 top, 1 bottom
 	float t = TIME;
 	float wave = sin(pos.x * 0.09 + t * 1.8) * 0.6 + sin(pos.x * 0.23 - t * 2.7) * 0.4;
-	vec3 c = COLOR.rgb * mix(1.2, 0.75, y);  // depth
+	vec3 c = COLOR.rgb * mix(1.3, 0.5, y);  // depth: dark at the bottom, as in Diablo's globes
 	c += 0.28 * smoothstep(0.16, 0.0, abs(y - 0.22 - wave * 0.07));  // the rippling shine
 	// Bubbles: one per 14 px cell drifting left, each rising at its own pace.
 	float x = pos.x + t * 9.0;
