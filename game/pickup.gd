@@ -29,13 +29,16 @@ const QUAD := 4.0
 const QUAD_TIME := 10.0  # s
 const HOPS := [[0.32, 26.0], [0.18, 7.0]]  # gold pops out of the enemy: (duration s, height px) per hop
 const HALO := 1.8  # the glow under a drop, to spot it on the floor: its size, x the drop's
-const AURA := {"scroll": 5.0}  # a rarer drop's halo is wider, to spot it from afar: x the drop's
+## A scroll on the floor shines a golden aura, to spot it from afar: (size x the drop's, texture).
+const AURA_WIDE := 9.0
+const AURA_CORE := 3.5
+static var _aura_wide := _make_halo(Color(1.0, 0.6, 0.1), 1.0, 0.55)
+static var _aura_core := _make_halo(Color(1.0, 0.85, 0.45), 1.0, 0.7)
 static var _halo := _make_halo(Color(1.0, 0.82, 0.25))
 ## A grimoire glows its own colour, and twinkles: red for the hero, blue for the spells.
 static var _halos := {
 	"grimoire_hero": _make_halo(Color(1.0, 0.2, 0.15), 0.8),
 	"grimoire_spell": _make_halo(Color(0.25, 0.55, 1.0), 0.8),
-	"scroll": _make_halo(Color(1.0, 0.8, 0.2), 0.9),  # a golden aura
 }
 const SHINE := {"size": 24, "frames": 7, "fps": 12, "loop": false}  # assets/icons/drop_gold_shine.png
 
@@ -47,8 +50,25 @@ var speed := 0.0
 var age := 0.0  # drawn only: the synced position stays on the floor
 
 
+## A scroll's aura: additive light behind it, breathing slowly, each scroll on its own phase.
+func _ready() -> void:
+	if kind != "scroll":
+		return
+	var aura := Node2D.new()
+	aura.name = "Aura"
+	aura.show_behind_parent = true
+	aura.material = CanvasItemMaterial.new()
+	aura.material.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD  # light, not paint
+	aura.draw.connect(func():
+		for a in [[_aura_wide, SIZES.scroll * AURA_WIDE], [_aura_core, SIZES.scroll * AURA_CORE]]:
+			aura.draw_texture_rect(a[0], Rect2(-a[1] / 2.0, -a[1] / 2.0, a[1], a[1]), false))
+	add_child(aura)
+
+
 func _process(delta: float) -> void:
 	_shimmer()
+	if has_node("Aura"):
+		$Aura.scale = Vector2.ONE * (1.0 + 0.12 * sin(Arena.clock * 2.5 + get_instance_id() % 628 * 0.01))
 	if kind in _halos:
 		queue_redraw()  # the halo twinkles
 	var total: float = HOPS[0][0] + HOPS[1][0]
@@ -137,7 +157,10 @@ func _draw() -> void:
 	var hop := _hop()
 	if hop.x > 0.0:  # squashed as it touches the floor
 		draw_set_transform(Vector2(0, -hop.x + hop.y * sz * 0.1), 0.0, Vector2(1.0 + hop.y * 0.2, 1.0 - hop.y * 0.2))
-	var h: float = sz * AURA.get(kind, HALO)
+	if kind == "scroll":  # its aura (see _ready) instead of the halo
+		draw_texture_rect(tex, Rect2(-sz / 2.0, -sz / 2.0, sz, sz), false)
+		return
+	var h := sz * HALO
 	var halo: Texture2D = _halos.get(kind, _halo)
 	var glow := Color.WHITE
 	if kind in _halos:  # twinkle: a slow swell with a quick flicker on top, each grimoire on its own phase
@@ -148,9 +171,10 @@ func _draw() -> void:
 	draw_texture_rect(tex, Rect2(-sz / 2.0, -sz / 2.0, sz, sz), false)
 
 
-static func _make_halo(c: Color, alpha := 0.55) -> GradientTexture2D:
+static func _make_halo(c: Color, alpha := 0.55, mid := 0.65) -> GradientTexture2D:
 	var g := Gradient.new()
-	g.colors = PackedColorArray([Color(c, alpha), Color(c, 0.0)])
+	g.offsets = PackedFloat32Array([0.0, 0.35, 1.0])  # mid: the light left at 35%: 0.65 is a straight fade
+	g.colors = PackedColorArray([Color(c, alpha), Color(c, alpha * mid), Color(c, 0.0)])
 	var tex := GradientTexture2D.new()
 	tex.gradient = g
 	tex.fill = GradientTexture2D.FILL_RADIAL
