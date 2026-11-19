@@ -3,7 +3,7 @@
 # The web export of the game, with the Godot version of project.godot.
 FROM debian:bookworm-slim AS web
 ARG GODOT_VERSION=4.7.2
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl unzip \
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl unzip rsync \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /tmp/godot
 RUN base=https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable \

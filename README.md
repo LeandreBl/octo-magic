@@ -142,6 +142,9 @@ and the spells are words you write on scrolls, forged by an AI.
 - Online (website, web game, accounts, forge, coop lobby, TURN):
   `cp example.env .env`, fill it, `docker compose up -d --build`, then
   http://localhost:8080.
+  Locally, the game and the website then follow the working tree: edit, wait
+  for `exported` in `docker compose logs -f game` (a few seconds), refresh
+  (F5). Only the backend's code needs `--build` again.
   Locally without `ANTHROPIC_API_KEY` nor `CLAUDE_CODE_OAUTH_TOKEN`, also run
   `python3 server/forge.py` (your logged-in `claude` CLI) and set
   `FORGE_URL=http://host.docker.internal:8765` in `.env`. On the

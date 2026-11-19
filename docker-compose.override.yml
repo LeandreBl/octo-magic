@@ -14,3 +14,26 @@ services:
       FORGE_URL: ${FORGE_URL:-http://forge:8765}
     extra_hosts:
       - host.docker.internal:host-gateway
+    # No --build for the game nor the website: web/ and assets/ come from
+    # the working tree, the game from the `game` service's live export.
+    # Edit, then refresh (F5). The backend's own code still needs --build.
+    volumes:
+      - ./web:/app/web
+      - ./assets:/assets:ro
+      - game_export:/app/web/godot
+
+  # Re-exports the game on every change of the working tree (its logs:
+  # `docker compose logs -f game`), into the volume the server serves.
+  game:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: web
+    command: ["sh", "/repo/backend/docker/watch-game.sh"]
+    volumes:
+      - .:/repo:ro
+      - game_export:/out
+
+volumes:
+  game_export:
