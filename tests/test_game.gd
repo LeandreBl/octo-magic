@@ -230,7 +230,7 @@ func _test_run() -> void:
 	_test_inspiration(run)
 	run.list = Upgrades.LIST
 	run.start(p.equipped_spells(), [{"gold%": 0.5}, {"mana_cost%": -0.5}])
-	check(run.mana_cost("primary") == maxi(1, roundi(Spell.mana_cost(run.spells.primary) * 0.5)), "mana cost stat")
+	check(is_equal_approx(run.mana_cost("primary"), Spell.mana_cost(run.spells.primary) * 0.5), "mana cost stat")
 	run.collect("gold", 10)
 	check(run.gold == 15, "gold bonus")
 	_test_augments(run, p)
