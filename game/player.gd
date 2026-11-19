@@ -354,7 +354,11 @@ func _steer(delta: float) -> void:
 		if move.length() > 0.3:
 			aim = move.normalized()
 	elif _touch_aim.is_empty():
-		aim = (get_global_mouse_position() - global_position).normalized()
+		# From the gem the spells leave from, so they fly through the cursor
+		# (from the body they would fly parallel to it, off by the staff).
+		var mouse := get_global_mouse_position()
+		var from := gem() if mouse.distance_to(gem()) > radius else global_position
+		aim = (mouse - from).normalized()
 		fire = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
 
 	firing = {
