@@ -52,6 +52,7 @@
   "element": "lightning",
   "color": "#9fd8ff",
   "cooldown": 0.15,
+  "mana_mult": 1.32,
   "emit": {
    "pattern": "aim",
    "count": 1,
@@ -69,7 +70,7 @@
     "on_hit": [
      {
       "type": "damage",
-      "amount": 6,
+      "amount": 5,
       "radius": 0
      }
     ],

@@ -47,6 +47,7 @@ static func sanitize(d: Variant) -> Dictionary:
 		"element": _enum(s.get("element"), ELEMENTS),
 		"color": _color(s.get("color")),
 		"cooldown": _num(s.get("cooldown"), 0.5, 0.08, 5.0),
+		"mana_mult": _num(s.get("mana_mult"), 1.0, 1.0, 3.0),  # hand-tuned surcharge on the priced cost
 		"words": words.slice(0, 20),
 		"origin": str(s.get("origin", "")).substr(0, 40),
 		"palette": _palette(s.get("palette")),
@@ -204,7 +205,7 @@ static func power(s: Dictionary) -> float:
 
 ## A cast costs CAST_BASE plus CAST_RATE per power (Pila Ignea, power 28: 15;
 ## Telum Magicum, power 5: 10). A channeled spell (beam, cone) costs CHANNEL_RATE per power a
-## second (Fulmen, Flatus Gelidus 10/s), paid per tick: held down, it still
+## second (Flatus Gelidus 10/s; Fulmen 11/s with its mana_mult), paid per tick: held down, it still
 ## drains faster than the base mana regen.
 const CAST_RATE := 5.0 / 23.0
 const CAST_BASE := 10.0 - 5.0 * CAST_RATE
@@ -214,8 +215,8 @@ const CHANNEL_RATE := 10.0 / 6.0
 ## Mana per cast: a whole number for a cast, a fraction per tick for a channel.
 static func mana_cost(s: Dictionary) -> float:
 	if s.emit.body.shape in ["beam", "cone"]:
-		return power(s) * CHANNEL_RATE * s.cooldown
-	return roundf(CAST_BASE + power(s) * CAST_RATE)
+		return power(s) * CHANNEL_RATE * s.cooldown * s.get("mana_mult", 1.0)
+	return roundf((CAST_BASE + power(s) * CAST_RATE) * s.get("mana_mult", 1.0))
 
 
 ## A cost as shown: per second for a channeled spell (beam, cone: one cast per
