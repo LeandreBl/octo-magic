@@ -1000,6 +1000,7 @@ var _end_score_name: Label
 var _end_gold: Label
 var _end_scrolls: Label
 var _end_news: VBoxContainer
+var _end_card: PanelContainer
 var _end_picks: HFlowContainer
 var _end_again: Button
 
@@ -1021,6 +1022,26 @@ func _end_screen() -> Control:
 	_end_sub = UITheme.label("", "", 22, UITheme.TEXT_DIM)
 	_end_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(_end_sub)
+	# the run's figures on the left, its news (achievements, unlocks) on the
+	# right in a card that scrolls: a long list no longer pushes the buttons off
+	var body := _hbox(24)
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(body)
+	var stats := _vbox(18)
+	stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_child(stats)
+	_end_card = PanelContainer.new()
+	_end_card.theme_type_variation = "Well"
+	_end_card.custom_minimum_size.x = 360
+	body.add_child(_end_card)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_end_card.add_child(scroll)
+	_end_news = _vbox(10)
+	_end_news.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_end_news)
+	var outer := col
+	col = stats
 	var tiles := _hbox(14)
 	col.add_child(tiles)
 	for k in [["wave", "Wave reached"], ["level", "Level"], ["kills", "Enemies defeated"], ["bosses", "Bosses defeated"], ["score", "Score"]]:
@@ -1063,10 +1084,7 @@ func _end_screen() -> Control:
 	_end_picks.add_theme_constant_override("h_separation", 6)
 	_end_picks.add_theme_constant_override("v_separation", 6)
 	col.add_child(_end_picks)
-	_end_news = _vbox(8)
-	_end_news.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_child(_end_news)
-	col.add_child(_spacer())
+	col = outer  # the buttons: under body, always on screen
 	var buttons := _hbox(24)
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	_end_again = _button("Play again", _play, "Primary")
@@ -1084,15 +1102,21 @@ func _end_screen() -> Control:
 
 func _news(color: Color, head: String, text: String) -> void:
 	var row := _hbox(10)
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	var dot := ColorRect.new()
 	dot.color = color
 	dot.custom_minimum_size = Vector2(12, 12)
-	dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	dot.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	row.add_child(dot)
-	row.add_child(UITheme.label(head, "", 18, color))
-	row.add_child(UITheme.label(text, "", 18))
+	var lines := _vbox(0)
+	lines.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(lines)
+	if head:
+		lines.add_child(UITheme.label(head, "", 16, color))
+	var l := UITheme.label(text, "", 18)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lines.add_child(l)
 	_end_news.add_child(row)
+	_end_card.show()
 
 
 func _on_run_ended() -> void:
@@ -1110,6 +1134,7 @@ func _on_run_ended() -> void:
 	_end_scrolls.text = tr("+%d scroll(s)") % r.scrolls
 	for c in _end_news.get_children():
 		c.queue_free()
+	_end_card.hide()  # shown back by the first _news
 	for c in _end_picks.get_children():
 		c.queue_free()
 	_skill_icons(_end_picks, 48)
