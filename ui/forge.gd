@@ -305,9 +305,11 @@ func stats(s: Dictionary) -> Array:
 	return rows
 
 
-## The words were taken: the line is cleared for the next spell.
+## The words were taken: the line is cleared for the next spell, and the new
+## job comes to the foreground of the big circle, as if its chip was clicked.
 func _on_started(job: Dictionary) -> void:
 	_edit.text = ""
+	_focus = job.id
 	_jobs.add_child(_job_chip(job))
 
 
