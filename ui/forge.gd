@@ -53,6 +53,7 @@ var _jobs: HBoxContainer  # a small circle per forge job (_job_chip)
 var _focus := ""  # id of the job in the foreground of the big circle; empty: writing
 var _writing: Array[Control] = []  # hidden while a job is in the foreground
 var _new: Button  # back to writing
+var _gap: Control  # under _new, as tall as the hidden writing: the big circle stays put
 var _glow := 0.0  # the big circle flares up when a spell is forged
 var _drawn := 1.0  # the chalk being drawn on the table when shown, 0..1
 var _time := 0.0
@@ -156,6 +157,10 @@ func _ready() -> void:
 	_new.hide()
 	_page.add_child(_new)
 	_page.move_child(_new, _write.get_index() + 1)
+	_gap = Control.new()
+	_gap.hide()
+	_page.add_child(_gap)
+	_page.move_child(_gap, _new.get_index() + 1)
 
 	# The spell to improve, picked among the equipped ones with the arrows: its
 	# icon, its name carved in the wood, its description and stats in chalk.
@@ -396,6 +401,12 @@ func _process(delta: float) -> void:
 	for c in _writing:
 		c.visible = job.is_empty()
 	_new.visible = not job.is_empty()
+	_gap.visible = _new.visible
+	if _gap.visible:  # the writing's last laid out height (always shown before a job comes to the front)
+		var h := 4.0 - _new.get_combined_minimum_size().y  # its 4 separations, against 3 here
+		for c in _writing:
+			h += c.size.y
+		_gap.custom_minimum_size.y = maxf(h, 0.0)
 	var can: bool = main.can_write()
 	for a in _arrows:
 		a.disabled = Profile.equipped_entries().size() < 2
