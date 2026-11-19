@@ -159,31 +159,55 @@ const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 
-// The chevron lock's clunk, synthesized: a low thump and a short metallic ping.
-// Browsers may keep audio suspended until a click or key on the page.
+// The chevron lock's chime, synthesized: a soft low swell, a crystal bell rising
+// along a pentatonic scale with each chevron, a few sparkles, all in an echo.
+// The last one rings a whole chord. Browsers may keep audio suspended until a
+// click or key on the page.
 let audio = null;
-function clunk(last) {
+const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19]; // semitones over A4, one per chevron
+function chime(n, last) {
   try {
     audio ??= new AudioContext();
     if (audio.state === "suspended") audio.resume().catch(() => {});
     const now = audio.currentTime;
     const out = audio.createGain();
-    out.gain.value = 0.35;
+    out.gain.value = 0.22;
     out.connect(audio.destination);
-    const tone = (type, f0, f1, gain, decay) => {
+    // The echo: a darkened feedback delay, the "cavern" of the gate.
+    const delay = audio.createDelay(1);
+    delay.delayTime.value = 0.23;
+    const fb = audio.createGain();
+    fb.gain.value = 0.42;
+    const damp = audio.createBiquadFilter();
+    damp.type = "lowpass";
+    damp.frequency.value = 3200;
+    out.connect(delay).connect(damp).connect(fb).connect(delay);
+    damp.connect(audio.destination);
+    const tone = (f, gain, at, attack, decay, f1 = f) => {
       const o = audio.createOscillator();
       const g = audio.createGain();
-      o.type = type;
-      o.frequency.setValueAtTime(f0, now);
-      o.frequency.exponentialRampToValueAtTime(f1, now + decay);
-      g.gain.setValueAtTime(gain, now);
-      g.gain.exponentialRampToValueAtTime(0.001, now + decay);
+      const t0 = now + at;
+      o.frequency.setValueAtTime(f, t0);
+      if (f1 !== f) o.frequency.exponentialRampToValueAtTime(f1, t0 + decay);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(gain, t0 + attack);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + decay);
       o.connect(g).connect(out);
-      o.start(now);
-      o.stop(now + decay);
+      o.start(t0);
+      o.stop(t0 + attack + decay + 0.05);
     };
-    tone("sine", 140, 55, 1, 0.25); // the thump
-    tone("square", last ? 660 : 880, last ? 640 : 860, 0.12, last ? 0.6 : 0.12); // the ping
+    const bell = (f, gain, at, decay) => {
+      // Inharmonic partials make a glassy bell rather than a beep.
+      tone(f, gain, at, 0.005, decay);
+      tone(f * 2.76, gain * 0.4, at, 0.005, decay * 0.5);
+      tone(f * 5.4, gain * 0.15, at, 0.005, decay * 0.25);
+    };
+    tone(110, 0.5, 0, 0.06, 0.5, 80); // the swell, a soft "whoom"
+    const f = 440 * 2 ** (SCALE[n] / 12);
+    if (last) [1, 1.25, 1.5, 2].forEach((r, i) => bell(f * r, 0.5, i * 0.07, 1.8));
+    else bell(f, 0.6, 0, 0.9);
+    for (let i = 0; i < (last ? 9 : 4); i++) // the sparkles
+      tone(2000 + Math.random() * 3000, 0.08, 0.04 + i * 0.05 + Math.random() * 0.03, 0.003, 0.12);
   } catch {}
 }
 addEventListener("pointerdown", () => audio?.resume(), { capture: true });
@@ -301,7 +325,7 @@ export function runeGate(parent = document.body, { lang = language() } = {}) {
     await wait(reduced() ? 0 : behind > 1 ? 150 : 220);
     runes[address[n]].classList.add("lit");
     chevrons[order[n]].classList.add("on");
-    clunk(n === CHEVRONS - 1);
+    chime(n, n === CHEVRONS - 1);
     pips.children[n].classList.add("on");
     locked = n + 1;
     count.textContent = t.locked(locked);
