@@ -23,7 +23,6 @@ var _dim: ColorRect  # darkens the world behind menus
 var _logged_in := false  # at the last Online.changed
 var _prompt: Label  # gamepad button prompts, while a gamepad is in use
 var _forge_from := "title"  # the screen the forge returns to (not back_to: options... keep theirs)
-var _forge_corner: Button  # the way to the forge from every screen between runs
 var _on_fullscreen: JavaScriptObject  # kept alive: the browser calls it on fullscreenchange
 var _halo: TextureRect  # light bloom behind the level-up cards
 var _time_tween: Tween  # time back to normal after a level-up
@@ -105,13 +104,6 @@ func _ready() -> void:
 	Run.changed.connect(func():  # a grimoire picked up while choosing
 		_level_more.text = tr("+%d more grimoire(s) waiting") % (Run.pending.size() - 1) if Run.pending.size() > 1 else "")
 	Profile.changed.connect(_refresh_title)
-	_forge_corner = _forge_button()
-	_forge_corner.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-	_forge_corner.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	_forge_corner.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_forge_corner.offset_right = -32
-	_forge_corner.offset_bottom = -28
-	root.add_child(_forge_corner)
 	_prompt = UITheme.label("", "Caption", 18)
 	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_prompt.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
@@ -185,9 +177,6 @@ func show_screen(name: String) -> void:
 	sticks.visible = name == ""
 	_toasts.visible = name not in ["", "levelup"]  # in the menus only
 	_dim.visible = name not in ["", "title", "shop", "forge", "end"]
-	# Between runs, the forge is one click away (title and end of run have their own button).
-	_forge_corner.visible = not Run.active and Online.logged_in() and not Online.character.is_empty() \
-		and name not in ["", "pause", "levelup", "forge", "title", "end", "account", "characters"]
 	_dim.color.a = 0.82 if Run.active else 1.0  # out of a run, only the idle mage would show: hide it
 	if name == "levelup":
 		_dim.color.a = 0.45  # the slowed world shows through
