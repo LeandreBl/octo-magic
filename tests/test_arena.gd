@@ -57,6 +57,21 @@ func _initialize() -> void:
 				failures += 1
 				printerr("FAIL: a monster of radius %d from %s stops %d px from the start" % [r, at, left])
 				break
+	# On the graveyard: a boss goes to a mage anywhere, or as near as it fits when the mage is in streets too narrow for it.
+	var boss_ground: Array = Arena.walkable(56.0)
+	var mage_ground: Array = Arena.walkable(16.0)
+	for i in 30:
+		var to: Vector2 = mage_ground[i * 97 % mage_ground.size()]
+		var near: Vector2 = (Vector2(Arena._nearest(to, 56.0)) + Vector2(0.5, 0.5)) * Arena.CELL
+		var b: Vector2 = boss_ground[i * 31 % boss_ground.size()]
+		for k in 5400:
+			if b.distance_to(near) < 60.0:
+				break
+			b = Arena.slide(b, Arena.way(b, to, 56.0) * 80.0 / 60.0, 56.0)
+		if b.distance_to(near) >= 60.0:
+			failures += 1
+			printerr("FAIL: a boss walking to %s is stuck at %s" % [to, b])
+			break
 	# On the graveyard: from every grave, a monster reaches the start.
 	for g in Arena.spawns:
 		var left := _walk(Vector2(g[0], g[1]), Arena.START)

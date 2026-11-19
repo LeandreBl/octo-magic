@@ -129,7 +129,7 @@ const CELL := 24.0  # the walkable grid's step
 ## The movers' sizes a grid is walked for: a mover uses the first at least its
 ## radius (pickups and mages 16, monsters 24, bosses 60).
 const SIZES := [16.0, 24.0, 60.0]
-static var _grids := {}  # size -> {ground: [Vector2], links: {cell: [Vector2i]}, fields: {target cell: {cell: steps}}}
+static var _grids := {}  # size -> {ground: [Vector2], links: {cell: [Vector2i]}, fields: {target cell: {cell: steps}}, near: {cell: its nearest grid cell}}
 static var _grids_of: Array = []  # the polygons they were walked on
 
 
@@ -196,20 +196,21 @@ static func _grid(r: float) -> Dictionary:
 				todo.append(n)
 			links[c].append(n)
 			links[n].append(c)
-	_grids[R] = {"ground": ground, "links": links, "fields": {}}
+	_grids[R] = {"ground": ground, "links": links, "fields": {}, "near": {}}
 	return _grids[R]
 
 
 ## Which way a mover of radius r at `from` walks to reach `to` around the
 ## walls: straight at it when its size's grid between them is open, else down
 ## a flow field (steps to to's cell over that grid, walked once per cell the
-## target stands in). Off the grid (out of bounds, an unreachable spot): straight.
+## target stands in). A target where its size never goes (a mage in streets
+## too narrow for a boss): to the grid's cell nearest it, not straight into a wall.
 static func way(from: Vector2, to: Vector2, r := 16.0) -> Vector2:
 	var grid: Dictionary = _grid(r)
 	var links: Dictionary = grid.links
 	var fields: Dictionary = grid.fields
-	var goal: Variant = _on_grid(to, r)
-	var at: Variant = _on_grid(from, r)
+	var goal: Variant = _nearest(to, r)
+	var at: Variant = _nearest(from, r)
 	if goal == null or at == null or _open(from, to, links):
 		return (to - from).normalized()
 	if not fields.has(goal):
@@ -265,6 +266,22 @@ static func _on_grid(pos: Vector2, r := 16.0) -> Variant:
 			if links.has(n) and (best == null or pos.distance_to((Vector2(n) + Vector2(0.5, 0.5)) * CELL) < pos.distance_to((Vector2(best) + Vector2(0.5, 0.5)) * CELL)):
 				best = n
 	return best
+
+
+## _on_grid, else the grid's cell nearest pos anywhere (cached per cell), or null (no grid).
+static func _nearest(pos: Vector2, r := 16.0) -> Variant:
+	var c: Variant = _on_grid(pos, r)
+	if c != null:
+		return c
+	var grid: Dictionary = _grid(r)
+	var cell := Vector2i((pos / CELL).floor())
+	if not grid.near.has(cell):
+		var best: Variant = null
+		for n in grid.links:
+			if best == null or (n - cell).length_squared() < (best - cell).length_squared():
+				best = n
+		grid.near[cell] = best
+	return grid.near[cell]
 
 
 ## Whether the straight line from a to b crosses only cells of the grid (links).
