@@ -15,9 +15,6 @@ const HUD := preload("res://ui/hud.gd")  # its spell icon
 const MAX_SHOWN := 8  # word circles drawn
 const GLYPHS_N := 10  # glyphs lit around a job's circle while forging
 const JOB := 64.0  # a job's circle
-## Glyphs follow the forge's real progress (main.gd's job.progress); until the
-## model answers, an expected curve creeps over its step (MODEL_STEP, server/forge.py).
-const FORGE_SECONDS := 90.0
 ## PixelLab art (tools/make_forge.py); the chalk is white, tinted here.
 const ROOM: Texture2D = preload("res://assets/forge/room.png")  # the study, its table seen at three quarters
 ## Its candles' flames, in ROOM pixels: a flickering light on each.
@@ -361,12 +358,6 @@ func _on_forged(job: Dictionary, ok: bool) -> void:
 		tw.tween_callback(chip.queue_free)
 
 
-## Share of a job's glyphs lit after `seconds` of forging: fast at first, then
-## slower, never all.
-static func coverage(seconds: float) -> float:
-	return 0.95 * (1.0 - exp(-seconds / FORGE_SECONDS))
-
-
 func _process(delta: float) -> void:
 	_time += delta
 	if not is_visible_in_tree():
@@ -510,7 +501,8 @@ func _glyphs(c: CanvasItem, job: Dictionary, mid: Vector2, radius: float, g: flo
 		c.draw_texture_rect_region(GLYPHS, Rect2(at - Vector2(g, g) / 2, Vector2(g, g)), Rect2(_order[i] * 32, 0, 32, 32), tint)
 
 
-## A job's progress shown, 0..1: the forge's real one, an expected curve creeping
-## until the model answers.
+## A job's progress shown, 0..1: a fake first 10% over its lead_in seconds, so
+## it fills at once, then the forge's real 0..1 over the other 90%.
 static func _progress(job: Dictionary) -> float:
-	return maxf(job.get("progress", 0.0), 0.2 * coverage((Time.get_ticks_msec() - job.started) / 1000.0))
+	var t := (Time.get_ticks_msec() - job.started) / 1000.0
+	return 0.1 * clampf(t / job.get("lead_in", 3.0), 0.0, 1.0) + 0.9 * job.get("progress", 0.0)

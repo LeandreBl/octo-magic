@@ -572,6 +572,7 @@ func _on_forge_reply(result: int, code: int, headers: PackedStringArray, data: P
 		job.id = reply.job
 		job.words = maxi(1, reply.get("words", [1]).size())
 		job.started = Time.get_ticks_msec()
+		job.lead_in = randf_range(2.0, 5.0)  # seconds of the fake first 10% (ui/forge.gd)
 		forge_jobs.append(job)
 		Profile.blank_scrolls -= job.words
 		Profile.save()

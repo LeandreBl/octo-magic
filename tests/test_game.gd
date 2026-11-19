@@ -27,8 +27,11 @@ func _initialize() -> void:
 	_test_sfx()
 	_test_tentacle()
 	var Forge: GDScript = load("res://ui/forge.gd")  # load: it needs the autoloads
-	check(Forge.coverage(0) == 0.0 and Forge.coverage(30) < Forge.coverage(60) and Forge.coverage(3600) < 1.0,
-		"forge runes fill the parchment, never full before the spell is back")
+	var now := Time.get_ticks_msec()
+	check(is_equal_approx(Forge._progress({"started": now - 10000, "lead_in": 2.0, "progress": 0.5}), 0.55)
+		and Forge._progress({"started": now, "lead_in": 5.0}) < 0.01
+		and is_equal_approx(Forge._progress({"started": now - 10000, "lead_in": 2.0, "progress": 1.0}), 1.0),
+		"forge glyphs: a fake 10% lead-in, then the forge's real progress over 90%")
 	var a := Enemy.new()
 	var b := Enemy.new()
 	b.position = Vector2(10, 0)  # radius 12 each: 14 too close
