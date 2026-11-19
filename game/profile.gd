@@ -120,7 +120,7 @@ var stats := {"kills": 0, "bosses": 0, "best_wave": 0, "best_level": 0, "gold_to
 var achievements := {}  # id -> unix time reached
 var scores := []  # best first: {score, wave, level, kills, time}
 var spells := {}  # slot -> spell id equipped
-var forged := []  # spells from the forge: {id, slot, file, spell}
+var forged := []  # spells from the forge: {id, slot, file, spell, base}: base, the base spell it came from (base_of)
 var augments := {}  # AUGMENTS id -> true, bought
 var slotted := []  # AUGMENTS ids in the slots, SLOTS at most
 var run := {}  # the solo run left between two waves (Run.to_dict() + map, hp, mana, potions), {} if none
@@ -182,7 +182,7 @@ func apply(d: Dictionary) -> void:
 		if f is Dictionary and str(f.get("slot")) in Spell.SLOTS:
 			var file := str(f.get("file", ""))
 			var s := SpellArt.load_bundle(file) if file.begins_with("user://") else {}
-			forged.append({"id": str(f.get("id")), "slot": f.slot, "file": file,
+			forged.append({"id": str(f.get("id")), "slot": f.slot, "file": file, "base": str(f.get("base", "")),
 				"spell": s if not s.is_empty() else Spell.sanitize(f.get("spell"))})
 	for id in _dict(d.get("augments")):
 		if AUGMENTS.has(id):
@@ -350,6 +350,20 @@ func equip_spell(slot: String, id: String) -> bool:
 	return true
 
 
+## The base spell (game/spells.json id) entry `e` comes from, for its
+## sub-skills (Run.base): itself, the one a forged spell was improved from, or
+## for a spell forged before that was kept, the first base spell of its element.
+func base_of(e: Dictionary) -> String:
+	if base_spells.any(func(b): return b.id == e.get("id")):
+		return e.id
+	if e.get("base", "") != "":
+		return e.base
+	for b in base_spells:
+		if b.slot == e.get("slot") and b.spell.get("element") == e.get("spell", {}).get("element"):
+			return b.id
+	return ""
+
+
 ## slot -> spell, what the next run starts with.
 func equipped_spells() -> Dictionary:
 	var out := {}
@@ -360,9 +374,10 @@ func equipped_spells() -> Dictionary:
 
 ## A spell written by the forge (bundle saved at `file`): kept, and equipped
 ## in `slot` for the next run.
-func add_forged(spell: Dictionary, file: String, slot := "primary") -> String:
+## `base`: the base spell it came from (base_of the improved one).
+func add_forged(spell: Dictionary, file: String, slot := "primary", base := "") -> String:
 	var id := file.get_file().get_basename()  # unique: see next_bundle_path
-	forged.append({"id": id, "slot": slot, "file": file, "spell": spell})
+	forged.append({"id": id, "slot": slot, "file": file, "spell": spell, "base": base})
 	spells[slot] = id
 	_saved()
 	return id

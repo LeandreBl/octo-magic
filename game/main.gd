@@ -142,9 +142,8 @@ func _run_started(map: String, saved := {}) -> void:
 			n.free()
 	if saved.is_empty() or not Run.restore(saved):
 		saved = {}
-		var id: String = Profile.spells.primary
 		Run.start(Profile.equipped_spells(), Profile.bonus_list(), Profile.slotted_augments(),
-			id if Profile.base_spells.any(func(e): return e.id == id) else "")
+			Profile.base_of(Profile._entry(Profile.spells.primary, "primary")))
 	var p := local_player()
 	if p:
 		p.position = Arena.START
@@ -520,7 +519,7 @@ func write_scroll(words: String, entry: Dictionary) -> void:
 		_forge_posting = false
 		toast.emit(tr("Log in (main menu → Account) to write the scrolls."))
 		return
-	var job := {"slot": entry.slot, "spell": entry.spell, "who": Online.character_name(), "words": 0, "text": word}
+	var job := {"slot": entry.slot, "spell": entry.spell, "base": Profile.base_of(entry), "who": Online.character_name(), "words": 0, "text": word}
 	var body := JSON.stringify({"spell": entry.spell, "words": word,
 		"scrolls": Profile.blank_scrolls, "lang": TranslationServer.get_locale()})
 	if not _forge_request("/api/forge", auth + PackedStringArray(["Content-Type: application/json"]),
@@ -596,7 +595,7 @@ func _on_bundle(data: PackedByteArray, job: Dictionary, cancelled: int) -> void:
 		_end_job(job, false)
 		return
 	Profile.blank_scrolls += cancelled
-	Online.push_spell(Profile.add_forged(s, path, job.slot), path)
+	Online.push_spell(Profile.add_forged(s, path, job.slot, job.base), path)
 	forge_note = tr("Scroll written: %s will be your main spell in the next run.") % s.name
 	if cancelled > 0:
 		forge_note += " " + tr("%d word(s) cancelled (meaningless, not in a dead language or cheating), scroll(s) given back.") % cancelled

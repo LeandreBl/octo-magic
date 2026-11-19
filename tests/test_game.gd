@@ -518,6 +518,9 @@ func _test_profile() -> void:
 	check(p.available_spells("primary").size() == 7, "achievements unlock spells")
 	check(p.equip_spell("primary", "spark") and not p.equip_spell("primary", "arcane_missiles"), "equip unlocked only")
 	check(p.add_forged(Spell.base(), "user://spells/forged_1.spell") == "forged_1", "forged spell kept")
+	check(p.base_of(p.forged[0]) == "fireball", "a forged spell of unknown origin gets its element's base spell's sub-skills")
+	check(p.base_of(p.forged[0].merged({"base": "lightning"})) == "lightning" and p.base_of(p.base_spells[1]) == "lightning",
+		"a forged spell keeps its base spell's sub-skills")
 	var owned := p.equipped_entries()
 	check(owned.size() == 1 and owned[0].id == "forged_1", "forge picks among the equipped spells only")
 	owned = p.available_spells("primary")
