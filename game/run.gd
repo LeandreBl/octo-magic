@@ -214,45 +214,45 @@ const ENEMIES := {
 	"imp": {"hp": 9.0, "speed": 150.0, "radius": 14.0, "damage": 6.0, "xp": 1, "gold": 1,
 		"from": 2, "weight": 3.0, "ai": "weave", "color": "#e53935"},
 	"archer": {"hp": 12.0, "speed": 60.0, "radius": 18.0, "damage": 7.0, "xp": 2, "gold": 2,
-		"from": 2, "weight": 1.5, "ai": "still", "color": "#8d6e63", "shot": "arrow",
+		"from": 3, "weight": 1.5, "ai": "still", "color": "#8d6e63", "shot": "arrow",
 		"spells": [{"type": "bolt", "every": 2.4}]},
 	"zombie": {"hp": 55.0, "speed": 45.0, "radius": 22.0, "damage": 18.0, "xp": 2, "gold": 2,
-		"from": 3, "weight": 1.5, "ai": "chase", "heavy": 0.6, "color": "#9e9e9e"},
+		"from": 6, "weight": 1.5, "ai": "chase", "heavy": 0.6, "color": "#9e9e9e"},
 	"skeletal_warrior": {"hp": 16.0, "speed": 95.0, "radius": 19.0, "damage": 13.0, "xp": 2, "gold": 1,
-		"from": 3, "weight": 2.0, "ai": "chase", "color": "#d7ccc8",
+		"from": 4, "weight": 2.0, "ai": "chase", "color": "#d7ccc8",
 		"variant": ["helmet", 0.5, {"hp": 1.4}]},
 	"marksman": {"hp": 26.0, "speed": 60.0, "radius": 18.0, "damage": 9.0, "xp": 2, "gold": 2,
-		"from": 4, "weight": 1.2, "ai": "still", "color": "#6d4c41", "shot": "arrow",
+		"from": 9, "weight": 1.2, "ai": "still", "color": "#6d4c41", "shot": "arrow",
 		"spells": [{"type": "bolt", "every": 2.0}]},
 	"skeletal_knight": {"hp": 45.0, "speed": 95.0, "radius": 21.0, "damage": 13.0, "xp": 3, "gold": 2,
-		"from": 5, "weight": 1.0, "ai": "chase", "heavy": 0.7, "color": "#90a4ae",
+		"from": 13, "weight": 1.0, "ai": "chase", "heavy": 0.7, "color": "#90a4ae",
 		"variant": ["gauntlets", 0.5, {"damage": 1.2}]},
 	"wraith": {"hp": 14.0, "speed": 140.0, "radius": 18.0, "damage": 7.0, "xp": 2, "gold": 1,
-		"from": 5, "weight": 1.2, "ai": "chase", "color": "#f5f5f5", "effect": ["freeze", 1.0, 1.5]},
+		"from": 7, "weight": 1.2, "ai": "chase", "color": "#f5f5f5", "effect": ["freeze", 1.0, 1.5]},
 	"poison_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 5.0, "xp": 3, "gold": 3,
-		"from": 5, "weight": 0.8, "ai": "still", "color": "#7cb342", "shot": "poison_orb",
+		"from": 11, "weight": 0.8, "ai": "still", "color": "#7cb342", "shot": "poison_orb",
 		"effect": ["poison", 0.6, 3.0], "variant": ["shield", 0.35, {"hp": 2.0}],
 		"spells": [{"type": "bolt", "every": 2.4, "dmg": 1.0}]},
 	"rotting_zombie": {"hp": 55.0, "speed": 45.0, "radius": 22.0, "damage": 16.0, "xp": 3, "gold": 2,
-		"from": 6, "weight": 1.0, "ai": "chase", "heavy": 0.6, "color": "#827717",
+		"from": 16, "weight": 1.0, "ai": "chase", "heavy": 0.6, "color": "#827717",
 		"effect": ["poison", 0.3, 3.0], "gunk": [50.0, 5.0]},
 	"burning_skeleton": {"hp": 16.0, "speed": 115.0, "radius": 19.0, "damage": 13.0, "xp": 2, "gold": 2,
-		"from": 6, "weight": 1.2, "ai": "chase", "color": "#ff7043", "fire": true},
+		"from": 10, "weight": 1.2, "ai": "chase", "color": "#ff7043", "fire": true},
 	"frost_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 5.0, "xp": 3, "gold": 3,
-		"from": 6, "weight": 0.8, "ai": "still", "color": "#4fc3f7", "shot": "frost_orb",
+		"from": 14, "weight": 0.8, "ai": "still", "color": "#4fc3f7", "shot": "frost_orb",
 		"effect": ["freeze", 1.0, 2.0], "variant": ["shield", 0.35, {"hp": 2.0}],
 		"spells": [{"type": "bolt", "every": 2.4, "dmg": 1.0}]},
 	"putrid_archer": {"hp": 26.0, "speed": 60.0, "radius": 18.0, "damage": 8.0, "xp": 3, "gold": 2,
-		"from": 7, "weight": 1.0, "ai": "still", "color": "#689f38", "shot": "poison_arrow",
+		"from": 18, "weight": 1.0, "ai": "still", "color": "#689f38", "shot": "poison_arrow",
 		"effect": ["poison", 0.4, 3.0], "spells": [{"type": "bolt", "every": 2.0}]},
 	"fire_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 20.0, "xp": 3, "gold": 3,
-		"from": 7, "weight": 0.8, "ai": "still", "color": "#ff5722", "shot": "fireball", "fire": true,
+		"from": 20, "weight": 0.8, "ai": "still", "color": "#ff5722", "shot": "fireball", "fire": true,
 		"variant": ["shield", 0.35, {"hp": 2.0}], "spells": [{"type": "bolt", "every": 2.6, "dmg": 1.0}]},
 	"burning_archer": {"hp": 12.0, "speed": 60.0, "radius": 18.0, "damage": 16.0, "xp": 3, "gold": 2,
-		"from": 8, "weight": 0.8, "ai": "still", "color": "#ff9800", "shot": "fire_arrow", "fire": true,
+		"from": 22, "weight": 0.8, "ai": "still", "color": "#ff9800", "shot": "fire_arrow", "fire": true,
 		"spells": [{"type": "bolt", "every": 2.4, "dmg": 1.0}]},
 	"lightning_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 11.0, "xp": 3, "gold": 3,
-		"from": 8, "weight": 0.8, "ai": "still", "color": "#e3f2fd", "shot": "spark",
+		"from": 24, "weight": 0.8, "ai": "still", "color": "#e3f2fd", "shot": "spark",
 		"effect": ["stun", 1.0, 0.6], "variant": ["shield", 0.35, {"hp": 2.0}],
 		"spells": [{"type": "bolt", "every": 2.8, "dmg": 1.0}]},
 	# bosses, one every BOSS_EVERY waves (BOSSES)
@@ -298,28 +298,62 @@ static func is_boss(kind: String) -> bool:
 	return ENEMIES.get(kind, {}).get("boss", false)
 
 
-## The enemy kinds of wave `w`: a boss every BOSS_EVERY waves (BOSSES) with
-## a small escort, else a growing mix of the kinds unlocked so far. Seeded by
-## `w`: the same plan on every peer.
+## Waves a kind takes, from its "from", to reach its full "weight": a strong
+## kind trickles in, then grows common.
+const RAMP := 8.0
+const TANKY := 26.0  # hp from which a kind makes an "elite" wave
+const SKELETONS := ["skeleton", "skeletal_warrior", "burning_skeleton"]  # a "horde"
+const ZOMBIES := ["zombie", "rotting_zombie"]
+## The special waves, in turn: zombies only, lots of one kind (swarm), few
+## tanky kinds (elite), hundreds of skeletons (horde).
+const WAVE_TYPES := ["zombies", "swarm", "elite", "horde"]
+
+
+## The type of wave `w`: "boss", "mix" or one of WAVE_TYPES, in turn: the
+## third wave of every five from wave 8, and the first one too from wave 11.
+static func wave_type(w: int) -> String:
+	if w % BOSS_EVERY == 0:
+		return "boss"
+	if w >= 8 and w % BOSS_EVERY == 3 or w >= 11 and w % BOSS_EVERY == 1:
+		return WAVE_TYPES[(w / BOSS_EVERY * 2 + int(w % BOSS_EVERY == 3)) % WAVE_TYPES.size()]
+	return "mix"
+
+
+## The enemy kinds of wave `w`, by its wave_type: a boss every BOSS_EVERY waves
+## (BOSSES) with a small escort, else the kinds unlocked so far, each weighted
+## up over RAMP waves. Seeded by `w`: the same plan on every peer.
 static func wave_plan(w: int) -> Array:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = w
 	var pool := ENEMIES.keys().filter(func(k): return ENEMIES[k].get("weight", 0.0) > 0.0 and ENEMIES[k].from <= w)
-	var weights := PackedFloat32Array(pool.map(func(k): return ENEMIES[k].weight))
 	var out := []
 	var n := 4 + w * 2
-	if w % BOSS_EVERY == 0:
-		out.append(BOSSES[mini(w, BOSSES.keys().max())])
-		n = w / BOSS_EVERY * 2
+	match wave_type(w):
+		"boss":
+			out.append(BOSSES[mini(w, BOSSES.keys().max())])
+			n = w / BOSS_EVERY * 2
+		"elite":
+			pool = pool.filter(func(k): return ENEMIES[k].hp >= TANKY)
+			n = 3 + w / 3
+		"zombies":
+			pool = pool.filter(func(k): return k in ZOMBIES)
+			n = 6 + w
+		"horde":
+			pool = pool.filter(func(k): return k in SKELETONS)
+			n = 60 + w * 6
+		"swarm":
+			pool = [pool[rng.randi() % pool.size()]]
+			n = 10 + w * 3
+	var weights := PackedFloat32Array(pool.map(func(k): return ENEMIES[k].weight * minf(1.0, (w - ENEMIES[k].from + 1) / RAMP)))
 	for i in n:
 		out.append(pool[rng.rand_weighted(weights)])
 	return out
 
 
-## Stats of an enemy of `kind` at wave `w`: tougher every wave.
+## Stats of an enemy of `kind` at wave `w`: the same health at every wave (the
+## waves grow in number and in strong kinds instead), a little faster and harder-hitting.
 static func enemy_stats(kind: String, w: int) -> Dictionary:
 	var s: Dictionary = ENEMIES[kind].duplicate(true)
-	s.hp *= 1.0 + (w - 1) * 0.2
 	s.speed *= 1.0 + minf(w - 1, 20) * 0.02
 	s.damage *= 1.0 + (w - 1) * 0.05
 	s.gold = s.gold + w / BOSS_EVERY

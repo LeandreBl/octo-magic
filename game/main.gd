@@ -16,6 +16,8 @@ extends Node2D
 
 const POLL_SECONDS := 3.0
 const SPAWN_EVERY := 0.5  # s between two monsters of a wave: it trickles in
+const SPAWN_SPAN := 25.0  # s at most for a wave to come out: a horde pours in faster
+const ALIVE_MAX := 220  # no more monsters out while this many are alive
 const LEVEL_BLAST_RADIUS := 220.0  # px around the mage leveling up
 const LEVEL_BLAST_FORCE := 900.0  # knock speed: about 270 px of slide (enemy knock decays 1500/s)
 const LEVEL_BLAST_TIME := 0.6  # s of game time for the halo's front to reach LEVEL_BLAST_RADIUS
@@ -40,6 +42,7 @@ var net: Node  # game/net.gd
 var spawned := 0  # names of spawned enemies and drops
 var to_spawn := []  # the current wave's kinds not out yet (host)
 var _spawn_in := 0.0  # s until the next one comes out
+var _spawn_every := SPAWN_EVERY  # this wave's pace
 var map_name := "crypt"  # the run's first music track (Sfx.TRACKS), for players dropping in
 ## Scrolls being written, in parallel: {id, words (scrolls used), slot (of the
 ## improved spell, the forged one goes there), spell (the improved one), text
@@ -92,9 +95,9 @@ func _process(delta: float) -> void:
 	if not multiplayer.is_server():
 		return
 	if to_spawn:
-		_spawn_in -= delta
-		if _spawn_in <= 0.0:
-			_spawn_in = SPAWN_EVERY
+		_spawn_in = maxf(_spawn_in - delta, -0.1)  # held back by ALIVE_MAX: no burst after
+		while to_spawn and _spawn_in <= 0.0 and get_tree().get_nodes_in_group("enemies").size() < ALIVE_MAX:
+			_spawn_in += _spawn_every
 			_spawn_enemy(to_spawn.pop_front())
 	elif get_tree().get_nodes_in_group("enemies").is_empty():
 		_pull_drops()  # wave cleared
@@ -242,6 +245,7 @@ func _next_wave() -> void:
 		Profile.save()
 	_wave_started.rpc(Run.wave + 1)
 	to_spawn = Run.wave_plan(Run.wave)
+	_spawn_every = minf(SPAWN_EVERY, SPAWN_SPAN / to_spawn.size())
 	_spawn_in = 0.0
 
 

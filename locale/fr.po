@@ -22,6 +22,18 @@ msgstr "Continuer · vague %d"
 msgid "Wave %d!"
 msgstr "Vague %d !"
 
+msgid "Elite wave!"
+msgstr "Vague d'élite !"
+
+msgid "Zombie wave!"
+msgstr "Vague de zombies !"
+
+msgid "Skeleton horde!"
+msgstr "Horde de squelettes !"
+
+msgid "Swarm!"
+msgstr "Nuée !"
+
 msgid "Achievements"
 msgstr "Succès"
 

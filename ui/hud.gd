@@ -135,14 +135,16 @@ func _ready() -> void:
 	Run.changed.connect(_on_run_changed)
 
 
-## Wave MILESTONE, 2 x MILESTONE...: the message fades in, stays, fades out.
+## Wave MILESTONE, 2 x MILESTONE... and the special waves (Run.wave_type): the message fades in, stays, fades out.
 func _on_run_changed() -> void:
 	if Run.wave == _wave_seen:
 		return
 	_wave_seen = Run.wave
-	if Run.wave <= 0 or Run.wave % MILESTONE:
+	var special: String = {"elite": tr("Elite wave!"), "zombies": tr("Zombie wave!"),
+		"horde": tr("Skeleton horde!"), "swarm": tr("Swarm!")}.get(Run.wave_type(Run.wave), "")
+	if Run.wave <= 0 or Run.wave % MILESTONE and not special:
 		return
-	_milestone.text = tr("Wave %d!") % Run.wave
+	_milestone.text = special if special else tr("Wave %d!") % Run.wave
 	var t := _milestone.create_tween()
 	_milestone.modulate.a = 0.0
 	t.tween_property(_milestone, "modulate:a", 1.0, 0.6)

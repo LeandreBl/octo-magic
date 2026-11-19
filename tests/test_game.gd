@@ -459,7 +459,19 @@ func _test_waves() -> void:
 		check(not RunState.ENEMIES[k].has("gunk") or e and e[0] == "poison", "%s gunk is poison" % k)
 	check(RunState.wave_plan(9).size() > RunState.wave_plan(4).size(), "waves grow")
 	# Waves spawn out of every mage's view: tests/test_arena.gd (Arena.spawn_point).
-	check(RunState.enemy_stats("skeleton", 10).hp > RunState.enemy_stats("skeleton", 1).hp, "enemies get tougher")
+	check(RunState.enemy_stats("skeleton", 40).hp == RunState.enemy_stats("skeleton", 1).hp, "the same health at every wave")
+	var types := {}
+	for w in range(1, 60):
+		var t := RunState.wave_type(w)
+		types[t] = true
+		var plan := RunState.wave_plan(w)
+		match t:
+			"elite": check(plan.all(func(k): return RunState.ENEMIES[k].hp >= RunState.TANKY), "elite wave %d is tanky" % w)
+			"zombies": check(plan.all(func(k): return k in RunState.ZOMBIES), "zombie wave %d" % w)
+			"horde": check(plan.size() >= 100 and plan.all(func(k): return k in RunState.SKELETONS), "skeleton horde %d" % w)
+			"swarm": check(plan.count(plan[0]) == plan.size(), "swarm %d is of one kind" % w)
+	check(types.size() == 6, "every wave type comes up (%s)" % [types.keys()])
+	check(RunState.wave_type(3) == "mix" and RunState.ENEMIES.skeletal_knight.from > 10, "tanky kinds come late")
 	var looks := {}
 	for i in 60:
 		var st := RunState.enemy_stats("fire_mage", 1)

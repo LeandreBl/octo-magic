@@ -10,8 +10,11 @@ and the spells are words you write on scrolls, forged by an AI.
   `assets/maps/graveyard/map.json`, edited with `tools/map_editor.py`). Trees and
   roofs are drawn above the mage and fade around it when it walks under them;
   mages and monsters slide around walls, tombs and trees.
-- Endless waves of growing size and strength. Monsters come out of open tombs,
-  never inside a player's view; a boss every 5 waves.
+- Endless waves of growing size; a monster has the same health at every wave,
+  stronger kinds join late and grow common. Special waves in turn: zombies
+  only, a swarm of one kind, a few tanky ones (elite), a horde of hundreds of
+  skeletons. Monsters come out of open tombs, never inside a player's view; a
+  boss every 5 waves.
 - XP from kills: each level gives full health and mana back and blasts the
   monsters around the mage away.
 - Drops: gold, mana and life orbs, blank scrolls, red and blue grimoires, and
