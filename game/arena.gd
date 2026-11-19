@@ -20,7 +20,8 @@ const NIGHT := 0.72
 const LAMP_LIGHT := 110.0  # world
 const MAGE_LIGHT := 190.0  # world
 const MAGES_LIT := 8  # the shader's room for mages
-const FLASHES := 16  # the shader's room for flashes (flash)
+const LIGHTS := 48  # the shader's room for flashes (flash) and spells (the "spells" group, nearest the camera first)
+const SPELL_LIGHT := 90.0  # world: the least light around a spell
 const LAMPS := [[188, 228], [261, 203], [726, 173], [807, 176], [699, 252], [834, 254], [1199, 235], [1398, 428],
 		[398, 490], [673, 532], [864, 532], [1292, 781], [1362, 791], [677, 863], [862, 860]]
 
@@ -84,7 +85,7 @@ uniform vec2 lamps[%d];
 uniform vec2 mages[%d];
 uniform int lit;  // mages used
 uniform float night;
-uniform vec4 flash_at[%d];  // x, y, radius, strength
+uniform vec4 flash_at[%d];  // flashes, then spells  // x, y, radius, strength
 uniform vec3 flash_color[%d];
 uniform int flashing;
 varying vec2 world;
@@ -104,7 +105,7 @@ void fragment() {
 	float a = night * (1.0 - l);
 	COLOR = vec4(vec3(0.01, 0.02, 0.06) * a + shine, a);
 }
-""" % [LAMPS.size(), MAGES_LIT, FLASHES, FLASHES, LAMPS.size(), LAMP_LIGHT, MAGE_LIGHT]
+""" % [LAMPS.size(), MAGES_LIT, LIGHTS, LIGHTS, LAMPS.size(), LAMP_LIGHT, MAGE_LIGHT]
 	night.material = ShaderMaterial.new()
 	night.material.shader = dark
 	night.material.set_shader_parameter("lamps", PackedVector2Array(LAMPS.map(func(l): return Vector2(l[0], l[1]) * SCALE)))
@@ -133,16 +134,22 @@ func _process(delta: float) -> void:
 	night.material.set_shader_parameter("lit", mages.size())
 	mages.resize(MAGES_LIT)
 	night.material.set_shader_parameter("mages", mages)
-	flashes = flashes.filter(func(f): return clock < f[3] + f[4]).slice(-FLASHES)
+	flashes = flashes.filter(func(f): return clock < f[3] + f[4]).slice(-LIGHTS)
 	var at := PackedVector4Array()
 	var colors := PackedVector3Array()
 	for f in flashes:  # growing from a third of its radius, fading
 		var t: float = (clock - f[3]) / f[4]
 		at.append(Vector4(f[0].x, f[0].y, f[1] * (0.3 + 0.7 * sqrt(t)), (1.0 - t) * (1.0 - t)))
 		colors.append(Vector3(f[2].r, f[2].g, f[2].b))
+	var spells := get_tree().get_nodes_in_group("spells")
+	if spells.size() > LIGHTS - at.size():
+		spells.sort_custom(func(a, b): return a.global_position.distance_squared_to(mage) < b.global_position.distance_squared_to(mage))
+	for b in spells.slice(0, LIGHTS - at.size()):  # their own color, dimmer, a zone's over its area
+		at.append(Vector4(b.global_position.x, b.global_position.y, maxf(b.body.size * (1.3 if b.body.shape == "zone" else 3.5), SPELL_LIGHT), b.modulate.a))
+		colors.append(Vector3(b.color.r, b.color.g, b.color.b) * 0.6)
 	night.material.set_shader_parameter("flashing", at.size())
-	at.resize(FLASHES)
-	colors.resize(FLASHES)
+	at.resize(LIGHTS)
+	colors.resize(LIGHTS)
 	night.material.set_shader_parameter("flash_at", at)
 	night.material.set_shader_parameter("flash_color", colors)
 

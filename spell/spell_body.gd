@@ -137,6 +137,7 @@ func _ready() -> void:
 	bounce_left = body.bounce
 	origin = position
 	born = Arena.clock
+	add_to_group("spells")  # lit in the night (Arena)
 	if is_instance_valid(caster):
 		anchor = position - caster.global_position
 	homing = body.motion.any(func(m): return m.type == "homing" and m.strength > 0.0)
