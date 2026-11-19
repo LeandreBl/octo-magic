@@ -142,7 +142,7 @@ func _process(delta: float) -> void:
 		at.append(Vector4(f[0].x, f[0].y, f[1] * (0.3 + 0.7 * sqrt(t)), (1.0 - t) * (1.0 - t)))
 		colors.append(Vector3(f[2].r, f[2].g, f[2].b))
 	for e in get_tree().get_nodes_in_group("enemies"):  # a boss glows in its own color around it
-		if e.hp > 0.0 and Run.is_boss(e.kind) and at.size() < LIGHTS:
+		if e.hp > 0.0 and e.data.get("boss", false) and at.size() < LIGHTS:
 			var c := Color(e.data.color)
 			at.append(Vector4(e.global_position.x, e.global_position.y, maxf(e.radius * BOSS_LIGHT, MAGE_LIGHT), 1.0))
 			colors.append(Vector3(c.r, c.g, c.b) * 0.5)
