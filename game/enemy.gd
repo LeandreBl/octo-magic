@@ -29,6 +29,8 @@ const BITE_WARN := 0.5  # s: vanished, about to bite where the mage stood
 const BOSS_CATCH_UP := 1.2  # out of cast range, a boss walks this much faster than its mage
 const PREDICT_SHARE := 0.2  # of the enemies lead their mage: walk to cut it off, shoot where it will be
 const PREDICT_MAX := 1.5  # s: the farthest ahead they guess
+const WAY_EVERY := 6  # physics frames between two Arena.way of an enemy away from its mage (staggered)
+const WAY_NEAR := 120.0  # px: closer to its mage, every frame
 
 var kind := "skeleton"
 var data := {}  # its Run.ENEMIES entry, scaled to the wave
@@ -55,6 +57,7 @@ var _act := ""  # a special move playing (SPELL_ANIM), for _act_time seconds
 var _act_time := 0.0
 var _act_len := 1.0
 var predicts := false  # leads its mage (PREDICT_SHARE of them, see lead)
+var _way := Vector2.ZERO  # its last Arena.way (_steer)
 
 static var _textures := {}
 
@@ -165,7 +168,7 @@ func _physics_process(delta: float) -> void:
 	if windup > 0.0:
 		motion = Vector2.ZERO
 	# fully out of the mages (they are not pushed back), half out of each other enemy
-	var apart := Arena.apart(self, get_tree().get_nodes_in_group("enemies")) + 2.0 * Arena.apart(self, get_tree().get_nodes_in_group("players"))
+	var apart := Arena.apart(self, Arena.neighbours(self)) + 2.0 * Arena.apart(self, get_tree().get_nodes_in_group("players"))
 	position = Arena.slide(position, (motion + knock) * delta + apart, radius)
 	knock = knock.move_toward(Vector2.ZERO, 1500.0 * delta)
 	hit_cooldown -= delta
@@ -192,10 +195,13 @@ func _afflict(p: Node2D) -> void:
 
 
 ## The direction its AI walks, `to`: from it to its mage. It goes toward the
-## mage around the walls (Arena.way).
+## mage around the walls (Arena.way: every WAY_EVERY frames when far, a
+## crowd's worth of them is the host's heaviest work).
 func _steer(to: Vector2) -> Vector2:
 	var ai: String = data.get("ai", "chase")
-	var w := Arena.way(position, position + to, radius)
+	if not _way or to.length() < WAY_NEAR or (Engine.get_physics_frames() + get_instance_id()) % WAY_EVERY == 0:
+		_way = Arena.way(position, position + to, radius)
+	var w := _way
 	if predicts and w.dot(to.normalized()) > 0.9:  # in the open: cuts it off (around walls it follows the path)
 		w = lead(to, speed).normalized()
 	if ai != "chase" and not in_view(to):  # too far to cast: walks in

@@ -32,9 +32,15 @@ static var polygons: Array = _map.polygons.map(func(poly): return PackedVector2A
 	set(v):
 		polygons = v
 		boxes = _boxes(v)
+		buckets = _buckets(boxes)
 ## Each polygon's bounding box: slide skips the polygons far from the mover
 ## (it runs for every mover, every frame).
 static var boxes: Array = _boxes(polygons)
+## Bucket cell -> [polygon, its edges] for the polygons whose box, grown by
+## BUCKET, touches it, with their edges as near: slide only looks at the few
+## edges around the mover, not the whole map's.
+static var buckets: Dictionary = _buckets(boxes)
+const BUCKET := 128.0  # px: more than a mover's radius plus its push out of a wall
 static var solids: Array = _map.circles.map(func(s): return [s[0] * SCALE, s[1] * SCALE, s[2] * SCALE])
 static var spawns: Array = _map.spawns.map(func(s): return [s[0] * SCALE, s[1] * SCALE])
 static var START := Vector2(_map.start[0], _map.start[1]) * SCALE
@@ -395,10 +401,33 @@ static func _boxes(polys: Array) -> Array:
 		return b)
 
 
+## Every polygon with all its edges, buckets' way (a mover too big for them).
+static func _all() -> Array:
+	return range(polygons.size()).map(func(j): return [j, range(polygons[j].size())])
+
+
+static func _buckets(bs: Array) -> Dictionary:
+	var out := {}
+	for j in bs.size():
+		var poly: PackedVector2Array = polygons[j]
+		var b: Rect2 = bs[j].grow(BUCKET)
+		for x in range(floori(b.position.x / BUCKET), floori(b.end.x / BUCKET) + 1):
+			for y in range(floori(b.position.y / BUCKET), floori(b.end.y / BUCKET) + 1):
+				var cell := Rect2(Vector2(x, y) * BUCKET, Vector2.ONE * BUCKET).grow(BUCKET)
+				var edges := PackedInt32Array()
+				for i in poly.size():
+					if cell.intersects(Rect2(poly[i], Vector2.ZERO).expand(poly[(i + 1) % poly.size()]), true):
+						edges.append(i)
+				if not out.has(Vector2i(x, y)):
+					out[Vector2i(x, y)] = []
+				out[Vector2i(x, y)].append([j, edges])
+	return out
+
+
 ## How far `me` moves to get out of the living `others` (nodes with position,
 ## radius and hp) it overlaps: half of each overlap, the other one moving the
 ## other half on its own turn. Feed it to slide, to stay off the walls.
-## ponytail: O(n) per mover, O(n²) a frame; a spatial grid if the crowds grow past ~200.
+## Enemies: feed it neighbours, not the whole crowd (O(n²) a frame).
 static func apart(me: Node2D, others: Array) -> Vector2:
 	var out := Vector2.ZERO
 	for o in others:
@@ -408,6 +437,34 @@ static func apart(me: Node2D, others: Array) -> Vector2:
 		var min_d: float = me.radius + o.radius
 		if d.length_squared() < min_d * min_d:
 			out += (d.normalized() if d else Vector2.from_angle(me.get_instance_id())) * (min_d - d.length()) * 0.5
+	return out
+
+
+const NEAR := 32.0  # px: neighbours' cell
+static var _near := {}  # cell -> its nodes, for one physics frame (neighbours)
+static var _near_frame := -1
+static var _near_r := 0.0  # the biggest radius among them
+
+
+## The enemies that may overlap `me` (in its cell or around it), for apart:
+## they are bucketed once per physics frame, not all scanned per mover.
+static func neighbours(me: Node2D) -> Array:
+	if _near_frame != Engine.get_physics_frames():
+		_near_frame = Engine.get_physics_frames()
+		_near = {}
+		_near_r = 0.0
+		for n in me.get_tree().get_nodes_in_group("enemies"):
+			_near_r = maxf(_near_r, n.radius)
+			var c := Vector2i((n.position / NEAR).floor())
+			if not _near.has(c):
+				_near[c] = []
+			_near[c].append(n)
+	var lo := Vector2i(((me.position - Vector2.ONE * (me.radius + _near_r)) / NEAR).floor())
+	var hi := Vector2i(((me.position + Vector2.ONE * (me.radius + _near_r)) / NEAR).floor())
+	var out := []
+	for x in range(lo.x, hi.x + 1):  # as far as the biggest of them touches it
+		for y in range(lo.y, hi.y + 1):
+			out.append_array(_near.get(Vector2i(x, y), []))
 	return out
 
 
@@ -424,21 +481,22 @@ static func slide(pos: Vector2, motion: Vector2, r: float) -> Vector2:
 			if tangent.dot(motion) < 0.0:
 				tangent = -tangent
 			p = c + (n * min_d + tangent * motion.length()).normalized() * min_d
-	for k in polygons.size() * 3:  # pushed out to r from its nearest edge, sliding along it; thrice: out of one may push into a neighbour
-		var j := k % polygons.size()
+	var near: Array = buckets.get(Vector2i((p / BUCKET).floor()), []) if r < BUCKET / 2.0 else _all()
+	for k in near.size() * 3:  # pushed out to r from its nearest edge, sliding along it; thrice: out of one may push into a neighbour
+		var j: int = near[k % near.size()][0]
 		if not boxes[j].grow(r + 1.0).has_point(p):
 			continue  # outside it and farther than r from its edges
 		var poly: PackedVector2Array = polygons[j]
 		var inside := Geometry2D.is_point_in_polygon(p, poly)
 		var best := Vector2.INF
-		for i in poly.size():
+		for i in (range(poly.size()) if inside else near[k % near.size()][1]):  # outside: only its edges near enough to touch
 			var q := Geometry2D.get_closest_point_to_segment(p, poly[i], poly[(i + 1) % poly.size()])
 			if q.distance_squared_to(p) < best.distance_squared_to(p):
 				best = q
 		if inside or p.distance_to(best) < r:
 			var out := (best - p if inside else p - best).normalized()
 			p = best + (out if out else Vector2.UP) * r
-	for j in polygons.size():
-		if boxes[j].has_point(p) and Geometry2D.is_point_in_polygon(p, polygons[j]):
+	for e in near:
+		if boxes[e[0]].has_point(p) and Geometry2D.is_point_in_polygon(p, polygons[e[0]]):
 			return pos  # squeezed between zones closer than the mover's width: it stays put
 	return p
