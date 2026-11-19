@@ -91,7 +91,7 @@ MONSTERS = {
         "walk": "floating toward the bottom of the image, robes flowing, seen from directly above, seamless loop",
         "summon": "raises its glowing staff, violet necrotic magic swirls around it, summoning, seen from directly above",
         "death": "staggers in agony, cracks of blinding violet light burst out of its body, about to explode, seen from directly above"}),
-    # the boss monsters (waves 10, 15, 20, 25, then 30 and every 5th): each one adds an attack to the last one's
+    # the boss monsters (waves 20, 30, 40, 50, then 60 and every 10th): each one adds an attack to the last one's
     "bone_herald": (96, {"look": (DARK + "a towering skeletal herald in black bone armor, a ribcage launcher of glowing bone"
                                          " missiles on its back, huge imposing boss", "horned skull")}, {
         "attack": "leans forward and launches glowing bone missiles from its back toward the bottom of the image, seen from directly above",

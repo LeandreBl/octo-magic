@@ -439,10 +439,10 @@ func _test_waves() -> void:
 	for k in RunState.wave_plan(12):
 		w12[k] = true
 	check(w12.size() >= 6, "late waves mix many kinds (%d)" % w12.size())
-	for w in range(RunState.BOSS_EVERY, 50, RunState.BOSS_EVERY):
+	for w in range(RunState.BOSS_EVERY, 100, RunState.BOSS_EVERY):
 		var plan := RunState.wave_plan(w)
 		check(RunState.is_boss(plan[0]) and plan.count(plan[0]) == 1, "boss wave")
-		check(plan[0] == RunState.BOSSES[mini(w, 30)], "the boss of wave %d" % w)
+		check(plan[0] == RunState.BOSSES[mini(w, RunState.BOSSES.keys().max())], "the boss of wave %d" % w)
 	var attacks := []
 	for k in ["bone_herald", "pyre_lord", "blight_eye", "grave_maw"]:  # each one adds an attack
 		var types: Array = RunState.ENEMIES[k].spells.map(func(sp): return sp.type)

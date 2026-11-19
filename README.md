@@ -14,7 +14,7 @@ and the spells are words you write on scrolls, forged by an AI.
   stronger kinds join late and grow common. Special waves in turn: zombies
   only, a swarm of one kind, a few tanky ones (elite), a horde of hundreds of
   skeletons. Monsters come out of open tombs, never inside a player's view; a
-  boss every 5 waves.
+  boss every 10 waves.
 - XP from kills: each level gives full health and mana back and blasts the
   monsters around the mage away.
 - Drops: gold, mana and life orbs, blank scrolls, red and blue grimoires, and
@@ -54,10 +54,10 @@ and the spells are words you write on scrolls, forged by an AI.
   screen). They attack only from on screen; ground attacks are always
   telegraphed.
 - Effects on the mage: poison, freeze (slowed), stun, and fire damage.
-- Bosses (`Run.BOSSES`): Lich King (wave 5: shot rings, summons skeletons at 30% hp),
+- Bosses (`Run.BOSSES`): Lich King (wave 10: shot rings, summons skeletons at 30% hp),
   then the boss monsters, each adding an attack to the last one's: Bone Herald
-  (10, missile volleys), Pyre Lord (15, + fire pools), Blight Eye (20, + green
-  laser), Grave Maw (25, + vanishes and bites), Archfiend (30 and every 5th
+  (20, missile volleys), Pyre Lord (30, + fire pools), Blight Eye (40, + green
+  laser), Grave Maw (50, + vanishes and bites), Archfiend (60 and every 10th
   wave after, + fire pools hatching hell imps, more each time). A boss dies in
   a staggering explosion (`game/boss_death.gd`) and scatters gold.
 

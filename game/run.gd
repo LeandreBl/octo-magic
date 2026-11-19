@@ -8,7 +8,8 @@ signal changed
 signal offered(offers: Array)  # a grimoire opened: let the player pick one
 signal level_gained  # one or more levels: health and mana back to full
 
-const BOSS_EVERY := 5
+const BOSS_EVERY := 10
+const CYCLE := 5  # the special waves' rhythm (wave_type), apart from the bosses'
 var active := false
 var wave := 0
 var level := 1
@@ -291,7 +292,7 @@ const LASER := {"type": "laser", "every": 6.0, "length": 520.0, "time": 1.6, "dm
 const BITE := {"type": "teleport", "every": 7.0, "dmg": 2.5}
 ## Wave -> its boss; past the last one, the last one comes back every BOSS_EVERY
 ## waves, its fireballs hatching more imps each time (enemy_stats).
-const BOSSES := {5: "boss", 10: "bone_herald", 15: "pyre_lord", 20: "blight_eye", 25: "grave_maw", 30: "archfiend"}
+const BOSSES := {10: "boss", 20: "bone_herald", 30: "pyre_lord", 40: "blight_eye", 50: "grave_maw", 60: "archfiend"}
 const IMPS_PER_FIGHT := 2  # more imps per fireball each time the last boss comes back
 const BOSS_HASTE := 0.6  # a boss's spells come this much sooner than their "every"
 
@@ -316,8 +317,8 @@ const WAVE_TYPES := ["zombies", "swarm", "elite", "horde"]
 static func wave_type(w: int) -> String:
 	if w % BOSS_EVERY == 0:
 		return "boss"
-	if w >= 8 and w % BOSS_EVERY == 3 or w >= 11 and w % BOSS_EVERY == 1:
-		return WAVE_TYPES[(w / BOSS_EVERY * 2 + int(w % BOSS_EVERY == 3)) % WAVE_TYPES.size()]
+	if w >= 8 and w % CYCLE == 3 or w >= 11 and w % CYCLE == 1:
+		return WAVE_TYPES[(w / CYCLE * 2 + int(w % CYCLE == 3)) % WAVE_TYPES.size()]
 	return "mix"
 
 
@@ -333,7 +334,7 @@ static func wave_plan(w: int) -> Array:
 	match wave_type(w):
 		"boss":
 			out.append(BOSSES[mini(w, BOSSES.keys().max())])
-			n = w / BOSS_EVERY * 2
+			n = w / CYCLE * 2
 		"elite":
 			pool = pool.filter(func(k): return ENEMIES[k].hp >= TANKY)
 			n = 3 + w / 3
@@ -358,7 +359,7 @@ static func enemy_stats(kind: String, w: int) -> Dictionary:
 	var s: Dictionary = ENEMIES[kind].duplicate(true)
 	s.speed *= 1.0 + minf(w - 1, 20) * 0.02
 	s.damage *= 1.0 + (w - 1) * 0.05
-	s.gold = s.gold + w / BOSS_EVERY
+	s.gold = s.gold + w / CYCLE
 	var xp: float = s.xp
 	for sp in s.get("spells", []):
 		if s.get("boss", false):
