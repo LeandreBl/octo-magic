@@ -235,9 +235,10 @@ func _check_channel() -> void:
 		e.hp = 1000.0
 		e.position = pos
 		world.add_child(e)
+		e.set_physics_process(false)  # held there, not slid off the map's obstacles
 		return e
 	var near_behind: Node2D = at.call(Vector2(60, 100))  # nearest, but behind the aim
-	var wide: Node2D = at.call(Vector2(150, 170))  # 54 degrees off the aim, nearest ahead
+	var wide: Node2D = at.call(Vector2(150, 120))  # 22 degrees off the aim (within its 30), nearest ahead
 	var aimed: Node2D = at.call(Vector2(300, 100))
 	var far: Node2D = at.call(Vector2(380, 110))
 	SpellBody.cast(spells.lightning.emit, Vector2(100, 100), Vector2.RIGHT, null, spells.lightning, world)
@@ -488,6 +489,15 @@ func _check_channel() -> void:
 	mage.firing = {"primary": false}
 	await physics_frame
 	check(not is_instance_valid(arc) or arc.is_queued_for_deletion(),"released beam stops at once")
+	mage.firing = {"primary": true}
+	SpellBody.cast(spells.lightning.emit, Vector2(110, 100), Vector2.RIGHT, mage, spells.lightning, world)
+	await physics_frame
+	var crit := Spell.scale_damage(spells.lightning, Stats.CRIT_MULT)
+	SpellBody.cast(crit.emit, Vector2(110, 100), Vector2.RIGHT, mage, crit, world)
+	arcs = world.get_children().filter(func(n): return n is SpellBody and n.caster == mage and not n.is_queued_for_deletion())
+	check(arcs.size() == 1 and is_same(arcs[0].body, crit.emit.body), "a crit tick (a scaled copy) renews the arc, no second one")
+	mage.firing = {"primary": false}
+	await physics_frame
 	var twin: Dictionary = spells.lightning.duplicate(true)
 	twin.emit.merge({"count": 2, "pattern": "spread", "spread": 40.0}, true)
 	mage.firing = {"primary": true}

@@ -56,8 +56,11 @@ static func cast(emit: Dictionary, pos: Vector2, aim: Vector2, owner_node: Node2
 			await world.get_tree().create_timer(emit.burst_delay).timeout
 			if not is_instance_valid(world):
 				return
-		var b := _channeled(emit.body, owner_node, depth, i, world)
+		var b := _channeled(emit.body, owner_node, depth, i, spell, world)
 		if b:  # a channel tick renews the live arc / cone: one on screen, not a stack
+			b.body = emit.body  # this tick's damage (a crit, Vis Teli, short of mana)
+			b.spell = spell
+			b.modulate.a = spell.get("weak", 1.0)
 			b.age = 0.0
 			b.struck = false
 			b.dir = dirs[i]
@@ -80,11 +83,13 @@ static func cast(emit: Dictionary, pos: Vector2, aim: Vector2, owner_node: Node2
 			SpellSound.play(spell, emit.body, depth, b, world)
 
 
-static func _channeled(body: Dictionary, owner_node: Node2D, depth: int, index: int, world: Node) -> SpellBody:
+## The live arc / cone of this spell's body: matched by spell id, not by dict,
+## as a crit or Vis Teli tick casts a scaled copy (Spell.scale_damage).
+static func _channeled(body: Dictionary, owner_node: Node2D, depth: int, index: int, spell: Dictionary, world: Node) -> SpellBody:
 	if body.shape not in ["beam", "cone"]:
 		return null
 	for n in world.get_children():
-		if n is SpellBody and is_same(n.body, body) and n.caster == owner_node \
+		if n is SpellBody and n.body.shape == body.shape and n.spell.get("id") == spell.get("id") and n.caster == owner_node \
 				and n.depth == depth and n.index == index and not n.is_queued_for_deletion():
 			return n
 	return null
@@ -139,6 +144,8 @@ func _ready() -> void:
 	if spell.has("weak"):  # cast short of mana (Spell.weakened): 1 % of damage, 1 % visible
 		modulate.a = spell.weak
 	anim = SpellArt.animation(spell, body)
+	if body.shape == "beam":  # gripped before its first draw: no straight arc for a frame
+		target = _beam_target()
 	var dot := SpellArt.texture(body.particle, spell.palette)
 	if dot and body.sheet.is_empty():
 		var p := CPUParticles2D.new()
