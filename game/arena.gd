@@ -22,6 +22,7 @@ const MAGES_LIT := 8  # the shader's room for mages
 const LIGHTS := 48  # the shader's room for flashes (flash) and spells (the "spells" group, nearest the camera first)
 const SPELL_LIGHT := 90.0  # world: the least light around a spell
 const BEAM_LIGHT := 50.0  # world: the light around each point of a beam's arc
+const BOSS_LIGHT := 4.0  # a boss's light radius, in its radii (at least MAGE_LIGHT)
 
 static var clock := 0.0  # s of game time, scaled by Engine.time_scale: animations run on it
 static var _map: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ART + "map.json"))
@@ -140,6 +141,11 @@ func _process(delta: float) -> void:
 		var t: float = (clock - f[3]) / f[4]
 		at.append(Vector4(f[0].x, f[0].y, f[1] * (0.3 + 0.7 * sqrt(t)), (1.0 - t) * (1.0 - t)))
 		colors.append(Vector3(f[2].r, f[2].g, f[2].b))
+	for e in get_tree().get_nodes_in_group("enemies"):  # a boss glows in its own color around it
+		if e.hp > 0.0 and Run.is_boss(e.kind) and at.size() < LIGHTS:
+			var c := Color(e.data.color)
+			at.append(Vector4(e.global_position.x, e.global_position.y, maxf(e.radius * BOSS_LIGHT, MAGE_LIGHT), 1.0))
+			colors.append(Vector3(c.r, c.g, c.b) * 0.5)
 	var spells := get_tree().get_nodes_in_group("spells")
 	if spells.size() > LIGHTS - at.size():
 		spells.sort_custom(func(a, b): return a.global_position.distance_squared_to(mage) < b.global_position.distance_squared_to(mage))
