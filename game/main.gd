@@ -102,11 +102,12 @@ func _process(delta: float) -> void:
 			_spawn_in += _spawn_every
 			_spawn_enemy(to_spawn.pop_front())
 	elif get_tree().get_nodes_in_group("enemies").is_empty():
-		_pull_drops()  # wave cleared
+		if Run.wave_type(Run.wave) != "boss":  # a boss's loot is walked to
+			_pull_drops()  # wave cleared
 		_next_wave()
 
 
-## Every drop on the map flies to the player (wave cleared, boss down, level-up).
+## Every drop on the map flies to the player (wave cleared, but a boss wave).
 func _pull_drops() -> void:
 	for p in get_tree().get_nodes_in_group("pickups"):
 		p.magnet = INF
@@ -186,7 +187,7 @@ func _offer_loadout(text: String) -> void:
 		p.loadout_json = JSON.stringify(Player.clean_loadout(JSON.parse_string(text)))
 
 
-## A mage levels up: the host pulls every drop in, and a halo of light spreads
+## A mage levels up: a halo of light spreads
 ## from the mage to LEVEL_BLAST_RADIUS, pushing each enemy away (and turning
 ## back each enemy shot) as its front reaches it.
 @rpc("any_peer", "call_local", "reliable")
@@ -195,7 +196,6 @@ func _level_blast() -> void:
 	var p := get_node_or_null("P%d" % (from if from else 1))
 	if not multiplayer.is_server() or not p:
 		return
-	_pull_drops()
 	var at: Vector2 = p.position
 	var hit := {}
 	_level_wave.rpc(at)
@@ -308,8 +308,6 @@ func _on_killed(e: Node2D) -> void:
 		_drop("grimoire_" + Upgrades.KINDS.pick_random(), 1, e.position + Vector2(randf_range(-12, 12), -16))
 	if randf() < (0.05 if Run.is_boss(e.kind) else 0.0025) * luck:  # rare: ~1 boss in 20
 		_drop("scroll", 1, e.position + Vector2(0, 14))
-	if Run.is_boss(e.kind):
-		_pull_drops.call_deferred()  # after its own drops' deferred spawns
 
 
 ## Kills and drops are shared: every peer counts them in its own Run.
