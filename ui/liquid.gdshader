@@ -6,7 +6,7 @@ shader_type canvas_item;
 
 uniform float top = 6.0;  // the fill's top, in the bar's pixels (hud.gd RIM)
 uniform float height = 16.0;  // the fill's height, in pixels
-uniform float alpha = 0.72;  // see-through: the game shows under it
+uniform float alpha = 0.86;  // see-through: the game shows under it
 
 varying vec2 pos;  // in the bar's pixels
 

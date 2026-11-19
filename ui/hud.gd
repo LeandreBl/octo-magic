@@ -174,8 +174,8 @@ func _bar(parent: Control, color: Color, height: int) -> ProgressBar:
 	bar.custom_minimum_size = Vector2(250, height)
 	bar.show_percentage = false
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Muted: less saturated and darker than the theme color, so it does not glare.
-	var fill := UITheme.fill(Color.from_hsv(color.h, color.s * 0.6, color.v * 0.75))
+	# Slightly muted: a touch less saturated and darker than the theme color.
+	var fill := UITheme.fill(Color.from_hsv(color.h, color.s * 0.85, color.v * 0.9))
 	fill.border_color = fill.bg_color.lightened(0.15)  # a softer top highlight
 	fill.set_corner_radius_all((height - RIM * 2) / 2)
 	fill.set_expand_margin_all(-RIM)  # inside the frame
