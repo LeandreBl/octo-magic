@@ -472,6 +472,11 @@ func _test_waves() -> void:
 			"swarm": check(plan.count(plan[0]) == plan.size(), "swarm %d is of one kind" % w)
 	check(types.size() == 6, "every wave type comes up (%s)" % [types.keys()])
 	check(RunState.wave_type(3) == "mix" and RunState.ENEMIES.skeletal_knight.from > 10, "tanky kinds come late")
+	check(RunState.ENEMIES.skeletal_knight.xp > RunState.ENEMIES.skeleton.xp and RunState.ENEMIES.skeleton.xp > RunState.ENEMIES.imp.xp, "harder kinds give more XP")
+	var shielded := RunState.enemy_stats("poison_mage", 1)
+	while shielded.look == "poison_mage":
+		shielded = RunState.enemy_stats("poison_mage", 1)
+	check(shielded.xp == 2 * RunState.ENEMIES.poison_mage.xp, "a shield doubles its hp and its XP")
 	var looks := {}
 	for i in 60:
 		var st := RunState.enemy_stats("fire_mage", 1)

@@ -113,7 +113,7 @@ static func _arr(v: Variant) -> Array:
 
 
 static func xp_to_next(lvl: int) -> int:
-	return 5 + (lvl - 1) * 4
+	return 10 + (lvl - 1) * 8  # ENEMIES xp counts double the old scale
 
 
 func add_xp(amount: int) -> void:
@@ -197,6 +197,8 @@ func finish() -> Dictionary:
 ## boss). Look: "color" (its zones), sprites in assets/monsters/<kind>/.
 ## "ai" moves it (game/enemy.gd): chase, weave (zigzags in), still (archers, mages: hold still once on screen,
 ## see Enemy.VIEW, walk in when the mage is off it).
+## "xp": its worth at wave 1, by how hard it is to kill and how dangerous it is
+## (enemy_stats grows it with its variant's hp).
 ## "heavy": share of knockback taken.
 ## "spells": its own casts, each every "every" seconds (see Enemy.cast);
 ## "dmg" scales its "damage". "shot": the effect its shots fly as
@@ -209,74 +211,74 @@ func finish() -> Dictionary:
 ## "kills": added to the run's kills when it falls (the boss monsters).
 ## "loot": richer drops (life and mana orbs, Quad Damage), see main.gd.
 const ENEMIES := {
-	"skeleton": {"hp": 18.0, "speed": 80.0, "radius": 19.0, "damage": 8.0, "xp": 1, "gold": 1,
+	"skeleton": {"hp": 18.0, "speed": 80.0, "radius": 19.0, "damage": 8.0, "xp": 2, "gold": 1,
 		"from": 1, "weight": 6.0, "ai": "chase", "color": "#e0dccb"},
 	"imp": {"hp": 9.0, "speed": 150.0, "radius": 14.0, "damage": 6.0, "xp": 1, "gold": 1,
 		"from": 2, "weight": 3.0, "ai": "weave", "color": "#e53935"},
 	"archer": {"hp": 12.0, "speed": 60.0, "radius": 18.0, "damage": 7.0, "xp": 2, "gold": 2,
 		"from": 3, "weight": 1.5, "ai": "still", "color": "#8d6e63", "shot": "arrow",
 		"spells": [{"type": "bolt", "every": 2.4}]},
-	"zombie": {"hp": 55.0, "speed": 45.0, "radius": 22.0, "damage": 18.0, "xp": 2, "gold": 2,
+	"zombie": {"hp": 55.0, "speed": 45.0, "radius": 22.0, "damage": 18.0, "xp": 4, "gold": 2,
 		"from": 6, "weight": 1.5, "ai": "chase", "heavy": 0.6, "color": "#9e9e9e"},
-	"skeletal_warrior": {"hp": 16.0, "speed": 95.0, "radius": 19.0, "damage": 13.0, "xp": 2, "gold": 1,
+	"skeletal_warrior": {"hp": 16.0, "speed": 95.0, "radius": 19.0, "damage": 13.0, "xp": 3, "gold": 1,
 		"from": 4, "weight": 2.0, "ai": "chase", "color": "#d7ccc8",
 		"variant": ["helmet", 0.5, {"hp": 1.4}]},
-	"marksman": {"hp": 26.0, "speed": 60.0, "radius": 18.0, "damage": 9.0, "xp": 2, "gold": 2,
+	"marksman": {"hp": 26.0, "speed": 60.0, "radius": 18.0, "damage": 9.0, "xp": 3, "gold": 2,
 		"from": 9, "weight": 1.2, "ai": "still", "color": "#6d4c41", "shot": "arrow",
 		"spells": [{"type": "bolt", "every": 2.0}]},
-	"skeletal_knight": {"hp": 45.0, "speed": 95.0, "radius": 21.0, "damage": 13.0, "xp": 3, "gold": 2,
+	"skeletal_knight": {"hp": 45.0, "speed": 95.0, "radius": 21.0, "damage": 13.0, "xp": 5, "gold": 2,
 		"from": 13, "weight": 1.0, "ai": "chase", "heavy": 0.7, "color": "#90a4ae",
 		"variant": ["gauntlets", 0.5, {"damage": 1.2}]},
-	"wraith": {"hp": 14.0, "speed": 140.0, "radius": 18.0, "damage": 7.0, "xp": 2, "gold": 1,
+	"wraith": {"hp": 14.0, "speed": 140.0, "radius": 18.0, "damage": 7.0, "xp": 3, "gold": 1,
 		"from": 7, "weight": 1.2, "ai": "chase", "color": "#f5f5f5", "effect": ["freeze", 1.0, 1.5]},
-	"poison_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 5.0, "xp": 3, "gold": 3,
+	"poison_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 5.0, "xp": 4, "gold": 3,
 		"from": 11, "weight": 0.8, "ai": "still", "color": "#7cb342", "shot": "poison_orb",
 		"effect": ["poison", 0.6, 3.0], "variant": ["shield", 0.35, {"hp": 2.0}],
 		"spells": [{"type": "bolt", "every": 2.4, "dmg": 1.0}]},
-	"rotting_zombie": {"hp": 55.0, "speed": 45.0, "radius": 22.0, "damage": 16.0, "xp": 3, "gold": 2,
+	"rotting_zombie": {"hp": 55.0, "speed": 45.0, "radius": 22.0, "damage": 16.0, "xp": 5, "gold": 2,
 		"from": 16, "weight": 1.0, "ai": "chase", "heavy": 0.6, "color": "#827717",
 		"effect": ["poison", 0.3, 3.0], "gunk": [50.0, 5.0]},
-	"burning_skeleton": {"hp": 16.0, "speed": 115.0, "radius": 19.0, "damage": 13.0, "xp": 2, "gold": 2,
+	"burning_skeleton": {"hp": 16.0, "speed": 115.0, "radius": 19.0, "damage": 13.0, "xp": 3, "gold": 2,
 		"from": 10, "weight": 1.2, "ai": "chase", "color": "#ff7043", "fire": true},
-	"frost_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 5.0, "xp": 3, "gold": 3,
+	"frost_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 5.0, "xp": 4, "gold": 3,
 		"from": 14, "weight": 0.8, "ai": "still", "color": "#4fc3f7", "shot": "frost_orb",
 		"effect": ["freeze", 1.0, 2.0], "variant": ["shield", 0.35, {"hp": 2.0}],
 		"spells": [{"type": "bolt", "every": 2.4, "dmg": 1.0}]},
-	"putrid_archer": {"hp": 26.0, "speed": 60.0, "radius": 18.0, "damage": 8.0, "xp": 3, "gold": 2,
+	"putrid_archer": {"hp": 26.0, "speed": 60.0, "radius": 18.0, "damage": 8.0, "xp": 4, "gold": 2,
 		"from": 18, "weight": 1.0, "ai": "still", "color": "#689f38", "shot": "poison_arrow",
 		"effect": ["poison", 0.4, 3.0], "spells": [{"type": "bolt", "every": 2.0}]},
-	"fire_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 20.0, "xp": 3, "gold": 3,
+	"fire_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 20.0, "xp": 5, "gold": 3,
 		"from": 20, "weight": 0.8, "ai": "still", "color": "#ff5722", "shot": "fireball", "fire": true,
 		"variant": ["shield", 0.35, {"hp": 2.0}], "spells": [{"type": "bolt", "every": 2.6, "dmg": 1.0}]},
-	"burning_archer": {"hp": 12.0, "speed": 60.0, "radius": 18.0, "damage": 16.0, "xp": 3, "gold": 2,
+	"burning_archer": {"hp": 12.0, "speed": 60.0, "radius": 18.0, "damage": 16.0, "xp": 4, "gold": 2,
 		"from": 22, "weight": 0.8, "ai": "still", "color": "#ff9800", "shot": "fire_arrow", "fire": true,
 		"spells": [{"type": "bolt", "every": 2.4, "dmg": 1.0}]},
-	"lightning_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 11.0, "xp": 3, "gold": 3,
+	"lightning_mage": {"hp": 14.0, "speed": 60.0, "radius": 18.0, "damage": 11.0, "xp": 5, "gold": 3,
 		"from": 24, "weight": 0.8, "ai": "still", "color": "#e3f2fd", "shot": "spark",
 		"effect": ["stun", 1.0, 0.6], "variant": ["shield", 0.35, {"hp": 2.0}],
 		"spells": [{"type": "bolt", "every": 2.8, "dmg": 1.0}]},
 	# bosses, one every BOSS_EVERY waves (BOSSES)
-	"boss": {"name": "Lich King", "hp": 400.0, "speed": 50.0, "radius": 58.0, "damage": 25.0, "xp": 20, "gold": 40,
+	"boss": {"name": "Lich King", "hp": 400.0, "speed": 50.0, "radius": 58.0, "damage": 25.0, "xp": 40, "gold": 40,
 		"boss": true, "ai": "chase", "heavy": 0.3, "color": "#7e57c2",
 		"spells": [{"type": "ring", "every": 3.0, "count": 12}, {"type": "summon", "every": 8.0, "kind": "skeleton", "count": 3, "hp": 0.3}]},
 	# the boss monsters: each one adds an attack to the last one's
-	"bone_herald": {"name": "Bone Herald", "hp": 450.0, "speed": 55.0, "radius": 56.0, "damage": 24.0, "xp": 25, "gold": 40,
+	"bone_herald": {"name": "Bone Herald", "hp": 450.0, "speed": 55.0, "radius": 56.0, "damage": 24.0, "xp": 50, "gold": 40,
 		"boss": true, "kills": 100, "ai": "chase", "heavy": 0.3, "color": "#e0dccb", "shot": "bone_missile",
 		"spells": [BURST]},
-	"pyre_lord": {"name": "Pyre Lord", "hp": 500.0, "speed": 55.0, "radius": 56.0, "damage": 26.0, "xp": 30, "gold": 50,
+	"pyre_lord": {"name": "Pyre Lord", "hp": 500.0, "speed": 55.0, "radius": 56.0, "damage": 26.0, "xp": 60, "gold": 50,
 		"boss": true, "kills": 200, "ai": "chase", "heavy": 0.3, "color": "#ff7043", "shot": "bone_missile",
 		"spells": [BURST, FIREBALL]},
-	"blight_eye": {"name": "Blight Eye", "hp": 550.0, "speed": 50.0, "radius": 56.0, "damage": 26.0, "xp": 35, "gold": 60,
+	"blight_eye": {"name": "Blight Eye", "hp": 550.0, "speed": 50.0, "radius": 56.0, "damage": 26.0, "xp": 70, "gold": 60,
 		"boss": true, "kills": 300, "ai": "chase", "heavy": 0.3, "color": "#76ff03", "shot": "bone_missile",
 		"spells": [BURST, FIREBALL, LASER]},
-	"grave_maw": {"name": "Grave Maw", "hp": 600.0, "speed": 60.0, "radius": 56.0, "damage": 28.0, "xp": 40, "gold": 70,
+	"grave_maw": {"name": "Grave Maw", "hp": 600.0, "speed": 60.0, "radius": 56.0, "damage": 28.0, "xp": 80, "gold": 70,
 		"boss": true, "kills": 400, "ai": "chase", "heavy": 0.3, "color": "#78909c", "shot": "bone_missile",
 		"spells": [BURST, FIREBALL, LASER, BITE]},
-	"archfiend": {"name": "Archfiend", "hp": 650.0, "speed": 60.0, "radius": 60.0, "damage": 28.0, "xp": 50, "gold": 80,
+	"archfiend": {"name": "Archfiend", "hp": 650.0, "speed": 60.0, "radius": 60.0, "damage": 28.0, "xp": 100, "gold": 80,
 		"boss": true, "kills": 500, "ai": "chase", "heavy": 0.3, "color": "#d50000", "shot": "bone_missile",
 		"spells": [BURST, HELLFIRE, LASER, BITE]},
 	# hatched by the Archfiend's fireballs only
-	"hell_imp": {"hp": 9.0, "speed": 170.0, "radius": 14.0, "damage": 6.0, "xp": 1, "gold": 2,
+	"hell_imp": {"hp": 9.0, "speed": 170.0, "radius": 14.0, "damage": 6.0, "xp": 2, "gold": 2,
 		"from": 1, "weight": 0.0, "ai": "weave", "color": "#ff6d00", "loot": true},
 }
 ## The boss monsters' attacks, stacked: 3 bursts of 2 missiles; a fireball
@@ -357,6 +359,7 @@ static func enemy_stats(kind: String, w: int) -> Dictionary:
 	s.speed *= 1.0 + minf(w - 1, 20) * 0.02
 	s.damage *= 1.0 + (w - 1) * 0.05
 	s.gold = s.gold + w / BOSS_EVERY
+	var xp: float = s.xp
 	for sp in s.get("spells", []):
 		if s.get("boss", false):
 			sp.every *= BOSS_HASTE
@@ -368,4 +371,6 @@ static func enemy_stats(kind: String, w: int) -> Dictionary:
 		s.look = kind + "_" + v[0]
 		for stat in v[2]:
 			s[stat] *= v[2][stat]
+			xp *= v[2][stat]  # a helmet, a shield: harder to kill, more XP
+	s.xp = roundi(xp)
 	return s
