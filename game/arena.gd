@@ -21,6 +21,7 @@ const MAGE_LIGHT := 190.0  # world
 const MAGES_LIT := 8  # the shader's room for mages
 const LIGHTS := 48  # the shader's room for flashes (flash) and spells (the "spells" group, nearest the camera first)
 const SPELL_LIGHT := 90.0  # world: the least light around a spell
+const BEAM_LIGHT := 50.0  # world: the light around each point of a beam's arc
 
 static var clock := 0.0  # s of game time, scaled by Engine.time_scale: animations run on it
 static var _map: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ART + "map.json"))
@@ -142,12 +143,13 @@ func _process(delta: float) -> void:
 	var spells := get_tree().get_nodes_in_group("spells")
 	if spells.size() > LIGHTS - at.size():
 		spells.sort_custom(func(a, b): return a.global_position.distance_squared_to(mage) < b.global_position.distance_squared_to(mage))
-	for b in spells:  # their own color, dimmer, a zone's over its area, a beam's along its arc
-		var r := maxf(b.body.size * (1.3 if b.body.shape == "zone" else 3.5), SPELL_LIGHT)
-		for p in (b.lit if b.body.shape == "beam" and b.lit else [b.global_position]):
+	for b in spells:  # their own color, dimmer, a zone's over its area; a beam's along its arc, uncolored and narrow (its points overlap: their colors summed to white)
+		var beam: bool = b.body.shape == "beam"
+		var r := BEAM_LIGHT if beam else maxf(b.body.size * (1.3 if b.body.shape == "zone" else 3.5), SPELL_LIGHT)
+		for p in (b.lit if beam and b.lit else [b.global_position]):
 			if at.size() < LIGHTS:
 				at.append(Vector4(p.x, p.y, r, b.modulate.a))
-				colors.append(Vector3(b.color.r, b.color.g, b.color.b) * 0.6)
+				colors.append(Vector3.ZERO if beam else Vector3(b.color.r, b.color.g, b.color.b) * 0.6)
 	night.material.set_shader_parameter("flashing", at.size())
 	at.resize(LIGHTS)
 	colors.resize(LIGHTS)
