@@ -244,6 +244,13 @@ func _channel() -> void:
 					e.push((e.global_position - global_position).normalized() * gust)
 				_chill(e)
 				_harden(e)
+		if gust > 0.0:  # Procella also turns the shots (archers' arrows...) in the cone away; every peer, as _repel_shots
+			var k := _cone_scale()
+			for s in get_tree().get_nodes_in_group("shots"):
+				var away: Vector2 = s.position - global_position
+				if away.length() <= body.speed * k + s.RADIUS and s.velocity.dot(away) < 0.0 \
+						and absf(angle_difference(dir.angle(), away.angle())) <= deg_to_rad(body.angle) * k / 2.0:
+					s.velocity = away.normalized() * maxf(s.velocity.length(), gust)
 
 
 ## Within `speed` px and `angle` degrees (full width) around the aim; a cone

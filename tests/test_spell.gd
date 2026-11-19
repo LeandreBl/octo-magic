@@ -347,10 +347,17 @@ func _check_channel() -> void:
 		if n is SpellBody:
 			n.free()
 	mage.stats = Stats.total([Upgrades.bonus(Upgrades.LIST.hurricane, 5)])
+	var arrow := Enemy.Shot.new()
+	arrow.position = mage.gem() + Vector2(60, 0)
+	arrow.velocity = Vector2(-300, 0)  # flying at the mage
+	world.add_child(arrow)
 	SpellBody.cast(spells.frost_jet.emit, Vector2(100, 100), Vector2.RIGHT, mage, spells.frost_jet, world)
 	for i in 3:
 		await physics_frame
 	check(aimed.knock.x > 0.0 and is_zero_approx(aimed.knock.y), "Procella V: the cone pushes the enemy back")
+	check(not is_instance_valid(arrow) or arrow.velocity.x > 0.0, "Procella V: the cone turns an arrow back")
+	if is_instance_valid(arrow):
+		arrow.free()
 	for n in world.get_children():
 		if n is SpellBody:
 			n.free()
