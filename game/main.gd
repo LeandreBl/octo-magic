@@ -307,7 +307,7 @@ func _killed(kind: String, xp: int, look: String, pos: Vector2, radius: float, a
 	Run.killed(kind)
 	Run.collect("xp", xp)  # XP comes from the kill itself, no crystal to pick up
 	if not Run.is_boss(kind):
-		Sfx.play("die", pos)
+		Sfx.play(Sfx.DEATHS.get(kind, "die"), pos)
 		var c := Enemy.Corpse.new()
 		c.look = look
 		c.position = pos

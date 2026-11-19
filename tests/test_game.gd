@@ -600,6 +600,8 @@ func _test_sfx() -> void:
 		for x in s:
 			peak = maxf(peak, absf(x))
 		check(s.size() > 0 and peak > 0.05 and peak <= 1.0, "sound %s is audible and does not clip (peak %.2f)" % [n, peak])
+	for k in Sfx.DEATHS:
+		check(k in Run.ENEMIES and Sfx.DEATHS[k] in Sfx.RECIPES, "death sound of " + k)
 	check(Sfx.stream("hit").data.size() == Sfx.synth(Sfx.RECIPES.hit).size() * 2, "16-bit sound data")
 	check(Sfx.music_gain(0.0, 120.0) == 0.0 and Sfx.music_gain(5.0, 120.0) == 0.5 and Sfx.music_gain(60.0, 120.0) == 1.0 \
 			and Sfx.music_gain(115.0, 120.0) == 0.5 and Sfx.music_gain(120.0, 120.0) == 0.0, "music fades in over its first 10 s, out over its last 10 s")

@@ -16,6 +16,11 @@ const RATE := 22050
 const RECIPES := {
 	"hit": {"wave": "bell", "f": [880, 620], "len": 0.06, "noise": 0.3, "db": -22.0},
 	"die": {"wave": "bell", "f": [700, 180], "len": 0.25, "noise": 0.2, "sparkle": 30.0, "echo": 1, "db": -16.0},
+	# Deaths by family (DEATHS): a crack and rattling bones, a wet splosh, a fading wail, a squeal.
+	"die_bones": {"wave": "noise", "f": [1], "len": 0.35, "lp": 0.8, "clicks": 40.0, "db": -14.0},
+	"die_flesh": {"wave": "sine", "f": [160, 70, 35], "len": 0.45, "noise": 0.65, "lp": 0.04, "wobble": 22.0, "db": -10.0},
+	"die_ghost": {"wave": "sine", "f": [700, 1100, 250], "len": 0.7, "noise": 0.2, "lp": 0.6, "wobble": 7.0, "echo": 2, "db": -16.0},
+	"die_imp": {"wave": "saw", "f": [900, 1500, 300], "len": 0.22, "noise": 0.15, "db": -18.0},
 	"shot": {"wave": "bell", "f": [1100, 380], "len": 0.18, "noise": 0.2, "sparkle": 30.0, "db": -12.0},  # heard from afar (ranged enemies)
 	"boss": {"wave": "saw", "f": [55, 85, 50], "len": 1.6, "noise": 0.3, "sparkle": 6.0, "echo": 2, "db": -6.0},
 	"boss_die": {"wave": "bell", "f": [300, 40], "len": 1.4, "noise": 0.35, "sparkle": 25.0, "echo": 3, "db": -4.0},
@@ -33,6 +38,12 @@ const RECIPES := {
 	"game_over": {"wave": "bell", "f": [392, 330, 262, 196], "notes": true, "len": 1.6, "echo": 3, "db": -6.0},
 	"click": {"wave": "bell", "f": [1400, 1250], "len": 0.05, "echo": 1, "db": -18.0, "bus": "UI"},
 	"hover": {"wave": "sine", "f": [2400, 2600], "len": 0.03, "db": -28.0, "bus": "UI"},
+}
+## kind -> its death sound (the others, mages: "die").
+const DEATHS := {
+	"skeleton": "die_bones", "skeletal_warrior": "die_bones", "skeletal_knight": "die_bones", "burning_skeleton": "die_bones",
+	"archer": "die_bones", "marksman": "die_bones", "putrid_archer": "die_bones", "burning_archer": "die_bones",
+	"zombie": "die_flesh", "rotting_zombie": "die_flesh", "wraith": "die_ghost", "imp": "die_imp", "hell_imp": "die_imp",
 }
 const ECHO_DELAY := 0.11  # s between repeats of the tail
 const ECHO_FEEDBACK := 0.4
@@ -224,6 +235,8 @@ static func synth(r: Dictionary) -> PackedFloat32Array:
 	out.resize(n)
 	var phase := 0.0
 	var lp := 0.0
+	var cut: float = r.get("lp", 0.3)
+	var wobble: float = r.get("wobble", 0.0)
 	for i in n:
 		var t := float(i) / RATE
 		var k := t / length
@@ -244,8 +257,10 @@ static func synth(r: Dictionary) -> PackedFloat32Array:
 			"square": s = signf(sin(phase)) * 0.5
 			"saw": s = fmod(phase / TAU, 1.0) * 1.2 - 0.6
 			"bell": s = sin(phase) * 0.6 + sin(phase * 2.76) * 0.25 + sin(phase * 5.4) * 0.15 * (1.0 - k)
-		lp += (rng.randf_range(-1.0, 1.0) - lp) * 0.3  # darker noise
+		lp += (rng.randf_range(-1.0, 1.0) - lp) * cut  # darker noise
 		s = s * (1.0 - noise_mix) + lp * 1.5 * noise_mix
+		if wobble:  # gurgles, wails
+			s *= 0.6 + 0.4 * sin(TAU * wobble * t)
 		out[i] = s * minf(1.0, t / 0.005) * env
 	# Sparkle: short high chimes scattered over the sound.
 	for g in int(r.get("sparkle", 0.0) * length):
@@ -254,6 +269,15 @@ static func synth(r: Dictionary) -> PackedFloat32Array:
 		var amp := rng.randf_range(0.1, 0.25) * (1.0 - float(at) / n)
 		for i in mini(int(RATE * 0.04), n - at):
 			out[at + i] += sin(TAU * hz * i / RATE) * amp * (1.0 - i / (RATE * 0.04))
+	# Clicks: dry knocks of bright noise ringing briefly (bones clattering down).
+	for g in int(r.get("clicks", 0.0) * length):
+		var at := rng.randi_range(0, n - 1)
+		var hz := rng.randf_range(1200.0, 3200.0)
+		var amp := rng.randf_range(0.3, 0.7) * (1.0 - 0.7 * float(at) / n)
+		var m := int(RATE * 0.015)
+		for i in mini(m, n - at):
+			var d := 1.0 - float(i) / m
+			out[at + i] += (sin(TAU * hz * i / RATE) * 0.6 + rng.randf_range(-0.4, 0.4)) * amp * d * d
 	# Echo: the sound repeats fainter, a resonant tail.
 	var repeats: int = r.get("echo", 0)
 	if repeats:
