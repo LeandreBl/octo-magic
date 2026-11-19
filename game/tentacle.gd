@@ -3,12 +3,12 @@ extends Line2D
 ## sprite: seen from above, the hat is on top.
 ## A muscular arm, not a rope: a Verlet chain pinned at the body that keeps its
 ## length and resists bending, each joint pulled toward a target curve (the tip
-## curls more than the base). It walks at every speed, spread around the body:
-## the tip holds the ground like a sucker, and when the body has gone too far it
-## lets go, curls up as it lifts, and unrolls onto a new spot ahead (the bend runs
-## from the base to the tip); faster, the steps quicken (PACE), so the arms keep
-## reaching ahead instead of all streaming behind. Still, the arms writhe slowly
-## and now and then one shifts. It is a body of its own: its
+## curls more than the base), its first segment aimed at its tip's spot. Moving,
+## it pulls the body along: it reaches forward on its side, the tip grips the
+## ground like a sucker, the arm sweeps back past its base as the body goes by,
+## then lets go, curls up as it lifts and unrolls ahead again (the bend runs from
+## the base to the tip); the two groups pull out of phase (STAGGER). Slow, it
+## steps to its rest spot; still, the arms writhe slowly and now and then one shifts. It is a body of its own: its
 ## points bump into the arena's walls and are shoved out of the enemies around
 ## (circles), the tip never planted inside either. Visual only: the body is the
 ## hitbox, and each peer simulates its own from the synced position. Shape by
@@ -32,6 +32,14 @@ const ROOT_STIFF := 0.5  # how hard the first segment leaves the body along the 
 const PACE := 80.0  # px/s: up to it the gait keeps its times; faster, it quickens with the speed
 const MIN_PACE := 0.3  # the quickest gait, in its slow times: beyond, the strides lengthen
 const LEAD := 0.7  # how far ahead of its rest spot a step lands at most, in LENGTH
+## Moving, the arms swim with the ground: each reaches forward on its side, grips,
+## pulls back past its base as the body goes by, then lets go and reaches again.
+const PULL_FROM := 30.0  # px/s: below it, it steps to its rest spot
+const REACH_FAR := 1.0  # how far from its base an arm reaches ahead, in LENGTH
+const PULL := 0.1  # it lets go once its tip is that far behind its base, in LENGTH
+const STAGGER := 0.5  # in LENGTH: group 1 pulls that much longer, so the two groups never all pull at once
+const REACH_FRONT := 0.15  # rad from the heading: where the front arms reach
+const REACH_SPREAD := 0.25  # rad more per arm toward the rear: the rear ones reach to the side
 const THICK := 3.0  # px: a point's radius against walls and enemies
 const BOUNCE := 0.4  # of a point's speed into a wall sent back out
 ## The arm's targets (heading, bends, grip) eased toward the body's, per second: a
@@ -56,6 +64,8 @@ var _side := 1.0  # which way it curls: outward, mirrored left and right
 var _heading := 0.0  # rad: the body's heading, eased (TURN)
 var _bend := PackedFloat32Array()  # the joints' target bends, eased (EASE)
 var _hold := 1.0  # the tip's grip, eased (EASE)
+var _reaching := false  # the current step reaches ahead to pull
+var _reach := 0.0  # rad from the heading, on its side: where it reaches
 var _gait := 0.0  # the gait's clock, in GAIT turns: the two groups take turns on its whole numbers
 
 
@@ -63,6 +73,7 @@ func _init(direction := 0.0, step_group := 0) -> void:
 	dir = direction
 	group = step_group
 	_side = 1.0 if sin(direction) >= 0.0 else -1.0
+	_reach = REACH_FRONT + REACH_SPREAD * (absf(angle_difference(0.0, direction)) / (PI / 4.0) - 0.5)
 	texture = TEX
 	texture_mode = Line2D.LINE_TEXTURE_STRETCH
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -104,6 +115,8 @@ func follow(center: Vector2, heading: float, delta: float, t: float,
 		_step_t -= delta
 		s = 1.0 - maxf(_step_t, 0.0) / _step_len
 		var lift := sin(PI * s)
+		if _reaching:  # the spot ahead moves with the body: aimed at until the tip lands
+			_to = _free(base + Vector2.from_angle(heading + _side * _reach) * length * REACH_FAR, walls, obstacles, map)
 		foot = _from.lerp(_to, ease(s, -2.0)).lerp(base, LIFT * lift)  # drawn back up, then laid down
 		hold = 0.3  # lifted: the muscle shapes it more than the path
 	else:
@@ -111,13 +124,18 @@ func follow(center: Vector2, heading: float, delta: float, t: float,
 		var turn := int(_gait) % 2 == group
 		_fidget -= delta
 		var shift := _fidget <= 0.0 and _speed < 5.0
-		if far > length * STEP and turn or far > length * 0.7 or shift and turn:  # too far: it steps anyway
+		var moving := _speed > PULL_FROM
+		var back := (foot - base).dot(Vector2.from_angle(heading)) / length  # how far ahead of its base the tip is
+		var step := (back < -PULL - STAGGER * group or foot.distance_to(base) > length * 1.2) if moving \
+				else (far > length * STEP and turn or far > length * 0.7 or shift and turn)  # too far: it steps anyway
+		if step:
 			_from = foot
+			_reaching = moving
 			var lead := vel * (GAIT + STEP_TIME) * pace  # lands where the body is going
 			var spot := rest + lead.limit_length(length * LEAD)
 			if shift:
 				spot = rest + Vector2.from_angle(randf() * TAU) * length * 0.15
-			_to = _free(spot, walls, obstacles, map)
+			_to = _free(spot, walls, obstacles, map)  # reaching: aimed at each frame of the step
 			_step_len = FIDGET_TIME if shift else STEP_TIME * pace
 			_step_t = _step_len
 			_fidget = randf_range(1.5, 5.0)
@@ -142,7 +160,7 @@ func follow(center: Vector2, heading: float, delta: float, t: float,
 	var seg := length / (POINTS - 1)
 	for k in 6:
 		chain[0] = base
-		chain[1] = chain[1].lerp(base + Vector2.from_angle(a) * seg, ROOT_STIFF)
+		chain[1] = chain[1].lerp(base + (foot - base).normalized() * seg, ROOT_STIFF)  # aimed at its tip's spot
 		for i in POINTS - 1:
 			var d := chain[i + 1] - chain[i]
 			var fix := d * (1.0 - seg / maxf(d.length(), 0.001))
