@@ -1,8 +1,8 @@
 extends Control
 ## In-run HUD: pause and score (top left; the wave and gold are in the
-## pause menu); HP and mana gauges (no text), each as wide as its max and
-## hollow when empty, a thin XP bar and the bosses' health under them, in
-## gothic iron frames with Diablo-like liquids (top center: the
+## pause menu); one gauge (no text) of HP, XP and mana, each as wide as its
+## max and hollow when empty, with the bosses' health under it, in gothic iron
+## frames with Diablo-like liquids (top center: the
 ## other enemies show none); the spell slots, primary then secondary, with
 ## cooldown (top right: touch a slot to cast it), then the
 ## passive (shield, time until it is back).
@@ -11,15 +11,17 @@ signal paused
 
 const UITheme := preload("res://ui/theme.gd")
 const LIQUID: Shader = preload("res://ui/liquid.gdshader")
-# The gauges' frames (generated, hollow, 9-sliced): texture, height, end cap
-# width (the slot starts there), rim above and below the slot.
-const FRAME := [preload("res://assets/ui/gauge_frame.png"), 30, 36, 6]
-const FRAME_SMALL := [preload("res://assets/ui/gauge_frame_small.png"), 16, 19, 3]
+# The gauges' frame (generated, hollow, 9-sliced) and the divider between
+# the bars in one frame (its ruby, cut from the frame's end cap).
+const FRAME: Texture2D = preload("res://assets/ui/gauge_frame.png")
+const DIVIDER: Texture2D = preload("res://assets/ui/gauge_divider.png")
+const CAP := 36  # the frame's end caps: the slot starts there
+const RIM := 6  # the frame's rails, above and below the slot
+const SLOT := 18  # the slot's height: the bars'
 # Diablo's liquids: blood red, deep blue; the XP gold.
 const HP_COLOR := Color("#b3141b")
 const MANA_COLOR := Color("#2346c8")
 const XP_COLOR := Color("#d9a520")
-const GAP := 6  # between the gauges
 const SHARE := 1.0 / 3.0  # of the screen width the gauges take at base max HP and mana
 const MAX_SHARE := 0.45  # their cap, however high the max HP and mana go
 const MILESTONE := 5  # every this many waves, a message fades in and out
@@ -29,6 +31,7 @@ var _hp: ProgressBar
 var _mana: ProgressBar
 var _xp: ProgressBar
 var _boss: VBoxContainer  # the bosses' names and health bar, hidden without one
+var _boss_bar: ProgressBar
 var _score: Label
 var _passive: Control
 var _shield: Label
@@ -69,30 +72,26 @@ func _ready() -> void:
 	_score = UITheme.label("", "", 15, UITheme.TEXT_DIM)
 	score.add_child(_score)
 
-	# Top center: HP and mana gauges, sized by their max; under them the XP
-	# bar, then the bosses' health while one is up.
+	# Top center: HP, XP and mana in one frame, sized by their max; under
+	# them the bosses' health while one is up.
 	var top := _box(VBoxContainer.new(), 8)
 	top.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	top.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	margin.add_child(top)
-	var gauges := _box(HBoxContainer.new(), GAP)
-	gauges.alignment = BoxContainer.ALIGNMENT_CENTER
-	top.add_child(gauges)
-	# HP and mana each in a side as wide as the wider of the two, so they
-	# meet at the screen's center whatever their max.
-	_hp = _bar(_side(gauges, BoxContainer.ALIGNMENT_END), HP_COLOR, FRAME)
+	_hp = _bar(HP_COLOR)
 	_hp.fill_mode = ProgressBar.FILL_END_TO_BEGIN  # empties from the left
-	_mana = _bar(_side(gauges, BoxContainer.ALIGNMENT_BEGIN), MANA_COLOR, FRAME)
-	_mana.fill_mode = ProgressBar.FILL_END_TO_BEGIN
-	_xp = _bar(top, XP_COLOR, FRAME_SMALL)
-	_xp.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_xp = _bar(XP_COLOR)
+	_mana = _bar(MANA_COLOR)
+	_gauge(top, [_hp, _xp, _mana])
 	_boss = _box(VBoxContainer.new(), 2)
 	top.add_child(_boss)
 	var b_name := UITheme.label("", "", 20, UITheme.TEXT)
 	b_name.add_theme_color_override("font_shadow_color", UITheme.OUTLINE)
 	b_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_boss.add_child(b_name)
-	_bar(_boss, HP_COLOR, FRAME).fill_mode = ProgressBar.FILL_END_TO_BEGIN
+	_boss_bar = _bar(HP_COLOR)
+	_boss_bar.fill_mode = ProgressBar.FILL_END_TO_BEGIN
+	_gauge(_boss, [_boss_bar])
 
 	# Top right: the primary spell, the secondary under it, then the passive.
 	var right := _box(VBoxContainer.new(), 10)
@@ -169,55 +168,54 @@ func _plate(parent: Control, h_flags: int, v_flags: int) -> PanelContainer:
 	return p
 
 
-func _side(parent: Control, align: int) -> HBoxContainer:
-	var side := _box(HBoxContainer.new(), 0)
-	side.alignment = align
-	parent.add_child(side)
-	return side
+## `bars` side by side in one frame, a divider between two, centered in `parent`.
+func _gauge(parent: Control, bars: Array) -> void:
+	var frame := PanelContainer.new()
+	var box := StyleBoxTexture.new()  # its content margins: the texture's, so the bars fill the slot
+	box.texture = FRAME
+	box.set_texture_margin(SIDE_LEFT, CAP)  # the end caps keep their shape
+	box.set_texture_margin(SIDE_RIGHT, CAP)
+	box.set_texture_margin(SIDE_TOP, RIM)
+	box.set_texture_margin(SIDE_BOTTOM, RIM)
+	frame.add_theme_stylebox_override("panel", box)
+	frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var row := _box(HBoxContainer.new(), 0)
+	frame.add_child(row)
+	for i in bars.size():
+		if i:
+			var gap := Control.new()  # the divider's width in the slot, it covers the rails
+			gap.custom_minimum_size.x = DIVIDER.get_width()
+			gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			var ruby := TextureRect.new()
+			ruby.texture = DIVIDER
+			ruby.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			ruby.offset_top = -RIM
+			ruby.offset_bottom = RIM
+			ruby.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			gap.add_child(ruby)
+			row.add_child(gap)
+		row.add_child(bars[i])
+	parent.add_child(frame)
 
 
-## A gauge of `color` in `frame` (FRAME or FRAME_SMALL), its fill a liquid.
-func _bar(parent: Control, color: Color, frame: Array) -> ProgressBar:
-	var height: int = frame[1]
-	var cap: int = frame[2]
-	var rim: int = frame[3]
+## A bar of `color` the slot's height, its fill a liquid.
+func _bar(color: Color) -> ProgressBar:
 	var bar := ProgressBar.new()
-	bar.custom_minimum_size = Vector2(250, height)
+	bar.custom_minimum_size = Vector2(250, SLOT)
 	bar.show_percentage = false
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var fill := UITheme.fill(color)
 	fill.border_color = color.lightened(0.25)  # a soft top highlight
-	fill.border_width_top = rim / 3
-	fill.set_corner_radius_all((height - rim * 2) / 2)  # the slot's round ends
-	fill.expand_margin_top = -rim  # inside the frame's slot
-	fill.expand_margin_bottom = -rim
-	fill.expand_margin_left = -cap
-	fill.expand_margin_right = -cap
-	# Its minimum size: ProgressBar draws value * (size - min) + min, so a
-	# low value never shrinks the inset rect below zero (drawn off the frame).
-	fill.set_content_margin(SIDE_TOP, rim)
-	fill.set_content_margin(SIDE_BOTTOM, rim)
-	fill.set_content_margin(SIDE_LEFT, cap)
-	fill.set_content_margin(SIDE_RIGHT, cap)
+	fill.border_width_top = 2
+	fill.set_corner_radius_all(SLOT / 2)  # the slot's round ends
 	bar.add_theme_stylebox_override("fill", fill)
 	bar.add_theme_stylebox_override("background", StyleBoxEmpty.new())  # see-through when empty
 	var liquid := ShaderMaterial.new()  # the fill as a liquid: translucent, rippling
 	liquid.shader = LIQUID
-	liquid.set_shader_parameter("top", rim)
-	liquid.set_shader_parameter("height", height - rim * 2)
+	liquid.set_shader_parameter("top", 0.0)
+	liquid.set_shader_parameter("height", SLOT)
 	bar.material = liquid
-	var panel := Panel.new()  # the frame, hollow
-	var box := StyleBoxTexture.new()
-	box.texture = frame[0]
-	box.set_texture_margin(SIDE_LEFT, cap)  # the end caps keep their shape
-	box.set_texture_margin(SIDE_RIGHT, cap)
-	box.set_texture_margin(SIDE_TOP, rim)
-	box.set_texture_margin(SIDE_BOTTOM, rim)
-	panel.add_theme_stylebox_override("panel", box)
-	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bar.add_child(panel)
-	parent.add_child(bar)
 	return bar
 
 
@@ -281,7 +279,7 @@ func _process(_delta: float) -> void:
 	_boss.visible = not bosses.is_empty()
 	if _boss.visible:  # several at once: one bar for all of them
 		_boss.get_child(0).text = " · ".join(bosses.map(func(e): return tr(e.data.name)))
-		_set_bar(_boss.get_child(1), bosses.reduce(func(a, e): return a + e.hp, 0.0), bosses.reduce(func(a, e): return a + e.max_hp, 0.0))
+		_set_bar(_boss_bar, bosses.reduce(func(a, e): return a + e.hp, 0.0), bosses.reduce(func(a, e): return a + e.max_hp, 0.0))
 	_score.text = "Score %d" % Run.score()
 	_passive.visible = "shield" in p.passives
 	if _passive.visible:  # no key: it applies itself
@@ -306,20 +304,17 @@ func _process(_delta: float) -> void:
 		ui[5].add_theme_stylebox_override("panel", _ready_box if can and left <= 0.05 else _busy_box)
 
 
-## HP and mana as wide as their max: SHARE of the screen at the base max, up
-## to MAX_SHARE; the XP and boss bars as wide as both.
+## HP and mana as wide as their max (XP a quarter of HP): SHARE of the screen
+## at the base max, up to MAX_SHARE; the boss bar as wide as the three.
 func _size_gauges(hp_max: float, mana_max: float) -> void:
 	var screen := get_viewport_rect().size.x
-	var total := hp_max + mana_max
-	var per := screen * SHARE / (Stats.BASE.hp + Stats.BASE.mana)
+	var total := hp_max * 1.25 + mana_max
+	var per := screen * SHARE / (Stats.BASE.hp * 1.25 + Stats.BASE.mana)
 	per = minf(per, screen * MAX_SHARE / total)
 	_hp.custom_minimum_size.x = roundf(hp_max * per)
+	_xp.custom_minimum_size.x = roundf(hp_max * per / 4.0)
 	_mana.custom_minimum_size.x = roundf(mana_max * per)
-	var side := maxf(_hp.custom_minimum_size.x, _mana.custom_minimum_size.x)
-	_hp.get_parent().custom_minimum_size.x = side
-	_mana.get_parent().custom_minimum_size.x = side
-	_xp.custom_minimum_size.x = side * 2 + GAP
-	_boss.get_child(1).custom_minimum_size.x = side * 2 + GAP
+	_boss_bar.custom_minimum_size.x = roundf(total * per) + DIVIDER.get_width() * 2
 
 
 ## The spell's icon, else the first frame of its projectile, else a disc of its color.
