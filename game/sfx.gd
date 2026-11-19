@@ -109,7 +109,7 @@ func _process(_delta: float) -> void:
 	var dt := (now - _tick) / 1e6 if _tick else 0.0  # real time: the game's delta slows down with it
 	_tick = now
 	for m: AudioStreamPlayer in [_music, _music_out]:
-		if not m or not m.playing or m.stream_paused:  # none headless
+		if not m or not m.playing:  # none headless, or held (pause_music)
 			continue
 		var pos: float = m.get_meta("pos") + dt * m.pitch_scale
 		var end: float = m.get_meta("end")
@@ -174,6 +174,8 @@ static func music(track: String) -> void:
 	if track == _node._track and _node._music.playing:
 		return
 	_node._track = track
+	for p in [_node._music, _node._music_out]:
+		p.set_meta("held", false)  # a held track is not resumed over the new one
 	var m := _node._music_out
 	_node._music_out = _node._music
 	_node._music = m
@@ -182,7 +184,6 @@ static func music(track: String) -> void:
 	m.set_meta("pos", 0.0)
 	m.set_meta("end", m.stream.get_length())
 	m.volume_db = MUSIC_DB + linear_to_db(0.001)
-	m.stream_paused = false
 	m.play()
 
 
@@ -200,11 +201,20 @@ func _fade_out(m: AudioStreamPlayer) -> void:
 		m.set_meta("end", pos + MUSIC_FADE * music_gain(pos, end))
 
 
-## Holds the music where it is (pause menu), or lets it go on.
+## Holds the music where it is (pause menu), or lets it go on. Stopped and
+## replayed from its clock, not stream_paused: the web's sample playback
+## resumes a paused track further on (by the time spent paused before, the
+## slow motion), so it ended at full volume and the next one cut in.
 static func pause_music(paused: bool) -> void:
-	if _node:
-		_node._music.stream_paused = paused
-		_node._music_out.stream_paused = paused
+	if not _node:
+		return
+	for m: AudioStreamPlayer in [_node._music, _node._music_out]:
+		if paused and m.playing:
+			m.set_meta("held", true)
+			m.stop()  # stop() does not emit finished
+		elif not paused and m.get_meta("held", false):
+			m.set_meta("held", false)
+			m.play(m.get_meta("pos"))
 
 
 static func stream(sound: String) -> AudioStreamWAV:
